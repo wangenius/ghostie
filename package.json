@@ -10,9 +10,15 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@radix-ui/react-icons": "^1.3.2",
+    "@shadcn/ui": "^0.0.4",
     "@tauri-apps/api": "^2.1.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.469.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^1",
