@@ -8,6 +8,9 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
+mod llm;
+mod commands;
+
 fn main() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -31,6 +34,28 @@ fn main() {
                 })
                 .build(),
         )
+        .invoke_handler(tauri::generate_handler![
+            commands::add_model,
+            commands::remove_model,
+            commands::list_models,
+            commands::set_current_model,
+            commands::chat,
+            commands::set_system_prompt,
+            commands::get_system_prompt,
+            commands::set_stream_output,
+            commands::add_bot,
+            commands::remove_bot,
+            commands::list_bots,
+            commands::set_current_bot,
+            commands::get_current_bot,
+            commands::set_bot_alias,
+            commands::remove_bot_alias,
+            commands::list_bot_aliases,
+            commands::add_agent,
+            commands::remove_agent,
+            commands::get_agent,
+            commands::execute_agent_command,
+        ])
         .setup(|app| {
             let _ = app.handle();
             let shortcut = Shortcut::new(Some(Modifiers::ALT | Modifiers::CONTROL), Code::Space);

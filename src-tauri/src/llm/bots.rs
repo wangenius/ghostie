@@ -4,9 +4,9 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use anyhow::Result;
 use colored::*;
-use crate::utils;
+use crate::llm::utils;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Bot {
     pub name: String,
     pub system_prompt: String,

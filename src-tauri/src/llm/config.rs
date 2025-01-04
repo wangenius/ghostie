@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use crate::utils;
+use crate::llm::utils;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModelConfig {

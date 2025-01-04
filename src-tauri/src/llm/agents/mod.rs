@@ -1,6 +1,6 @@
-use crate::config::Config;
-use crate::llm_provider::{LLMProvider, Message, Provider};
-use crate::utils;
+use crate::llm::config::Config;
+use crate::llm::llm_provider::{LLMProvider, Message, Provider};
+use crate::llm::utils;
 use anyhow::Result;
 use colored::*;
 use futures::StreamExt;
@@ -13,8 +13,8 @@ use std::sync::Arc;
 use tokio::select;
 use tokio::time::Duration;
 
-mod executor;
 pub mod types;
+pub mod executor;
 mod ui;
 
 use executor::CommandExecutor;

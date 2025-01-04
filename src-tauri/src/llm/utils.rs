@@ -7,7 +7,7 @@ use std::process::Command;
 pub fn get_config_dir() -> Option<PathBuf> {
     let home = env::var("HOME").or_else(|_| env::var("USERPROFILE")).ok()?;
     let mut path = PathBuf::from(home);
-    path.push(".gpt-shell");
+    path.push(".pip-shell");
     Some(path)
 }
 

@@ -1,12 +1,7 @@
 /// 主模块
 /// 包含命令行界面、交互式聊天、配置管理等核心功能
 
-mod llm_provider;
-mod config;
-mod bots;
-mod update;
-mod utils;
-mod agents;
+
 
 use clap::{Command, Arg};
 use colored::*;
