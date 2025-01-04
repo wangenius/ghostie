@@ -40,9 +40,7 @@ impl ConversationContext {
     fn add_message(&mut self, role: &str, content: String) {
         self.messages.push(Message {
             role: role.to_string(),
-            content,
-            name: None,
-            function_call: None,
+            content
         });
     }
 }

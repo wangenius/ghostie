@@ -184,12 +184,31 @@ pub async fn chat(window: tauri::Window, messages: Vec<Message>) -> Result<Strin
     let config = Config::load().map_err(|e| e.to_string())?;
     let (_, model_config) = config.get_current_model().ok_or("No model configured")?;
     
+    // 获取当前 bot 的系统提示词
+    let mut all_messages = Vec::new();
+    let bots_config = BotsConfig::load().map_err(|e| e.to_string())?;
+    if let Some(bot) = bots_config.get_current() {
+        all_messages.push(Message {
+            role: "system".to_string(),
+            content: bot.system_prompt.clone(),
+        });
+    } else if let Some(ref system_prompt) = config.system_prompt {
+        all_messages.push(Message {
+            role: "system".to_string(),
+            content: system_prompt.clone(),
+        });
+    }
+    
+    // 添加历史消息
+    all_messages.extend(messages);
+    
     let provider = Provider::new(model_config.api_key.clone())
         .with_url(model_config.api_url.clone())
         .with_model(model_config.model.clone());
     
     let running = Arc::new(AtomicBool::new(true));
-    let mut stream = LLMProvider::chat(&provider, messages, true, running.clone())
+    println!("all_messages: {:?}", all_messages);
+    let mut stream = LLMProvider::chat(&provider, all_messages, true, running.clone())
         .await
         .map_err(|e| e.to_string())?;
     
@@ -202,6 +221,8 @@ pub async fn chat(window: tauri::Window, messages: Vec<Message>) -> Result<Strin
             let _ = window.emit("chat-response", text.clone());
         }
     }
+    // 发送聊天完成事件
+    let _ = window.emit("chat-complete", ());
     Ok(response)
 }
 
