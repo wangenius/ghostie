@@ -61,7 +61,12 @@ jobs:
         run: |
           $version = "${{ steps.get_version.outputs.version }}"
           $installerPath = "src-tauri/target/release/bundle/nsis/lulu_${version}_x64-setup.exe"
-          cargo tauri signer sign $installerPath
+          # 创建临时私钥文件
+          $env:TAURI_SIGNING_PRIVATE_KEY | Out-File -FilePath "private_key.key"
+          # 使用私钥文件进行签名
+          cargo tauri signer sign --private-key-path "private_key.key" --password "$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD" $installerPath
+          # 删除临时私钥文件
+          Remove-Item "private_key.key"
 
       - name: Generate latest.json
         shell: pwsh
