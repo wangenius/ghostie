@@ -8,8 +8,8 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
-mod commands;
 mod llm;
+mod commands;
 
 fn main() {
     let app = tauri::Builder::default()
@@ -21,7 +21,7 @@ fn main() {
                         == &Shortcut::new(Some(Modifiers::ALT | Modifiers::CONTROL), Code::Space)
                     {
                         if matches!(event.state(), ShortcutState::Pressed) {
-                            if let Some(window) = app.get_window("main") {
+                            if let Some(window) = app.get_webview_window("main") {
                                 if window.is_visible().unwrap() {
                                     let _ = window.hide();
                                 } else {
@@ -97,27 +97,27 @@ fn main() {
                 .build(app)?;
             Ok(())
         })
-        .on_window_event(move |_, event| {
+        .on_window_event(move |app_handle, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
-                api.prevent_close();
+                if let Some(window) = app_handle.get_webview_window("main") {
+                    window.hide().unwrap();
+                    api.prevent_close();
+                }
+            }
+            if let WindowEvent::Focused(focused) = event {
+                if !focused {
+                    if let Some(window) = app_handle.get_webview_window("main") {
+                        window.hide().unwrap();
+                    }
+                }
             }
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
-    app.run(|app_handle, event| {
+    app.run(|_app_handle, event| {
         if let tauri::RunEvent::ExitRequested { api, .. } = event {
             api.prevent_exit();
-        }
-        if let Some(window) = app_handle.get_window("main") {
-            let window_handle = window.clone();
-            window.on_window_event(move |event| match event {
-                WindowEvent::CloseRequested { api, .. } => {
-                    let _ = window_handle.hide();
-                    api.prevent_close();
-                }
-                _ => {}
-            });
         }
     });
 }
