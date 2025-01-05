@@ -13,7 +13,7 @@ export function ListView({ items, activeIndex, onItemClick }: ListViewProps) {
   const currentBot = bots.find(bot => bot.isCurrent);
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 px-3">
       {items.map((item, index) => {
         if (item.type === "chat") {
           return (

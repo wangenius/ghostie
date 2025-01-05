@@ -1,7 +1,15 @@
 import { invoke } from '@tauri-apps/api/core';
 import { relaunch } from '@tauri-apps/plugin-process';
-import { ChevronRight, Globe2, Keyboard, Moon, Power, RefreshCw, RotateCw, Sun } from "lucide-react";
+import { ChevronRight, Globe2, Keyboard, Lightbulb, Moon, Power, RefreshCw, RotateCw, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
+import { enable, isEnabled, disable } from '@tauri-apps/plugin-autostart';
+// when using `"withGlobalTauri": true`, you may use
+// const { enable, isEnabled, disable } = window.__TAURI__.autostart;
+
+// Enable autostart
+
+// Check enable state
+
 
 interface Settings {
 	theme: 'light' | 'dark' | 'system';
@@ -24,6 +32,31 @@ export function GeneralTab() {
 	});
 
 	const [checking, setChecking] = useState(false);
+
+	// 初始化时获取自启动状态
+	useEffect(() => {
+		isEnabled()
+			.then(enabled => {
+				setSettings(prev => ({ ...prev, autoLaunch: enabled }));
+			})
+			.catch(console.error);
+	}, []);
+
+	// 处理自启动状态变更
+	const handleAutoLaunchChange = async (checked: boolean) => {
+		try {
+			if (checked) {
+				await enable();
+			} else {
+				await disable();
+			}
+			setSettings(prev => ({ ...prev, autoLaunch: checked }));
+		} catch (error) {
+			console.error('设置自启动失败:', error);
+			// 恢复原来的状态
+			setSettings(prev => ({ ...prev, autoLaunch: !checked }));
+		}
+	};
 
 	useEffect(() => {
 		// 如果启用了自动更新，定期检查更新
@@ -120,8 +153,7 @@ export function GeneralTab() {
 						{settings.theme === 'light' ? <Sun className="w-[18px] h-[18px]" /> :
 							settings.theme === 'dark' ? <Moon className="w-[18px] h-[18px]" /> :
 								<div className="w-[18px] h-[18px] flex">
-									<Sun className="w-[18px] h-[18px] absolute" />
-									<Moon className="w-[18px] h-[18px] relative left-2" />
+									<Lightbulb className="w-[18px] h-[18px] absolute" />
 								</div>
 						}
 					</div>
@@ -197,7 +229,7 @@ export function GeneralTab() {
 					<input
 						type="checkbox"
 						checked={settings.autoLaunch}
-						onChange={(e) => setSettings({ ...settings, autoLaunch: e.target.checked })}
+						onChange={(e) => handleAutoLaunchChange(e.target.checked)}
 						className="sr-only peer"
 					/>
 					<div className="w-9 h-5 rounded-full bg-muted peer-checked:bg-primary after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>

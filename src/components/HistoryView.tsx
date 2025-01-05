@@ -54,7 +54,7 @@ export function HistoryView() {
       <div className="space-y-1 py-2·">
         <button
           onClick={() => setSelectedHistory(null)}
-          className="text-sm text-muted-foreground hover:text-foreground mb-2"
+          className="text-sm rounded text-muted-foreground hover:text-foreground hover:bg-secondary px-2 py-1 mb-2"
         >
           ← 返回历史记录列表
         </button>

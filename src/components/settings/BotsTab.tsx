@@ -59,42 +59,40 @@ export function BotsTab() {
 
   return (
     <div>
-      <div className="flex items-center justify-end mb-3">
+      <div className="grid grid-cols-2 gap-2">
         <button
           onClick={handleOpenBotAdd}
-          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+          className="flex items-center justify-center gap-2 p-2.5 rounded-lg border border-dashed border-border hover:bg-secondary text-muted-foreground hover:text-foreground"
         >
-          <Plus className="w-4 h-4 mr-1" />
-          添加机器人
+          <Plus className="w-4 h-4" />
+          <span className="text-sm font-medium">添加机器人</span>
         </button>
-      </div>
-      <div className="space-y-1">
         {bots.map((bot) => (
           <div
             key={bot.name}
-            className="flex items-center justify-between h-14 px-3 -mx-3 rounded-lg hover:bg-secondary"
+            className="flex items-center justify-between p-2.5 rounded-lg border border-border hover:bg-secondary"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 min-w-0">
               <div className="text-muted-foreground">
-                <Bot className="w-[18px] h-[18px]" />
+                <Bot className="w-4 h-4" />
               </div>
-              <div>
-                <div className="text-sm text-foreground">{bot.name}</div>
-                <div className="text-xs text-muted-foreground line-clamp-1">{bot.system_prompt}</div>
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-foreground truncate">{bot.name}</div>
+                <div className="text-xs text-muted-foreground truncate">{bot.system_prompt}</div>
               </div>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center gap-0.5 ml-2">
               <button
                 onClick={() => handleOpenBotEdit(bot.name)}
-                className="p-2 text-muted-foreground hover:text-primary"
+                className="p-1.5 text-muted-foreground hover:text-primary"
               >
-                <Pencil className="w-4 h-4" />
+                <Pencil className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => handleDeleteBot(bot.name)}
-                className="p-2 text-muted-foreground hover:text-destructive"
+                className="p-1.5 text-muted-foreground hover:text-destructive"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>

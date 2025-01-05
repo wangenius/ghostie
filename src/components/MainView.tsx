@@ -160,7 +160,7 @@ export function MainView() {
         onSettingsTabChange={setSettingsTab}
       />
 
-      <div className="flex-1 px-6 mt-2 overflow-y-auto">
+      <div className="flex-1 mt-2 overflow-y-auto">
         <div className="max-w-xl mx-auto space-y-6">
           {currentView === "list" && (
             <ListView

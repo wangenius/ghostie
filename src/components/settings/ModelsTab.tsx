@@ -80,58 +80,58 @@ export function ModelsTab() {
 
   return (
     <div>
-      <div className="flex items-center justify-end mb-3">
+      <div className="grid grid-cols-2 gap-2">
         <button
           onClick={handleOpenModelAdd}
-          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+          className="flex items-center justify-center gap-2 p-2.5 rounded-lg border border-dashed border-border hover:bg-secondary text-muted-foreground hover:text-foreground"
         >
-          <Plus className="w-4 h-4 mr-1" />
-          添加模型
+          <Plus className="w-4 h-4" />
+          <span className="text-sm font-medium">添加模型</span>
         </button>
-      </div>
-      <div className="space-y-1">
         {models.map((model) => (
           <div
             key={model.name}
             onClick={() => !model.is_current && handleSetCurrentModel(model.name)}
-            className={`flex items-center justify-between h-14 px-3 -mx-3 rounded-lg cursor-pointer transition-colors ${
-              model.is_current ? "bg-secondary" : "hover:bg-secondary"
+            className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors border ${
+              model.is_current ? "bg-secondary border-primary/30" : "hover:bg-secondary border-border"
             }`}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 min-w-0">
               <div className={model.is_current ? "text-primary" : "text-muted-foreground"}>
-                <Database className="w-[18px] h-[18px]" />
+                <Database className="w-4 h-4" />
               </div>
-              <div>
-                <div className={`text-sm ${model.is_current ? "text-primary" : "text-foreground"}`}>
-                  {model.name}
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className={`text-sm font-medium truncate ${model.is_current ? "text-primary" : "text-foreground"}`}>
+                    {model.name}
+                  </div>
+                  {model.is_current && (
+                    <span className="flex-shrink-0 text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                      当前使用
+                    </span>
+                  )}
                 </div>
-                <div className="text-xs text-muted-foreground">{model.model}</div>
+                <div className="text-xs text-muted-foreground truncate">{model.model}</div>
               </div>
             </div>
-            <div className="flex items-center">
-              {model.is_current && (
-                <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded mr-2">
-                  当前使用
-                </span>
-              )}
+            <div className="flex items-center gap-0.5 ml-2">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleOpenModelEdit(model);
                 }}
-                className="p-2 text-muted-foreground hover:text-primary"
+                className="p-1.5 text-muted-foreground hover:text-primary"
               >
-                <Pencil className="w-4 h-4" />
+                <Pencil className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDeleteModel(model.name);
                 }}
-                className="p-2 text-muted-foreground hover:text-destructive"
+                className="p-1.5 text-muted-foreground hover:text-destructive"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
