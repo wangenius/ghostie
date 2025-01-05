@@ -1,5 +1,8 @@
 import { ChevronRight, Globe2, Keyboard, Moon, RefreshCw, Sun, Power, RotateCw } from "lucide-react";
 import { useEffect, useState } from "react";
+import { invoke } from '@tauri-apps/api/core';
+import { getVersion } from '@tauri-apps/api/app';
+import { relaunch } from '@tauri-apps/plugin-process';
 
 interface Settings {
   theme: 'light' | 'dark' | 'system';
@@ -22,6 +25,48 @@ export function GeneralTab() {
   });
 
   const [checking, setChecking] = useState(false);
+  const [currentVersion, setCurrentVersion] = useState('');
+
+  useEffect(() => {
+    getVersion().then(setCurrentVersion);
+
+    // 如果启用了自动更新，定期检查更新
+    if (settings.autoUpdate) {
+      const checkInterval = setInterval(checkForUpdates, 1000 * 60 * 60); // 每小时检查一次
+      return () => clearInterval(checkInterval);
+    }
+  }, [settings.autoUpdate]);
+
+  const checkForUpdates = async () => {
+    try {
+      const hasUpdate = await invoke<boolean>('check_update');
+	  console.log(hasUpdate);
+      
+      if (hasUpdate) {
+        // 如果有更新，安装并重启
+        await invoke('install_update');
+        await relaunch();
+      }
+      
+      return hasUpdate;
+    } catch (error) {
+      console.error('更新检查失败:', error);
+      return false;
+    }
+  };
+
+  const checkUpdate = async () => {
+    setChecking(true);
+    try {
+      const hasUpdate = await checkForUpdates();
+      if (!hasUpdate) {
+        // TODO: 使用 dialog 插件显示提示
+        console.log('已经是最新版本');
+      }
+    } finally {
+      setChecking(false);
+    }
+  };
 
   // 监听系统主题变化并应用主题
   useEffect(() => {
@@ -49,12 +94,6 @@ export function GeneralTab() {
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [settings.theme]);
-
-  const checkUpdate = async () => {
-    setChecking(true);
-    // TODO: 实现检查更新逻辑
-    setTimeout(() => setChecking(false), 2000);
-  };
 
   const toggleTheme = () => {
     const themeMap = {

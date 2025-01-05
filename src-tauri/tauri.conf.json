@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0-rc",
-  "productName": "pipshe",
+  "productName": "lulu",
   "version": "0.1.0",
-  "identifier": "com.wangenius.pipshe",
+  "identifier": "com.wangenius.lulu",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "pipshe",
+        "title": "lulu",
         "width": 600,
         "height": 400,
         "resizable": false,
@@ -108,6 +108,7 @@
     }
   },
   "bundle": {
+    "createUpdaterArtifacts": true,
     "active": true,
     "targets": [
       "msi",
@@ -118,5 +119,18 @@
       "icons/icon.ico",
       "icons/icon.png"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "windows": {
+        "installMode": "passive"
+      },
+      "active": true,
+      "endpoints": [
+        "https://github.com/wangenius/lulu/releases/latest/download/latest.json"
+      ],
+      "dialog": false,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlGQzZBMkM3QkMwRjU3QUMKUldTc1Z3Kzh4NkxHbjEvOURYOHBpZEV4aWxYZjZrcWR1UVkza0tWTW9MYm1TVXkzRERiQ1pEcDAK"
+    }
   }
 }

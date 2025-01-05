@@ -7,13 +7,87 @@ use tauri::{
     Manager, WindowEvent,
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_updater::UpdaterExt;
 
 mod commands;
 mod llm;
 
+#[tauri::command]
+async fn check_update(app: tauri::AppHandle) -> Result<bool, String> {
+    match app.updater() {
+        Ok(updater) => {
+            match updater.check().await {
+                Ok(update) => Ok(update.is_some()),
+                Err(e) => Err(e.to_string()),
+            }
+        }
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+#[tauri::command]
+async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    let update = updater.check().await.map_err(|e| e.to_string())?;
+    
+    if let Some(update) = update {
+        let mut downloaded = 0;
+        let progress = move |chunk_length: usize, content_length: Option<u64>| {
+            downloaded += chunk_length;
+            println!("已下载 {downloaded} / {content_length:?}");
+        };
+        let finished = || println!("下载完成");
+        
+        update
+            .download_and_install(progress, finished)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        println!("更新已安装");
+        app.restart();
+    }
+    
+    Ok(())
+}
+
 fn main() {
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_log::Builder::default().build())
+        .plugin(tauri_plugin_global_shortcut::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::default().build())
+        .plugin(tauri_plugin_process::init())
+        .invoke_handler(tauri::generate_handler![
+            commands::add_model,
+            commands::remove_model,
+            commands::list_models,
+            commands::set_current_model,
+            commands::update_model,
+            commands::get_model,
+            commands::chat,
+            commands::set_system_prompt,
+            commands::get_system_prompt,
+            commands::set_stream_output,
+            commands::add_bot,
+            commands::remove_bot,
+            commands::list_bots,
+            commands::set_current_bot,
+            commands::get_current_bot,
+            commands::update_bot,
+            commands::get_bot,
+            commands::add_agent,
+            commands::remove_agent,
+            commands::get_agent,
+            commands::execute_agent_command,
+            commands::create_chat_history,
+            commands::update_chat_history,
+            commands::list_histories,
+            commands::delete_history,
+            commands::open_window,
+            commands::open_window_with_query,
+            check_update,
+            install_update,
+        ])
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(move |app, shortcut, event| {
@@ -43,35 +117,6 @@ fn main() {
                 })
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![
-            commands::add_model,
-            commands::remove_model,
-            commands::list_models,
-            commands::set_current_model,
-            commands::update_model,
-            commands::get_model,
-            commands::chat,
-            commands::set_system_prompt,
-            commands::get_system_prompt,
-            commands::set_stream_output,
-            commands::add_bot,
-            commands::remove_bot,
-            commands::list_bots,
-            commands::set_current_bot,
-            commands::get_current_bot,
-            commands::update_bot,
-            commands::get_bot,
-            commands::add_agent,
-            commands::remove_agent,
-            commands::get_agent,
-            commands::execute_agent_command,
-            commands::create_chat_history,
-            commands::update_chat_history,
-            commands::list_histories,
-            commands::delete_history,
-            commands::open_window,
-            commands::open_window_with_query,
-        ])
         .setup(|app| {
             let _ = app.handle();
             let shortcut = Shortcut::new(Some(Modifiers::ALT | Modifiers::CONTROL), Code::Space);
