@@ -3,8 +3,7 @@ use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
-use tauri::Emitter;
-use tauri::Manager;
+use tauri::{Emitter, Manager, WindowEvent};
 
 use crate::llm::{
     agents::{
@@ -13,6 +12,7 @@ use crate::llm::{
     },
     bots::{Bot, BotsConfig},
     config::Config,
+    history::{ChatHistory, ChatMessage, HistoryManager},
     llm_provider::{LLMProvider, Message, Provider},
 };
 
@@ -183,7 +183,7 @@ pub async fn execute_agent_command(
 pub async fn chat(window: tauri::Window, messages: Vec<Message>) -> Result<String, String> {
     let config = Config::load().map_err(|e| e.to_string())?;
     let (_, model_config) = config.get_current_model().ok_or("No model configured")?;
-    
+
     // 获取当前 bot 的系统提示词
     let mut all_messages = Vec::new();
     let bots_config = BotsConfig::load().map_err(|e| e.to_string())?;
@@ -198,20 +198,20 @@ pub async fn chat(window: tauri::Window, messages: Vec<Message>) -> Result<Strin
             content: system_prompt.clone(),
         });
     }
-    
+
     // 添加历史消息
     all_messages.extend(messages);
-    
+
     let provider = Provider::new(model_config.api_key.clone())
         .with_url(model_config.api_url.clone())
         .with_model(model_config.model.clone());
-    
+
     let running = Arc::new(AtomicBool::new(true));
     println!("all_messages: {:?}", all_messages);
     let mut stream = LLMProvider::chat(&provider, all_messages, true, running.clone())
         .await
         .map_err(|e| e.to_string())?;
-    
+
     let mut response = String::new();
     while let Some(chunk) = stream.next().await {
         let text = chunk.map_err(|e| e.to_string())?;
@@ -243,4 +243,61 @@ pub async fn get_system_prompt() -> Result<Option<String>, String> {
 pub async fn set_stream_output(enabled: bool) -> Result<(), String> {
     let mut config = Config::load().map_err(|e| e.to_string())?;
     config.set_stream(enabled).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn create_chat_history() -> Result<String, String> {
+    HistoryManager::create_history().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn update_chat_history(
+    id: String,
+    title: String,
+    preview: String,
+    messages: Vec<ChatMessage>,
+) -> Result<(), String> {
+    HistoryManager::update_history(&id, title, preview, messages).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn list_histories() -> Result<Vec<ChatHistory>, String> {
+    HistoryManager::list_histories().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn delete_history(id: String) -> Result<(), String> {
+    HistoryManager::delete_history(&id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn open_model_add(app: tauri::AppHandle) -> Result<(), String> {
+    let window = app
+        .get_webview_window("model-add")
+        .ok_or("Failed to create model-add window")?;
+    let window_clone = window.clone();
+    window.on_window_event(move |event| {
+        if let WindowEvent::CloseRequested { api, .. } = event {
+            let _ = window_clone.hide();
+            api.prevent_close();
+        }
+    });
+    window.show().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn open_role_add(app: tauri::AppHandle) -> Result<(), String> {
+    let window = app
+        .get_webview_window("role-add")
+        .ok_or("Failed to create role-add window")?;
+    let window_clone = window.clone();
+    window.on_window_event(move |event| {
+        if let WindowEvent::CloseRequested { api, .. } = event {
+            let _ = window_clone.hide();
+            api.prevent_close();
+        }
+    });
+    window.show().map_err(|e| e.to_string())?;
+    Ok(())
 }

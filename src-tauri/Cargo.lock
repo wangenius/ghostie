@@ -496,8 +496,10 @@ checksum = "7e36cc9d416881d2e24f9a963be5fb1cd90966419ac844274161d10488b3e825"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
+ "js-sys",
  "num-traits",
  "serde",
+ "wasm-bindgen",
  "windows-targets 0.52.6",
 ]
 
@@ -2916,6 +2918,7 @@ dependencies = [
  "async-trait",
  "base64 0.21.7",
  "chardetng",
+ "chrono",
  "colored",
  "encoding_rs",
  "encoding_rs_io",
@@ -2933,6 +2936,7 @@ dependencies = [
  "tokio",
  "toml 0.8.19",
  "toml_edit 0.21.1",
+ "uuid",
  "walkdir",
 ]
 

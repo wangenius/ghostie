@@ -39,6 +39,8 @@ anyhow = "1.0"
 async-trait = "0.1"
 colored = "2.0"
 reqwest = { version = "0.11", features = ["json", "stream"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.7", features = ["v4", "serde"] }
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

@@ -23,7 +23,7 @@ export function SearchBar({
 }: Props) {
   return (
     <div className="pt-2 px-4">
-      <div className="relative">
+      <div  className="relative">
         {currentView !== "list" ? (
           <button
             onClick={() => onViewChange("list")}
@@ -35,7 +35,7 @@ export function SearchBar({
             />
           </button>
         ) : (
-          <button className="absolute left-0 top-1/2 -translate-y-1/2">
+          <button  className="absolute left-0 top-1/2 -translate-y-1/2">
             <img src={"/icon.png"} alt="logo" className="w-5 h-5" />
           </button>
         )}

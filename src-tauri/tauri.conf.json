@@ -22,7 +22,44 @@
         "alwaysOnTop": true,
         "skipTaskbar": true,
         "label": "main",
-        "center": true
+        "center": true,
+        "url": "/",
+        "visible": false,
+        "focus": true,
+        "maximizable": false,
+        "minimizable": false
+      },
+      {
+        "title": "添加模型",
+        "width": 400,
+        "height": 500,
+        "resizable": false,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": false,
+        "label": "model-add",
+        "center": true,
+        "url": "/model-add",
+        "parent": "main",
+        "visible": false,
+        "maximizable": false,
+        "minimizable": false
+      },
+      {
+        "title": "添加角色",
+        "width": 400,
+        "height": 500,
+        "resizable": false,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": false,
+        "label": "role-add",
+        "center": true,
+        "url": "/role-add",
+        "visible": false,
+        "parent": "main",
+        "maximizable": false,
+        "minimizable": false
       }
     ],
     "security": {
@@ -32,7 +69,9 @@
       ],
       "assetProtocol": {
         "enable": true,
-        "scope": ["**"]
+        "scope": [
+          "**"
+        ]
       }
     }
   },

@@ -55,6 +55,12 @@ fn main() {
             commands::remove_agent,
             commands::get_agent,
             commands::execute_agent_command,
+            commands::create_chat_history,
+            commands::update_chat_history,
+            commands::list_histories,
+            commands::delete_history,
+            commands::open_model_add,
+            commands::open_role_add,
         ])
         .setup(|app| {
             let _ = app.handle();

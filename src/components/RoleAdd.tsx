@@ -1,27 +1,24 @@
-import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
-interface Props {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  embedded?: boolean;
-}
-
-export function RoleAdd({ isOpen, onClose, onSuccess, embedded = false }: Props) {
+export function RoleAdd() {
   const [name, setName] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      inputRef.current?.focus();
-    }
-  }, [isOpen]);
+    inputRef.current?.focus();
+  }, []);
 
-  if (!isOpen) return null;
+  const handleClose = async () => {
+    const window = await getCurrentWindow();
+    setName("");
+    setSystemPrompt("");
+    window.hide();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,10 +27,7 @@ export function RoleAdd({ isOpen, onClose, onSuccess, embedded = false }: Props)
     try {
       setIsSubmitting(true);
       await invoke("add_bot", { name, systemPrompt });
-      onSuccess();
-      onClose();
-      setName("");
-      setSystemPrompt("");
+      await handleClose();
     } catch (error) {
       console.error("添加 bot 失败:", error);
     } finally {
@@ -41,62 +35,61 @@ export function RoleAdd({ isOpen, onClose, onSuccess, embedded = false }: Props)
     }
   };
 
-  const content = (
-    <>
-      {/* 头部搜索样式区域 */}
-      <div className="pt-2 px-4">
-        <div className="relative">
-          <input
-            ref={inputRef}
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full pl-3 text-sm pr-24 h-10 bg-transparent text-gray-800 outline-none placeholder:text-gray-400"
-            placeholder="输入 Bot 名称"
-          />
+  return (
+    <div className="flex flex-col h-screen bg-white">
+      <div
+        className="flex items-center justify-between h-12 px-4 border-b border-neutral-100"
+        data-tauri-drag-region
+      >
+        <div className="text-sm font-medium text-neutral-800">添加角色</div>
+        <button
+          onClick={handleClose}
+          className="p-1.5 text-neutral-400 hover:text-neutral-800 transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
 
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all duration-200 active:scale-95"
-            >
-              <X className="w-[18px] h-[18px]" />
-            </button>
+      <div className="flex-1 overflow-auto p-4">
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="block text-xs text-neutral-500">角色名称</label>
+            <input
+              ref={inputRef}
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full h-9 px-3 bg-neutral-100 rounded-md text-sm focus:bg-neutral-200 transition-colors outline-none placeholder:text-neutral-400"
+              placeholder="输入 Bot 名称"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs text-neutral-500">系统提示词</label>
+            <textarea
+              value={systemPrompt}
+              onChange={(e) => setSystemPrompt(e.target.value)}
+              className="w-full px-3 py-2 bg-neutral-100 rounded-md text-sm focus:bg-neutral-200 transition-colors outline-none min-h-[160px] resize-none placeholder:text-neutral-400"
+              placeholder="输入系统提示词"
+            />
           </div>
         </div>
       </div>
 
-      {/* 系统提示词区域 */}
-      <div className="px-4 mt-2">
-        <textarea
-          value={systemPrompt}
-          onChange={(e) => setSystemPrompt(e.target.value)}
-          className="w-full px-3 py-2 text-sm bg-gray-50 rounded-lg text-gray-800 outline-none placeholder:text-gray-400 min-h-[120px] resize-none"
-          placeholder="输入系统提示词"
-        />
-      </div>
-
-      {/* 底部按钮区域 */}
-      <div className="px-4 py-3 flex justify-end">
+      <div className="flex justify-end gap-2 px-4 py-3 border-t border-neutral-100">
+        <button
+          onClick={handleClose}
+          className="px-3 h-8 text-xs text-neutral-600 hover:bg-neutral-100 rounded transition-colors"
+        >
+          取消
+        </button>
         <button
           onClick={handleSubmit}
           disabled={!name || !systemPrompt || isSubmitting}
-          className="px-4 py-1.5 text-sm bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 h-8 text-xs text-white bg-neutral-900 rounded hover:bg-neutral-800 disabled:opacity-50 disabled:hover:bg-neutral-900 transition-colors"
         >
           {isSubmitting ? "创建中..." : "创建"}
         </button>
-      </div>
-    </>
-  );
-
-  if (embedded) {
-    return <div className="bg-white w-full rounded-lg">{content}</div>;
-  }
-
-  return (
-    <div className="fixed inset-0 flex items-start justify-center">
-      <div className="bg-white w-full max-w-xl mt-16 rounded-lg shadow-xl">
-        {content}
       </div>
     </div>
   );
