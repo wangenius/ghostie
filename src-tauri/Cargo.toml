@@ -44,11 +44,3 @@ uuid = { version = "1.7", features = ["v4", "serde"] }
 url = { version = "2.5.4", features = ["serde"] }
 tauri-plugin-updater = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
 tauri-plugin-process = "2.2.0"
-
-[features]
-# this feature is used for production builds or when `devPath` points to the filesystem
-# DO NOT REMOVE!!
-custom-protocol = ["tauri/custom-protocol"]
-
-[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
-tauri-plugin-updater = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
