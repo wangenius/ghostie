@@ -1,7 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { MainView } from "./components/MainView";
 import { ModelAdd } from "./components/ModelAdd";
-import { RoleAdd } from "./components/RoleAdd";
+import { BotAdd } from "./components/BotAdd";
+import { ModelEdit } from "./components/ModelEdit";
+import { BotEdit } from "./components/BotEdit";
 
 function App() {
   return (
@@ -9,7 +11,9 @@ function App() {
       <Routes>
         <Route path="/" element={<MainView />} />
         <Route path="/model-add" element={<ModelAdd />} />
-        <Route path="/role-add" element={<RoleAdd />} />
+        <Route path="/bot-add" element={<BotAdd />} />
+        <Route path="/model-edit" element={<ModelEdit />} />
+        <Route path="/bot-edit" element={<BotEdit />} />
       </Routes>
     </Router>
   );

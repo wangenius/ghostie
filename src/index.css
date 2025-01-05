@@ -8,11 +8,20 @@ html, body {
   height: 100%;
   position: fixed;
   width: 100%;
+  background: transparent !important;
 }
 
 #root {
   height: 100%;
   overflow: hidden;
+  background: transparent !important;
+}
+
+/* 应用圆角和背景 */
+.app-container {
+  @apply rounded-lg backdrop-blur-sm;
+  height: 100%;
+  width: 100%;
 }
 
 ::-webkit-scrollbar {

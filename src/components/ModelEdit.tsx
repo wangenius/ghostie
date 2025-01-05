@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { emit } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
@@ -18,23 +18,42 @@ const defaultModel: Model = {
   model: "",
 };
 
-export function ModelAdd() {
+export function ModelEdit() {
   const [model, setModel] = useState<Model>(defaultModel);
+  const [originalName, setOriginalName] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    const unlisten = listen<Record<string, string>>("query-params", (event) => {
+      const { name, api_key, api_url, model } = event.payload;
+      if (name) {
+        setOriginalName(name);
+        setModel({
+          name,
+          api_key: api_key || "",
+          api_url: api_url || "",
+          model: model || "",
+        });
+      }
+    });
+
     inputRef.current?.focus();
+
+    return () => {
+      unlisten.then(fn => fn());
+    };
   }, []);
 
   const handleClose = async () => {
     const window = await getCurrentWindow();
-	setModel(defaultModel);
+    setModel(defaultModel);
     window.hide();
   };
 
   const handleSubmit = async () => {
     try {
-      await invoke("add_model", {
+      await invoke("update_model", {
+        oldName: originalName,
         name: model.name,
         apiKey: model.api_key,
         apiUrl: model.api_url,
@@ -43,7 +62,7 @@ export function ModelAdd() {
       await emit("model-updated");
       await handleClose();
     } catch (error) {
-      console.error("添加模型失败:", error);
+      console.error("更新模型失败:", error);
     }
   };
 
@@ -53,7 +72,7 @@ export function ModelAdd() {
         className="flex items-center justify-between h-12 px-4 border-b border-neutral-100" 
         data-tauri-drag-region
       >
-        <div className="text-sm font-medium text-neutral-800">添加模型</div>
+        <div className="text-sm font-medium text-neutral-800">编辑模型</div>
         <button
           onClick={handleClose}
           className="p-1.5 text-neutral-400 hover:text-neutral-800 transition-colors"
@@ -83,13 +102,12 @@ export function ModelAdd() {
               value={model.api_key}
               onChange={(e) => setModel({ ...model, api_key: e.target.value })}
               className="w-full h-9 px-3 bg-neutral-100 rounded-md text-sm focus:bg-neutral-200 transition-colors outline-none placeholder:text-neutral-400"
-              placeholder="请输入 API Key"
+              placeholder="如需更新 API Key 请输入新的值"
             />
           </div>
 
           <div className="space-y-1.5">
             <label className="block text-xs text-neutral-500">API URL：</label>
-			
             <input
               type="text"
               value={model.api_url}
@@ -97,9 +115,9 @@ export function ModelAdd() {
               className="w-full h-9 px-3 bg-neutral-100 rounded-md text-sm focus:bg-neutral-200 transition-colors outline-none placeholder:text-neutral-400"
               placeholder="整个 API URL，包括base_url/v1/chat/completions"
             />
-			<small className="text-xs text-neutral-500">
-			比如：https://api.openai.com/v1/chat/completions
-			</small>
+            <small className="text-xs text-neutral-500">
+              比如：https://api.openai.com/v1/chat/completions
+            </small>
           </div>
 
           <div className="space-y-1.5">
@@ -124,10 +142,10 @@ export function ModelAdd() {
         </button>
         <button
           onClick={handleSubmit}
-          disabled={!model.name || !model.api_key}
+          disabled={!model.name}
           className="px-3 h-8 text-xs text-white bg-neutral-900 rounded hover:bg-neutral-800 disabled:opacity-50 disabled:hover:bg-neutral-900 transition-colors"
         >
-          添加
+          保存
         </button>
       </div>
     </div>

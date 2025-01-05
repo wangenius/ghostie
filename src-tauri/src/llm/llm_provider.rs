@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
-    pub role: String,
+    pub bot: String,
     pub content: String,
 }
 
@@ -90,21 +90,6 @@ impl Provider {
         self
     }
 
-    pub fn with_json_mode(mut self, enabled: bool) -> Self {
-        self.json_mode = enabled;
-        self
-    }
-
-    fn is_v36(&self) -> bool {
-        self.api_url.contains("free.v36.cm")
-    }
-
-    pub fn is_qwen(&self) -> bool {
-        self.api_url.contains("dashscope.aliyuncs.com")
-    }
-
-
-
     fn get_api_url(&self) -> String {
         self.api_url.clone()
     }
@@ -142,25 +127,12 @@ impl LLMProvider for Provider {
 
         let mut headers = reqwest::header::HeaderMap::new();
         headers.insert("Content-Type", "application/json".parse().unwrap());
-
-        if self.is_qwen() {
-            headers.insert(
-                "Authorization",
-                format!("Bearer {}", self.api_key).parse().unwrap(),
-            );
-            headers.insert("X-DashScope-SSE", "enable".parse().unwrap());
-        } else if self.is_v36() {
-            headers.insert(
-                "Authorization",
-                format!("Bearer {}", self.api_key).parse().unwrap(),
-            );
-            headers.insert("x-foo", "true".parse().unwrap());
-        } else {
-            headers.insert(
-                "Authorization",
-                format!("Bearer {}", self.api_key).parse().unwrap(),
-            );
-        }
+        headers.insert(
+            "Authorization",
+            format!("Bearer {}", self.api_key).parse().unwrap(),
+        );
+        headers.insert("X-DashScope-SSE", "enable".parse().unwrap());
+        headers.insert("x-foo", "true".parse().unwrap());
 
         let api_url = self.get_api_url();
 

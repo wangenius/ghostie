@@ -14,7 +14,7 @@ export function ChatView({ messages }: ChatViewProps) {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-    const assistantMessages = messages.filter(m => m.role === "assistant");
+    const assistantMessages = messages.filter(m => m.bot === "assistant");
     if (assistantMessages.length > 0) {
       lastAssistantMessage.current = assistantMessages[assistantMessages.length - 1].content;
     }
@@ -45,7 +45,7 @@ export function ChatView({ messages }: ChatViewProps) {
         <div key={index} className="group">
           <div className={`
             py-2 px-4 mt-2 rounded-xl
-            ${message.role === "assistant" ? "bg-slate-50 w-fit" : "bg-white"}
+            ${message.bot === "assistant" ? "bg-slate-50 w-fit" : "bg-white"}
           `}>
             <div className="relative">
               <div className="text-sm leading-relaxed whitespace-pre-wrap text-gray-800">

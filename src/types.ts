@@ -1,7 +1,7 @@
 export type View = "list" | "chat" | "settings" | "history";
 
 export interface Message {
-  role: "user" | "assistant";
+  bot: "user" | "assistant";
   content: string;
 }
 

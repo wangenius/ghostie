@@ -8,8 +8,8 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
-mod llm;
 mod commands;
+mod llm;
 
 fn main() {
     let app = tauri::Builder::default()
@@ -39,6 +39,8 @@ fn main() {
             commands::remove_model,
             commands::list_models,
             commands::set_current_model,
+            commands::update_model,
+            commands::get_model,
             commands::chat,
             commands::set_system_prompt,
             commands::get_system_prompt,
@@ -48,9 +50,8 @@ fn main() {
             commands::list_bots,
             commands::set_current_bot,
             commands::get_current_bot,
-            commands::set_bot_alias,
-            commands::remove_bot_alias,
-            commands::list_bot_aliases,
+            commands::update_bot,
+            commands::get_bot,
             commands::add_agent,
             commands::remove_agent,
             commands::get_agent,
@@ -59,8 +60,8 @@ fn main() {
             commands::update_chat_history,
             commands::list_histories,
             commands::delete_history,
-            commands::open_model_add,
-            commands::open_role_add,
+            commands::open_window,
+            commands::open_window_with_query,
         ])
         .setup(|app| {
             let _ = app.handle();
@@ -97,27 +98,22 @@ fn main() {
                 .build(app)?;
             Ok(())
         })
-        .on_window_event(move |app_handle, event| {
-            if let WindowEvent::CloseRequested { api, .. } = event {
-                if let Some(window) = app_handle.get_webview_window("main") {
-                    window.hide().unwrap();
-                    api.prevent_close();
-                }
-            }
-            if let WindowEvent::Focused(focused) = event {
-                if !focused {
-                    if let Some(window) = app_handle.get_webview_window("main") {
-                        window.hide().unwrap();
-                    }
-                }
-            }
-        })
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
-    app.run(|_app_handle, event| {
+    app.run(|app_handle, event| {
         if let tauri::RunEvent::ExitRequested { api, .. } = event {
             api.prevent_exit();
+        }
+        if let Some(window) = app_handle.get_webview_window("main") {
+            let window_handle = window.clone();
+            window.on_window_event(move |event| match event {
+                WindowEvent::CloseRequested { api, .. } => {
+                    let _ = window_handle.hide();
+                    api.prevent_close();
+                }
+                _ => {}
+            });
         }
     });
 }

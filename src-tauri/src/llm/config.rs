@@ -84,13 +84,6 @@ impl Config {
         Some(path)
     }
 
-    pub fn open_config() -> Result<()> {
-        if let Some(path) = Self::get_path() {
-            utils::open_file_in_editor(&path)?;
-        }
-        Ok(())
-    }
-
     pub fn add_model(
         &mut self,
         name: String,
@@ -138,33 +131,6 @@ impl Config {
         }
     }
 
-    pub fn list_models(&self) {
-        if self.models.is_empty() {
-            println!("no models configured yet");
-            return;
-        }
-
-        println!("available models:");
-        for (name, config) in &self.models {
-            let current = if self.current_model.as_deref() == Some(name) {
-                " (current)".yellow()
-            } else {
-                "".clear()
-            };
-            println!("- {}{}", name.green(), current);
-            println!("  API URL: {}", config.api_url);
-            println!("  Model: {}", config.model);
-            println!(
-                "  API Key: {}",
-                if config.api_key.is_empty() {
-                    "not set".red()
-                } else {
-                    "set".green()
-                }
-            );
-        }
-    }
-
     pub fn get_current_model(&self) -> Option<(&str, &ModelConfig)> {
         self.current_model
             .as_ref()
@@ -189,6 +155,45 @@ impl Config {
                 "disabled".yellow()
             }
         );
+        Ok(())
+    }
+
+    pub fn update_model(
+        &mut self,
+        old_name: &str,
+        new_name: String,
+        api_key: Option<String>,
+        api_url: String,
+        model: String,
+    ) -> Result<()> {
+        // 检查旧名称是否存在
+        let old_config = self.models.get(old_name).ok_or_else(|| anyhow::anyhow!("model not found: {}", old_name))?;
+        
+        // 如果新名称与旧名称不同，检查新名称是否已存在
+        if old_name != new_name && self.models.contains_key(&new_name) {
+            return Err(anyhow::anyhow!("model already exists: {}", new_name));
+        }
+
+        // 创建新的配置
+        let model_config = ModelConfig {
+            api_key: api_key.unwrap_or_else(|| old_config.api_key.clone()),
+            api_url,
+            model,
+        };
+
+        // 如果名称发生变化
+        if old_name != new_name {
+            self.models.remove(old_name);
+            // 如果更新的是当前模型，更新当前模型名称
+            if self.current_model.as_deref() == Some(old_name) {
+                self.current_model = Some(new_name.clone());
+            }
+        }
+        
+        // 插入新配置
+        self.models.insert(new_name.clone(), model_config);
+        self.save()?;
+        println!("model updated: {}", new_name.green());
         Ok(())
     }
 }

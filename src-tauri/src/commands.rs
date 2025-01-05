@@ -36,7 +36,7 @@ pub async fn remove_model(name: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn list_models() -> Result<Vec<(String, bool, String, String)>, String> {
+pub async fn list_models() -> Result<Vec<HashMap<String, String>>, String> {
     let config = Config::load().map_err(|e| e.to_string())?;
     let mut models = Vec::new();
     for (name, model_config) in &config.models {
@@ -44,12 +44,14 @@ pub async fn list_models() -> Result<Vec<(String, bool, String, String)>, String
             .current_model
             .as_ref()
             .map_or(false, |current| current == name);
-        models.push((
-            name.clone(),
-            is_current,
-            model_config.api_url.clone(),
-            model_config.model.clone(),
-        ));
+        
+        let mut model_info = HashMap::new();
+        model_info.insert("name".to_string(), name.clone());
+        model_info.insert("is_current".to_string(), is_current.to_string());
+        model_info.insert("api_url".to_string(), model_config.api_url.clone());
+        model_info.insert("model".to_string(), model_config.model.clone());
+        
+        models.push(model_info);
     }
     Ok(models)
 }
@@ -76,7 +78,7 @@ pub async fn remove_bot(name: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn list_bots() -> Result<Vec<(String, bool, String)>, String> {
+pub async fn list_bots() -> Result<Vec<HashMap<String, String>>, String> {
     let config = BotsConfig::load().map_err(|e| e.to_string())?;
     let mut bots = Vec::new();
     for (name, bot) in &config.bots {
@@ -84,7 +86,13 @@ pub async fn list_bots() -> Result<Vec<(String, bool, String)>, String> {
             .current
             .as_ref()
             .map_or(false, |current| current == name);
-        bots.push((name.clone(), is_current, bot.system_prompt.clone()));
+        
+        let mut bot_info = HashMap::new();
+        bot_info.insert("name".to_string(), name.clone());
+        bot_info.insert("is_current".to_string(), is_current.to_string());
+        bot_info.insert("system_prompt".to_string(), bot.system_prompt.clone());
+        
+        bots.push(bot_info);
     }
     Ok(bots)
 }
@@ -99,28 +107,6 @@ pub async fn set_current_bot(name: String) -> Result<(), String> {
 pub async fn get_current_bot() -> Result<Option<Bot>, String> {
     let config = BotsConfig::load().map_err(|e| e.to_string())?;
     Ok(config.get_current().cloned())
-}
-
-#[tauri::command]
-pub async fn set_bot_alias(bot: String, alias: String) -> Result<(), String> {
-    let mut config = BotsConfig::load().map_err(|e| e.to_string())?;
-    config.set_alias(bot, alias).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub async fn remove_bot_alias(alias: String) -> Result<(), String> {
-    let mut config = BotsConfig::load().map_err(|e| e.to_string())?;
-    config.remove_alias(&alias).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub async fn list_bot_aliases() -> Result<Vec<(String, String)>, String> {
-    let config = BotsConfig::load().map_err(|e| e.to_string())?;
-    Ok(config
-        .aliases
-        .iter()
-        .map(|(k, v)| (k.clone(), v.clone()))
-        .collect())
 }
 
 // Agent 相关命令
@@ -188,12 +174,12 @@ pub async fn chat(window: tauri::Window, messages: Vec<Message>) -> Result<Strin
     let bots_config = BotsConfig::load().map_err(|e| e.to_string())?;
     if let Some(bot) = bots_config.get_current() {
         all_messages.push(Message {
-            role: "system".to_string(),
+            bot: "system".to_string(),
             content: bot.system_prompt.clone(),
         });
     } else if let Some(ref system_prompt) = config.system_prompt {
         all_messages.push(Message {
-            role: "system".to_string(),
+            bot: "system".to_string(),
             content: system_prompt.clone(),
         });
     }
@@ -206,7 +192,6 @@ pub async fn chat(window: tauri::Window, messages: Vec<Message>) -> Result<Strin
         .with_model(model_config.model.clone());
 
     let running = Arc::new(AtomicBool::new(true));
-    println!("all_messages: {:?}", all_messages);
     let mut stream = LLMProvider::chat(&provider, all_messages, true, running.clone())
         .await
         .map_err(|e| e.to_string())?;
@@ -270,10 +255,11 @@ pub async fn delete_history(id: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn open_model_add(app: tauri::AppHandle) -> Result<(), String> {
+pub async fn open_window(app: tauri::AppHandle, name: String) -> Result<(), String> {
+    println!("open_window: {}", name);
     let window = app
-        .get_webview_window("model-add")
-        .ok_or("Failed to create model-add window")?;
+        .get_webview_window(&name)
+        .ok_or(format!("Failed to create {} window", name))?;
     let window_clone = window.clone();
     window.on_window_event(move |event| {
         if let WindowEvent::CloseRequested { api, .. } = event {
@@ -286,10 +272,15 @@ pub async fn open_model_add(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn open_role_add(app: tauri::AppHandle) -> Result<(), String> {
+pub async fn open_window_with_query(
+    app: tauri::AppHandle,
+    name: String,
+    query: HashMap<String, String>,
+) -> Result<(), String> {
     let window = app
-        .get_webview_window("role-add")
-        .ok_or("Failed to create role-add window")?;
+        .get_webview_window(&name)
+        .ok_or_else(|| format!("Window {} not found", name))?;
+
     let window_clone = window.clone();
     window.on_window_event(move |event| {
         if let WindowEvent::CloseRequested { api, .. } = event {
@@ -297,6 +288,71 @@ pub async fn open_role_add(app: tauri::AppHandle) -> Result<(), String> {
             api.prevent_close();
         }
     });
-    window.show().map_err(|e| e.to_string())?;
+
+    window
+        .emit("query-params", query)
+        .map_err(|e| format!("Failed to send query params: {}", e))?;
+
+    window
+        .set_focus()
+        .map_err(|e| format!("Failed to focus window: {}", e))?;
+
+    window
+        .show()
+        .map_err(|e| format!("Failed to show window: {}", e))?;
+
     Ok(())
+}
+
+#[tauri::command]
+pub async fn update_model(
+    old_name: String,
+    name: String,
+    api_key: Option<String>,
+    api_url: String,
+    model: String,
+) -> Result<(), String> {
+    let mut config = Config::load().map_err(|e| e.to_string())?;
+    config
+        .update_model(&old_name, name, api_key, api_url, model)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn update_bot(
+    old_name: String,
+    name: String,
+    system_prompt: String,
+) -> Result<(), String> {
+    let mut config = BotsConfig::load().map_err(|e| e.to_string())?;
+    config
+        .update_bot(&old_name, name, system_prompt)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn get_model(name: String) -> Result<HashMap<String, String>, String> {
+    let config = Config::load().map_err(|e| e.to_string())?;
+    let model_config = config.models.get(&name).ok_or_else(|| format!("Model not found: {}", name))?;
+    
+    let mut result = HashMap::new();
+    result.insert("name".to_string(), name);
+    result.insert("api_key".to_string(), model_config.api_key.clone());
+    result.insert("api_url".to_string(), model_config.api_url.clone());
+    result.insert("model".to_string(), model_config.model.clone());
+    
+    Ok(result)
+}
+
+#[tauri::command]
+pub async fn get_bot(name: String) -> Result<HashMap<String, String>, String> {
+    let config = BotsConfig::load().map_err(|e| e.to_string())?;
+    let bot = config.bots.get(&name).ok_or_else(|| format!("Bot not found: {}", name))?;
+    
+    let mut bot_info = HashMap::new();
+    bot_info.insert("name".to_string(), name);
+    bot_info.insert("bot_name".to_string(), bot.name.clone());
+    bot_info.insert("system_prompt".to_string(), bot.system_prompt.clone());
+    
+    Ok(bot_info)
 }

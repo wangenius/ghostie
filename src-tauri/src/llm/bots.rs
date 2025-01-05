@@ -51,12 +51,7 @@ impl BotsConfig {
         Some(path)
     }
 
-    pub fn open_config() -> Result<()> {
-        if let Some(path) = Self::get_path() {
-            utils::open_file_in_editor(&path)?;
-        }
-        Ok(())
-    }
+
     
     pub fn add_bot(&mut self, name: String, system_prompt: String) -> Result<()> {
         let bot = Bot {
@@ -78,68 +73,7 @@ impl BotsConfig {
             Err(anyhow::anyhow!("bot not found: {}", name))
         }
     }
-    
-    pub fn get_bot(&self, name: &str) -> Option<&Bot> {
-        self.bots.get(name)
-    }
 
-    pub fn list_bots(&self) {
-        if self.bots.is_empty() {
-            println!("no bots added yet");
-            return;
-        }
-
-        println!("available bots:");
-        for (name, bot) in &self.bots {
-            let current_marker = if Some(name) == self.current.as_ref() {
-                "* ".bright_green()
-            } else {
-                "  ".into()
-            };
-            println!("{}{} (system prompt: {})", current_marker, name.green(), bot.system_prompt);
-        }
-    }
-
-    pub fn set_alias(&mut self, bot: String, alias: String) -> Result<()> {
-        if alias.len() != 1 {
-            return Err(anyhow::anyhow!("alias must be a single character"));
-        }
-        // 检查器人是否存在
-        if !self.bots.contains_key(&bot) {
-            return Err(anyhow::anyhow!("bot not found: {}", bot));
-        }
-        // 添加或更新别名
-        self.aliases.insert(alias.clone(), bot.clone());
-        self.save()?;
-        println!("alias set: {} -> {}", alias.green(), bot.green());
-        Ok(())
-    }
-
-    pub fn remove_alias(&mut self, alias: &str) -> Result<()> {
-        if let Some(bot_name) = self.aliases.remove(alias) {
-            self.save()?;
-            println!("alias removed: {} -> {}", alias.green(), bot_name.green());
-            Ok(())
-        } else {
-            Err(anyhow::anyhow!("alias not found: {}", alias))
-        }
-    }
-
-    pub fn list_aliases(&self) {
-        if self.aliases.is_empty() {
-            println!("no aliases set yet");
-            return;
-        }
-
-        println!("current aliases:");
-        for (alias, bot_name) in &self.aliases {
-            println!("- {} -> {}", alias.green(), bot_name.green());
-        }
-    }
-
-    pub fn get_bot_by_alias(&self, alias: &str) -> Option<&String> {
-        self.aliases.get(alias)
-    }
 
     pub fn set_current(&mut self, name: &str) -> Result<()> {
         if !self.bots.contains_key(name) {
@@ -151,14 +85,44 @@ impl BotsConfig {
         Ok(())
     }
 
-    pub fn clear_current(&mut self) -> Result<()> {
-        self.current = None;
-        self.save()?;
-        println!("已清除当前机器人设置");
-        Ok(())
-    }
-
     pub fn get_current(&self) -> Option<&Bot> {
         self.current.as_ref().and_then(|name| self.bots.get(name))
+    }
+
+    pub fn update_bot(
+        &mut self,
+        old_name: &str,
+        new_name: String,
+        system_prompt: String,
+    ) -> Result<()> {
+        if !self.bots.contains_key(old_name) {
+            return Err(anyhow::anyhow!("bot not found: {}", old_name));
+        }
+
+        if old_name != new_name && self.bots.contains_key(&new_name) {
+            return Err(anyhow::anyhow!("bot already exists: {}", new_name));
+        }
+
+        let bot = Bot {
+            name: new_name.clone(),
+            system_prompt,
+        };
+
+        if old_name != new_name {
+            self.bots.remove(old_name);
+            if self.current.as_deref() == Some(old_name) {
+                self.current = Some(new_name.clone());
+            }
+            for (_, target) in self.aliases.iter_mut() {
+                if target == old_name {
+                    *target = new_name.clone();
+                }
+            }
+        }
+
+        self.bots.insert(new_name.clone(), bot);
+        self.save()?;
+        println!("bot updated: {}", new_name.green());
+        Ok(())
     }
 } 

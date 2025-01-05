@@ -63,11 +63,11 @@ export function HistoryView() {
             <div
               key={index}
               className={`p-4 rounded-lg ${
-                message.role === "user" ? "bg-blue-50" : "bg-gray-50"
+                message.bot === "user" ? "bg-blue-50" : "bg-gray-50"
               }`}
             >
               <div className="text-xs text-gray-500 mb-2">
-                {message.role === "user" ? "你" : "助手"}
+                {message.bot === "user" ? "你" : "助手"}
               </div>
               <div className="text-sm whitespace-pre-wrap">{message.content}</div>
             </div>

@@ -2,12 +2,14 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { emit } from "@tauri-apps/api/event";
 
-export function RoleAdd() {
+export function BotAdd() {
   const [name, setName] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -27,6 +29,7 @@ export function RoleAdd() {
     try {
       setIsSubmitting(true);
       await invoke("add_bot", { name, systemPrompt });
+      await emit("bot-updated");
       await handleClose();
     } catch (error) {
       console.error("添加 bot 失败:", error);
@@ -36,7 +39,7 @@ export function RoleAdd() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="app-container flex flex-col h-screen bg-white">
       <div
         className="flex items-center justify-between h-12 px-4 border-b border-neutral-100"
         data-tauri-drag-region

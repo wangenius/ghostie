@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Message } from "../types";
 
 export function useChat() {
@@ -18,13 +18,13 @@ export function useChat() {
       const chunk = event.payload as string;
       setMessages((messages) => {
         const lastMessage = messages[messages.length - 1];
-        if (lastMessage?.role === "assistant") {
+        if (lastMessage?.bot === "assistant") {
           return [
             ...messages.slice(0, -1),
             { ...lastMessage, content: lastMessage.content + chunk },
           ];
         }
-        return [...messages, { role: "assistant", content: chunk }];
+        return [...messages, { bot: "assistant", content: chunk }];
       });
     });
 
@@ -32,9 +32,13 @@ export function useChat() {
       setIsLoading(false);
       const currentMessages = messagesRef.current;
       if (historyIdRef.current && currentMessages.length >= 2) {
-        const userMessages = currentMessages.filter(msg => msg.role === "user");
+        const userMessages = currentMessages.filter(
+          (msg) => msg.bot === "user"
+        );
         const title = userMessages[0].content.slice(0, 50) + "...";
-        const preview = currentMessages[currentMessages.length - 1].content.slice(0, 100) + "...";
+        const preview =
+          currentMessages[currentMessages.length - 1].content.slice(0, 100) +
+          "...";
         invoke("update_chat_history", {
           id: historyIdRef.current,
           title,
@@ -52,8 +56,8 @@ export function useChat() {
 
   const sendMessage = async (message: string) => {
     setIsLoading(true);
-    const userMessage: Message = { role: "user", content: message };
-    
+    const userMessage: Message = { bot: "user", content: message };
+
     if (messages.length === 0) {
       try {
         const id = await invoke<string>("create_chat_history");
@@ -87,4 +91,4 @@ export function useChat() {
     sendMessage,
     clearMessages,
   };
-} 
+}

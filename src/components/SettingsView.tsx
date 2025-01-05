@@ -1,8 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
-import { emit } from "@tauri-apps/api/event";
-import { Plus, Trash2, Moon, Sun, Globe2, Keyboard, RefreshCw, Settings as SettingsIcon, Database, Users2, X, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
+import { Bot, ChevronRight, Database, Globe2, Keyboard, Moon, Pencil, Plus, RefreshCw, Settings as SettingsIcon, Sun, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
+
+interface Bot {
+  name: string;
+  system_prompt: string;
+}
 
 interface Props {
   isOpen: boolean;
@@ -28,11 +32,11 @@ interface Settings {
 const NAV_ITEMS = [
   { id: 'general', label: '通用', icon: SettingsIcon },
   { id: 'models', label: '模型', icon: Database },
-  { id: 'roles', label: '角色', icon: Users2 },
+  { id: 'bots', label: '机器人', icon: Bot },
 ] as const;
 
 export function SettingsView({ isOpen, onClose, embedded = false }: Props) {
-  const [activeTab, setActiveTab] = useState<"models" | "roles" | "general">("general");
+  const [activeTab, setActiveTab] = useState<"models" | "bots" | "general">("general");
   const [models, setModels] = useState<Model[]>([]);
   const [settings, setSettings] = useState<Settings>({
     theme: 'system',
@@ -40,29 +44,37 @@ export function SettingsView({ isOpen, onClose, embedded = false }: Props) {
     shortcut: 'Ctrl+Shift+Space',
     autoUpdate: true,
   });
+  const [bots, setBots] = useState<Bot[]>([]);
 
   useEffect(() => {
     loadModels();
+    loadBots();
 
     // 监听模型更新事件
-    const unsubscribe = listen("model-updated", () => {
+    const unsubscribeModel = listen("model-updated", () => {
       loadModels();
     });
 
+    // 监听角色更新事件
+    const unsubscribeBot = listen("bot-updated", () => {
+      loadBots();
+    });
+
     return () => {
-      unsubscribe.then(fn => fn());
+      unsubscribeModel.then(fn => fn());
+      unsubscribeBot.then(fn => fn());
     };
   }, []);
 
   const loadModels = async () => {
     try {
-      const modelsList = await invoke<[string, boolean, string, string][]>("list_models");
+      const modelsList = await invoke<Array<Record<string, string>>>("list_models");
       setModels(
-        modelsList.map(([name, is_current, api_url, model]) => ({
-          name,
-          is_current,
-          api_url,
-          model,
+        modelsList.map((model) => ({
+          name: model.name,
+          is_current: model.is_current === "true",
+          api_url: model.api_url,
+          model: model.model,
           api_key: "",
         })).sort((a, b) => a.name.localeCompare(b.name))
       );
@@ -71,12 +83,23 @@ export function SettingsView({ isOpen, onClose, embedded = false }: Props) {
     }
   };
 
-  const handleOpenModelAdd = async () => {
-    await invoke("open_model_add");
+  const loadBots = async () => {
+    try {
+      const botsList = await invoke<Array<Bot>>("list_bots");
+      setBots(
+        botsList.sort((a, b) => a.name.localeCompare(b.name))
+      );
+    } catch (error) {
+      console.error("加载角色列表失败:", error);
+    }
   };
 
-  const handleOpenRoleAdd = async () => {
-    await invoke("open_role_add");
+  const handleOpenModelAdd = async () => {
+    await invoke("open_window", { name: "model-add" });
+  };
+
+  const handleOpenBotAdd = async () => {
+    await invoke("open_window", { name: "bot-add" });
   };
 
   const handleDeleteModel = async (name: string) => {
@@ -97,6 +120,37 @@ export function SettingsView({ isOpen, onClose, embedded = false }: Props) {
     }
   };
 
+  const handleOpenModelEdit = async (model: Model) => {
+    try {
+      // 获取完整的模型信息，包括 api_key
+      const query = await invoke<Record<string, string>>("get_model", { name: model.name });
+      console.log(query);
+      await invoke("open_window_with_query", {
+        name: "model-edit",
+        query
+      });
+    } catch (error) {
+      console.error("打开模型编辑窗口失败:", error);
+    }
+  };
+
+  const handleOpenBotEdit = async (name: string) => {
+    const query = await invoke<Bot>("get_bot", { name });
+    await invoke("open_window_with_query", {
+      name: "bot-edit",
+      query
+    });
+  };
+
+  const handleDeleteBot = async (name: string) => {
+    try {
+      await invoke("remove_bot", { name });
+      await loadBots();
+    } catch (error) {
+      console.error("删除角色失败:", error);
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case "models":
@@ -106,9 +160,8 @@ export function SettingsView({ isOpen, onClose, embedded = false }: Props) {
               <div
                 key={model.name}
                 onClick={() => !model.is_current && handleSetCurrentModel(model.name)}
-                className={`flex items-center justify-between h-14 px-3 -mx-3 rounded-lg cursor-pointer transition-colors ${
-                  model.is_current ? "bg-blue-50" : "hover:bg-gray-50"
-                }`}
+                className={`flex items-center justify-between h-14 px-3 -mx-3 rounded-lg cursor-pointer transition-colors ${model.is_current ? "bg-blue-50" : "hover:bg-gray-50"
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <div className={model.is_current ? "text-blue-500" : "text-gray-400"}>
@@ -127,6 +180,15 @@ export function SettingsView({ isOpen, onClose, embedded = false }: Props) {
                       当前使用
                     </span>
                   )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenModelEdit(model);
+                    }}
+                    className="p-2 text-gray-400 hover:text-blue-500"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -151,16 +213,46 @@ export function SettingsView({ isOpen, onClose, embedded = false }: Props) {
             </button>
           </div>
         );
-      case "roles":
+      case "bots":
         return (
           <div className="space-y-2">
+            {bots.map((bot) => (
+              <div
+                key={bot.name}
+                className="flex items-center justify-between h-14 px-3 -mx-3 rounded-lg hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="text-gray-400">
+                    <Bot className="w-[18px] h-[18px]" />
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">{bot.name}</div>
+                    <div className="text-xs text-gray-400 line-clamp-1">{bot.system_prompt}</div>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <button
+                    onClick={() => handleOpenBotEdit(bot.name)}
+                    className="p-2 text-gray-400 hover:text-blue-500"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteBot(bot.name)}
+                    className="p-2 text-gray-400 hover:text-red-500"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
             <button
-              onClick={handleOpenRoleAdd}
+              onClick={handleOpenBotAdd}
               className="flex items-center justify-between w-full h-12 px-3 -mx-3 text-gray-600 hover:bg-gray-50 rounded-lg"
             >
               <div className="flex items-center gap-2">
                 <Plus className="w-[18px] h-[18px]" />
-                <span className="text-sm">添加角色</span>
+                <span className="text-sm">添加机器人</span>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400" />
             </button>
@@ -247,11 +339,10 @@ export function SettingsView({ isOpen, onClose, embedded = false }: Props) {
             <button
               key={id}
               onClick={() => setActiveTab(id as any)}
-              className={`flex items-center gap-2 text-sm transition-colors ${
-                activeTab === id
+              className={`flex items-center gap-2 text-sm transition-colors ${activeTab === id
                   ? 'text-blue-600 font-medium'
                   : 'text-gray-600 hover:text-gray-900'
-              }`}
+                }`}
             >
               <Icon className="w-4 h-4" />
               {label}

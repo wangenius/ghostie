@@ -8,12 +8,12 @@ export function useBots() {
 
   const loadBots = async () => {
     try {
-      const botsList = await invoke<[string, boolean, string][]>("list_bots");
+      const botsList = await invoke<Array<Record<string, string>>>("list_bots");
       setBots(
-        botsList.map(([name, isCurrent, systemPrompt]) => ({
-          name,
-          isCurrent,
-          systemPrompt,
+        botsList.map((bot) => ({
+          name: bot.name,
+          isCurrent: bot.is_current === "true",
+          systemPrompt: bot.system_prompt,
           type: "bot" as const,
         }))
       );

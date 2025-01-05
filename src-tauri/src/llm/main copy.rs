@@ -26,9 +26,9 @@ use agents::{Agent, AgentManager};
 const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// 添加辅助函数
-fn create_message(role: &str, content: String) -> Message {
+fn create_message(bot: &str, content: String) -> Message {
     Message {
-        role: role.to_string(),
+        bot: bot.to_string(),
         content,
         name: None,
         function_call: None,
