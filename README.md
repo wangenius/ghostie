@@ -1,8 +1,10 @@
 # Lulu - 智能对话助手
 
 <div align="center">
-    <img src="docs/image.png" alt="Lulu Logo" width="500"/>
+    <img src="public/icon.png" alt="Lulu Logo" width="400" />
 </div>
+
+
 
 Lulu 是一个基于 Tauri + React 开发的跨平台智能对话助手应用。它提供了一个简洁优雅的界面，让你可以轻松地与各种 AI 模型进行对话。
 
@@ -19,7 +21,9 @@ Lulu 是一个基于 Tauri + React 开发的跨平台智能对话助手应用。
 - 🛠 丰富的设置选项
 
 ## 📸 界面预览
-
+<div align="center">
+    <img src="docs/image.png" alt="Lulu Logo" width="600"/>
+</div>
 <div align="center">
     <img src="docs/chat.png" alt="History View" width="600"/>
 </div>
