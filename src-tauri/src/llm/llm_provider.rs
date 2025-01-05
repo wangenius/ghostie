@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
-    pub bot: String,
+    pub role: String,
     pub content: String,
 }
 
@@ -159,9 +159,10 @@ impl LLMProvider for Provider {
             let response_text = response.text().await?;
             let response_json: serde_json::Value = serde_json::from_str(&response_text)?;
 
-            let content =  response_json["choices"][0]["message"]["content"].as_str()
-            .ok_or_else(|| anyhow::anyhow!("Failed to extract content from response"))?
-            .to_string();
+            let content = response_json["choices"][0]["message"]["content"]
+                .as_str()
+                .ok_or_else(|| anyhow::anyhow!("Failed to extract content from response"))?
+                .to_string();
 
             let stream = futures::stream::once(async { Ok(content) });
             return Ok(Box::pin(stream));

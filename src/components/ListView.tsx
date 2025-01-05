@@ -78,7 +78,7 @@ export function ListView({ items, activeIndex, onItemClick }: ListViewProps) {
               </div>
             </div>
             <ChevronRight
-              className={`w-4 h-4 ${
+              className={`w-4 h-4 flex-none ${
                 index === activeIndex ? "text-blue-400" : "text-gray-300"
               }`}
             />

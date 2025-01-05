@@ -54,7 +54,7 @@ export function BotEdit() {
       await emit("bot-updated");
       await handleClose();
     } catch (error) {
-      console.error("更新角色失败:", error);
+      console.error("更新机器人失败:", error);
     }
   };
 
@@ -64,7 +64,7 @@ export function BotEdit() {
         className="flex items-center justify-between h-12 px-4 border-b border-neutral-100" 
         data-tauri-drag-region
       >
-        <div className="text-sm font-medium text-neutral-800">编辑角色</div>
+        <div className="text-sm font-medium text-neutral-800">编辑机器人</div>
         <button
           onClick={handleClose}
           className="p-1.5 text-neutral-400 hover:text-neutral-800 transition-colors"
@@ -76,24 +76,24 @@ export function BotEdit() {
       <div className="flex-1 overflow-auto p-4 flex flex-col">
         <div className="space-y-4 flex flex-col flex-1">
           <div className="space-y-1.5">
-            <label className="block text-xs text-neutral-500">角色名称</label>
+            <label className="block text-xs text-neutral-500">机器人名称</label>
             <input
               ref={inputRef}
               type="text"
               value={bot.name}
               onChange={(e) => setBot({ ...bot, name: e.target.value })}
               className="w-full h-9 px-3 bg-neutral-100 rounded-md text-sm focus:bg-neutral-200 transition-colors outline-none placeholder:text-neutral-400"
-              placeholder="请输入角色名称"
+              placeholder="请输入机器人名称"
             />
           </div>
 
           <div className="space-y-1.5 flex-1 flex flex-col">
-            <label className="block text-xs text-neutral-500">角色提示词</label>
+            <label className="block text-xs text-neutral-500">机器人提示词</label>
             <textarea
               value={bot.system_prompt}
               onChange={(e) => setBot({ ...bot, system_prompt: e.target.value })}
               className="w-full flex-1 px-3 py-2 bg-neutral-100 rounded-md text-sm focus:bg-neutral-200 transition-colors outline-none placeholder:text-neutral-400 resize-none"
-              placeholder="请输入角色提示词"
+              placeholder="请输入机器人提示词"
             />
           </div>
         </div>

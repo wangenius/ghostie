@@ -18,13 +18,13 @@ export function useChat() {
       const chunk = event.payload as string;
       setMessages((messages) => {
         const lastMessage = messages[messages.length - 1];
-        if (lastMessage?.bot === "assistant") {
+        if (lastMessage?.role === "assistant") {
           return [
             ...messages.slice(0, -1),
             { ...lastMessage, content: lastMessage.content + chunk },
           ];
         }
-        return [...messages, { bot: "assistant", content: chunk }];
+        return [...messages, { role: "assistant", content: chunk }];
       });
     });
 
@@ -33,7 +33,7 @@ export function useChat() {
       const currentMessages = messagesRef.current;
       if (historyIdRef.current && currentMessages.length >= 2) {
         const userMessages = currentMessages.filter(
-          (msg) => msg.bot === "user"
+          (msg) => msg.role === "user"
         );
         const title = userMessages[0].content.slice(0, 50) + "...";
         const preview =
@@ -56,7 +56,7 @@ export function useChat() {
 
   const sendMessage = async (message: string) => {
     setIsLoading(true);
-    const userMessage: Message = { bot: "user", content: message };
+    const userMessage: Message = { role: "user", content: message };
 
     if (messages.length === 0) {
       try {
@@ -76,6 +76,7 @@ export function useChat() {
       });
     } catch (error) {
       console.error("发送消息失败:", error);
+      setMessages(prevMessages => [...prevMessages, { role: "assistant", content: String(error) }]);
       setIsLoading(false);
     }
   };

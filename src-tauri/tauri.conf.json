@@ -46,7 +46,7 @@
         "minimizable": false
       },
       {
-        "title": "添加角色",
+        "title": "添加机器人",
         "width": 400,
         "height": 500,
         "resizable": false,
@@ -78,7 +78,7 @@
         "minimizable": false
       },
       {
-        "title": "编辑角色",
+        "title": "编辑机器人",
         "width": 400,
         "height": 500,
         "resizable": false,

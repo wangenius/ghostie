@@ -13,6 +13,7 @@ export function MainView() {
 	const [inputValue, setInputValue] = useState("");
 
   const [currentView, setCurrentView] = useState<View>("list");
+  const [settingsTab, setSettingsTab] = useState<"general" | "models" | "bots">("general");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -157,6 +158,8 @@ export function MainView() {
             clearMessages();
           }
         }}
+        settingsTab={settingsTab}
+        onSettingsTabChange={setSettingsTab}
       />
 
       <div className="flex-1 px-6 mt-2 overflow-y-auto">
@@ -178,6 +181,7 @@ export function MainView() {
               isOpen={true}
               onClose={() => setCurrentView("list")}
               embedded={true}
+              activeTab={settingsTab}
             />
           )}
         </div>

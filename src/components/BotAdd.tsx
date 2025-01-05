@@ -44,7 +44,7 @@ export function BotAdd() {
         className="flex items-center justify-between h-12 px-4 border-b border-neutral-100"
         data-tauri-drag-region
       >
-        <div className="text-sm font-medium text-neutral-800">添加角色</div>
+        <div className="text-sm font-medium text-neutral-800">添加机器人</div>
         <button
           onClick={handleClose}
           className="p-1.5 text-neutral-400 hover:text-neutral-800 transition-colors"
@@ -56,7 +56,7 @@ export function BotAdd() {
       <div className="flex-1 overflow-auto p-4">
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="block text-xs text-neutral-500">角色名称</label>
+            <label className="block text-xs text-neutral-500">机器人名称</label>
             <input
               ref={inputRef}
               type="text"

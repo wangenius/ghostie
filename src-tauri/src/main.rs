@@ -30,7 +30,16 @@ fn main() {
                                 }
                             }
                         }
+                    } else if shortcut == &Shortcut::new(None, Code::Escape) {
+                        if matches!(event.state(), ShortcutState::Pressed) {
+                            if let Some(window) = app.get_webview_window("main") {
+                                if window.is_visible().unwrap() {
+                                    let _ = window.hide();
+                                }
+                            }
+                        }
                     }
+                    
                 })
                 .build(),
         )

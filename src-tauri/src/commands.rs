@@ -174,23 +174,21 @@ pub async fn chat(window: tauri::Window, messages: Vec<Message>) -> Result<Strin
     let bots_config = BotsConfig::load().map_err(|e| e.to_string())?;
     if let Some(bot) = bots_config.get_current() {
         all_messages.push(Message {
-            bot: "system".to_string(),
+            role: "system".to_string(),
             content: bot.system_prompt.clone(),
         });
-    } else if let Some(ref system_prompt) = config.system_prompt {
+    } else {
         all_messages.push(Message {
-            bot: "system".to_string(),
-            content: system_prompt.clone(),
+            role: "system".to_string(),
+            content: "".to_string(),
         });
     }
 
     // 添加历史消息
     all_messages.extend(messages);
-
     let provider = Provider::new(model_config.api_key.clone())
         .with_url(model_config.api_url.clone())
         .with_model(model_config.model.clone());
-
     let running = Arc::new(AtomicBool::new(true));
     let mut stream = LLMProvider::chat(&provider, all_messages, true, running.clone())
         .await
