@@ -1,4 +1,4 @@
-import { ArrowLeft, Bot, Clock, Database, Loader2Icon, Settings as SettingsIcon, X } from "lucide-react";
+import { ArrowLeft, Bot, Clock, Database, Loader2Icon, Settings as SettingsIcon, Stars, X } from "lucide-react";
 import { RefObject } from "react";
 import { View } from "../types";
 
@@ -43,7 +43,7 @@ export function SearchBar({
           </button>
         ) : (
           <button className="absolute left-0 top-1/2 -translate-y-1/2">
-            <img src={"/icon.png"} alt="logo" className="w-5 h-5" />
+            <Stars className="w-5 h-5 text-muted-foreground hover:text-foreground" />
           </button>
         )}
 

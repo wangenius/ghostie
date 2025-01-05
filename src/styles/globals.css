@@ -39,7 +39,7 @@
   }
 
   .dark {
-    --background: #0f172a;
+    --background: #1a1a1d;
     --foreground: #f8fafc;
 
     --card: #1e293b;
@@ -85,13 +85,11 @@ body {
   height: 100%;
   position: fixed;
   width: 100%;
-  background: transparent !important;
 }
 
 #root {
   height: 100%;
   overflow: hidden;
-  background: transparent !important;
 }
 
 /* 应用圆角和背景 */
