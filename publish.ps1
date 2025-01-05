@@ -45,6 +45,12 @@ if ($currentBranch -ne "master") {
 }
 
 try {
+    # 更新 package.json 中的版本号
+    Write-Host "正在更新 package.json 中的版本号..." -ForegroundColor Cyan
+    $packageJson = Get-Content "package.json" -Raw | ConvertFrom-Json
+    $packageJson.version = $Version
+    $packageJson | ConvertTo-Json -Depth 100 | Set-Content "package.json"
+
     # 更新 tauri.conf.json 中的版本号
     Write-Host "正在更新 tauri.conf.json 中的版本号..." -ForegroundColor Cyan
     $tauriConfig.version = $Version
@@ -52,7 +58,7 @@ try {
 
     # 提交更改
     Write-Host "正在提交更改..." -ForegroundColor Cyan
-    git add src-tauri/tauri.conf.json
+    git add package.json src-tauri/tauri.conf.json
     git commit -m "bump version to $Version"
 
     # 推送更改
