@@ -381,3 +381,8 @@ pub async fn get_bot(name: String) -> Result<HashMap<String, String>, String> {
 
     Ok(bot_info)
 }
+
+#[tauri::command]
+pub fn hide_window(window: tauri::Window) {
+    let _ = window.hide();
+}

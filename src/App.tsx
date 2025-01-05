@@ -4,8 +4,21 @@ import { ModelAdd } from "./components/ModelAdd";
 import { BotAdd } from "./components/BotAdd";
 import { ModelEdit } from "./components/ModelEdit";
 import { BotEdit } from "./components/BotEdit";
+import { useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 
 function App() {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        invoke('hide_window');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <Router>
       <Routes>

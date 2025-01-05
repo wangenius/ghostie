@@ -15,12 +15,10 @@ mod llm;
 #[tauri::command]
 async fn check_update(app: tauri::AppHandle) -> Result<bool, String> {
     match app.updater() {
-        Ok(updater) => {
-            match updater.check().await {
-                Ok(update) => Ok(update.is_some()),
-                Err(e) => Err(e.to_string()),
-            }
-        }
+        Ok(updater) => match updater.check().await {
+            Ok(update) => Ok(update.is_some()),
+            Err(e) => Err(e.to_string()),
+        },
         Err(e) => Err(e.to_string()),
     }
 }
@@ -29,7 +27,7 @@ async fn check_update(app: tauri::AppHandle) -> Result<bool, String> {
 async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
     let updater = app.updater().map_err(|e| e.to_string())?;
     let update = updater.check().await.map_err(|e| e.to_string())?;
-    
+
     if let Some(update) = update {
         let mut downloaded = 0;
         let progress = move |chunk_length: usize, content_length: Option<u64>| {
@@ -37,16 +35,16 @@ async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
             println!("已下载 {downloaded} / {content_length:?}");
         };
         let finished = || println!("下载完成");
-        
+
         update
             .download_and_install(progress, finished)
             .await
             .map_err(|e| e.to_string())?;
-        
+
         println!("更新已安装");
         app.restart();
     }
-    
+
     Ok(())
 }
 
@@ -57,7 +55,10 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::default().build())
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_autostart::init(tauri_plugin_autostart::MacosLauncher::LaunchAgent, Some(vec!["--flag1", "--flag2"])))
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec!["--flag1", "--flag2"]),
+        ))
         .invoke_handler(tauri::generate_handler![
             commands::add_model,
             commands::remove_model,
@@ -86,15 +87,14 @@ fn main() {
             commands::delete_history,
             commands::open_window,
             commands::open_window_with_query,
+            commands::hide_window,
             check_update,
             install_update,
         ])
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(move |app, shortcut, event| {
-                    if shortcut
-                        == &Shortcut::new(Some(Modifiers::ALT), Code::Space)
-                    {
+                    if shortcut == &Shortcut::new(Some(Modifiers::ALT), Code::Space) {
                         if matches!(event.state(), ShortcutState::Pressed) {
                             if let Some(window) = app.get_webview_window("main") {
                                 if window.is_visible().unwrap() {
@@ -105,16 +105,7 @@ fn main() {
                                 }
                             }
                         }
-                    } else if shortcut == &Shortcut::new(None, Code::Escape) {
-                        if matches!(event.state(), ShortcutState::Pressed) {
-                            if let Some(window) = app.get_webview_window("main") {
-                                if window.is_visible().unwrap() {
-                                    let _ = window.hide();
-                                }
-                            }
-                        }
                     }
-                    
                 })
                 .build(),
         )
