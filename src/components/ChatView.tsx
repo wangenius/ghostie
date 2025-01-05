@@ -48,7 +48,7 @@ export function ChatView({ messages }: ChatViewProps) {
             ${message.role === "assistant" ? "bg-secondary" : "bg-background"}
           `}>
             <div className="relative">
-              <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+              <div className="text-sm !select-text leading-relaxed whitespace-pre-wrap text-foreground">
                 {message.content}
               </div>
               {message.role === "assistant" && (

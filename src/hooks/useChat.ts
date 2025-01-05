@@ -54,7 +54,7 @@ export function useChat() {
     };
   }, []);
 
-  const sendMessage = async (message: string) => {
+  const sendMessage = async (message: string, bot?:string) => {
     setIsLoading(true);
     const userMessage: Message = { role: "user", content: message };
 
@@ -73,6 +73,7 @@ export function useChat() {
     try {
       await invoke("chat", {
         messages: newMessages,
+        bot: bot,
       });
     } catch (error) {
       console.error("发送消息失败:", error);

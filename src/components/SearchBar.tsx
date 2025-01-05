@@ -1,6 +1,7 @@
 import { ArrowLeft, Bot, Clock, Database, Loader2Icon, Settings as SettingsIcon, Stars, X } from "lucide-react";
 import { RefObject } from "react";
 import { View } from "../types";
+import { useBots } from "../hooks/useBots";
 
 interface Props {
   inputValue: string;
@@ -31,6 +32,9 @@ export function SearchBar({
   settingsTab,
   onSettingsTabChange,
 }: Props) {
+  const { bots } = useBots();
+  const currentBot = bots.find(bot => bot.isCurrent);
+
   return (
     <div className="pt-2 px-4">
       <div className="relative">
@@ -65,15 +69,22 @@ export function SearchBar({
             ))}
           </div>
         ) : currentView === "chat" || currentView === "list" ? (
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputValue}
-            onChange={(e) => onInputChange(e.target.value)}
-            onKeyDown={onKeyDown}
-            className="w-full pl-8 text-sm pr-24 h-10 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
-            placeholder={"输入消息..."}
-          />
+          <>
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={(e) => onInputChange(e.target.value)}
+              onKeyDown={onKeyDown}
+              className="w-full pl-8 text-sm pr-24 h-10 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+              placeholder={currentBot ? `使用 ${currentBot.name} 对话...` : "输入消息..."}
+            />
+            {currentBot && currentView === "chat" && (
+              <div className="absolute left-8 -bottom-5 text-xs text-muted-foreground">
+                当前机器人: {currentBot.name}
+              </div>
+            )}
+          </>
         ) : (
           <div className="w-full pl-8 h-10 text-foreground leading-10">
             {currentView === "history" ? "历史记录" : null}

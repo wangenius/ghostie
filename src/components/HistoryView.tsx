@@ -51,25 +51,25 @@ export function HistoryView() {
 
   if (selectedHistory) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-1 py-2·">
         <button
           onClick={() => setSelectedHistory(null)}
-          className="text-sm text-muted-foreground hover:text-foreground mb-4"
+          className="text-sm text-muted-foreground hover:text-foreground mb-2"
         >
           ← 返回历史记录列表
         </button>
-        <div className="space-y-4">
+        <div className="space-y-1">
           {selectedHistory.messages.map((message, index) => (
             <div
               key={index}
-              className={`p-4 rounded-lg ${
+              className={`p-2 rounded-lg ${
                 message.role === "user" ? "bg-primary/10" : "bg-secondary"
               }`}
             >
               <div className="text-xs text-muted-foreground mb-2">
                 {message.role === "user" ? "你" : "助手"}
               </div>
-              <div className="text-sm text-foreground whitespace-pre-wrap">{message.content}</div>
+              <div className="text-sm !select-text text-foreground whitespace-pre-wrap">{message.content}</div>
             </div>
           ))}
         </div>
@@ -78,16 +78,16 @@ export function HistoryView() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-1">
       {histories.map((history) => (
         <div
           key={history.id}
-          className="p-4 bg-card border border-border rounded-lg hover:border-border/80 hover:shadow-sm transition-all group cursor-pointer"
+          className="p-2 bg-card border border-border rounded-lg hover:border-border/80 hover:shadow-sm transition-all group cursor-pointer"
           onClick={() => setSelectedHistory(history)}
         >
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-2">
             <div className="flex-shrink-0 p-2 bg-secondary rounded-lg">
-              <MessageCircle className="w-5 h-5 text-muted-foreground" />
+              <MessageCircle className="w-7 h-7 text-muted-foreground" />
             </div>
             
             <div className="flex-1 min-w-0">
@@ -95,7 +95,11 @@ export function HistoryView() {
                 <h3 className="text-sm font-medium text-foreground truncate">
                   {history.title}
                 </h3>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2"> <div className="flex items-center gap-2">
+                <span className="inline-flex items-center px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground">
+                  {history.messages.length} 条消息
+                </span>
+              </div>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
                     {new Date(history.timestamp).toLocaleDateString()} {new Date(history.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                   </span>
@@ -114,15 +118,11 @@ export function HistoryView() {
                 </div>
               </div>
               
-              <div className="mt-1 text-sm text-muted-foreground line-clamp-2 break-all">
+              <div className="text-sm text-muted-foreground line-clamp-1 break-all">
                 {history.preview}
               </div>
               
-              <div className="mt-2 flex items-center gap-2">
-                <span className="inline-flex items-center px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground">
-                  {history.messages.length} 条消息
-                </span>
-              </div>
+             
             </div>
           </div>
         </div>

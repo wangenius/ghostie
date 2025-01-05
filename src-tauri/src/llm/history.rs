@@ -16,7 +16,7 @@ pub struct ChatHistory {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ChatMessage {
-    pub bot: String,
+    pub role: String,
     pub content: String,
 }
 

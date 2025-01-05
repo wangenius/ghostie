@@ -26,9 +26,10 @@ export function BotsTab() {
 
   const loadBots = async () => {
     try {
-      const botsList = await invoke<Array<Bot>>("list_bots");
+      const botsList = await invoke<{bots: Bot[]}>("list_bots");
+      console.log(botsList);
       setBots(
-        botsList.sort((a, b) => a.name.localeCompare(b.name))
+        botsList.bots
       );
     } catch (error) {
       console.error("加载机器人列表失败:", error);

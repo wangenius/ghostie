@@ -19,6 +19,8 @@ pub struct BotsConfig {
     pub aliases: HashMap<String, String>,
     #[serde(default)]
     pub current: Option<String>,
+    #[serde(default)]
+    pub recent_bots: Vec<String>,
 }
 
 impl BotsConfig {
@@ -52,6 +54,11 @@ impl BotsConfig {
     }
 
 
+    pub fn get(&self, name: &str) -> Option<&Bot> {
+        self.bots.get(name)
+    }
+
+
     
     pub fn add_bot(&mut self, name: String, system_prompt: String) -> Result<()> {
         let bot = Bot {
@@ -80,6 +87,7 @@ impl BotsConfig {
             return Err(anyhow::anyhow!("机器人不存在: {}", name));
         }
         self.current = Some(name.to_string());
+        self.update_recent_bots(name)?;
         self.save()?;
         println!("当前机器人已设置为: {}", name.green());
         Ok(())
@@ -123,6 +131,16 @@ impl BotsConfig {
         self.bots.insert(new_name.clone(), bot);
         self.save()?;
         println!("bot updated: {}", new_name.green());
+        Ok(())
+    }
+
+    pub fn update_recent_bots(&mut self, name: &str) -> Result<()> {
+        self.recent_bots.retain(|x| x != name);
+        self.recent_bots.insert(0, name.to_string());
+        if self.recent_bots.len() > 10 {
+            self.recent_bots.truncate(10);
+        }
+        self.save()?;
         Ok(())
     }
 } 

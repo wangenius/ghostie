@@ -44,13 +44,13 @@ pub async fn list_models() -> Result<Vec<HashMap<String, String>>, String> {
             .current_model
             .as_ref()
             .map_or(false, |current| current == name);
-        
+
         let mut model_info = HashMap::new();
         model_info.insert("name".to_string(), name.clone());
         model_info.insert("is_current".to_string(), is_current.to_string());
         model_info.insert("api_url".to_string(), model_config.api_url.clone());
         model_info.insert("model".to_string(), model_config.model.clone());
-        
+
         models.push(model_info);
     }
     Ok(models)
@@ -78,23 +78,36 @@ pub async fn remove_bot(name: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn list_bots() -> Result<Vec<HashMap<String, String>>, String> {
+pub async fn list_bots() -> Result<serde_json::Value, String> {
     let config = BotsConfig::load().map_err(|e| e.to_string())?;
     let mut bots = Vec::new();
+
+    // 收集所有 bots
     for (name, bot) in &config.bots {
-        let is_current = config
-            .current
-            .as_ref()
-            .map_or(false, |current| current == name);
-        
-        let mut bot_info = HashMap::new();
-        bot_info.insert("name".to_string(), name.clone());
-        bot_info.insert("is_current".to_string(), is_current.to_string());
-        bot_info.insert("system_prompt".to_string(), bot.system_prompt.clone());
-        
-        bots.push(bot_info);
+        let mut bot_info = serde_json::Map::new();
+        bot_info.insert("name".to_string(), serde_json::Value::String(name.clone()));
+        bot_info.insert(
+            "system_prompt".to_string(),
+            serde_json::Value::String(bot.system_prompt.clone()),
+        );
+        bots.push(serde_json::Value::Object(bot_info));
     }
-    Ok(bots)
+
+    // 构建返回结果
+    let mut result = serde_json::Map::new();
+    result.insert("bots".to_string(), serde_json::Value::Array(bots));
+    result.insert(
+        "recent_bots".to_string(),
+        serde_json::Value::Array(
+            config
+                .recent_bots
+                .iter()
+                .map(|name| serde_json::Value::String(name.clone()))
+                .collect(),
+        ),
+    );
+
+    Ok(serde_json::Value::Object(result))
 }
 
 #[tauri::command]
@@ -165,14 +178,18 @@ pub async fn execute_agent_command(
 
 // LLM 对话相关命令
 #[tauri::command]
-pub async fn chat(window: tauri::Window, messages: Vec<Message>) -> Result<String, String> {
+pub async fn chat(
+    window: tauri::Window,
+    messages: Vec<Message>,
+    bot: Option<String>,
+) -> Result<String, String> {
     let config = Config::load().map_err(|e| e.to_string())?;
     let (_, model_config) = config.get_current_model().ok_or("No model configured")?;
 
     // 获取当前 bot 的系统提示词
     let mut all_messages = Vec::new();
     let bots_config = BotsConfig::load().map_err(|e| e.to_string())?;
-    if let Some(bot) = bots_config.get_current() {
+    if let Some(bot) = bots_config.get(bot.as_deref().unwrap_or("")) {
         all_messages.push(Message {
             role: "system".to_string(),
             content: bot.system_prompt.clone(),
@@ -183,9 +200,13 @@ pub async fn chat(window: tauri::Window, messages: Vec<Message>) -> Result<Strin
             content: "".to_string(),
         });
     }
-
+    let mut config = BotsConfig::load().map_err(|e| e.to_string())?;
+    let _ = config
+        .update_recent_bots(bot.as_deref().unwrap_or(""))
+        .map_err(|e| e.to_string())?;
     // 添加历史消息
     all_messages.extend(messages);
+    println!("all_messages: {:?}", all_messages);
     let provider = Provider::new(model_config.api_key.clone())
         .with_url(model_config.api_url.clone())
         .with_model(model_config.model.clone());
@@ -331,26 +352,32 @@ pub async fn update_bot(
 #[tauri::command]
 pub async fn get_model(name: String) -> Result<HashMap<String, String>, String> {
     let config = Config::load().map_err(|e| e.to_string())?;
-    let model_config = config.models.get(&name).ok_or_else(|| format!("Model not found: {}", name))?;
-    
+    let model_config = config
+        .models
+        .get(&name)
+        .ok_or_else(|| format!("Model not found: {}", name))?;
+
     let mut result = HashMap::new();
     result.insert("name".to_string(), name);
     result.insert("api_key".to_string(), model_config.api_key.clone());
     result.insert("api_url".to_string(), model_config.api_url.clone());
     result.insert("model".to_string(), model_config.model.clone());
-    
+
     Ok(result)
 }
 
 #[tauri::command]
 pub async fn get_bot(name: String) -> Result<HashMap<String, String>, String> {
     let config = BotsConfig::load().map_err(|e| e.to_string())?;
-    let bot = config.bots.get(&name).ok_or_else(|| format!("Bot not found: {}", name))?;
-    
+    let bot = config
+        .bots
+        .get(&name)
+        .ok_or_else(|| format!("Bot not found: {}", name))?;
+
     let mut bot_info = HashMap::new();
     bot_info.insert("name".to_string(), name);
     bot_info.insert("bot_name".to_string(), bot.name.clone());
     bot_info.insert("system_prompt".to_string(), bot.system_prompt.clone());
-    
+
     Ok(bot_info)
 }

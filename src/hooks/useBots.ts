@@ -2,21 +2,30 @@ import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { AgentInfo, BotInfo } from "../types";
 
+export interface Bot {
+  name: string;
+  systemPrompt: string;
+}
+
 export function useBots() {
-  const [bots, setBots] = useState<BotInfo[]>([]);
+  const [allBots, setAllBots] = useState<Bot[]>([]);
+  const [recentBots, setRecentBots] = useState<string[]>([]);
   const [agents, setAgents] = useState<AgentInfo[]>([]);
 
   const loadBots = async () => {
     try {
-      const botsList = await invoke<Array<Record<string, string>>>("list_bots");
-      setBots(
-        botsList.map((bot) => ({
+      const response = await invoke<{
+        bots: Array<{ name: string; system_prompt: string }>;
+        recent_bots: string[];
+      }>("list_bots");
+
+      setAllBots(
+        response.bots.map((bot) => ({
           name: bot.name,
-          isCurrent: bot.is_current === "true",
           systemPrompt: bot.system_prompt,
-          type: "bot" as const,
         }))
       );
+      setRecentBots(response.recent_bots);
     } catch (error) {
       console.error("加载 bots 失败:", error);
     }
@@ -25,28 +34,34 @@ export function useBots() {
   const loadAgents = async () => {
     try {
       const agentsList = await invoke<AgentInfo[]>("list_agents");
-      setAgents(
-        agentsList.map((agent) => ({ ...agent, type: "agent" as const }))
-      );
+      setAgents(agentsList.map((agent) => ({ ...agent, type: "agent" as const })));
     } catch (error) {
       console.error("加载 agents 失败:", error);
     }
   };
 
-  const setCurrentBot = async (name: string) => {
+  const updateRecentBot = async (name: string) => {
     try {
-      await invoke("set_current_bot", { name });
-      await loadBots();
+      await invoke("update_recent_bot", { name });
+      await loadBots(); // 重新加载以获取最新的排序
     } catch (error) {
-      console.error("设置当前 bot 失败:", error);
+      console.error("更新最近使用的 bot 失败:", error);
     }
   };
+
+  // 转换为前端使用的格式
+  const bots: BotInfo[] = allBots.map((bot) => ({
+    name: bot.name,
+    systemPrompt: bot.systemPrompt,
+    type: "bot" as const,
+  }));
 
   return {
     bots,
     agents,
+    recentBots,
     loadBots,
     loadAgents,
-    setCurrentBot,
+    updateRecentBot,
   };
 } 

@@ -18,7 +18,7 @@ export function MainView() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { messages, isLoading, sendMessage, clearMessages } = useChat();
-  const { bots, agents, loadBots, loadAgents, setCurrentBot } = useBots();
+  const { bots, agents, loadBots, loadAgents, updateRecentBot, recentBots } = useBots();
 
   useEffect(() => {
     if (currentView === "list") {
@@ -27,26 +27,16 @@ export function MainView() {
   }, [currentView]);
 
   // 计算当前显示的列表项
-  const listItems: ListItem[] = (() => {
-    if (inputValue.trim()) {
-      const chatItem = {
-        type: "chat" as const,
-        content: inputValue,
-      };
-
-      const filteredItems = [...bots, ...agents].filter(
-        (item) =>
-          item.name.toLowerCase().includes(inputValue.toLowerCase()) ||
-          item.systemPrompt.toLowerCase().includes(inputValue.toLowerCase()) ||
-          ("description" in item &&
-            item.description?.toLowerCase().includes(inputValue.toLowerCase()))
-      );
-
-      return [chatItem, ...filteredItems];
-    }
-
-    return [...bots, ...agents].sort((a, b) => a.name.localeCompare(b.name));
-  })();
+  const listItems: ListItem[] = [
+    // 首先添加最近使用的 bots
+    ...recentBots
+      .map(name => bots.find(bot => bot.name === name))
+      .filter((bot): bot is BotInfo => bot !== undefined),
+    // 然后添加其他未在最近列表中的 bots
+    ...bots.filter(bot => !recentBots.includes(bot.name)),
+    // 最后添加 agents
+    ...agents
+  ];
 
   useEffect(() => {
     const handleFocus = () => inputRef.current?.focus();
@@ -105,26 +95,34 @@ export function MainView() {
   // 重置 activeIndex 当列表内容变化时
   useEffect(() => {
     setActiveIndex(0);
-  }, [inputValue]);
+  }, [currentView]);
 
   const handleItemClick = async (item: ListItem) => {
-    if (item.type === "chat") {
-      await handleChat(item.content);
-    } else if (item.type === "bot") {
-      await handleBotClick(item);
+    if (item.type === "bot") {
+      if (inputValue.trim()) {
+        await handleChat(inputValue, item.name);
+      } else {
+        await handleBotClick(item);
+      }
     }
   };
 
   const handleBotClick = async (bot: BotInfo) => {
-    if (!bot.isCurrent) {
-      await setCurrentBot(bot.name);
+    // 找到当前点击的 bot 在 listItems 中的索引
+    const index = listItems.findIndex(item => item.type === "bot" && item.name === bot.name);
+    if (index !== -1) {
+      setActiveIndex(index);
     }
+    await updateRecentBot(bot.name);
   };
 
-  const handleChat = async (message: string) => {
+  const handleChat = async (message: string, bot?: string) => {
+    if (bot) {
+      await updateRecentBot(bot);
+    }
     setInputValue("");
     setCurrentView("chat");
-    await sendMessage(message);
+    await sendMessage(message, bot);
   };
 
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -137,7 +135,7 @@ export function MainView() {
     } else if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       const activeItem = listItems[activeIndex];
-      if (activeItem) {
+      if (activeItem?.type === "bot") {
         await handleItemClick(activeItem);
       }
     }

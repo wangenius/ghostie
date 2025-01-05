@@ -95,7 +95,7 @@ export function ModelsTab() {
             key={model.name}
             onClick={() => !model.is_current && handleSetCurrentModel(model.name)}
             className={`flex items-center justify-between h-14 px-3 -mx-3 rounded-lg cursor-pointer transition-colors ${
-              model.is_current ? "bg-primary/10" : "hover:bg-secondary"
+              model.is_current ? "bg-secondary" : "hover:bg-secondary"
             }`}
           >
             <div className="flex items-center gap-3">
