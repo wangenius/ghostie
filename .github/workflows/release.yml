@@ -1,4 +1,5 @@
 name: Release
+# 自动发布
 on:
   push:
     tags:
@@ -47,6 +48,7 @@ jobs:
         env:
           VERSION: ${{ steps.get_version.outputs.version }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
           npm run build
           npm run tauri build
@@ -54,6 +56,7 @@ jobs:
       - name: Sign Windows Installer
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         shell: pwsh
         run: |
           $version = "${{ steps.get_version.outputs.version }}"

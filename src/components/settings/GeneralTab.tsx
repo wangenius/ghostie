@@ -1,14 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
+import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
 import { relaunch } from '@tauri-apps/plugin-process';
-import { ChevronRight, Globe2, Keyboard, Lightbulb, Moon, Power, RefreshCw, RotateCw, Sun } from "lucide-react";
+import { ChevronRight, Globe2, Keyboard, Lightbulb, Moon, Power, RotateCw, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
-import { enable, isEnabled, disable } from '@tauri-apps/plugin-autostart';
-// when using `"withGlobalTauri": true`, you may use
-// const { enable, isEnabled, disable } = window.__TAURI__.autostart;
-
-// Enable autostart
-
-// Check enable state
+import { message } from '@tauri-apps/plugin-dialog';
 
 
 interface Settings {
@@ -26,7 +21,7 @@ export function GeneralTab() {
 	const [settings, setSettings] = useState<Settings>({
 		theme: (localStorage.getItem(THEME_KEY) as Settings['theme']) || 'system',
 		language: 'zh-CN',
-		shortcut: 'Ctrl+Shift+Space',
+		shortcut: 'Alt+Space',
 		autoUpdate: true,
 		autoLaunch: false,
 	});
@@ -58,18 +53,9 @@ export function GeneralTab() {
 		}
 	};
 
-	useEffect(() => {
-		// 如果启用了自动更新，定期检查更新
-		if (settings.autoUpdate) {
-			const checkInterval = setInterval(checkForUpdates, 1000 * 60 * 60); // 每小时检查一次
-			return () => clearInterval(checkInterval);
-		}
-	}, [settings.autoUpdate]);
-
 	const checkForUpdates = async () => {
 		try {
 			const hasUpdate = await invoke<boolean>('check_update');
-			console.log(hasUpdate);
 
 			if (hasUpdate) {
 				// 如果有更新，安装并重启
@@ -89,8 +75,7 @@ export function GeneralTab() {
 		try {
 			const hasUpdate = await checkForUpdates();
 			if (!hasUpdate) {
-				// TODO: 使用 dialog 插件显示提示
-				console.log('已经是最新版本');
+				await message('已是最新版本', { title: 'Lulu' });
 			}
 		} finally {
 			setChecking(false);
@@ -194,26 +179,6 @@ export function GeneralTab() {
 				<ChevronRight className="w-4 h-4 text-muted-foreground" />
 			</div>
 
-			<div className="flex items-center justify-between h-12 px-3 -mx-3 rounded-lg hover:bg-secondary">
-				<div className="flex items-center gap-3">
-					<div className="text-muted-foreground">
-						<RefreshCw className="w-[18px] h-[18px]" />
-					</div>
-					<div>
-						<div className="text-sm text-foreground">自动更新</div>
-						<div className="text-xs text-muted-foreground">当有新版本时自动通知</div>
-					</div>
-				</div>
-				<label className="relative inline-flex items-center cursor-pointer">
-					<input
-						type="checkbox"
-						checked={settings.autoUpdate}
-						onChange={(e) => setSettings({ ...settings, autoUpdate: e.target.checked })}
-						className="sr-only peer"
-					/>
-					<div className="w-9 h-5 rounded-full bg-muted peer-checked:bg-primary after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-background after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
-				</label>
-			</div>
 
 			<div className="flex items-center justify-between h-12 px-3 -mx-3 rounded-lg hover:bg-secondary">
 				<div className="flex items-center gap-3">

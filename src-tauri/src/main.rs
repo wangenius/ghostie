@@ -57,6 +57,7 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::default().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_autostart::init(tauri_plugin_autostart::MacosLauncher::LaunchAgent, Some(vec!["--flag1", "--flag2"])))
         .invoke_handler(tauri::generate_handler![
             commands::add_model,
             commands::remove_model,
@@ -92,7 +93,7 @@ fn main() {
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(move |app, shortcut, event| {
                     if shortcut
-                        == &Shortcut::new(Some(Modifiers::ALT | Modifiers::CONTROL), Code::Space)
+                        == &Shortcut::new(Some(Modifiers::ALT), Code::Space)
                     {
                         if matches!(event.state(), ShortcutState::Pressed) {
                             if let Some(window) = app.get_webview_window("main") {
@@ -119,7 +120,7 @@ fn main() {
         )
         .setup(|app| {
             let _ = app.handle();
-            let shortcut = Shortcut::new(Some(Modifiers::ALT | Modifiers::CONTROL), Code::Space);
+            let shortcut = Shortcut::new(Some(Modifiers::ALT), Code::Space);
             app.global_shortcut().register(shortcut)?;
 
             let menu = Menu::with_items(
