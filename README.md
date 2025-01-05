@@ -21,7 +21,7 @@ Lulu 是一个基于 Tauri + React 开发的跨平台智能对话助手应用。
 ## 📸 界面预览
 
 <div align="center">
-    <img src="docs/history.png" alt="History View" width="600"/>
+    <img src="docs/chat.png" alt="History View" width="600"/>
 </div>
 
 ## 🚀 快速开始
