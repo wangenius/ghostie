@@ -17,13 +17,13 @@ export function ListView({ items, activeIndex, onItemClick }: ListViewProps) {
               key="chat-action"
               onClick={() => onItemClick(item)}
               className={`flex items-center justify-between h-12 px-3 -mx-3 rounded-lg cursor-pointer transition-colors ${
-                index === activeIndex ? "bg-blue-50" : "hover:bg-gray-50"
+                index === activeIndex ? "bg-primary/10" : "hover:bg-secondary"
               }`}
             >
               <div className="flex items-center gap-3">
                 <div
                   className={`${
-                    index === activeIndex ? "text-blue-500" : "text-gray-400"
+                    index === activeIndex ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
                   <MessageSquare className="w-[18px] h-[18px]" />
@@ -31,15 +31,15 @@ export function ListView({ items, activeIndex, onItemClick }: ListViewProps) {
                 <div>
                   <div
                     className={`text-sm ${
-                      index === activeIndex ? "text-blue-600" : "text-gray-600"
+                      index === activeIndex ? "text-primary" : "text-foreground"
                     }`}
                   >
                     发送消息
                   </div>
-                  <div className="text-xs text-gray-400">{item.content}</div>
+                  <div className="text-xs text-muted-foreground">{item.content}</div>
                 </div>
               </div>
-              <div className="text-xs text-gray-400 px-2 py-1 bg-gray-50 rounded">
+              <div className="text-xs text-muted-foreground px-2 py-1 bg-secondary rounded">
                 Enter ↵
               </div>
             </div>
@@ -51,13 +51,13 @@ export function ListView({ items, activeIndex, onItemClick }: ListViewProps) {
             key={item.name}
             onClick={() => onItemClick(item)}
             className={`flex items-center justify-between h-12 px-3 -mx-3 rounded-lg cursor-pointer transition-colors ${
-              index === activeIndex ? "bg-blue-50" : "hover:bg-gray-50"
+              index === activeIndex ? "bg-primary/10" : "hover:bg-secondary"
             }`}
           >
             <div className="flex items-center gap-3">
               <div
                 className={`transition-colors ${
-                  index === activeIndex ? "text-blue-600" : "text-gray-400"
+                  index === activeIndex ? "text-primary" : "text-muted-foreground"
                 }`}
               >
                 {item.type === "agent" ? <Terminal /> : <Bot />}
@@ -65,12 +65,12 @@ export function ListView({ items, activeIndex, onItemClick }: ListViewProps) {
               <div>
                 <div
                   className={`text-sm ${
-                    index === activeIndex ? "text-blue-600" : "text-gray-600"
+                    index === activeIndex ? "text-primary" : "text-foreground"
                   }`}
                 >
                   {item.name}
                 </div>
-                <div className="text-xs text-gray-400 text-ellipsis overflow-hidden line-clamp-1">
+                <div className="text-xs text-muted-foreground text-ellipsis overflow-hidden line-clamp-1">
                   {item.type === "agent"
                     ? item.description || "无描述"
                     : item.systemPrompt}
@@ -79,7 +79,7 @@ export function ListView({ items, activeIndex, onItemClick }: ListViewProps) {
             </div>
             <ChevronRight
               className={`w-4 h-4 flex-none ${
-                index === activeIndex ? "text-blue-400" : "text-gray-300"
+                index === activeIndex ? "text-primary" : "text-muted-foreground"
               }`}
             />
           </div>

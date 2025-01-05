@@ -144,7 +144,7 @@ export function MainView() {
   };
 
   return (
-    <div className="app-container flex flex-col h-screen bg-white">
+    <div className="app-container flex flex-col h-screen bg-background">
       <SearchBar
         inputValue={inputValue}
         currentView={currentView}

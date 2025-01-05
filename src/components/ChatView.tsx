@@ -45,12 +45,21 @@ export function ChatView({ messages }: ChatViewProps) {
         <div key={index} className="group">
           <div className={`
             py-2 px-4 mt-2 rounded-xl
-            ${message.role === "assistant" ? "bg-slate-50 w-fit" : "bg-white"}
+            ${message.role === "assistant" ? "bg-secondary" : "bg-background"}
           `}>
             <div className="relative">
-              <div className="text-sm leading-relaxed whitespace-pre-wrap text-gray-800">
+              <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
                 {message.content}
               </div>
+              {message.role === "assistant" && (
+                <button
+                  onClick={() => copyMessage(message.content)}
+                  className="absolute -right-2 top-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                  title="复制消息 (Ctrl+C)"
+                >
+                  <CopyIcon className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>

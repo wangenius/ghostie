@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #0f172a;
+
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+
+    --popover: #ffffff;
+    --popover-foreground: #0f172a;
+
+    --primary: #3b82f6;
+    --primary-foreground: #ffffff;
+
+    --secondary: #f1f5f9;
+    --secondary-foreground: #0f172a;
+
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
+
+    --accent: #f1f5f9;
+    --accent-foreground: #0f172a;
+
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+
+    --border: #e2e8f0;
+    --input: #e2e8f0;
+    --ring: #3b82f6;
+
+    --radius: 0.5rem;
+
+    --hover: #f8fafc;
+    --hover-foreground: #0f172a;
+  }
+
+  .dark {
+    --background: #0f172a;
+    --foreground: #f8fafc;
+
+    --card: #1e293b;
+    --card-foreground: #f8fafc;
+
+    --popover: #1e293b;
+    --popover-foreground: #f8fafc;
+
+    --primary: #3b82f6;
+    --primary-foreground: #ffffff;
+
+    --secondary: #1e293b;
+    --secondary-foreground: #f8fafc;
+
+    --muted: #1e293b;
+    --muted-foreground: #94a3b8;
+
+    --accent: #1e293b;
+    --accent-foreground: #f8fafc;
+
+    --destructive: #7f1d1d;
+    --destructive-foreground: #f8fafc;
+
+    --border: #1e293b;
+    --input: #1e293b;
+    --ring: #3b82f6;
+
+    --hover: #0f172a;
+    --hover-foreground: #f8fafc;
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* 禁止滚动 */
+html,
+body {
+  overflow: hidden;
+  height: 100%;
+  position: fixed;
+  width: 100%;
+  background: transparent !important;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+  background: transparent !important;
+}
+
+/* 应用圆角和背景 */
+.app-container {
+  @apply rounded-lg backdrop-blur-sm;
+  height: 100%;
+  width: 100%;
+}
+
+/* 自定义滚动条样式 */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted rounded-full transition-colors;
+}
+
+/* 当鼠标悬停在可滚动区域时才显示滚动条 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) transparent;
+}
+
+.overflow-y-auto,
+.overflow-x-auto {
+  &::-webkit-scrollbar-thumb {
+    @apply opacity-0;
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    @apply opacity-100;
+  }
+}
+
+p,
+div,
+span,
+button,
+input,
+textarea,
+select,
+option,
+a {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}

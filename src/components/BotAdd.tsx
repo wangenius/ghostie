@@ -10,7 +10,6 @@ export function BotAdd() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
@@ -39,15 +38,15 @@ export function BotAdd() {
   };
 
   return (
-    <div className="app-container flex flex-col h-screen bg-white">
+    <div className="app-container flex flex-col h-screen bg-background">
       <div
-        className="flex items-center justify-between h-12 px-4 border-b border-neutral-100"
+        className="flex items-center justify-between h-12 px-4 border-b border-border"
         data-tauri-drag-region
       >
-        <div className="text-sm font-medium text-neutral-800">添加机器人</div>
+        <div className="text-sm font-medium text-foreground">添加机器人</div>
         <button
           onClick={handleClose}
-          className="p-1.5 text-neutral-400 hover:text-neutral-800 transition-colors"
+          className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
@@ -56,40 +55,40 @@ export function BotAdd() {
       <div className="flex-1 overflow-auto p-4">
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="block text-xs text-neutral-500">机器人名称</label>
+            <label className="block text-xs text-muted-foreground">机器人名称</label>
             <input
               ref={inputRef}
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full h-9 px-3 bg-neutral-100 rounded-md text-sm focus:bg-neutral-200 transition-colors outline-none placeholder:text-neutral-400"
+              className="w-full h-9 px-3 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground"
               placeholder="输入 Bot 名称"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-xs text-neutral-500">系统提示词</label>
+            <label className="block text-xs text-muted-foreground">系统提示词</label>
             <textarea
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
-              className="w-full px-3 py-2 bg-neutral-100 rounded-md text-sm focus:bg-neutral-200 transition-colors outline-none min-h-[160px] resize-none placeholder:text-neutral-400"
+              className="w-full px-3 py-2 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none min-h-[160px] resize-none placeholder:text-muted-foreground"
               placeholder="输入系统提示词"
             />
           </div>
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 px-4 py-3 border-t border-neutral-100">
+      <div className="flex justify-end gap-2 px-4 py-3 border-t border-border">
         <button
           onClick={handleClose}
-          className="px-3 h-8 text-xs text-neutral-600 hover:bg-neutral-100 rounded transition-colors"
+          className="px-3 h-8 text-xs text-muted-foreground hover:bg-secondary rounded transition-colors"
         >
           取消
         </button>
         <button
           onClick={handleSubmit}
           disabled={!name || !systemPrompt || isSubmitting}
-          className="px-3 h-8 text-xs text-white bg-neutral-900 rounded hover:bg-neutral-800 disabled:opacity-50 disabled:hover:bg-neutral-900 transition-colors"
+          className="px-3 h-8 text-xs text-primary-foreground bg-primary rounded hover:opacity-90 disabled:opacity-50 transition-colors"
         >
           {isSubmitting ? "创建中..." : "创建"}
         </button>

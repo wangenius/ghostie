@@ -83,7 +83,7 @@ export function ModelsTab() {
       <div className="flex items-center justify-end mb-3">
         <button
           onClick={handleOpenModelAdd}
-          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
         >
           <Plus className="w-4 h-4 mr-1" />
           添加模型
@@ -95,23 +95,23 @@ export function ModelsTab() {
             key={model.name}
             onClick={() => !model.is_current && handleSetCurrentModel(model.name)}
             className={`flex items-center justify-between h-14 px-3 -mx-3 rounded-lg cursor-pointer transition-colors ${
-              model.is_current ? "bg-blue-50/70" : "hover:bg-gray-50"
+              model.is_current ? "bg-primary/10" : "hover:bg-secondary"
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className={model.is_current ? "text-blue-500" : "text-gray-400"}>
+              <div className={model.is_current ? "text-primary" : "text-muted-foreground"}>
                 <Database className="w-[18px] h-[18px]" />
               </div>
               <div>
-                <div className={`text-sm ${model.is_current ? "text-blue-600" : "text-gray-600"}`}>
+                <div className={`text-sm ${model.is_current ? "text-primary" : "text-foreground"}`}>
                   {model.name}
                 </div>
-                <div className="text-xs text-gray-400">{model.model}</div>
+                <div className="text-xs text-muted-foreground">{model.model}</div>
               </div>
             </div>
             <div className="flex items-center">
               {model.is_current && (
-                <span className="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded mr-2">
+                <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded mr-2">
                   当前使用
                 </span>
               )}
@@ -120,7 +120,7 @@ export function ModelsTab() {
                   e.stopPropagation();
                   handleOpenModelEdit(model);
                 }}
-                className="p-2 text-gray-400 hover:text-blue-500"
+                className="p-2 text-muted-foreground hover:text-primary"
               >
                 <Pencil className="w-4 h-4" />
               </button>
@@ -129,7 +129,7 @@ export function ModelsTab() {
                   e.stopPropagation();
                   handleDeleteModel(model.name);
                 }}
-                className="p-2 text-gray-400 hover:text-red-500"
+                className="p-2 text-muted-foreground hover:text-destructive"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
