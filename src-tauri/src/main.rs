@@ -1,6 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::sync::atomic::{AtomicI64, Ordering};
+use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
@@ -11,6 +13,8 @@ use tauri_plugin_updater::UpdaterExt;
 
 mod commands;
 mod llm;
+
+static LAST_WINDOW_ACTION: AtomicI64 = AtomicI64::new(0);
 
 #[tauri::command]
 async fn check_update(app: tauri::AppHandle) -> Result<bool, String> {
@@ -141,21 +145,42 @@ fn main() {
                         }
                     }
                 })
-                .on_tray_icon_event(|app_handle, event| {
-                    if let Some(window) = app_handle.app_handle().get_webview_window("main") {
-                        if matches!(
-                            event,
+                .tooltip("echo智能助手")
+                .show_menu_on_left_click(false)
+                .on_tray_icon_event(|tray, event| {
+                    if let Some(window) = tray.app_handle().get_webview_window("main") {
+                        match event {
                             tauri::tray::TrayIconEvent::Click {
                                 button: tauri::tray::MouseButton::Left,
                                 ..
+                            } => {
+                                let now = SystemTime::now()
+                                    .duration_since(UNIX_EPOCH)
+                                    .unwrap()
+                                    .as_millis() as i64;
+                                let last = LAST_WINDOW_ACTION.load(Ordering::SeqCst);
+
+                                if now - last < 500 {
+                                    return;
+                                }
+
+                                LAST_WINDOW_ACTION.store(now, Ordering::SeqCst);
+
+                                let visible = window.is_visible().unwrap();
+                                if visible {
+                                    let _ = window.hide();
+                                } else {
+                                    let _ = window.show();
+                                    let _ = window.set_focus();
+                                }
                             }
-                        ) {
-                            if window.is_visible().unwrap() {
-                                let _ = window.hide();
-                            } else {
-                                let _ = window.show();
-                                let _ = window.set_focus();
+                            tauri::tray::TrayIconEvent::Click {
+                                button: tauri::tray::MouseButton::Right,
+                                ..
+                            } => {
+                                // 在 Tauri 2.0 中，菜单会自动显示，不需要手动调用
                             }
+                            _ => {}
                         }
                     }
                 })
@@ -165,24 +190,22 @@ fn main() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
-    app.run(|app_handle, event| {
-        match event {
-            tauri::RunEvent::ExitRequested { api, .. } => {
-                api.prevent_exit();
-            }
-            tauri::RunEvent::Ready => {
-                if let Some(window) = app_handle.get_webview_window("main") {
-                    let window_handle = window.clone();
-                    window.on_window_event(move |event| match event {
-                        WindowEvent::CloseRequested { api, .. } => {
-                            let _ = window_handle.hide();
-                            api.prevent_close();
-                        }
-                        _ => {}
-                    });
-                }
-            }
-            _ => {}
+    app.run(|app_handle, event| match event {
+        tauri::RunEvent::ExitRequested { api, .. } => {
+            api.prevent_exit();
         }
+        tauri::RunEvent::Ready => {
+            if let Some(window) = app_handle.get_webview_window("main") {
+                let window_handle = window.clone();
+                window.on_window_event(move |event| match event {
+                    WindowEvent::CloseRequested { api, .. } => {
+                        let _ = window_handle.hide();
+                        api.prevent_close();
+                    }
+                    _ => {}
+                });
+            }
+        }
+        _ => {}
     });
 }

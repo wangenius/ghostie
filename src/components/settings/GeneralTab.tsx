@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { getVersion } from '@tauri-apps/api/app';
 import { ChevronRight, Globe2, Keyboard, Lightbulb, Moon, Power, RotateCw, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { message } from '@tauri-apps/plugin-dialog';
@@ -27,6 +28,14 @@ export function GeneralTab() {
 	});
 
 	const [checking, setChecking] = useState(false);
+	const [version, setVersion] = useState<string>('');
+
+	// 初始化时获取版本号
+	useEffect(() => {
+		getVersion().then(version => {
+			setVersion(version);
+		}).catch(console.error);
+	}, []);
 
 	// 初始化时获取自启动状态
 	useEffect(() => {
@@ -208,7 +217,7 @@ export function GeneralTab() {
 					</div>
 					<div>
 						<div className="text-sm text-foreground">检查更新</div>
-						<div className="text-xs text-muted-foreground">当前版本: v1.0.0</div>
+						<div className="text-xs text-muted-foreground">当前版本: v{version}</div>
 					</div>
 				</div>
 				<button
