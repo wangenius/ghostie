@@ -18,13 +18,10 @@ export function useChat() {
       const chunk = event.payload as string;
       setMessages((messages) => {
         const lastMessage = messages[messages.length - 1];
-        if (lastMessage?.role === "assistant") {
-          return [
-            ...messages.slice(0, -1),
-            { ...lastMessage, content: lastMessage.content + chunk },
-          ];
-        }
-        return [...messages, { role: "assistant", content: chunk }];
+        return [
+          ...messages.slice(0, -1),
+          { ...lastMessage, content: lastMessage.content + chunk },
+        ];
       });
     });
 
@@ -57,6 +54,9 @@ export function useChat() {
   const sendMessage = async (message: string, bot?:string) => {
     setIsLoading(true);
     const userMessage: Message = { role: "user", content: message };
+    const assistantMessage: Message = { role: "assistant", content: "" };
+    const newMessages = [...messages, userMessage, assistantMessage];
+    setMessages(newMessages);
 
     if (messages.length === 0) {
       try {
@@ -67,17 +67,16 @@ export function useChat() {
       }
     }
 
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
-
     try {
       await invoke("chat", {
-        messages: newMessages,
+        messages: newMessages.slice(0, -1),
         bot: bot,
       });
     } catch (error) {
       console.error("发送消息失败:", error);
-      setMessages(prevMessages => [...prevMessages, { role: "assistant", content: String(error) }]);
+      setMessages(prevMessages => {
+        return [...prevMessages.slice(0, -1), { role: "assistant", content: String(error) }];
+      });
       setIsLoading(false);
     }
   };

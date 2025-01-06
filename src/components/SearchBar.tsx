@@ -1,4 +1,4 @@
-import { ArrowLeft, Bot, Clock, Database, Loader2Icon, Settings as SettingsIcon, Stars, X } from "lucide-react";
+import { ArrowLeft, Bot, Clock, Database, Loader2Icon, Settings as SettingsIcon, Stars, Users, X } from "lucide-react";
 import { RefObject } from "react";
 import { View } from "../types";
 import { useBots } from "../hooks/useBots";
@@ -11,14 +11,15 @@ interface Props {
   onInputChange: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onViewChange: (view: View) => void;
-  settingsTab?: "general" | "models" | "bots";
-  onSettingsTabChange?: (tab: "general" | "models" | "bots") => void;
+  settingsTab?: "general" | "models" | "bots" | "agents";
+  onSettingsTabChange?: (tab: "general" | "models" | "bots" | "agents") => void;
 }
 
 const SETTINGS_NAV_ITEMS = [
   { id: 'general', label: '通用', icon: SettingsIcon },
   { id: 'models', label: '模型', icon: Database },
   { id: 'bots', label: '机器人', icon: Bot },
+  { id: 'agents', label: '代理', icon: Users },
 ] as const;
 
 export function SearchBar({
@@ -46,9 +47,13 @@ export function SearchBar({
             <ArrowLeft className="w-5 h-5 text-muted-foreground hover:text-foreground" />
           </button>
         ) : (
-          <button className="absolute left-0 top-1/2 -translate-y-1/2">
-            <Stars className="w-5 h-5 text-muted-foreground hover:text-foreground" />
-          </button>
+          <div
+            className="absolute left-0 top-1/2 -translate-y-1/2"
+            data-tauri-drag-region
+          >
+            <Stars data-tauri-drag-region
+              className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+          </div>
         )}
 
         {currentView === "settings" ? (
@@ -57,11 +62,10 @@ export function SearchBar({
               <button
                 key={id}
                 onClick={() => onSettingsTabChange?.(id as any)}
-                className={`flex items-center gap-1.5 py-1 px-2 rounded-md text-sm transition-colors ${
-                  settingsTab === id
-                    ? 'text-primary font-medium bg-primary/10'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
+                className={`flex items-center gap-1.5 py-1 px-2 rounded-md text-sm transition-colors ${settingsTab === id
+                  ? 'text-primary font-medium bg-primary/10'
+                  : 'text-muted-foreground hover:text-foreground'
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {label}

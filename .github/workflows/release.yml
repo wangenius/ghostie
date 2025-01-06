@@ -29,6 +29,21 @@ jobs:
         shell: bash
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
+      - name: Read release notes
+        id: release_notes
+        shell: bash
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          NOTES_FILE="RELEASE_NOTES/v${VERSION}.md"
+          if [ -f "$NOTES_FILE" ]; then
+            echo "notes<<EOF" >> $GITHUB_OUTPUT
+            cat "$NOTES_FILE" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "Error: Release notes file $NOTES_FILE not found"
+            exit 1
+          fi
+
       - name: Install dependencies
         run: npm install
 
@@ -40,6 +55,6 @@ jobs:
         with:
           tagName: v${{ steps.get_version.outputs.version }}
           releaseName: "Echo v${{ steps.get_version.outputs.version }}"
-          releaseBody: "See the assets to download this version and install."
+          releaseBody: ${{ steps.release_notes.outputs.notes }}
           releaseDraft: false
-          prerelease: false 
+          prerelease: false

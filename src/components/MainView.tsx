@@ -170,7 +170,7 @@ export function MainView() {
             />
           )}
 
-          {currentView === "chat" && <ChatView messages={messages} />}
+          {currentView === "chat" && <ChatView messages={messages} isLoading={isLoading} />}
 
           {currentView === "history" && <HistoryView />}
 

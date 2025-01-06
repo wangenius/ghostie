@@ -45,6 +45,39 @@ if ($currentBranch -ne "master") {
 }
 
 try {
+    # 创建 RELEASE_NOTES 目录（如果不存在）
+    if (-not (Test-Path "RELEASE_NOTES")) {
+        New-Item -ItemType Directory -Path "RELEASE_NOTES"
+    }
+
+    # 准备发布说明文件
+    $releaseNotesFile = "RELEASE_NOTES/v$Version.md"
+    
+    # 提示用户填写发布说明
+    Write-Host "`n请填写此版本的发布说明。" -ForegroundColor Cyan
+    Write-Host "提示：可以包含新功能、bug修复、改进等内容。" -ForegroundColor Cyan
+    Write-Host "按 Ctrl+Z 然后按 Enter 结束输入。" -ForegroundColor Yellow
+    
+    $releaseNotes = @()
+    while ($true) {
+        $line = Read-Host
+        if ($null -eq $line) { break }
+        $releaseNotes += $line
+    }
+    
+    # 保存发布说明
+    $releaseNotes | Set-Content $releaseNotesFile
+    
+    # 确认发布说明
+    Write-Host "`n发布说明预览：" -ForegroundColor Cyan
+    Get-Content $releaseNotesFile
+    
+    $confirm = Read-Host "`n确认发布说明是否正确？(Y/N)"
+    if ($confirm -ne "Y") {
+        Write-Host "已取消发布流程。" -ForegroundColor Yellow
+        exit 0
+    }
+
     # 更新 package.json 中的版本号
     Write-Host "正在更新 package.json 中的版本号..." -ForegroundColor Cyan
     $packageJson = Get-Content "package.json" -Raw | ConvertFrom-Json
@@ -58,7 +91,7 @@ try {
 
     # 提交更改
     Write-Host "正在提交更改..." -ForegroundColor Cyan
-    git add package.json src-tauri/tauri.conf.json
+    git add package.json src-tauri/tauri.conf.json "RELEASE_NOTES/v$Version.md"
     git commit -m "bump version to $Version"
 
     # 推送更改

@@ -1,12 +1,14 @@
 import { useRef, useEffect } from "react";
 import { Message } from "../types";
 import { CopyIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatViewProps {
   messages: Message[];
+  isLoading: boolean;
 }
 
-export function ChatView({ messages }: ChatViewProps) {
+export function ChatView({ messages, isLoading }: ChatViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastAssistantMessage = useRef<string>("");
 
@@ -41,30 +43,65 @@ export function ChatView({ messages }: ChatViewProps) {
 
   return (
     <div className="max-w-4xl mx-auto p-2">
-      {messages.map((message, index) => (
-        <div key={index} className="group">
-          <div className={`
-            py-2 px-4 mt-2 rounded-xl
-            ${message.role === "assistant" ? "bg-secondary" : "bg-background"}
-          `}>
-            <div className="relative">
-              <div className="text-sm !select-text leading-relaxed whitespace-pre-wrap text-foreground">
-                {message.content}
-              </div>
-              {message.role === "assistant" && (
-                <button
-                  onClick={() => copyMessage(message.content)}
-                  className="absolute -right-2 top-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
-                  title="复制消息 (Ctrl+C)"
+      <AnimatePresence>
+        {messages.map((message, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="group"
+          >
+            <div className={`
+              py-2 px-4 mt-2 rounded-xl
+              ${message.role === "assistant" ? "bg-secondary" : "bg-background"}
+            `}>
+              <div className="relative">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2, delay: 0.1 }}
+                  className="text-sm !select-text leading-relaxed whitespace-pre-wrap text-foreground"
                 >
-                  <CopyIcon className="w-4 h-4" />
-                </button>
-              )}
+                  {message.content}
+                  {isLoading && index === messages.length - 1 && message.role === "assistant" && (
+                    <motion.div 
+                      className="inline-flex ml-2"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      <motion.div
+                        className="w-2 h-2 rounded-full bg-primary"
+                        animate={{ 
+                          scale: [0.5, 1.2, 0.5],
+                          opacity: [0.2, 1, 0.2],
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      />
+                    </motion.div>
+                  )}
+                </motion.div>
+                {message.role === "assistant" && (
+                  <motion.button
+                    onClick={() => copyMessage(message.content)}
+                    className="absolute -right-4 -bottom-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                    title="复制消息 (Ctrl+C)"
+                  >
+                    <CopyIcon className="w-4 h-4" />
+                  </motion.button>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-      ))}
+          </motion.div>
+        ))}
+
+      </AnimatePresence>
       <div ref={messagesEndRef} />
     </div>
   );
-} 
+}
