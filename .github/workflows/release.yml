@@ -1,5 +1,4 @@
 name: Release
-# 自动发布
 on:
   push:
     tags:
@@ -9,8 +8,6 @@ jobs:
   release:
     permissions:
       contents: write
-    strategy:
-      fail-fast: false
     runs-on: windows-latest
     
     steps:
@@ -21,85 +18,28 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: lts/*
           cache: 'npm'
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-pc-windows-msvc
 
       - name: Get version from tag
         id: get_version
-        shell: pwsh
-        run: |
-          $tag = "${{ github.ref_name }}"
-          $version = $tag -replace '^v',''
-          echo "version=$version" >> $env:GITHUB_OUTPUT
+        shell: bash
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Install dependencies (Windows)
-        run: |
-          npm install
+      - name: Install dependencies
+        run: npm install
 
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli
-
-      - name: Build the app
+      - uses: tauri-apps/tauri-action@v0
         env:
-          VERSION: ${{ steps.get_version.outputs.version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: |
-          npm run build
-          npm run tauri build
-
-      - name: Sign Windows Installer
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        shell: pwsh
-        run: |
-          $version = "${{ steps.get_version.outputs.version }}"
-          $installerPath = "src-tauri/target/release/bundle/nsis/lulu_${version}_x64-setup.exe"
-          # 将 base64 密钥解码并保存为文件
-          $bytes = [Convert]::FromBase64String($env:TAURI_SIGNING_PRIVATE_KEY)
-          [System.IO.File]::WriteAllBytes("private_key.key", $bytes)
-          # 使用私钥文件进行签名
-          cargo tauri signer sign --private-key-path "private_key.key" --password "$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD" $installerPath
-          # 删除临时私钥文件
-          Remove-Item "private_key.key" -Force
-
-      - name: Generate latest.json
-        shell: pwsh
-        run: |
-          $version = "${{ steps.get_version.outputs.version }}"
-          $notes = "Release $version"
-          $signature = Get-Content "src-tauri/target/release/bundle/nsis/lulu_${version}_x64-setup.exe.sig" -Raw
-          $platforms = @{
-            "windows-x86_64" = @{
-              signature = $signature
-              url = "https://github.com/wangenius/lulu/releases/download/v${version}/lulu_${version}_x64-setup.exe"
-            }
-          }
-          $json = @{
-            version = $version
-            notes = $notes
-            pub_date = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
-            platforms = $platforms
-          } | ConvertTo-Json -Depth 10
-          $json | Out-File -FilePath "latest.json" -Encoding UTF8
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: |
-            src-tauri/target/release/bundle/msi/lulu_${{ steps.get_version.outputs.version }}_x64_en-US.msi
-            src-tauri/target/release/bundle/nsis/lulu_${{ steps.get_version.outputs.version }}_x64-setup.exe
-            src-tauri/target/release/bundle/nsis/lulu_${{ steps.get_version.outputs.version }}_x64-setup.exe.sig
-            latest.json
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          tagName: v${{ steps.get_version.outputs.version }}
+          releaseName: "Echo v${{ steps.get_version.outputs.version }}"
+          releaseBody: "See the assets to download this version and install."
+          releaseDraft: false
+          prerelease: false 

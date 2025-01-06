@@ -74,7 +74,7 @@ try {
     Write-Host "版本号已更新为：$Version" -ForegroundColor Green
     Write-Host "标签 v$Version 已创建并推送" -ForegroundColor Green
     Write-Host "`n正在等待 GitHub Actions 构建..." -ForegroundColor Yellow
-    Write-Host "你可以在这里查看构建进度：https://github.com/wangenius/lulu/actions" -ForegroundColor Yellow
+    Write-Host "你可以在这里查看构建进度：https://github.com/wangenius/echo/actions" -ForegroundColor Yellow
 
 } catch {
     Write-Host "`n❌ 发布过程中出现错误：" -ForegroundColor Red

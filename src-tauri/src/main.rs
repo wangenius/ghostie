@@ -59,6 +59,24 @@ fn main() {
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec!["--flag1", "--flag2"]),
         ))
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(move |app, shortcut, event| {
+                    if shortcut == &Shortcut::new(Some(Modifiers::ALT), Code::Space) {
+                        if matches!(event.state(), ShortcutState::Pressed) {
+                            if let Some(window) = app.get_webview_window("main") {
+                                if window.is_visible().unwrap() {
+                                    let _ = window.hide();
+                                } else {
+                                    let _ = window.show();
+                                    let _ = window.set_focus();
+                                }
+                            }
+                        }
+                    }
+                })
+                .build(),
+        )
         .invoke_handler(tauri::generate_handler![
             commands::add_model,
             commands::remove_model,
@@ -91,24 +109,6 @@ fn main() {
             check_update,
             install_update,
         ])
-        .plugin(
-            tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(move |app, shortcut, event| {
-                    if shortcut == &Shortcut::new(Some(Modifiers::ALT), Code::Space) {
-                        if matches!(event.state(), ShortcutState::Pressed) {
-                            if let Some(window) = app.get_webview_window("main") {
-                                if window.is_visible().unwrap() {
-                                    let _ = window.hide();
-                                } else {
-                                    let _ = window.show();
-                                    let _ = window.set_focus();
-                                }
-                            }
-                        }
-                    }
-                })
-                .build(),
-        )
         .setup(|app| {
             let _ = app.handle();
             let shortcut = Shortcut::new(Some(Modifiers::ALT), Code::Space);
@@ -138,6 +138,18 @@ fn main() {
                                 window.hide().unwrap();
                             }
                             _ => {}
+                        }
+                    }
+                })
+                .on_tray_icon_event(|app_handle, event| {
+                    if let Some(window) = app_handle.app_handle().get_webview_window("main") {
+                        if matches!(event, tauri::tray::TrayIconEvent::Click { button: tauri::tray::MouseButton::Left, .. }) {
+                            if window.is_visible().unwrap() {
+                                let _ = window.hide();
+                            } else {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
                         }
                     }
                 })

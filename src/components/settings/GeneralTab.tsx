@@ -75,7 +75,7 @@ export function GeneralTab() {
 		try {
 			const hasUpdate = await checkForUpdates();
 			if (!hasUpdate) {
-				await message('已是最新版本', { title: 'Lulu' });
+				await message('已是最新版本', { title: 'echo' });
 			}
 		} finally {
 			setChecking(false);

@@ -1,12 +1,12 @@
-# Lulu - 智能对话助手
+# echo - 智能对话助手
 
 <div align="center">
-    <img src="public/icon.png" alt="Lulu Logo" width="400" />
+    <img src="public/icon.png" alt="echo Logo" width="400" />
 </div>
 
 
 
-Lulu 是一个基于 Tauri + React 开发的跨平台智能对话助手应用。它提供了一个简洁优雅的界面，让你可以轻松地与各种 AI 模型进行对话。
+echo 是一个基于 Tauri + React 开发的跨平台智能对话助手应用。它提供了一个简洁优雅的界面，让你可以轻松地与各种 AI 模型进行对话。
 
 ## ✨ 主要特性
 
@@ -22,7 +22,7 @@ Lulu 是一个基于 Tauri + React 开发的跨平台智能对话助手应用。
 
 ## 📸 界面预览
 <div align="center">
-    <img src="docs/image.png" alt="Lulu Logo" width="600"/>
+    <img src="docs/image.png" alt="echo Logo" width="600"/>
 </div>
 <div align="center">
     <img src="docs/chat.png" alt="History View" width="600"/>
@@ -36,7 +36,7 @@ Lulu 是一个基于 Tauri + React 开发的跨平台智能对话助手应用。
 
 ### 安装方式
 
-1. 从 [Releases](https://github.com/yourusername/lulu/releases) 页面下载最新版安装包
+1. 从 [Releases](https://github.com/yourusername/echo/releases) 页面下载最新版安装包
 2. 运行安装程序
 3. 启动应用即可开始使用
 

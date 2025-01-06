@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0-rc",
-  "productName": "lulu",
+  "productName": "echo",
   "version": "0.1.6",
-  "identifier": "com.wangenius.lulu",
+  "identifier": "com.wangenius.echo",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "lulu",
+        "title": "echo",
         "width": 600,
         "height": 400,
         "resizable": false,
@@ -127,7 +127,7 @@
       },
       "active": true,
       "endpoints": [
-        "https://github.com/wangenius/lulu/releases/latest/download/latest.json"
+        "https://github.com/wangenius/echo/releases/latest/download/latest.json"
       ],
       "dialog": false,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlGQzZBMkM3QkMwRjU3QUMKUldTc1Z3Kzh4NkxHbjEvOURYOHBpZEV4aWxYZjZrcWR1UVkza0tWTW9MYm1TVXkzRERiQ1pEcDAK"
