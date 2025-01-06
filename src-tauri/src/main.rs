@@ -143,7 +143,13 @@ fn main() {
                 })
                 .on_tray_icon_event(|app_handle, event| {
                     if let Some(window) = app_handle.app_handle().get_webview_window("main") {
-                        if matches!(event, tauri::tray::TrayIconEvent::Click { button: tauri::tray::MouseButton::Left, .. }) {
+                        if matches!(
+                            event,
+                            tauri::tray::TrayIconEvent::Click {
+                                button: tauri::tray::MouseButton::Left,
+                                ..
+                            }
+                        ) {
                             if window.is_visible().unwrap() {
                                 let _ = window.hide();
                             } else {
@@ -160,18 +166,23 @@ fn main() {
         .expect("error while building tauri application");
 
     app.run(|app_handle, event| {
-        if let tauri::RunEvent::ExitRequested { api, .. } = event {
-            api.prevent_exit();
-        }
-        if let Some(window) = app_handle.get_webview_window("main") {
-            let window_handle = window.clone();
-            window.on_window_event(move |event| match event {
-                WindowEvent::CloseRequested { api, .. } => {
-                    let _ = window_handle.hide();
-                    api.prevent_close();
+        match event {
+            tauri::RunEvent::ExitRequested { api, .. } => {
+                api.prevent_exit();
+            }
+            tauri::RunEvent::Ready => {
+                if let Some(window) = app_handle.get_webview_window("main") {
+                    let window_handle = window.clone();
+                    window.on_window_event(move |event| match event {
+                        WindowEvent::CloseRequested { api, .. } => {
+                            let _ = window_handle.hide();
+                            api.prevent_close();
+                        }
+                        _ => {}
+                    });
                 }
-                _ => {}
-            });
+            }
+            _ => {}
         }
     });
 }
