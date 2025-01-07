@@ -1,8 +1,8 @@
-import { emit, listen } from "@tauri-apps/api/event";
+import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { PluginManager, Plugin, PluginArg } from "../../services/PluginManager";
+import { Plugin, PluginArg, PluginManager } from "../../services/PluginManager";
 
 export function PluginRun() {
 	const [plugin, setPlugin] = useState<Plugin | null>(null);
@@ -165,10 +165,10 @@ export function PluginRun() {
 				<div className="mt-4">
 					<div className="text-sm text-muted-foreground">执行结果</div>
 				</div>
-					{result && (
-						<div className={`p-3 !select-text rounded-md text-sm ${result.type === 'success'
-							? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-							: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+				{result && (
+					<div className={`p-3 !select-text rounded-md text-sm ${result.type === 'success'
+						? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+						: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
 						}`}>
 						{result.message}
 					</div>
