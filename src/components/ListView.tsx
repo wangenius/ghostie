@@ -1,6 +1,5 @@
 import { Bot, ChevronRight, MessageSquare, Terminal } from "lucide-react";
 import { ListItem } from "../types";
-import { useBots } from "../hooks/useBots";
 
 interface ListViewProps {
   items: ListItem[];
@@ -9,9 +8,6 @@ interface ListViewProps {
 }
 
 export function ListView({ items, activeIndex, onItemClick }: ListViewProps) {
-  const { bots } = useBots();
-  const currentBot = bots.find(bot => bot.isCurrent);
-
   return (
     <div className="space-y-1 px-3">
       {items.map((item, index) => {
@@ -20,23 +16,20 @@ export function ListView({ items, activeIndex, onItemClick }: ListViewProps) {
             <div
               key="chat-action"
               onClick={() => onItemClick(item)}
-              className={`flex items-center justify-between h-12 px-3 -mx-3 rounded-lg cursor-pointer transition-colors ${
-                index === activeIndex ? "bg-primary/10" : "hover:bg-secondary"
-              }`}
+              className={`flex items-center justify-between h-12 px-3 -mx-3 rounded-lg cursor-pointer transition-colors ${index === activeIndex ? "bg-primary/10" : "hover:bg-secondary"
+                }`}
             >
               <div className="flex items-center gap-3">
                 <div
-                  className={`${
-                    index === activeIndex ? "text-primary" : "text-muted-foreground"
-                  }`}
+                  className={`${index === activeIndex ? "text-primary" : "text-muted-foreground"
+                    }`}
                 >
                   <MessageSquare className="w-[18px] h-[18px]" />
                 </div>
                 <div>
                   <div
-                    className={`text-sm ${
-                      index === activeIndex ? "text-primary" : "text-foreground"
-                    }`}
+                    className={`text-sm ${index === activeIndex ? "text-primary" : "text-foreground"
+                      }`}
                   >
                     发送消息
                   </div>
@@ -50,32 +43,27 @@ export function ListView({ items, activeIndex, onItemClick }: ListViewProps) {
           );
         }
 
-        const isCurrentBot = item.type === "bot" && currentBot && item.name === currentBot.name;
 
         return (
           <div
             key={item.name}
             onClick={() => onItemClick(item)}
-            className={`flex items-center justify-between h-12 px-3 -mx-3 rounded-lg cursor-pointer transition-colors ${
-              index === activeIndex || isCurrentBot ? "bg-secondary" : "hover:bg-secondary"
-            }`}
+            className={`flex items-center justify-between h-12 px-3 -mx-3 rounded-lg cursor-pointer transition-colors ${index === activeIndex ? "bg-secondary" : "hover:bg-secondary"
+              }`}
           >
             <div className="flex items-center gap-3">
               <div
-                className={`transition-colors ${
-                  index === activeIndex || isCurrentBot ? "text-primary" : "text-muted-foreground"
-                }`}
+                className={`transition-colors ${index === activeIndex ? "text-primary" : "text-muted-foreground"
+                  }`}
               >
                 {item.type === "agent" ? <Terminal /> : <Bot />}
               </div>
               <div>
                 <div
-                  className={`text-sm ${
-                    index === activeIndex || isCurrentBot ? "text-primary" : "text-foreground"
-                  }`}
+                  className={`text-sm ${index === activeIndex ? "text-primary" : "text-foreground"
+                    }`}
                 >
                   {item.name}
-                  {isCurrentBot && <span className="ml-2 text-xs text-primary">(当前)</span>}
                 </div>
                 <div className="text-xs text-muted-foreground text-ellipsis overflow-hidden line-clamp-1">
                   {item.type === "agent"
@@ -85,9 +73,8 @@ export function ListView({ items, activeIndex, onItemClick }: ListViewProps) {
               </div>
             </div>
             <ChevronRight
-              className={`w-4 h-4 flex-none ${
-                index === activeIndex || isCurrentBot ? "text-primary" : "text-muted-foreground"
-              }`}
+              className={`w-4 h-4 flex-none ${index === activeIndex ? "text-primary" : "text-muted-foreground"
+                }`}
             />
           </div>
         );

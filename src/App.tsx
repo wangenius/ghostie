@@ -1,9 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { MainView } from "./components/MainView";
-import { ModelAdd } from "./components/ModelAdd";
-import { BotAdd } from "./components/BotAdd";
-import { ModelEdit } from "./components/ModelEdit";
-import { BotEdit } from "./components/BotEdit";
+import { ModelAdd } from "./components/popup/ModelAdd";
+import { BotAdd } from "./components/popup/BotAdd";
+import { ModelEdit } from "./components/popup/ModelEdit";
+import { BotEdit } from "./components/popup/BotEdit";
 import { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 

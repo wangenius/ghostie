@@ -1,7 +1,8 @@
 import { ArrowLeft, Bot, Clock, Database, Loader2Icon, Settings as SettingsIcon, Stars, Users, X } from "lucide-react";
 import { RefObject } from "react";
-import { View } from "../types";
 import { useBots } from "../hooks/useBots";
+import { SettingsTab, View } from "../types";
+
 
 interface Props {
   inputValue: string;
@@ -11,8 +12,8 @@ interface Props {
   onInputChange: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onViewChange: (view: View) => void;
-  settingsTab?: "general" | "models" | "bots" | "agents";
-  onSettingsTabChange?: (tab: "general" | "models" | "bots" | "agents") => void;
+  settingsTab?: SettingsTab;
+  onSettingsTabChange?: (tab: SettingsTab) => void;
 }
 
 const SETTINGS_NAV_ITEMS = [

@@ -50,3 +50,8 @@ agent:
 
     - file: "data/example.txt"
       description: "Example file containing information about the capital of France."
+  # 环境变量，用于配置agent环境。 value不会传给大模型，只用于agent内部使用
+  env:
+    - name: "OPENAI_API_KEY"
+      value: "path"
+      description: "The API key for the OpenAI API."

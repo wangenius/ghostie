@@ -1,5 +1,5 @@
 import { useChat } from "../hooks/useChat";
-import { BotInfo, ListItem, View } from "../types";
+import { BotInfo, ListItem, View, SettingsTab } from "../types";
 import { SearchBar } from "./SearchBar";
 import { ListView } from "./ListView";
 import { ChatView } from "./ChatView";
@@ -11,9 +11,8 @@ import { listen } from "@tauri-apps/api/event";
 
 export function MainView() {
 	const [inputValue, setInputValue] = useState("");
-
   const [currentView, setCurrentView] = useState<View>("list");
-  const [settingsTab, setSettingsTab] = useState<"general" | "models" | "bots">("general");
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 

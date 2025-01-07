@@ -25,3 +25,8 @@ export interface ChatItem {
 }
 
 export type ListItem = BotInfo | AgentInfo | ChatItem;
+
+
+/* UI */
+
+export type SettingsTab = "general" | "models" | "bots" | "agents";

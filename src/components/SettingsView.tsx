@@ -1,3 +1,4 @@
+import { SettingsTab } from "../types";
 import { AgentsTab } from "./settings/AgentsTab";
 import { BotsTab } from "./settings/BotsTab";
 import { GeneralTab } from "./settings/GeneralTab";
@@ -7,7 +8,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   embedded?: boolean;
-  activeTab: "general" | "models" | "bots" | "agents";
+  activeTab: SettingsTab;
 }
 
 export function SettingsView({ isOpen, onClose, embedded = false, activeTab }: Props) {
