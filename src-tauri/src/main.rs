@@ -13,6 +13,9 @@ use tauri_plugin_updater::UpdaterExt;
 
 mod commands;
 mod llm;
+mod plugins;
+
+pub use plugins::{JsPlugin, JsPluginManager};
 
 static LAST_WINDOW_ACTION: AtomicI64 = AtomicI64::new(0);
 
@@ -113,8 +116,13 @@ fn main() {
             commands::get_agent,
             commands::update_agent,
             commands::execute_agent_command,
+            commands::get_js_plugin,
+            commands::add_js_plugin,
+            commands::remove_js_plugin,
+            commands::list_js_plugins,
+            commands::update_js_plugin,
             check_update,
-            install_update,
+            install_update
         ])
         .setup(|app| {
             let _ = app.handle();

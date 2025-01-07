@@ -45,6 +45,9 @@ uuid = { version = "1.7", features = ["v4", "serde"] }
 url = { version = "2.5.4", features = ["serde"] }
 tauri-plugin-updater = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
 tauri-plugin-process = "2.2.0"
+sha2 = "0.10"
+futures-util = "0.3"
+semver = "1.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-autostart = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }

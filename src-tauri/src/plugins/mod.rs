@@ -1,7 +1,5 @@
-mod types;
-mod manager;
-mod loader;
+pub mod types;
+pub mod js_manager;
 
-pub use types::{Plugin, PluginMetadata, PluginConfig};
-pub use manager::PluginManager;
-pub use loader::PluginLoader; 
+pub use types::JsPlugin;
+pub use js_manager::JsPluginManager; 
