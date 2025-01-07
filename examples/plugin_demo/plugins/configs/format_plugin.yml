@@ -1,0 +1,9 @@
+metadata:
+  id: format_plugin
+  name: 格式化插件
+  version: 0.1.0
+  description: 提供文本格式化功能
+  author: GasCat
+  library: libformat_plugin.dll
+enabled: true
+settings: {} 

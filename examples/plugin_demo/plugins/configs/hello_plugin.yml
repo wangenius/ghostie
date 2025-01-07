@@ -1,0 +1,15 @@
+metadata:
+  id: hello_plugin
+  name: 问候插件
+  version: 0.1.0
+  description: 一个简单的问候插件示例
+  author: GasCat
+  homepage: https://github.com/your/hello_plugin
+  repository: https://github.com/your/hello_plugin
+  dependencies:
+    - id: format_plugin
+      version_req: ^0.1.0
+      optional: false
+  library: libhello_plugin.dll
+enabled: true
+settings: {} 

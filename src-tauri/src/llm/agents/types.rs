@@ -140,12 +140,6 @@ impl AgentManager {
         Ok(())
     }
 
-    pub fn load_agent(&mut self, name: &str, config: Agent) -> Result<()> {
-        self.save_agent(&config)?;
-        self.agents.insert(name.to_string(), config);
-        Ok(())
-    }
-
     pub fn get_agent(&self, name: &str) -> Option<&Agent> {
         self.agents.get(name)
     }

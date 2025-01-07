@@ -155,10 +155,7 @@
   "plugins": {
     "updater": {
       "windows": {
-        "installMode": "passive",
-        "installerArgs": [
-          "/D=$INSTDIR"
-        ]
+        "installMode": "passive"
       },
       "active": true,
       "endpoints": [
