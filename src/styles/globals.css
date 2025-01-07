@@ -101,31 +101,39 @@ body {
 
 /* 自定义滚动条样式 */
 ::-webkit-scrollbar {
-  @apply w-2;
+  @apply w-1.5;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-transparent;
+  background-color: rgb(var(--background));
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-muted rounded-full transition-colors;
+  background-color: rgb(var(--muted-foreground) / 0.3);
+  border-radius: 9999px;
+  border: 2px solid rgb(var(--background));
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(var(--muted-foreground) / 0.5);
 }
 
 /* 当鼠标悬停在可滚动区域时才显示滚动条 */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--muted) transparent;
+  scrollbar-color: rgb(var(--muted-foreground) / 0.3) rgb(var(--background));
 }
 
 .overflow-y-auto,
 .overflow-x-auto {
   &::-webkit-scrollbar-thumb {
-    @apply opacity-0;
+    opacity: 0;
+    transition: opacity 0.2s ease;
   }
 
   &:hover::-webkit-scrollbar-thumb {
-    @apply opacity-100;
+    opacity: 1;
   }
 }
 
