@@ -108,6 +108,22 @@
         "parent": "main",
         "maximizable": false,
         "minimizable": false
+      },
+      {
+        "title": "编辑代理",
+        "width": 600,
+        "height": 800,
+        "resizable": false,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": true,
+        "label": "agent-edit",
+        "center": true,
+        "url": "/agent-edit",
+        "visible": false,
+        "parent": "main",
+        "maximizable": false,
+        "minimizable": false
       }
     ],
     "security": {

@@ -101,7 +101,6 @@ fn main() {
             commands::get_bot,
             commands::add_agent,
             commands::remove_agent,
-            commands::get_agent,
             commands::execute_agent_command,
             commands::create_chat_history,
             commands::update_chat_history,
@@ -110,6 +109,10 @@ fn main() {
             commands::open_window,
             commands::open_window_with_query,
             commands::hide_window,
+            commands::list_agents,
+            commands::get_agent,
+            commands::update_agent,
+            commands::execute_agent_command,
             check_update,
             install_update,
         ])

@@ -73,8 +73,8 @@ export function SearchBar({
           </button>
         ) : current ? (
           <div data-tauri-drag-region className="flex items-center gap-1.5 px-1.5 py-1 rounded-md bg-primary/10">
-            <Bot className="w-4 h-4 text-primary" />
-            <span className="text-xs font-medium text-primary">{current}</span>
+            <Bot data-tauri-drag-region className="w-4 h-4 text-primary" />
+            <span data-tauri-drag-region className="text-xs font-medium text-primary">{current}</span>
           </div>
         ) : (
           <div data-tauri-drag-region>

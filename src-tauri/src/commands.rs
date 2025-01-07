@@ -110,38 +110,28 @@ pub async fn get_current_bot() -> Result<Option<Bot>, String> {
 
 // Agent 相关命令
 #[tauri::command]
-pub async fn add_agent(
-    name: String,
-    description: Option<String>,
-    system_prompt: String,
-    env: HashMap<String, String>,
-    templates: HashMap<String, String>,
-) -> Result<(), String> {
-    let agent = Agent {
-        name: name.clone(),
-        description,
-        system_prompt,
-        env,
-        templates,
-    };
-    let mut manager = AgentManager::new();
-    manager.load_agent(&name, agent);
-    Ok(())
+pub async fn add_agent(agent: Agent) -> Result<(), String> {
+    let manager = AgentManager::new().map_err(|e| e.to_string())?;
+    manager.save_agent(&agent).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub async fn remove_agent(name: String) -> Result<(), String> {
-    let mut manager = AgentManager::new();
-    manager
-        .remove_agent(&name)
-        .ok_or_else(|| "Agent not found".to_string())?;
+    let mut manager = AgentManager::new().map_err(|e| e.to_string())?;
+    manager.remove_agent(&name).map_err(|e| e.to_string())?;
     Ok(())
 }
 
 #[tauri::command]
 pub async fn get_agent(name: String) -> Result<Option<Agent>, String> {
-    let manager = AgentManager::new();
+    let manager = AgentManager::new().map_err(|e| e.to_string())?;
     Ok(manager.get_agent(&name).cloned())
+}
+
+#[tauri::command]
+pub async fn list_agents() -> Result<Vec<Agent>, String> {
+    let manager = AgentManager::new().map_err(|e| e.to_string())?;
+    Ok(manager.list_agents().into_iter().cloned().collect())
 }
 
 #[tauri::command]
@@ -150,7 +140,7 @@ pub async fn execute_agent_command(
     command: String,
     env: Option<HashMap<String, String>>,
 ) -> Result<String, String> {
-    let manager = AgentManager::new();
+    let manager = AgentManager::new().map_err(|e| e.to_string())?;
     let agent = manager.get_agent(&agent_name).ok_or("Agent not found")?;
 
     let mut command_env = agent.env.clone();
@@ -160,6 +150,12 @@ pub async fn execute_agent_command(
 
     let executor = CommandExecutor::new(command_env);
     executor.execute(&command).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn update_agent(old_name: String, agent: Agent) -> Result<(), String> {
+    let mut manager = AgentManager::new().map_err(|e| e.to_string())?;
+    manager.update_agent(&old_name, agent).map_err(|e| e.to_string())
 }
 
 // LLM 对话相关命令

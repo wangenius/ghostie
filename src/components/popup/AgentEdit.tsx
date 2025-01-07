@@ -1,8 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
-import { emit } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { X, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { AgentManager } from "../../services/AgentManager";
 
 interface Tool {
   name: string;
@@ -22,19 +23,6 @@ interface Knowledge {
   url?: string;
   text?: string;
   file?: string;
-}
-
-interface EnvVar {
-  name: string;
-  value: string;
-  description: string;
-}
-
-interface PresetTiming {
-  type: "once" | "minutely" | "hourly" | "daily" | "weekly" | "monthly";
-  time?: string;      // HH:mm 格式
-  dayOfWeek?: number; // 0-6, 用于每周
-  dayOfMonth?: number; // 1-31, 用于每月
 }
 
 interface Timing {
@@ -86,25 +74,36 @@ const presetTypes = [
   { value: "monthly", label: "每月" }
 ] as const;
 
-export function AgentAdd() {
+export function AgentEdit() {
   const [agent, setAgent] = useState<Agent>(defaultAgent);
-  const [models, setModels] = useState<string[]>([]);
+  const [originalName, setOriginalName] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"basic" | "tools" | "knowledge" | "env">("basic");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    const unlisten = listen<{ name: string }>("query-params", async (event) => {
+      const { name } = event.payload;
+      if (name) {
+        setOriginalName(name);
+        try {
+          const agentData = await AgentManager.getAgent(name);
+          if (agentData) {
+            setAgent(agentData);
+          }
+        } catch (error) {
+          console.error("加载代理数据失败:", error);
+        }
+      }
+    });
+
     inputRef.current?.focus();
-    loadModels();
+
+    return () => {
+      unlisten.then(fn => fn());
+    };
   }, []);
 
-  const loadModels = async () => {
-    try {
-      const availableModels = await invoke("get_models");
-      setModels(availableModels as string[]);
-    } catch (error) {
-      console.error("加载模型列表失败:", error);
-    }
-  };
+
 
   const handleClose = async () => {
     const window = await getCurrentWindow();
@@ -114,11 +113,15 @@ export function AgentAdd() {
 
   const handleSubmit = async () => {
     try {
-      await invoke("add_agent", { agent });
+      await invoke("update_agent", {
+        oldName: originalName,
+        agent
+      });
       await emit("agent-updated");
+      
       await handleClose();
     } catch (error) {
-      console.error("添加代理失败:", error);
+      console.error("更新代理失败:", error);
     }
   };
 
@@ -166,11 +169,11 @@ export function AgentAdd() {
 
   return (
     <div className="app-container flex flex-col h-screen bg-background">
-      <div 
-        className="flex items-center justify-between h-12 px-4 border-b border-border" 
+      <div
+        className="flex items-center justify-between h-12 px-4 border-b border-border"
         data-tauri-drag-region
       >
-        <div className="text-sm font-medium text-foreground">添加代理</div>
+        <div className="text-sm font-medium text-foreground">编辑代理</div>
         <button
           onClick={handleClose}
           className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
@@ -562,7 +565,7 @@ export function AgentAdd() {
           disabled={!agent.name}
           className="px-3 h-8 text-xs text-primary-foreground bg-primary rounded hover:opacity-90 disabled:opacity-50 transition-colors"
         >
-          添加
+          保存
         </button>
       </div>
     </div>
