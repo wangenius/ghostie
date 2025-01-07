@@ -56,12 +56,12 @@ try {
     # 提示用户填写发布说明
     Write-Host "`n请填写此版本的发布说明。" -ForegroundColor Cyan
     Write-Host "提示：可以包含新功能、bug修复、改进等内容。" -ForegroundColor Cyan
-    Write-Host "按 Ctrl+Z 然后按 Enter 结束输入。" -ForegroundColor Yellow
+    Write-Host "输入空行（直接按 Enter）来结束输入。" -ForegroundColor Yellow
     
     $releaseNotes = @()
     while ($true) {
         $line = Read-Host
-        if ($null -eq $line) { break }
+        if ($line -eq "") { break }
         $releaseNotes += $line
     }
     
