@@ -49,13 +49,10 @@ export function PluginsTab() {
 	};
 
 	const handleRunPlugin = async (name: string) => {
-		try {
-			const result = await PluginManager.runPlugin(name);
-
-			await message(`插件 "${name}" 执行输出: ${result}`, { title: 'Tauri', kind: 'info' });
-		} catch (error) {
-			console.error(`运行插件 "${name}" 失败:`, error);
-		}
+		await invoke("open_window", {
+			name: "plugin-run",
+			query: { name }
+		});
 	};
 
 	return (

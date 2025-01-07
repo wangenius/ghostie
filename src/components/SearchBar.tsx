@@ -22,6 +22,7 @@ const SETTINGS_NAV_ITEMS = [
   { id: 'bots', label: '机器人', icon: Bot },
   { id: 'agents', label: '代理', icon: Users },
   { id: 'plugins', label: '插件', icon: SwatchBook },
+  { id: 'space', label: '空间', icon: Database },
 ] as const;
 
 export function SearchBar({

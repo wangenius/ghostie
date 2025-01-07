@@ -28,8 +28,7 @@ export type ListItem = BotInfo | AgentInfo | ChatItem;
 
 
 /* UI */
-
-export type SettingsTab = "general" | "models" | "bots" | "agents" | "plugins";
+export type SettingsTab = "general" | "models" | "bots" | "agents" | "plugins" | "space";
 
 export interface PluginMetadata {
   id: string;

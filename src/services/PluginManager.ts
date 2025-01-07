@@ -6,6 +6,15 @@ export interface Plugin {
   description?: string;
   script_content: string;
   enabled: boolean;
+  args: PluginArg[];
+}
+
+export interface PluginArg {
+  name: string;
+  arg_type: string;
+  description: string;
+  required: boolean;
+  default_value?: string;
 }
 
 interface PluginState {
@@ -24,7 +33,7 @@ export class PluginManager {
   static async loadPlugins() {
     try {
       this.state.set({ loading: true });
-      const plugins = await invoke<Plugin[]>("list_js_plugins");
+      const plugins = await invoke<Plugin[]>("list_plugins");
       this.state.set({ list: plugins });
     } catch (error) {
       console.error("加载插件失败:", error);
@@ -33,30 +42,28 @@ export class PluginManager {
     }
   }
 
-  static async addPlugin(name: string, scriptContent: string) {
-    await invoke("add_js_plugin", { name, scriptContent });
+  static async addPlugin(plugin: Plugin) {
+    await invoke("add_plugin", { plugin });
     await this.loadPlugins();
   }
 
   static async removePlugin(name: string) {
-    await invoke("remove_js_plugin", { name });
+    await invoke("remove_plugin", { name });
     await this.loadPlugins();
   }
 
   static async getPlugin(name: string) {
-    return await invoke<Plugin>("get_js_plugin", { name });
+    return await invoke<Plugin>("get_plugin", { name });
   }
 
   static async updatePlugin(oldName: string, plugin: Plugin) {
-    await invoke("update_js_plugin", { oldName, plugin });
+    await invoke("update_plugin", { oldName, plugin });
     await this.loadPlugins();
   }
 
-  static async runPlugin(name: string) {
+  static async runPlugin(name: string, args?: Record<string, string>) {
     try {
-      const plugin = await this.getPlugin(name);
-      const fn = new Function(plugin.script_content);
-      const result = await fn();
+      const result = await invoke("execute_plugin", { name, args });
       return result;
     } catch (error) {
       console.error("执行脚本失败:", error);

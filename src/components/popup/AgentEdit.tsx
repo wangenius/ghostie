@@ -5,7 +5,7 @@ import { Plus, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AgentManager } from "../../services/AgentManager";
 
-interface Tool {
+interface Skill {
   name: string;
   type: "function" | "command" | "agent";
   description: string;
@@ -45,7 +45,7 @@ interface Agent {
     dayOfMonth?: number; // 1-31, 用于每月
     enable: boolean;
   };
-  tools: Tool[];
+  skills: Skill[];
   knowledge: Knowledge[];
   env: Record<string, string>;
 }
@@ -60,7 +60,7 @@ const defaultAgent: Agent = {
     time: "10:00",
     enable: false
   },
-  tools: [],
+  skills: [],
   knowledge: [],
   env: {}
 };
@@ -139,17 +139,17 @@ export function AgentEdit() {
     }
   };
 
-  const addTool = () => {
+  const addSkill = () => {
     setAgent({
       ...agent,
-      tools: [...agent.tools, { name: "", type: "function", description: "", parameters: [] }]
+      skills: [...agent.skills, { name: "", type: "function", description: "", parameters: [] }]
     });
   };
 
-  const removeTool = (index: number) => {
-    const newTools = [...agent.tools];
-    newTools.splice(index, 1);
-    setAgent({ ...agent, tools: newTools });
+  const removeSkill = (index: number) => {
+    const newSkills = [...agent.skills];
+    newSkills.splice(index, 1);
+    setAgent({ ...agent, skills: newSkills });
   };
 
   const addKnowledge = () => {
@@ -374,12 +374,12 @@ export function AgentEdit() {
 
         {activeTab === "tools" && (
           <div className="space-y-4">
-            {agent.tools.map((tool, index) => (
+            {agent.skills.map((skill, index) => (
               <div key={index} className="p-4 bg-secondary rounded-md space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-medium">工具 {index + 1}</h3>
                   <button
-                    onClick={() => removeTool(index)}
+                    onClick={() => removeSkill(index)}
                     className="p-1 text-muted-foreground hover:text-foreground"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -388,21 +388,21 @@ export function AgentEdit() {
                 <div className="space-y-3">
                   <input
                     type="text"
-                    value={tool.name}
+                    value={skill.name}
                     onChange={(e) => {
-                      const newTools = [...agent.tools];
-                      newTools[index].name = e.target.value;
-                      setAgent({ ...agent, tools: newTools });
+                      const newSkills = [...agent.skills];
+                      newSkills[index].name = e.target.value;
+                      setAgent({ ...agent, skills: newSkills });
                     }}
                     className="w-full h-9 px-3 bg-secondary/50 rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none"
                     placeholder="工具名称"
                   />
                   <select
-                    value={tool.type}
+                    value={skill.type}
                     onChange={(e) => {
-                      const newTools = [...agent.tools];
-                      newTools[index].type = e.target.value as "function" | "command" | "agent";
-                      setAgent({ ...agent, tools: newTools });
+                      const newSkills = [...agent.skills];
+                      newSkills[index].type = e.target.value as "function" | "command" | "agent";
+                      setAgent({ ...agent, skills: newSkills });
                     }}
                     className="w-full h-9 px-3 bg-secondary/50 rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none"
                   >
@@ -412,11 +412,11 @@ export function AgentEdit() {
                   </select>
                   <input
                     type="text"
-                    value={tool.description}
+                    value={skill.description}
                     onChange={(e) => {
-                      const newTools = [...agent.tools];
-                      newTools[index].description = e.target.value;
-                      setAgent({ ...agent, tools: newTools });
+                      const newSkills = [...agent.skills];
+                      newSkills[index].description = e.target.value;
+                      setAgent({ ...agent, skills: newSkills });
                     }}
                     className="w-full h-9 px-3 bg-secondary/50 rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none"
                     placeholder="工具描述"
@@ -425,7 +425,7 @@ export function AgentEdit() {
               </div>
             ))}
             <button
-              onClick={addTool}
+              onClick={addSkill}
               className="w-full h-9 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground border border-dashed border-border rounded-md"
             >
               <Plus className="w-4 h-4" />

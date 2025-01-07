@@ -33,7 +33,7 @@ export interface Agent {
     dayOfMonth?: number; // 1-31, 用于每月
     enable: boolean;
   };
-  tools: Tool[];
+  skills: Tool[];
   knowledge: Knowledge[];
   env: Record<string, string>;
 }

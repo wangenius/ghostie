@@ -1,8 +1,9 @@
 pub mod llm;
 pub mod plugins;
 pub mod commands;
+pub mod agents;
 
-pub use plugins::{JsPlugin, JsPluginManager};
+pub use plugins::{Plugin, PluginManager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

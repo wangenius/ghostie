@@ -4,6 +4,7 @@ import { BotsTab } from "./settings/BotsTab";
 import { GeneralTab } from "./settings/GeneralTab";
 import { ModelsTab } from "./settings/ModelsTab";
 import { PluginsTab } from "./settings/PluginsTab";
+import { SpaceTab } from "./settings/SpaceTab";
 
 interface Props {
   isOpen: boolean;
@@ -23,6 +24,8 @@ export function SettingsView({ isOpen, onClose, embedded = false, activeTab }: P
         return <AgentsTab />;
       case "plugins":
         return <PluginsTab />;
+      case "space":
+        return <SpaceTab />;
       default:
         return <GeneralTab />;
     }

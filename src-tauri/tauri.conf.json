@@ -92,6 +92,22 @@
         "parent": "main",
         "maximizable": false,
         "minimizable": false
+      },
+      {
+        "title": "运行插件",
+        "width": 400,
+        "height": 500,
+        "resizable": false,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": true,
+        "label": "plugin-run",
+        "center": true,
+        "url": "/plugin-run",
+        "visible": false,
+        "parent": "main",
+        "maximizable": false,
+        "minimizable": false
       }
     ],
     "security": {

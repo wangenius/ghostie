@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::llm::agents::{
+use crate::agents::{
     executor::CommandExecutor,
     types::{Agent, AgentManager},
 };
@@ -30,7 +30,7 @@ pub async fn list_agents() -> Result<Vec<Agent>, String> {
 }
 
 #[tauri::command]
-pub async fn execute_agent_command(
+pub async fn execute_agent(
     agent_name: String,
     command: String,
     env: Option<HashMap<String, String>>,

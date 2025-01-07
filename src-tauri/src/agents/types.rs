@@ -7,10 +7,10 @@ use anyhow::{Result, anyhow};
 use crate::llm::utils;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Tool {
+pub struct Skill {
     pub name: String,
     #[serde(rename = "type")]
-    pub tool_type: String,
+    pub skill_type: String,
     pub description: String,
     #[serde(default)]
     pub parameters: Vec<Parameter>,
@@ -72,9 +72,9 @@ pub struct Agent {
     /// 定时配置
     pub timing: Timing,
     
-    /// 工具列表
+    /// 技能列表
     #[serde(default)]
-    pub tools: Vec<Tool>,
+    pub skills: Vec<Skill>,
 
     /// 知识库
     #[serde(default)]
