@@ -23,11 +23,11 @@ export function PluginsTab() {
 	}, []);
 
 	const handleOpenPluginAdd = async () => {
-		await invoke("open_window_with_query", { name: "plugin-edit" });
+		await invoke("open_window", { name: "plugin-edit" });
 	};
 
 	const handleOpenPluginEdit = async (name: string) => {
-		await invoke("open_window_with_query", {
+		await invoke("open_window", {
 			name: "plugin-edit",
 			query: { name }
 		});

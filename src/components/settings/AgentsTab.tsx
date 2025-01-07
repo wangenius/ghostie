@@ -23,11 +23,11 @@ export function AgentsTab() {
   }, []);
 
   const handleOpenAgentAdd = async () => {
-    await invoke("open_window", { name: "agent-add" });
+    await invoke("open_window", { name: "agent-edit" });
   };
 
   const handleOpenAgentEdit = async (name: string) => {
-    await invoke("open_window_with_query", {
+    await invoke("open_window", {
       name: "agent-edit",
       query: { name }
     });

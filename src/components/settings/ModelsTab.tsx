@@ -46,7 +46,7 @@ export function ModelsTab() {
   };
 
   const handleOpenModelAdd = async () => {
-    await invoke("open_window_with_query", { name: "model-edit" });
+    await invoke("open_window", { name: "model-edit" });
   };
 
   const handleDeleteModel = async (name: string) => {
@@ -77,7 +77,7 @@ export function ModelsTab() {
   const handleOpenModelEdit = async (model: Model) => {
     try {
       const query = await invoke<Record<string, string>>("get_model", { name: model.name });
-      await invoke("open_window_with_query", {
+      await invoke("open_window", {
         name: "model-edit",
         query
       });

@@ -29,12 +29,12 @@ export function BotsTab() {
 
 
   const handleOpenBotAdd = async () => {
-    await invoke("open_window_with_query", { name: "bot-edit" });
+    await invoke("open_window", { name: "bot-edit" });
   };
 
   const handleOpenBotEdit = async (name: string) => {
     const query = await invoke<Bot>("get_bot", { name });
-    await invoke("open_window_with_query", {
+    await invoke("open_window", {
       name: "bot-edit",
       query
     });
