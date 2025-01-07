@@ -4,6 +4,7 @@ import { ModelAdd } from "./components/popup/ModelAdd";
 import { BotAdd } from "./components/popup/BotAdd";
 import { ModelEdit } from "./components/popup/ModelEdit";
 import { BotEdit } from "./components/popup/BotEdit";
+import { AgentAdd } from "./components/popup/AgentAdd";
 import { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -27,6 +28,7 @@ function App() {
         <Route path="/bot-add" element={<BotAdd />} />
         <Route path="/model-edit" element={<ModelEdit />} />
         <Route path="/bot-edit" element={<BotEdit />} />
+        <Route path="/agent-add" element={<AgentAdd />} />
       </Routes>
     </Router>
   );

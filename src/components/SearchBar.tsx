@@ -72,7 +72,7 @@ export function SearchBar({
             <ArrowLeft className="w-4 h-4 text-muted-foreground hover:text-foreground" />
           </button>
         ) : current ? (
-          <div className="flex items-center gap-1.5 px-1.5 py-1 rounded-md bg-primary/10">
+          <div data-tauri-drag-region className="flex items-center gap-1.5 px-1.5 py-1 rounded-md bg-primary/10">
             <Bot className="w-4 h-4 text-primary" />
             <span className="text-xs font-medium text-primary">{current}</span>
           </div>

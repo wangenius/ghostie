@@ -92,6 +92,22 @@
         "parent": "main",
         "maximizable": false,
         "minimizable": false
+      },
+      {
+        "title": "添加代理",
+        "width": 600,
+        "height": 800,
+        "resizable": false,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": true,
+        "label": "agent-add",
+        "center": true,
+        "url": "/agent-add",
+        "visible": false,
+        "parent": "main",
+        "maximizable": false,
+        "minimizable": false
       }
     ],
     "security": {
