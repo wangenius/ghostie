@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { emit } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { X, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface Tool {
@@ -24,18 +24,7 @@ interface Knowledge {
   file?: string;
 }
 
-interface EnvVar {
-  name: string;
-  value: string;
-  description: string;
-}
 
-interface PresetTiming {
-  type: "once" | "minutely" | "hourly" | "daily" | "weekly" | "monthly";
-  time?: string;      // HH:mm 格式
-  dayOfWeek?: number; // 0-6, 用于每周
-  dayOfMonth?: number; // 1-31, 用于每月
-}
 
 interface Timing {
   type: "once" | "minutely" | "hourly" | "daily" | "weekly" | "monthly";
@@ -88,23 +77,12 @@ const presetTypes = [
 
 export function AgentAdd() {
   const [agent, setAgent] = useState<Agent>(defaultAgent);
-  const [models, setModels] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"basic" | "tools" | "knowledge" | "env">("basic");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
-    loadModels();
   }, []);
-
-  const loadModels = async () => {
-    try {
-      const availableModels = await invoke("get_models");
-      setModels(availableModels as string[]);
-    } catch (error) {
-      console.error("加载模型列表失败:", error);
-    }
-  };
 
   const handleClose = async () => {
     const window = await getCurrentWindow();
@@ -166,8 +144,8 @@ export function AgentAdd() {
 
   return (
     <div className="app-container flex flex-col h-screen bg-background">
-      <div 
-        className="flex items-center justify-between h-12 px-4 border-b border-border" 
+      <div
+        className="flex items-center justify-between h-12 px-4 border-b border-border"
         data-tauri-drag-region
       >
         <div className="text-sm font-medium text-foreground">添加代理</div>

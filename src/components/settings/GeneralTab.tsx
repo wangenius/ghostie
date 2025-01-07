@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
 import { message } from '@tauri-apps/plugin-dialog';
 import { relaunch } from '@tauri-apps/plugin-process';
-import { ChevronRight, Globe2, Lightbulb, Moon, Power, RotateCw, Sun } from "lucide-react";
+import { ChevronRight, Lightbulb, Moon, Power, RotateCw, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
 
