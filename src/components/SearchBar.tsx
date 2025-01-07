@@ -1,4 +1,4 @@
-import { ArrowLeft, Bot, Clock, Database, Loader2Icon, Settings as SettingsIcon, Stars, Users, X } from "lucide-react";
+import { ArrowLeft, Bot, Clock, Database, Loader2Icon, PuzzleIcon, Settings as SettingsIcon, Stars, SwatchBook, Users, X } from "lucide-react";
 import { RefObject } from "react";
 import { BotManager } from "../services/BotManger";
 import { ChatManager } from "../services/ChatManager";
@@ -21,6 +21,7 @@ const SETTINGS_NAV_ITEMS = [
   { id: 'models', label: '模型', icon: Database },
   { id: 'bots', label: '机器人', icon: Bot },
   { id: 'agents', label: '代理', icon: Users },
+  { id: 'plugins', label: '插件', icon: SwatchBook },
 ] as const;
 
 export function SearchBar({
@@ -62,8 +63,8 @@ export function SearchBar({
   };
 
   return (
-    <div className="pt-2 px-4">
-      <div className="flex items-center gap-2 h-10">
+    <div data-tauri-drag-region className="pt-2 px-4">
+      <div data-tauri-drag-region className="flex items-center gap-2 h-10">
         {currentView !== "list" ? (
           <button
             onClick={() => onViewChange("list")}

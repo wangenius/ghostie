@@ -21,10 +21,17 @@ const defaultModel: Model = {
 export function ModelEdit() {
   const [model, setModel] = useState<Model>(defaultModel);
   const [originalName, setOriginalName] = useState<string>("");
+  const [create, setCreate] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const unlisten = listen<Record<string, string>>("query-params", (event) => {
+      if (!event.payload) {
+        setModel(defaultModel);
+        setCreate(true);
+        return;
+      }
       const { name, api_key, api_url, model } = event.payload;
       if (name) {
         setOriginalName(name);
@@ -34,6 +41,7 @@ export function ModelEdit() {
           api_url: api_url || "",
           model: model || "",
         });
+        setCreate(false);
       }
     });
 
@@ -51,18 +59,32 @@ export function ModelEdit() {
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+    
     try {
-      await invoke("update_model", {
-        oldName: originalName,
-        name: model.name,
-        apiKey: model.api_key,
-        apiUrl: model.api_url,
-        model: model.model,
-      });
+      setIsSubmitting(true);
+      if (create) {
+        await invoke("add_model", {
+          name: model.name,
+          apiKey: model.api_key,
+          apiUrl: model.api_url,
+          model: model.model,
+        });
+      } else {
+        await invoke("update_model", {
+          oldName: originalName,
+          name: model.name,
+          apiKey: model.api_key,
+          apiUrl: model.api_url,
+          model: model.model,
+        });
+      }
       await emit("model-updated");
       await handleClose();
     } catch (error) {
-      console.error("更新模型失败:", error);
+      console.error(create ? "添加模型失败:" : "更新模型失败:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -72,7 +94,7 @@ export function ModelEdit() {
         className="flex items-center justify-between h-12 px-4 border-b border-border" 
         data-tauri-drag-region
       >
-        <div className="text-sm font-medium text-foreground">编辑模型</div>
+        <div className="text-sm font-medium text-foreground">{create ? "添加模型" : "编辑模型"}</div>
         <button
           onClick={handleClose}
           className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
@@ -102,7 +124,7 @@ export function ModelEdit() {
               value={model.api_key}
               onChange={(e) => setModel({ ...model, api_key: e.target.value })}
               className="w-full h-9 px-3 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground"
-              placeholder="如需更新 API Key 请输入新的值"
+              placeholder={create ? "请输入 API Key" : "如需更新 API Key 请输入新的值"}
             />
           </div>
 
@@ -142,10 +164,10 @@ export function ModelEdit() {
         </button>
         <button
           onClick={handleSubmit}
-          disabled={!model.name}
+          disabled={!model.name || (create && !model.api_key) || isSubmitting}
           className="px-3 h-8 text-xs text-primary-foreground bg-primary rounded hover:opacity-90 disabled:opacity-50 transition-colors"
         >
-          保存
+          {isSubmitting ? (create ? "添加中..." : "更新中...") : (create ? "添加" : "更新")}
         </button>
       </div>
     </div>

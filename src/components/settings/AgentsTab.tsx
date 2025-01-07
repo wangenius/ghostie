@@ -1,7 +1,8 @@
-import { Bot, Pencil, Plus, Trash2 } from "lucide-react";
-import { useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { ask } from '@tauri-apps/plugin-dialog';
+import { Bot, Pencil, Plus, Trash2 } from "lucide-react";
+import { useEffect } from "react";
 import { AgentManager } from "../../services/AgentManager";
 
 export function AgentsTab() {
@@ -26,14 +27,19 @@ export function AgentsTab() {
   };
 
   const handleOpenAgentEdit = async (name: string) => {
-    await invoke("open_window_with_query", { 
+    await invoke("open_window_with_query", {
       name: "agent-edit",
       query: { name }
     });
   };
 
   const handleRemoveAgent = async (name: string) => {
-    if (confirm(`确定要删除代理 "${name}" 吗？`)) {
+    const answer = await ask(`确定要删除代理 "${name}" 吗？`, {
+      title: "Tauri",
+      kind: "warning",
+    });
+
+    if (answer) {
       try {
         await AgentManager.removeAgent(name);
       } catch (error) {

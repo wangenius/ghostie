@@ -77,11 +77,18 @@ const presetTypes = [
 export function AgentEdit() {
   const [agent, setAgent] = useState<Agent>(defaultAgent);
   const [originalName, setOriginalName] = useState<string>("");
+  const [create, setCreate] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"basic" | "tools" | "knowledge" | "env">("basic");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const unlisten = listen<{ name: string }>("query-params", async (event) => {
+      if (!event.payload) {
+        setAgent(defaultAgent);
+        setCreate(true);
+        return;
+      }
       const { name } = event.payload;
       if (name) {
         setOriginalName(name);
@@ -89,6 +96,7 @@ export function AgentEdit() {
           const agentData = await AgentManager.getAgent(name);
           if (agentData) {
             setAgent(agentData);
+            setCreate(false);
           }
         } catch (error) {
           console.error("加载代理数据失败:", error);
@@ -103,8 +111,6 @@ export function AgentEdit() {
     };
   }, []);
 
-
-
   const handleClose = async () => {
     const window = await getCurrentWindow();
     setAgent(defaultAgent);
@@ -112,16 +118,24 @@ export function AgentEdit() {
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+
     try {
-      await invoke("update_agent", {
-        oldName: originalName,
-        agent
-      });
+      setIsSubmitting(true);
+      if (create) {
+        await invoke("add_agent", { agent });
+      } else {
+        await invoke("update_agent", {
+          oldName: originalName,
+          agent
+        });
+      }
       await emit("agent-updated");
-      
       await handleClose();
     } catch (error) {
-      console.error("更新代理失败:", error);
+      console.error(create ? "添加代理失败:" : "更新代理失败:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -173,7 +187,7 @@ export function AgentEdit() {
         className="flex items-center justify-between h-12 px-4 border-b border-border"
         data-tauri-drag-region
       >
-        <div className="text-sm font-medium text-foreground">编辑代理</div>
+        <div className="text-sm font-medium text-foreground">{create ? "添加代理" : "编辑代理"}</div>
         <button
           onClick={handleClose}
           className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
@@ -562,10 +576,10 @@ export function AgentEdit() {
         </button>
         <button
           onClick={handleSubmit}
-          disabled={!agent.name}
+          disabled={!agent.name || isSubmitting}
           className="px-3 h-8 text-xs text-primary-foreground bg-primary rounded hover:opacity-90 disabled:opacity-50 transition-colors"
         >
-          保存
+          {isSubmitting ? (create ? "添加中..." : "更新中...") : (create ? "添加" : "更新")}
         </button>
       </div>
     </div>

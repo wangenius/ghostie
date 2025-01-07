@@ -17,10 +17,17 @@ const defaultBot: Bot = {
 export function BotEdit() {
   const [bot, setBot] = useState<Bot>(defaultBot);
   const [originalName, setOriginalName] = useState<string>("");
+  const [create, setCreate] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const unlisten = listen<Bot>("query-params", (event) => {
+      if (!event.payload) {
+        setBot(defaultBot);
+        setCreate(true);
+        return;
+      }
       const { name, system_prompt } = event.payload;
       if (name) {
         setOriginalName(name);
@@ -28,6 +35,7 @@ export function BotEdit() {
           name,
           system_prompt: system_prompt || "",
         });
+        setCreate(false);
       }
     });
 
@@ -45,16 +53,28 @@ export function BotEdit() {
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+    
     try {
-      await invoke("update_bot", {
-        oldName: originalName,
-        name: bot.name,
-        systemPrompt: bot.system_prompt,
-      });
+      setIsSubmitting(true);
+      if (create) {
+        await invoke("add_bot", {
+          name: bot.name,
+          systemPrompt: bot.system_prompt,
+        });
+      } else {
+        await invoke("update_bot", {
+          oldName: originalName,
+          name: bot.name,
+          systemPrompt: bot.system_prompt,
+        });
+      }
       await emit("bot-updated");
       await handleClose();
     } catch (error) {
-      console.error("更新机器人失败:", error);
+      console.error(create ? "添加机器人失败:" : "更新机器人失败:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -64,7 +84,7 @@ export function BotEdit() {
         className="flex items-center justify-between h-12 px-4 border-b border-border" 
         data-tauri-drag-region
       >
-        <div className="text-sm font-medium text-foreground">编辑机器人</div>
+        <div className="text-sm font-medium text-foreground">{create ? "添加机器人" : "编辑机器人"}</div>
         <button
           onClick={handleClose}
           className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
@@ -108,10 +128,10 @@ export function BotEdit() {
         </button>
         <button
           onClick={handleSubmit}
-          disabled={!bot.name || !bot.system_prompt}
+          disabled={!bot.name || !bot.system_prompt || isSubmitting}
           className="px-3 h-8 text-xs text-primary-foreground bg-primary rounded hover:opacity-90 disabled:opacity-50 transition-colors"
         >
-          保存
+          {isSubmitting ? (create ? "添加中..." : "更新中...") : (create ? "添加" : "更新")}
         </button>
       </div>
     </div>

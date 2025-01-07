@@ -4,71 +4,71 @@
 
 @layer base {
   :root {
-    --background: #ffffff;
-    --foreground: #0f172a;
+    --background: 255 255 255;
+    --foreground: 15 23 42;
 
-    --card: #ffffff;
-    --card-foreground: #0f172a;
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
 
-    --popover: #ffffff;
-    --popover-foreground: #0f172a;
+    --popover: 255 255 255;
+    --popover-foreground: 15 23 42;
 
-    --primary: #3b82f6;
-    --primary-foreground: #ffffff;
+    --primary: 59 130 246;
+    --primary-foreground: 255 255 255;
 
-    --secondary: #f1f5f9;
-    --secondary-foreground: #0f172a;
+    --secondary: 241 245 249;
+    --secondary-foreground: 15 23 42;
 
-    --muted: #f1f5f9;
-    --muted-foreground: #64748b;
+    --muted: 241 245 249;
+    --muted-foreground: 100 116 139;
 
-    --accent: #f1f5f9;
-    --accent-foreground: #0f172a;
+    --accent: 241 245 249;
+    --accent-foreground: 15 23 42;
 
-    --destructive: #ef4444;
-    --destructive-foreground: #ffffff;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
 
-    --border: #e2e8f0;
-    --input: #e2e8f0;
-    --ring: #3b82f6;
+    --border: 226 232 240;
+    --input: 226 232 240;
+    --ring: 59 130 246;
 
     --radius: 0.5rem;
 
-    --hover: #f8fafc;
-    --hover-foreground: #0f172a;
+    --hover: 248 250 252;
+    --hover-foreground: 15 23 42;
   }
 
   .dark {
-    --background: #1a1a1d;
-    --foreground: #f8fafc;
+    --background: 26 26 29;
+    --foreground: 248 250 252;
 
-    --card: #1e293b;
-    --card-foreground: #f8fafc;
+    --card: 30 41 59;
+    --card-foreground: 248 250 252;
 
-    --popover: #1e293b;
-    --popover-foreground: #f8fafc;
+    --popover: 30 41 59;
+    --popover-foreground: 248 250 252;
 
-    --primary: #3b82f6;
-    --primary-foreground: #ffffff;
+    --primary: 59 130 246;
+    --primary-foreground: 255 255 255;
 
-    --secondary: #1e293b;
-    --secondary-foreground: #f8fafc;
+    --secondary: 30 41 59;
+    --secondary-foreground: 248 250 252;
 
-    --muted: #1e293b;
-    --muted-foreground: #94a3b8;
+    --muted: 30 41 59;
+    --muted-foreground: 148 163 184;
 
-    --accent: #1e293b;
-    --accent-foreground: #f8fafc;
+    --accent: 30 41 59;
+    --accent-foreground: 248 250 252;
 
-    --destructive: #7f1d1d;
-    --destructive-foreground: #f8fafc;
+    --destructive: 127 29 29;
+    --destructive-foreground: 248 250 252;
 
-    --border: #1e293b;
-    --input: #1e293b;
-    --ring: #3b82f6;
+    --border: 30 41 59;
+    --input: 30 41 59;
+    --ring: 59 130 246;
 
-    --hover: #0f172a;
-    --hover-foreground: #f8fafc;
+    --hover: 15 23 42;
+    --hover-foreground: 248 250 252;
   }
 }
 

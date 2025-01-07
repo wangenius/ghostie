@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { Bot, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { BotManager } from "../../services/BotManger";
+import { ask } from "@tauri-apps/plugin-dialog";
 
 interface Bot {
   name: string;
@@ -28,7 +29,7 @@ export function BotsTab() {
 
 
   const handleOpenBotAdd = async () => {
-    await invoke("open_window", { name: "bot-add" });
+    await invoke("open_window_with_query", { name: "bot-edit" });
   };
 
   const handleOpenBotEdit = async (name: string) => {
@@ -41,8 +42,15 @@ export function BotsTab() {
 
   const handleDeleteBot = async (name: string) => {
     try {
-      await invoke("remove_bot", { name });
-      BotManager.loadBots();
+      const answer = await ask(`确定要删除机器人 "${name}" 吗？`, { 
+        title: "Tauri",
+        kind: "warning",
+      });
+
+      if (answer) {
+        await invoke("remove_bot", { name });
+        BotManager.loadBots();
+      }
     } catch (error) {
       console.error("删除机器人失败:", error);
     }

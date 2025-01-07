@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { ask } from "@tauri-apps/plugin-dialog";
 import { Database, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -45,15 +46,22 @@ export function ModelsTab() {
   };
 
   const handleOpenModelAdd = async () => {
-    await invoke("open_window", { name: "model-add" });
+    await invoke("open_window_with_query", { name: "model-edit" });
   };
 
   const handleDeleteModel = async (name: string) => {
-    try {
-      await invoke("remove_model", { name });
-      await loadModels();
-    } catch (error) {
-      console.error("删除模型失败:", error);
+    const answer = await ask(`确定要删除模型 "${name}" 吗？`, {
+      title: "Tauri",
+      kind: "warning",
+    });
+
+    if (answer) {
+      try {
+        await invoke("remove_model", { name });
+        await loadModels();
+      } catch (error) {
+        console.error("删除模型失败:", error);
+      }
     }
   };
 
