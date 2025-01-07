@@ -59,7 +59,7 @@ impl HistoryManager {
     }
 
     pub fn update_history(id: &str, title: String, preview: String, messages: Vec<ChatMessage>) -> Result<()> {
-        let mut history = if let Some(mut path) = Self::get_history_dir().ok() {
+        let mut history = if let Ok(mut path) = Self::get_history_dir() {
             path.push(format!("{}.json", id));
             if path.exists() {
                 let content = fs::read_to_string(path)?;

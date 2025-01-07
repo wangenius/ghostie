@@ -1,8 +1,7 @@
+use futures::StreamExt;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
-use futures::StreamExt;
 use tauri::Emitter;
-
 
 use crate::llm::{
     bots::BotsConfig,
@@ -35,7 +34,7 @@ pub async fn chat(
         });
     }
     let mut config = BotsConfig::load().map_err(|e| e.to_string())?;
-    let _ = config
+    config
         .update_recent_bots(bot.as_deref().unwrap_or(""))
         .map_err(|e| e.to_string())?;
     // 添加历史消息
@@ -63,21 +62,3 @@ pub async fn chat(
     println!("response: {}", response);
     Ok(response)
 }
-
-#[tauri::command]
-pub async fn set_system_prompt(prompt: Option<String>) -> Result<(), String> {
-    let mut config = Config::load().map_err(|e| e.to_string())?;
-    config.set_system_prompt(prompt).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub async fn get_system_prompt() -> Result<Option<String>, String> {
-    let config = Config::load().map_err(|e| e.to_string())?;
-    Ok(config.system_prompt.clone())
-}
-
-#[tauri::command]
-pub async fn set_stream_output(enabled: bool) -> Result<(), String> {
-    let mut config = Config::load().map_err(|e| e.to_string())?;
-    config.set_stream(enabled).map_err(|e| e.to_string())
-} 

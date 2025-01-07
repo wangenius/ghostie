@@ -180,8 +180,8 @@ impl LLMProvider for Provider {
 
                 let mut result = String::new();
                 for line in text.lines() {
-                    if line.starts_with("data: ") {
-                        let json_str = &line[6..];
+                    if let Some(stripped) = line.strip_prefix("data: ") {
+                        let json_str = stripped;
                         if json_str.trim() == "[DONE]" {
                             continue;
                         }

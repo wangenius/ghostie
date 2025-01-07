@@ -53,4 +53,4 @@ pub async fn update_agent(old_name: String, agent: Agent) -> Result<(), String> 
     manager
         .update_agent(&old_name, agent)
         .map_err(|e| e.to_string())
-} 
+}

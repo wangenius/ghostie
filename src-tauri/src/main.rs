@@ -69,15 +69,15 @@ fn main() {
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(move |app, shortcut, event| {
-                    if shortcut == &Shortcut::new(Some(Modifiers::ALT), Code::Space) {
-                        if matches!(event.state(), ShortcutState::Pressed) {
-                            if let Some(window) = app.get_webview_window("main") {
-                                if window.is_visible().unwrap() {
-                                    let _ = window.hide();
-                                } else {
-                                    let _ = window.show();
-                                    let _ = window.set_focus();
-                                }
+                    if shortcut == &Shortcut::new(Some(Modifiers::ALT), Code::Space)
+                        && matches!(event.state(), ShortcutState::Pressed)
+                    {
+                        if let Some(window) = app.get_webview_window("main") {
+                            if window.is_visible().unwrap() {
+                                let _ = window.hide();
+                            } else {
+                                let _ = window.show();
+                                let _ = window.set_focus();
                             }
                         }
                     }
@@ -92,9 +92,6 @@ fn main() {
             commands::update_model,
             commands::get_model,
             commands::chat,
-            commands::set_system_prompt,
-            commands::get_system_prompt,
-            commands::set_stream_output,
             commands::add_bot,
             commands::remove_bot,
             commands::list_bots,
@@ -110,7 +107,6 @@ fn main() {
             commands::list_histories,
             commands::delete_history,
             commands::open_window,
-            commands::open_window_with_query,
             commands::hide_window,
             commands::list_agents,
             commands::get_agent,
@@ -208,12 +204,11 @@ fn main() {
         tauri::RunEvent::Ready => {
             if let Some(window) = app_handle.get_webview_window("main") {
                 let window_handle = window.clone();
-                window.on_window_event(move |event| match event {
-                    WindowEvent::CloseRequested { api, .. } => {
+                window.on_window_event(move |event| {
+                    if let WindowEvent::CloseRequested { api, .. } = event {
                         let _ = window_handle.hide();
                         api.prevent_close();
                     }
-                    _ => {}
                 });
             }
         }

@@ -1,5 +1,4 @@
 use anyhow::Result;
-use colored::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -15,22 +14,15 @@ pub struct ModelConfig {
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Config {
+    // 模型配置
     #[serde(default)]
     pub models: HashMap<String, ModelConfig>,
+    // 当前模型
     #[serde(default)]
     pub current_model: Option<String>,
-    #[serde(default = "default_model")]
-    pub system_prompt: Option<String>,
-    #[serde(default = "default_stream")]
-    pub stream: bool,
-}
-
-fn default_model() -> Option<String> {
-    Some("your are a AI assistant".to_string())
-}
-
-fn default_stream() -> bool {
-    true
+    // 是否自动启动
+    #[serde(default)]
+    pub auto_start: Option<bool>,
 }
 
 impl Config {
@@ -56,12 +48,6 @@ impl Config {
                 config.models.insert(default_name.to_string(), model_config);
                 config.current_model = Some(default_name.to_string());
                 config.save()?;
-
-                println!("提示：已添加默认 OpenAI 配置，请使用以下命令设置 API Key：");
-                println!(
-                    "  gpt config model add {} <your-api-key>",
-                    default_name.green()
-                );
             }
 
             Ok(config)
@@ -102,7 +88,6 @@ impl Config {
             self.current_model = Some(name.clone());
         }
         self.save()?;
-        println!("model added: {}", name.green());
         Ok(())
     }
 
@@ -113,7 +98,6 @@ impl Config {
                 self.current_model = self.models.keys().next().map(|k| k.to_string());
             }
             self.save()?;
-            println!("model removed: {}", name.green());
             Ok(())
         } else {
             Err(anyhow::anyhow!("model not found: {}", name))
@@ -124,7 +108,6 @@ impl Config {
         if self.models.contains_key(name) {
             self.current_model = Some(name.to_string());
             self.save()?;
-            println!("current model set to: {}", name.green());
             Ok(())
         } else {
             Err(anyhow::anyhow!("model not found: {}", name))
@@ -135,27 +118,6 @@ impl Config {
         self.current_model
             .as_ref()
             .and_then(|name| self.models.get(name).map(|config| (name.as_str(), config)))
-    }
-
-    pub fn set_system_prompt(&mut self, prompt: Option<String>) -> Result<()> {
-        self.system_prompt = prompt;
-        self.save()?;
-        println!("system prompt updated");
-        Ok(())
-    }
-
-    pub fn set_stream(&mut self, enabled: bool) -> Result<()> {
-        self.stream = enabled;
-        self.save()?;
-        println!(
-            "stream output {}",
-            if enabled {
-                "enabled".green()
-            } else {
-                "disabled".yellow()
-            }
-        );
-        Ok(())
     }
 
     pub fn update_model(
@@ -193,7 +155,6 @@ impl Config {
         // 插入新配置
         self.models.insert(new_name.clone(), model_config);
         self.save()?;
-        println!("model updated: {}", new_name.green());
         Ok(())
     }
 }
