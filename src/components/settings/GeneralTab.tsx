@@ -1,10 +1,10 @@
+import { getVersion } from '@tauri-apps/api/app';
 import { invoke } from '@tauri-apps/api/core';
 import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
-import { relaunch } from '@tauri-apps/plugin-process';
-import { getVersion } from '@tauri-apps/api/app';
-import { ChevronRight, Globe2, Keyboard, Lightbulb, Moon, Power, RotateCw, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
 import { message } from '@tauri-apps/plugin-dialog';
+import { relaunch } from '@tauri-apps/plugin-process';
+import { ChevronRight, Globe2, Lightbulb, Moon, Power, RotateCw, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
 
 
 interface Settings {
@@ -154,35 +154,6 @@ export function GeneralTab() {
 					<div>
 						<div className="text-sm text-foreground">外观</div>
 						<div className="text-xs text-muted-foreground">{getThemeText()}</div>
-					</div>
-				</div>
-				<ChevronRight className="w-4 h-4 text-muted-foreground" />
-			</div>
-
-			<div
-				onClick={() => setSettings({ ...settings, language: settings.language === 'zh-CN' ? 'en-US' : 'zh-CN' })}
-				className="flex items-center justify-between h-12 px-3 -mx-3 rounded-lg cursor-pointer hover:bg-secondary"
-			>
-				<div className="flex items-center gap-3">
-					<div className="text-muted-foreground">
-						<Globe2 className="w-[18px] h-[18px]" />
-					</div>
-					<div>
-						<div className="text-sm text-foreground">语言</div>
-						<div className="text-xs text-muted-foreground">{settings.language === 'zh-CN' ? '简体中文' : 'English'}</div>
-					</div>
-				</div>
-				<ChevronRight className="w-4 h-4 text-muted-foreground" />
-			</div>
-
-			<div className="flex items-center justify-between h-12 px-3 -mx-3 rounded-lg hover:bg-secondary">
-				<div className="flex items-center gap-3">
-					<div className="text-muted-foreground">
-						<Keyboard className="w-[18px] h-[18px]" />
-					</div>
-					<div>
-						<div className="text-sm text-foreground">快捷键</div>
-						<div className="text-xs text-muted-foreground">{settings.shortcut}</div>
 					</div>
 				</div>
 				<ChevronRight className="w-4 h-4 text-muted-foreground" />
