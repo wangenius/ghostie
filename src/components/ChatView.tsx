@@ -1,16 +1,12 @@
-import { useRef, useEffect } from "react";
-import { Message } from "../types";
+import { AnimatePresence, motion } from "framer-motion";
 import { CopyIcon } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useRef } from "react";
+import { ChatManager } from "../services/ChatManager";
 
-interface ChatViewProps {
-  messages: Message[];
-  isLoading: boolean;
-}
-
-export function ChatView({ messages, isLoading }: ChatViewProps) {
+export function ChatView() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastAssistantMessage = useRef<string>("");
+  const { messages, loading } = ChatManager.use();
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -37,8 +33,21 @@ export function ChatView({ messages, isLoading }: ChatViewProps) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const copyMessage = (content: string) => {
-    navigator.clipboard.writeText(content);
+  const copyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      // 可以添加一个临时的提示效果
+      const target = document.activeElement as HTMLElement;
+      if (target) {
+        const originalTitle = target.getAttribute('title');
+        target.setAttribute('title', '已复制!');
+        setTimeout(() => {
+          target.setAttribute('title', originalTitle || '');
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('复制失败:', error);
+    }
   };
 
   return (
@@ -65,15 +74,15 @@ export function ChatView({ messages, isLoading }: ChatViewProps) {
                   className="text-sm !select-text leading-relaxed whitespace-pre-wrap text-foreground"
                 >
                   {message.content}
-                  {isLoading && index === messages.length - 1 && message.role === "assistant" && (
-                    <motion.div 
+                  {loading && index === messages.length - 1 && message.role === "assistant" && (
+                    <motion.div
                       className="inline-flex ml-2"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                     >
                       <motion.div
                         className="w-2 h-2 rounded-full bg-primary"
-                        animate={{ 
+                        animate={{
                           scale: [0.5, 1.2, 0.5],
                           opacity: [0.2, 1, 0.2],
                         }}

@@ -1,41 +1,21 @@
-import { useChat } from "../hooks/useChat";
-import { BotInfo, ListItem, View, SettingsTab } from "../types";
-import { SearchBar } from "./SearchBar";
-import { ListView } from "./ListView";
+import { listen } from "@tauri-apps/api/event";
+import { useEffect, useRef, useState } from "react";
+import { ChatManager } from "../services/ChatManager";
+import { SettingsTab, View } from "../types";
 import { ChatView } from "./ChatView";
 import { HistoryView } from "./HistoryView";
+import { ListView } from "./ListView";
+import { SearchBar } from "./SearchBar";
 import { SettingsView } from "./SettingsView";
-import { useState, useRef, useEffect } from "react";
-import { useBots } from "../hooks/useBots";
-import { listen } from "@tauri-apps/api/event";
 
 export function MainView() {
-	const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState("");
   const [currentView, setCurrentView] = useState<View>("list");
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");
-  const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { loading } = ChatManager.use();
 
-  const { messages, isLoading, sendMessage, clearMessages } = useChat();
-  const { bots, agents, loadBots, loadAgents, updateRecentBot, recentBots } = useBots();
 
-  useEffect(() => {
-    if (currentView === "list") {
-      loadBots();
-    }
-  }, [currentView]);
-
-  // 计算当前显示的列表项
-  const listItems: ListItem[] = [
-    // 首先添加最近使用的 bots
-    ...recentBots
-      .map(name => bots.find(bot => bot.name === name))
-      .filter((bot): bot is BotInfo => bot !== undefined),
-    // 然后添加其他未在最近列表中的 bots
-    ...bots.filter(bot => !recentBots.includes(bot.name)),
-    // 最后添加 agents
-    ...agents
-  ];
 
   useEffect(() => {
     const handleFocus = () => inputRef.current?.focus();
@@ -57,7 +37,7 @@ export function MainView() {
         e.preventDefault();
         setCurrentView("list");
         inputRef.current?.focus();
-        clearMessages();
+        // clearMessages();
       } else if (e.ctrlKey && e.key.toLowerCase() === "," || e.key.toLowerCase() === "，") {
         e.preventDefault();
         setCurrentView("settings");
@@ -80,9 +60,6 @@ export function MainView() {
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("keydown", handleKeyDown);
 
-    loadBots();
-    loadAgents();
-
     return () => {
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -91,68 +68,20 @@ export function MainView() {
     };
   }, []);
 
-  // 重置 activeIndex 当列表内容变化时
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [currentView]);
 
-  const handleItemClick = async (item: ListItem) => {
-    if (item.type === "bot") {
-      if (inputValue.trim()) {
-        await handleChat(inputValue, item.name);
-      } else {
-        await handleBotClick(item);
-      }
-    }
-  };
-
-  const handleBotClick = async (bot: BotInfo) => {
-    // 找到当前点击的 bot 在 listItems 中的索引
-    const index = listItems.findIndex(item => item.type === "bot" && item.name === bot.name);
-    if (index !== -1) {
-      setActiveIndex(index);
-    }
-    await updateRecentBot(bot.name);
-  };
-
-  const handleChat = async (message: string, bot?: string) => {
-    if (bot) {
-      await updateRecentBot(bot);
-    }
-    setInputValue("");
-    setCurrentView("chat");
-    await sendMessage(message, bot);
-  };
-
-  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveIndex((prev) => Math.max(0, prev - 1));
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActiveIndex((prev) => Math.min(listItems.length - 1, prev + 1));
-    } else if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      const activeItem = listItems[activeIndex];
-      if (activeItem?.type === "bot") {
-        await handleItemClick(activeItem);
-      }
-    }
-  };
 
   return (
     <div className="app-container flex flex-col h-screen bg-background">
       <SearchBar
         inputValue={inputValue}
         currentView={currentView}
-        isLoading={isLoading}
+        isLoading={loading}
         inputRef={inputRef}
         onInputChange={setInputValue}
-        onKeyDown={handleKeyDown}
         onViewChange={(view) => {
           setCurrentView(view);
           if (view === "list") {
-            clearMessages();
+            // clearMessages();
           }
         }}
         settingsTab={settingsTab}
@@ -161,18 +90,9 @@ export function MainView() {
 
       <div className="flex-1 mt-2 overflow-y-auto">
         <div className="max-w-xl mx-auto space-y-6">
-          {currentView === "list" && (
-            <ListView
-              items={listItems}
-              activeIndex={activeIndex}
-              onItemClick={handleItemClick}
-            />
-          )}
-
-          {currentView === "chat" && <ChatView messages={messages} isLoading={isLoading} />}
-
+          {currentView === "list" && <ListView />}
+          {currentView === "chat" && <ChatView />}
           {currentView === "history" && <HistoryView />}
-
           {currentView === "settings" && (
             <SettingsView
               isOpen={true}

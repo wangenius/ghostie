@@ -78,7 +78,7 @@ pub async fn remove_bot(name: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn list_bots() -> Result<serde_json::Value, String> {
+pub async fn list_bots() -> Result<Vec<serde_json::Value>, String> {
     let config = BotsConfig::load().map_err(|e| e.to_string())?;
     let mut bots = Vec::new();
 
@@ -93,21 +93,7 @@ pub async fn list_bots() -> Result<serde_json::Value, String> {
         bots.push(serde_json::Value::Object(bot_info));
     }
 
-    // 构建返回结果
-    let mut result = serde_json::Map::new();
-    result.insert("bots".to_string(), serde_json::Value::Array(bots));
-    result.insert(
-        "recent_bots".to_string(),
-        serde_json::Value::Array(
-            config
-                .recent_bots
-                .iter()
-                .map(|name| serde_json::Value::String(name.clone()))
-                .collect(),
-        ),
-    );
-
-    Ok(serde_json::Value::Object(result))
+    Ok(bots)
 }
 
 #[tauri::command]
@@ -226,6 +212,7 @@ pub async fn chat(
     }
     // 发送聊天完成事件
     let _ = window.emit("chat-complete", ());
+    println!("response: {}", response);
     Ok(response)
 }
 

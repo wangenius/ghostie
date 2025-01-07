@@ -1,6 +1,7 @@
 import { ArrowLeft, Bot, Clock, Database, Loader2Icon, Settings as SettingsIcon, Stars, Users, X } from "lucide-react";
 import { RefObject } from "react";
-import { useBots } from "../hooks/useBots";
+import { BotManager } from "../services/BotManger";
+import { ChatManager } from "../services/ChatManager";
 import { SettingsTab, View } from "../types";
 
 
@@ -10,7 +11,6 @@ interface Props {
   isLoading: boolean;
   inputRef: RefObject<HTMLInputElement>;
   onInputChange: (value: string) => void;
-  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onViewChange: (view: View) => void;
   settingsTab?: SettingsTab;
   onSettingsTabChange?: (tab: SettingsTab) => void;
@@ -29,36 +29,61 @@ export function SearchBar({
   isLoading,
   inputRef,
   onInputChange,
-  onKeyDown,
   onViewChange,
   settingsTab,
   onSettingsTabChange,
 }: Props) {
-  const { bots } = useBots();
-  const currentBot = bots.find(bot => bot.isCurrent);
+  const { current } = BotManager.use();
+
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault();
+    }
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (!inputValue.trim()) return;
+      if (!current) {
+        alert("请先选择一个机器人");
+        return;
+      }
+
+      if (!ChatManager.state.current.currentId) {
+        await ChatManager.createChat();
+      }
+
+      try {
+        onViewChange("chat");
+        onInputChange("");
+        await ChatManager.sendMessage(inputValue, current);
+      } catch (error) {
+        console.error("发送消息失败:", error);
+      }
+    }
+  };
 
   return (
     <div className="pt-2 px-4">
-      <div className="relative">
+      <div className="flex items-center gap-2 h-10">
         {currentView !== "list" ? (
           <button
             onClick={() => onViewChange("list")}
-            className="absolute left-0 top-1/2 -translate-y-1/2"
+            className="p-1.5 rounded-md hover:bg-secondary transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+            <ArrowLeft className="w-4 h-4 text-muted-foreground hover:text-foreground" />
           </button>
+        ) : current ? (
+          <div className="flex items-center gap-1.5 px-1.5 py-1 rounded-md bg-primary/10">
+            <Bot className="w-4 h-4 text-primary" />
+            <span className="text-xs font-medium text-primary">{current}</span>
+          </div>
         ) : (
-          <div
-            className="absolute left-0 top-1/2 -translate-y-1/2"
-            data-tauri-drag-region
-          >
-            <Stars data-tauri-drag-region
-              className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+          <div data-tauri-drag-region>
+            <Stars data-tauri-drag-region className="w-4 h-4 text-muted-foreground" />
           </div>
         )}
 
         {currentView === "settings" ? (
-          <div className="w-full pl-8 h-10 flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
             {SETTINGS_NAV_ITEMS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -74,29 +99,25 @@ export function SearchBar({
             ))}
           </div>
         ) : currentView === "chat" || currentView === "list" ? (
-          <>
+          <div className="flex-1 relative">
             <input
               ref={inputRef}
               type="text"
               value={inputValue}
               onChange={(e) => onInputChange(e.target.value)}
-              onKeyDown={onKeyDown}
-              className="w-full pl-8 text-sm pr-24 h-10 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
-              placeholder={currentBot ? `使用 ${currentBot.name} 对话...` : "输入消息..."}
+              onKeyDown={handleKeyDown}
+              className="w-full text-sm h-10 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+              placeholder={current ? `使用 ${current} 对话...` : "输入消息..."}
             />
-            {currentBot && currentView === "chat" && (
-              <div className="absolute left-8 -bottom-5 text-xs text-muted-foreground">
-                当前机器人: {currentBot.name}
-              </div>
-            )}
-          </>
+
+          </div>
         ) : (
-          <div className="w-full pl-8 h-10 text-foreground leading-10">
+          <div className="flex-1 text-foreground">
             {currentView === "history" ? "历史记录" : null}
           </div>
         )}
 
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
+        <div className="flex items-center gap-2">
           {isLoading && (
             <button
               onClick={() => onViewChange("list")}

@@ -1,7 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Bot, Pencil, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { BotManager } from "../../services/BotManger";
 
 interface Bot {
   name: string;
@@ -9,14 +10,14 @@ interface Bot {
 }
 
 export function BotsTab() {
-  const [bots, setBots] = useState<Bot[]>([]);
+  const { list } = BotManager.use();
 
   useEffect(() => {
-    loadBots();
-    
+    BotManager.loadBots();
+
     // 监听机器人更新事件
     const unsubscribeBot = listen("bot-updated", () => {
-      loadBots();
+      BotManager.loadBots();
     });
 
     return () => {
@@ -24,17 +25,7 @@ export function BotsTab() {
     };
   }, []);
 
-  const loadBots = async () => {
-    try {
-      const botsList = await invoke<{bots: Bot[]}>("list_bots");
-      console.log(botsList);
-      setBots(
-        botsList.bots
-      );
-    } catch (error) {
-      console.error("加载机器人列表失败:", error);
-    }
-  };
+
 
   const handleOpenBotAdd = async () => {
     await invoke("open_window", { name: "bot-add" });
@@ -51,7 +42,7 @@ export function BotsTab() {
   const handleDeleteBot = async (name: string) => {
     try {
       await invoke("remove_bot", { name });
-      await loadBots();
+      BotManager.loadBots();
     } catch (error) {
       console.error("删除机器人失败:", error);
     }
@@ -67,7 +58,7 @@ export function BotsTab() {
           <Plus className="w-4 h-4" />
           <span className="text-sm font-medium">添加机器人</span>
         </button>
-        {bots.map((bot) => (
+        {list.map((bot) => (
           <div
             key={bot.name}
             className="flex items-center justify-between p-2.5 rounded-lg border border-border hover:bg-secondary"
