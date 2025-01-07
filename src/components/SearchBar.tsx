@@ -1,4 +1,4 @@
-import { ArrowLeft, Bot, Clock, Database, Loader2Icon, PuzzleIcon, Settings as SettingsIcon, Stars, SwatchBook, Users, X } from "lucide-react";
+import { ArrowLeft, Bot, Clock, Database, Loader2Icon, Settings as SettingsIcon, Stars, SwatchBook, Users, X } from "lucide-react";
 import { RefObject } from "react";
 import { BotManager } from "../services/BotManger";
 import { ChatManager } from "../services/ChatManager";
