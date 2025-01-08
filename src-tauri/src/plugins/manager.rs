@@ -5,6 +5,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 
 /// PowerShell 插件管理器
 pub struct PluginManager {
@@ -79,7 +81,15 @@ impl PluginManager {
         );
         
         // 执行PowerShell脚本
-        let output = Command::new("pwsh")
+        let mut cmd = Command::new("pwsh");
+        
+        #[cfg(target_os = "windows")]
+        { 
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            cmd.creation_flags(CREATE_NO_WINDOW);
+        }
+        
+        let output = cmd
             .args(&[
                 "-NoProfile",
                 "-NonInteractive", 

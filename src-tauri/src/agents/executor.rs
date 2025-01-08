@@ -1,14 +1,14 @@
 use anyhow::Result;
 use colored::*;
 use std::process::Command;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 pub struct CommandExecutor {
-    env: HashMap<String, String>,
+    env: BTreeMap<String, String>,
 }
 
 impl CommandExecutor {
-    pub fn new(env: HashMap<String, String>) -> Self {
+    pub fn new(env: BTreeMap<String, String>) -> Self {
         Self { env }
     }
 

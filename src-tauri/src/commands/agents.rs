@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use crate::agents::{
     executor::CommandExecutor,
     types::{Agent, AgentManager},
@@ -33,7 +33,7 @@ pub async fn list_agents() -> Result<Vec<Agent>, String> {
 pub async fn execute_agent(
     agent_name: String,
     command: String,
-    env: Option<HashMap<String, String>>,
+    env: Option<BTreeMap<String, String>>,
 ) -> Result<String, String> {
     let manager = AgentManager::new().map_err(|e| e.to_string())?;
     let agent = manager.get_agent(&agent_name).ok_or("Agent not found")?;

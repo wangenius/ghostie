@@ -1,6 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use serde::{Serialize, Deserialize};
 use anyhow::Result;
 use colored::*;
@@ -14,9 +14,9 @@ pub struct Bot {
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct BotsConfig {
-    pub bots: HashMap<String, Bot>,
+    pub bots: BTreeMap<String, Bot>,
     #[serde(default)]
-    pub aliases: HashMap<String, String>,
+    pub aliases: BTreeMap<String, String>,
     #[serde(default)]
     pub current: Option<String>,
     #[serde(default)]

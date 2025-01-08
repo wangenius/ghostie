@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use serde::{Serialize, Deserialize};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -82,13 +82,13 @@ pub struct Agent {
     
     /// 环境变量
     #[serde(default)]
-    pub env: HashMap<String, String>,
+    pub env: BTreeMap<String, String>,
 }
 
 /// Agent 管理器
 #[derive(Debug, Default)]
 pub struct AgentManager {
-    pub agents: HashMap<String, Agent>,
+    pub agents: BTreeMap<String, Agent>,
     agents_dir: PathBuf,
 }
 
@@ -104,7 +104,7 @@ impl AgentManager {
         }
 
         let mut manager = Self {
-            agents: HashMap::new(),
+            agents: BTreeMap::new(),
             agents_dir,
         };
         
