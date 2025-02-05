@@ -1,4 +1,4 @@
-use crate::plugins::{Plugin, PluginManager};
+use crate::plugins::manager::{Plugin, PluginManager};
 use std::collections::HashMap;
 
 #[tauri::command]

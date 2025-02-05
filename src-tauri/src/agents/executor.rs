@@ -1,29 +1,17 @@
 use anyhow::Result;
 use colored::*;
 use std::process::Command;
-use std::collections::BTreeMap;
 
-pub struct CommandExecutor {
-    env: BTreeMap<String, String>,
-}
+pub struct CommandExecutor {}
 
 impl CommandExecutor {
-    pub fn new(env: BTreeMap<String, String>) -> Self {
-        Self { env }
+    pub fn new() -> Self {
+        Self {}
     }
 
     pub async fn execute(&self, command: &str) -> Result<String> {
-        let mut command_str = command.to_string();
+        let command_str = command.to_string();
         println!("\n原始命令: {}", command_str);
-        
-        // 替换环境变量
-        for (key, value) in &self.env {
-            let old = command_str.clone();
-            command_str = command_str.replace(&format!("{{{{{}}}}}", key), value);
-            if old != command_str {
-                println!("  {{{{{}}}}}: {} -> {}", key, old, command_str);
-            }
-        }
 
         // 检查是否还有未替换的变量
         if command_str.contains("{{") && command_str.contains("}}") {
@@ -37,9 +25,7 @@ impl CommandExecutor {
                 .args(["-Command", &command_str])
                 .output()?
         } else {
-            Command::new("sh")
-                .args(["-c", &command_str])
-                .output()?
+            Command::new("sh").args(["-c", &command_str]).output()?
         };
 
         let result = if output.status.success() {
@@ -48,12 +34,19 @@ impl CommandExecutor {
             String::from_utf8_lossy(&output.stderr).to_string()
         };
 
-        println!("执行结果: {}", if output.status.success() { result.green() } else { result.red() });
-        
+        println!(
+            "执行结果: {}",
+            if output.status.success() {
+                result.green()
+            } else {
+                result.red()
+            }
+        );
+
         if !output.status.success() {
             return Err(anyhow::anyhow!("命令执行失败: {}", result));
         }
-        
+
         Ok(result)
     }
-} 
+}

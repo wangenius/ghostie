@@ -10,11 +10,7 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_updater::UpdaterExt;
-
-mod agents;
-mod commands;
-mod llm;
-mod plugins;
+use echo::{agents, bots, config, llm, model, plugins};
 
 static LAST_WINDOW_ACTION: AtomicI64 = AtomicI64::new(0);
 
@@ -84,39 +80,38 @@ fn main() {
                 .build(),
         )
         .invoke_handler(tauri::generate_handler![
-            commands::models::add_model,
-            commands::models::remove_model,
-            commands::models::list_models,
-            commands::models::set_current_model,
-            commands::models::update_model,
-            commands::models::get_model,
-            commands::chat::chat,
-            commands::bots::add_bot,
-            commands::bots::remove_bot,
-            commands::bots::list_bots,
-            commands::bots::set_current_bot,
-            commands::bots::get_current_bot,
-            commands::bots::update_bot,
-            commands::bots::get_bot,
-
-            commands::history::create_chat_history,
-            commands::history::update_chat_history,
-            commands::history::list_histories,
-            commands::history::delete_history,
-            commands::window::open_window,
-            commands::window::hide_window,
-            commands::agents::add_agent,
-            commands::agents::remove_agent,
-            commands::agents::execute_agent,
-            commands::agents::list_agents,
-            commands::agents::get_agent,
-            commands::agents::update_agent,
-            commands::plugins::get_plugin,
-            commands::plugins::add_plugin,
-            commands::plugins::remove_plugin,
-            commands::plugins::list_plugins,
-            commands::plugins::update_plugin,
-            commands::plugins::execute_plugin,
+            model::command::add_model,
+            model::command::remove_model,
+            model::command::list_models,
+            model::command::set_current_model,
+            model::command::update_model,
+            model::command::get_model,
+            bots::command::add_bot,
+            bots::command::remove_bot,
+            bots::command::list_bots,
+            bots::command::set_current_bot,
+            bots::command::get_current_bot,
+            bots::command::update_bot,
+            bots::command::get_bot,
+            llm::chat::chat,
+            llm::chat::create_chat_history,
+            llm::chat::update_chat_history,
+            llm::chat::list_histories,
+            llm::chat::delete_history,
+            config::window::open_window,
+            config::window::hide_window,
+            agents::command::add_agent,
+            agents::command::remove_agent,
+            agents::command::execute_agent,
+            agents::command::list_agents,
+            agents::command::get_agent,
+            agents::command::update_agent,
+            plugins::command::get_plugin,
+            plugins::command::add_plugin,
+            plugins::command::remove_plugin,
+            plugins::command::list_plugins,
+            plugins::command::update_plugin,
+            plugins::command::execute_plugin,
             check_update,
             install_update
         ])

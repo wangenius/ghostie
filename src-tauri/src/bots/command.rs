@@ -1,5 +1,5 @@
+use crate::bots::bot::{Bot, BotsConfig};
 use std::collections::HashMap;
-use crate::llm::bots::{Bot, BotsConfig};
 
 #[tauri::command]
 pub async fn add_bot(name: String, system_prompt: String) -> Result<(), String> {
@@ -71,4 +71,4 @@ pub async fn get_bot(name: String) -> Result<HashMap<String, String>, String> {
     bot_info.insert("system_prompt".to_string(), bot.system_prompt.clone());
 
     Ok(bot_info)
-} 
+}

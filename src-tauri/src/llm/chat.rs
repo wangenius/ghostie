@@ -1,13 +1,12 @@
+use crate::bots::bot::BotsConfig;
+use crate::llm::history::{ChatHistory, ChatMessage, HistoryManager};
 use futures::StreamExt;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use tauri::Emitter;
 
-use crate::llm::{
-    bots::BotsConfig,
-    config::Config,
-    llm_provider::{LLMProvider, Message, Provider},
-};
+use crate::llm::llm::{LLMProvider, Message, Provider};
+use crate::model::manager::ModelManager;
 
 // LLM 对话相关命令
 #[tauri::command]
@@ -16,8 +15,7 @@ pub async fn chat(
     messages: Vec<Message>,
     bot: Option<String>,
 ) -> Result<String, String> {
-    let config = Config::load().map_err(|e| e.to_string())?;
-    let (_, model_config) = config.get_current_model().ok_or("No model configured")?;
+    let model_config = ModelManager::get_current().ok_or("No model configured")?;
 
     // 获取当前 bot 的系统提示词
     let mut all_messages = Vec::new();
@@ -61,4 +59,29 @@ pub async fn chat(
     let _ = window.emit("chat-complete", ());
     println!("response: {}", response);
     Ok(response)
+}
+
+#[tauri::command]
+pub async fn create_chat_history() -> Result<String, String> {
+    HistoryManager::create_history().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn update_chat_history(
+    id: String,
+    title: String,
+    preview: String,
+    messages: Vec<ChatMessage>,
+) -> Result<(), String> {
+    HistoryManager::update_history(&id, title, preview, messages).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn list_histories() -> Result<Vec<ChatHistory>, String> {
+    HistoryManager::list_histories().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn delete_history(id: String) -> Result<(), String> {
+    HistoryManager::delete_history(&id).map_err(|e| e.to_string())
 }

@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { Echo } from "../utils/Echo";
+import { Echo } from "echo-state";
 
 export interface Tool {
   name: string;
@@ -28,7 +28,7 @@ export interface Agent {
   temperature: number;
   timing: {
     type: "once" | "minutely" | "hourly" | "daily" | "weekly" | "monthly";
-    time?: string;      // HH:mm 格式
+    time?: string; // HH:mm 格式
     dayOfWeek?: number; // 0-6, 用于每周
     dayOfMonth?: number; // 1-31, 用于每月
     enable: boolean;
@@ -95,4 +95,4 @@ export class AgentManager {
       env,
     });
   };
-} 
+}

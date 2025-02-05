@@ -1,10 +1,10 @@
-use std::fs;
-use std::path::PathBuf;
-use std::collections::BTreeMap;
-use serde::{Serialize, Deserialize};
+use crate::config::utils;
 use anyhow::Result;
 use colored::*;
-use crate::llm::utils;
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+use std::fs;
+use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Bot {
@@ -38,7 +38,7 @@ impl BotsConfig {
             Ok(BotsConfig::default())
         }
     }
-    
+
     pub fn save(&self) -> Result<()> {
         if let Some(path) = Self::get_path() {
             let content = toml::to_string_pretty(self)?;
@@ -46,20 +46,17 @@ impl BotsConfig {
         }
         Ok(())
     }
-    
+
     pub fn get_path() -> Option<PathBuf> {
         let mut path = utils::get_config_dir()?;
         path.push("bots.toml");
         Some(path)
     }
 
-
     pub fn get(&self, name: &str) -> Option<&Bot> {
         self.bots.get(name)
     }
 
-
-    
     pub fn add_bot(&mut self, name: String, system_prompt: String) -> Result<()> {
         let bot = Bot {
             name: name.clone(),
@@ -70,7 +67,7 @@ impl BotsConfig {
         println!("bot added: {}", name.green());
         Ok(())
     }
-    
+
     pub fn remove_bot(&mut self, name: &str) -> Result<()> {
         if self.bots.remove(name).is_some() {
             self.save()?;
@@ -80,7 +77,6 @@ impl BotsConfig {
             Err(anyhow::anyhow!("bot not found: {}", name))
         }
     }
-
 
     pub fn set_current(&mut self, name: &str) -> Result<()> {
         if !self.bots.contains_key(name) {
@@ -143,4 +139,4 @@ impl BotsConfig {
         self.save()?;
         Ok(())
     }
-} 
+}

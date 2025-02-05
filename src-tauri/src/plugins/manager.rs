@@ -1,12 +1,41 @@
-use super::types::Plugin;
-use crate::llm::utils;
+use crate::config::utils;
 use anyhow::{anyhow, Result};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
-use std::path::{Path, PathBuf};
-use std::process::Command;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+/// 插件
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Plugin {
+    /// 插件名称
+    pub name: String,
+    /// 插件描述
+    pub description: String,
+    /// 插件是否启用
+    pub enabled: bool,
+    /// 插件脚本内容
+    pub script_content: String,
+    /// 插件参数
+    pub args: Vec<PluginArg>,
+}
+
+/// 插件参数
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PluginArg {
+    /// 参数名称
+    pub name: String,
+    /// 参数类型
+    pub arg_type: String,
+    /// 参数描述
+    pub description: String,
+    /// 参数是否必填
+    pub required: bool,
+    /// 参数默认值
+    pub default_value: Option<String>,
+}
 
 /// PowerShell 插件管理器
 pub struct PluginManager {
@@ -64,49 +93,55 @@ impl PluginManager {
     }
 
     pub fn execute_plugin(&mut self, name: &str, args: HashMap<String, String>) -> Result<String> {
-        let plugin = self.plugins.get(name)
+        let plugin = self
+            .plugins
+            .get(name)
             .ok_or_else(|| anyhow!("plugin not found: {}", name))?;
-        
+
         // 构建参数字符串，使用PowerShell函数调用语法
-        let args_str = args.iter()
+        let args_str = args
+            .iter()
             .map(|(k, v)| format!("-{} '{}'", k, v.replace("'", "'''")))
             .collect::<Vec<_>>()
             .join(" ");
-        
+
         // 构建完整的PowerShell命令
         let ps_command = format!(
             "{}; $output = main {}; $output",
-            plugin.script_content,
-            args_str
+            plugin.script_content, args_str
         );
-        
+
         // 执行PowerShell脚本
         let mut cmd = Command::new("pwsh");
-        
+
         #[cfg(target_os = "windows")]
-        { 
+        {
             const CREATE_NO_WINDOW: u32 = 0x08000000;
             cmd.creation_flags(CREATE_NO_WINDOW);
         }
-        
+
         let output = cmd
             .args(&[
                 "-NoProfile",
-                "-NonInteractive", 
-                "-ExecutionPolicy", "Bypass",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
                 "-Command",
-                &ps_command
+                &ps_command,
             ])
             .output()?;
-            
+
         if !output.status.success() {
             return Err(anyhow!(
                 "Plugin execution failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             ));
         }
-        
-        let result = String::from_utf8_lossy(&output.stdout).to_string().trim().to_string();
+
+        let result = String::from_utf8_lossy(&output.stdout)
+            .to_string()
+            .trim()
+            .to_string();
         if result.is_empty() {
             Ok("No output".to_string())
         } else {

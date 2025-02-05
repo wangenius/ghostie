@@ -1,7 +1,7 @@
 use anyhow::Result;
-use std::path::PathBuf;
-use std::fs;
 use std::env;
+use std::fs;
+use std::path::PathBuf;
 
 pub fn get_config_dir() -> Option<PathBuf> {
     let home = env::var("HOME").or_else(|_| env::var("USERPROFILE")).ok()?;

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use chrono::{DateTime, Utc};
-use crate::llm::utils;
+use crate::config::utils;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ChatHistory {

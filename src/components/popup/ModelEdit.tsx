@@ -60,23 +60,19 @@ export function ModelEdit() {
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
-    
+
     try {
       setIsSubmitting(true);
       if (create) {
         await invoke("add_model", {
           name: model.name,
-          apiKey: model.api_key,
-          apiUrl: model.api_url,
-          model: model.model,
+          model: model,
         });
       } else {
         await invoke("update_model", {
-          oldName: originalName,
-          name: model.name,
-          apiKey: model.api_key,
-          apiUrl: model.api_url,
-          model: model.model,
+          name: originalName,
+          newName: model.name,
+          model: model,
         });
       }
       await emit("model-updated");
@@ -90,8 +86,8 @@ export function ModelEdit() {
 
   return (
     <div className="app-container flex flex-col h-screen bg-background">
-      <div 
-        className="flex items-center justify-between h-12 px-4 border-b border-border" 
+      <div
+        className="flex items-center justify-between h-12 px-4 border-b border-border"
         data-tauri-drag-region
       >
         <div className="text-sm font-medium text-foreground">{create ? "添加模型" : "编辑模型"}</div>

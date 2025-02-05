@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { Echo } from "../utils/Echo";
+import { Echo } from "echo-state";
 
 export interface Plugin {
   name: string;

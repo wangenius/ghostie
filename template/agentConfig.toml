@@ -1,0 +1,60 @@
+# Agent 配置文件
+# Agent = LLM + Planning + Feedback + Tool use
+
+[agent]
+name = "Agent"
+description = "Agent = LLM+Planning+Feedback+Tool use"
+prompt = "You are a helpful assistant that can answer questions and help with tasks."
+
+# 定时执行配置
+[timing]
+frequency = "every day" # 执行频率
+time = "10:00"          # 执行时间
+enable = true           # 是否启用
+
+# 工具配置
+# 工具类型说明：
+# 1. function: 函数调用 - 直接调用预定义或自定义函数
+# 2. command: 命令调用 - 执行命令行命令
+# 3. agent: agent调用 - 调用其他agent
+
+[[tools]]
+name = "search"
+type = "function"
+description = "Search the web for information."
+
+
+[[tools]]
+name = "calculator"
+type = "command"
+description = "Calculate the result of an arithmetic expression."
+
+[[tools]]
+name = "feishu_agent"
+type = "agent"
+description = "Call an agent."
+
+
+# 知识库配置
+[[knowledge]]
+name = "wikipedia"
+description = "Wikipedia is a free online encyclopedia that anyone can edit."
+url = "https://en.wikipedia.org"
+
+
+[[knowledge]]
+text = "The capital of France is Paris."
+source = "https://en.wikipedia.org/wiki/Paris"
+
+
+[[knowledge]]
+file = "data/example.txt"
+description = "Example file containing information about the capital of France."
+
+
+# 环境变量配置
+# value不会传给大模型，只用于agent内部使用
+[[env]]
+name = "OPENAI_API_KEY"
+value = "path"
+description = "The API key for the OpenAI API."

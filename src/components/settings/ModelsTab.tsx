@@ -5,19 +5,23 @@ import { Database, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface Model {
-  name: string;
   api_key: string;
   api_url: string;
   model: string;
-  is_current?: boolean;
+}
+
+interface ModelManager {
+  models: Record<string, Model>;
+  current: string | null;
 }
 
 export function ModelsTab() {
-  const [models, setModels] = useState<Model[]>([]);
+  const [models, setModels] = useState<ModelManager>({ models: {}, current: null });
+
 
   useEffect(() => {
     loadModels();
-    
+
     // 监听模型更新事件
     const unsubscribeModel = listen("model-updated", () => {
       loadModels();
@@ -30,16 +34,8 @@ export function ModelsTab() {
 
   const loadModels = async () => {
     try {
-      const modelsList = await invoke<Array<Record<string, string>>>("list_models");
-      setModels(
-        modelsList.map((model) => ({
-          name: model.name,
-          is_current: model.is_current === "true",
-          api_url: model.api_url,
-          model: model.model,
-          api_key: "",
-        })).sort((a, b) => a.name.localeCompare(b.name))
-      );
+      const modelsList = await invoke<ModelManager>("list_models");
+      setModels(modelsList);
     } catch (error) {
       console.error("加载模型列表失败:", error);
     }
@@ -67,6 +63,7 @@ export function ModelsTab() {
 
   const handleSetCurrentModel = async (name: string) => {
     try {
+      console.log("设置当前模型:", name);
       await invoke("set_current_model", { name });
       await loadModels();
     } catch (error) {
@@ -74,9 +71,9 @@ export function ModelsTab() {
     }
   };
 
-  const handleOpenModelEdit = async (model: Model) => {
+  const handleOpenModelEdit = async (name: string) => {
     try {
-      const query = await invoke<Record<string, string>>("get_model", { name: model.name });
+      const query = await invoke<Record<string, string>>("get_model", { name });
       await invoke("open_window", {
         name: "model-edit",
         query
@@ -96,24 +93,23 @@ export function ModelsTab() {
           <Plus className="w-4 h-4" />
           <span className="text-sm font-medium">添加模型</span>
         </button>
-        {models.map((model) => (
+        {Object.entries(models.models).map(([name, model]) => (
           <div
-            key={model.name}
-            onClick={() => !model.is_current && handleSetCurrentModel(model.name)}
-            className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors border ${
-              model.is_current ? "bg-secondary border-primary/30" : "hover:bg-secondary border-border"
-            }`}
+            key={name}
+            onClick={() => name !== models.current && handleSetCurrentModel(name)}
+            className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors border ${name === models.current ? "bg-secondary border-primary/30" : "hover:bg-secondary border-border"
+              }`}
           >
             <div className="flex items-center gap-2 min-w-0">
-              <div className={model.is_current ? "text-primary" : "text-muted-foreground"}>
+              <div className={name === models.current ? "text-primary" : "text-muted-foreground"}>
                 <Database className="w-4 h-4" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <div className={`text-sm font-medium truncate ${model.is_current ? "text-primary" : "text-foreground"}`}>
-                    {model.name}
+                  <div className={`text-sm font-medium truncate ${name === models.current ? "text-primary" : "text-foreground"}`}>
+                    {name}
                   </div>
-                  {model.is_current && (
+                  {name === models.current && (
                     <span className="flex-shrink-0 text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">
                       当前使用
                     </span>
@@ -126,7 +122,7 @@ export function ModelsTab() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleOpenModelEdit(model);
+                  handleOpenModelEdit(name);
                 }}
                 className="p-1.5 text-muted-foreground hover:text-primary"
               >
@@ -135,7 +131,7 @@ export function ModelsTab() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDeleteModel(model.name);
+                  handleDeleteModel(name);
                 }}
                 className="p-1.5 text-muted-foreground hover:text-destructive"
               >

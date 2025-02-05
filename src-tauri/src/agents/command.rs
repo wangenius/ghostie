@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use crate::agents::{
     executor::CommandExecutor,
     types::{Agent, AgentManager},
@@ -30,20 +29,10 @@ pub async fn list_agents() -> Result<Vec<Agent>, String> {
 }
 
 #[tauri::command]
-pub async fn execute_agent(
-    agent_name: String,
-    command: String,
-    env: Option<BTreeMap<String, String>>,
-) -> Result<String, String> {
+pub async fn execute_agent(agent_name: String, command: String) -> Result<String, String> {
     let manager = AgentManager::new().map_err(|e| e.to_string())?;
-    let agent = manager.get_agent(&agent_name).ok_or("Agent not found")?;
 
-    let mut command_env = agent.env.clone();
-    if let Some(additional_env) = env {
-        command_env.extend(additional_env);
-    }
-
-    let executor = CommandExecutor::new(command_env);
+    let executor = CommandExecutor::new();
     executor.execute(&command).await.map_err(|e| e.to_string())
 }
 

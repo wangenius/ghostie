@@ -1,5 +1,3 @@
-pub mod bots;
-pub mod config;
+pub mod chat;
 pub mod history;
-pub mod llm_provider;
-pub mod utils;
+pub mod llm;

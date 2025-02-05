@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { Message } from "../types";
-import { Echo } from "../utils/Echo";
+import { Echo } from "echo-state";
 
 interface ChatState {
   messages: Message[];

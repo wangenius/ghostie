@@ -1,10 +1,10 @@
+use anyhow::{anyhow, Result};
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use serde::{Serialize, Deserialize};
 use std::fs;
 use std::path::{Path, PathBuf};
-use anyhow::{Result, anyhow};
 
-use crate::llm::utils;
+use crate::config::utils;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Skill {
@@ -57,11 +57,11 @@ pub struct Timing {
 pub struct Agent {
     /// Agent 名称
     pub name: String,
-    
+
     /// Agent 描述
     #[serde(default)]
     pub description: Option<String>,
-    
+
     /// 系统提示信息
     #[serde(rename = "systemPrompt")]
     pub system_prompt: String,
@@ -71,7 +71,7 @@ pub struct Agent {
 
     /// 定时配置
     pub timing: Timing,
-    
+
     /// 技能列表
     #[serde(default)]
     pub skills: Vec<Skill>,
@@ -79,10 +79,6 @@ pub struct Agent {
     /// 知识库
     #[serde(default)]
     pub knowledge: Vec<Knowledge>,
-    
-    /// 环境变量
-    #[serde(default)]
-    pub env: BTreeMap<String, String>,
 }
 
 /// Agent 管理器
@@ -93,11 +89,10 @@ pub struct AgentManager {
 }
 
 impl AgentManager {
-    
     pub fn new() -> Result<Self> {
         let app_dir = utils::get_config_dir().expect("Failed to get config directory");
         let agents_dir = app_dir.join("agents");
-        
+
         // 确保 agents 目录存在
         if !agents_dir.exists() {
             fs::create_dir_all(&agents_dir)?;
@@ -107,10 +102,10 @@ impl AgentManager {
             agents: BTreeMap::new(),
             agents_dir,
         };
-        
+
         // 加载所有 agent 配置
         manager.load_all_agents()?;
-        
+
         Ok(manager)
     }
 

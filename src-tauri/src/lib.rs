@@ -1,10 +1,11 @@
+pub mod agents;
+pub mod config;
 pub mod llm;
 pub mod plugins;
-pub mod commands;
-pub mod agents;
 
-pub use plugins::{Plugin, PluginManager};
+pub mod bots;
 
+pub mod model;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
