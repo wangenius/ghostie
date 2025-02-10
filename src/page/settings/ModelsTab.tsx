@@ -1,25 +1,32 @@
-import { BotItem } from "@/components/model/BotItem";
-import { BotEdit } from "@/windows/edit/BotEdit";
-import { BotManager } from "@services/manager/BotManger";
-import { cmd } from "@utils/shell";
-import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";
+import { ModelEdit } from "@/page/edit/ModelEdit";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ModelItem } from "@components/model/ModelItem";
+import { ModelManager } from "@/services/model/ModelManager";
+import { cmd } from "@utils/shell";
 import { PiDotsThreeBold } from "react-icons/pi";
+import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";
 
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
+/* 模型管理 */
 
+export function ModelsTab() {
+    /* 获取模型 */
+    const models = ModelManager.use();
 
-export function BotsTab() {
-    const bots = BotManager.use();
-
-    const handleDeleteBot = async (name: string) => {
-        const answer = await cmd.confirm(`确定要删除助手 "${name}" 吗？`);
+    /* 删除模型 */
+    const handleDeleteModel = async (name: string) => {
+        const answer = await cmd.confirm(`确定要删除模型 "${name}" 吗？`);
         if (answer) {
             try {
-                BotManager.remove(name);
+                ModelManager.remove(name);
             } catch (error) {
-                console.error("删除助手失败:", error);
+                console.error("删除模型失败:", error);
             }
         }
     };
@@ -28,16 +35,19 @@ export function BotsTab() {
 
     return (
         <div className="h-full flex flex-col gap-4">
+
+
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Button
-                        onClick={() => BotEdit.open()}
+                        onClick={() => ModelEdit.open()}
                     >
                         <TbPlus className="w-4 h-4" />
                         <span>新建</span>
                     </Button>
                 </div>
                 <div className="flex items-center gap-2">
+
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
@@ -47,7 +57,6 @@ export function BotsTab() {
 
 
                         <DropdownMenuContent align="end">
-
                             <DropdownMenuItem>
                                 <TbUpload className="w-4 h-4" />
                                 <span>导入</span>
@@ -64,15 +73,17 @@ export function BotsTab() {
                 </div>
             </div>
 
+
+            {/* 模型列表区域 */}
             <div className="flex-1 min-h-0 overflow-y-auto">
                 <div className="grid grid-cols-1 gap-3">
-                    {Object.entries(bots).map(([name, bot]) => (
-                        <BotItem
+                    {Object.entries(models).map(([name, model]) => (
+                        <ModelItem
                             key={name}
                             name={name}
-                            bot={bot}
-                            onEdit={() => BotEdit.open(name)}
-                            onDelete={handleDeleteBot}
+                            model={model}
+                            onEdit={() => ModelEdit.open(name)}
+                            onDelete={handleDeleteModel}
                         />
                     ))}
                 </div>

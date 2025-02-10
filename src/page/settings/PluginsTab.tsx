@@ -1,5 +1,5 @@
 import { PluginItem } from "@/components/model/PluginItem";
-import { PluginEdit } from "@/windows/edit/PluginEdit";
+import { PluginEdit } from "@/page/edit/PluginEdit";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ToolsManager } from "@/services/tool/ToolsManager";

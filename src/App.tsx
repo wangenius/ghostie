@@ -1,9 +1,9 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { BotEdit } from "./windows/edit/BotEdit";
-import { ModelEdit } from "./windows/edit/ModelEdit";
-import { MainView } from "./windows/main/MainView";
-import { SettingsPage } from "./windows/settings/Page";
-import { PluginEdit } from "./windows/edit/PluginEdit";
+import { BotEdit } from "./page/edit/BotEdit";
+import { ModelEdit } from "./page/edit/ModelEdit";
+import { MainView } from "./page/main/MainView";
+import { SettingsPage } from "./page/settings/Page";
+import { PluginEdit } from "./page/edit/PluginEdit";
 
 /* 主应用,提供路由 */
 function App() {

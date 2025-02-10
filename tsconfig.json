@@ -28,7 +28,7 @@
       "@services/*": ["./src/services/*"],
       "@components/*": ["./src/components/*"],
       "@utils/*": ["./src/utils/*"],
-      "@windows/*": ["./src/windows/*"],
+      "@windows/*": ["src/page/*"],
       "@hook/*": ["./src/hook/*"]
     }
   },
