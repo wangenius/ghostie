@@ -1,17 +1,18 @@
-import { Model } from "@common/types/model";
+import { BotProps } from "@/common/types/bot";
 import { TbBox, TbPencil, TbTrash } from "react-icons/tb";
 
 interface ModelItemProps {
 	name: string;
-	model: Model;
+	bot: BotProps;
 	onEdit: (name: string) => void;
 	onDelete: (name: string) => void;
 }
 
-export function ModelItem({ name, model, onEdit, onDelete }: ModelItemProps) {
+export function BotItem({ name, bot, onEdit, onDelete }: ModelItemProps) {
 	return (
 		<div className="group relative bg-card hover:bg-accent/5 border border-border rounded-lg transition-all duration-200">
 			{/* 主内容区 */}
+
 			<div className="flex items-center p-3 gap-3">
 				{/* 左侧图标 */}
 				<div className="shrink-0">
@@ -29,8 +30,7 @@ export function ModelItem({ name, model, onEdit, onDelete }: ModelItemProps) {
 
 					</div>
 					<div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-						<span className="truncate">{model.model}</span>
-
+						<span className="truncate">{bot.model}</span>
 					</div>
 				</div>
 

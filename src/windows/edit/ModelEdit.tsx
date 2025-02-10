@@ -1,3 +1,4 @@
+import { Header } from "@/components/custom/Header";
 import { Model } from "@common/types/model";
 import { useQuery } from "@hook/useQuery";
 import { ModelManager } from "@services/manager/ModelManager";
@@ -63,19 +64,7 @@ export function ModelEdit() {
 
     return (
         <div className="flex flex-col h-screen bg-background">
-            <div
-                className="draggable flex items-center justify-between h-12 px-4"
-            >
-                <div className="text-sm font-medium text-foreground">
-                    {create ? "添加模型" : "编辑模型"}
-                </div>
-                <button
-                    onClick={handleClose}
-                    className="btn"
-                >
-                    <TbX className="w-4 h-4" />
-                </button>
-            </div>
+            <Header title={create ? "添加模型" : "编辑模型"} close={handleClose} />
 
             <div className="flex-1 overflow-auto p-4">
                 <div className="space-y-4">

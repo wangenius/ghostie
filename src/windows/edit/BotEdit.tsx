@@ -1,3 +1,4 @@
+import { Header } from "@/components/custom/Header";
 import { cmd } from "@/utils/shell";
 import { BotProps } from "@common/types/bot";
 import { useQuery } from "@hook/useQuery";
@@ -24,7 +25,7 @@ export function BotEdit() {
     const query = useQuery("name");
     console.log(query);
     const models = ModelManager.use();
-    const { list: plugins } = PluginManager.use();
+    const plugins = PluginManager.use();
 
 
     useEffect(() => {
@@ -75,19 +76,8 @@ export function BotEdit() {
 
     return (
         <div className="flex flex-col h-screen bg-background">
-            <div
-                className="draggable flex items-center justify-between h-12 px-4"
-            >
-                <div className="text-sm font-medium text-foreground">
-                    {create ? "添加机器人" : "编辑机器人"}
-                </div>
-                <button
-                    onClick={handleClose}
-                    className="btn"
-                >
-                    <TbX className="w-4 h-4" />
-                </button>
-            </div>
+            <Header title={create ? "添加机器人" : "编辑机器人"} close={handleClose} />
+
 
             <div className="flex-1 overflow-auto p-4">
                 <div className="space-y-4">
@@ -123,7 +113,7 @@ export function BotEdit() {
                     <div className="space-y-1.5">
                         <label className="block text-xs text-muted-foreground">选择插件</label>
                         <div className="flex flex-wrap gap-2 p-2 bg-secondary rounded-md min-h-[2.25rem]">
-                            {plugins.map((plugin) => (
+                            {Object.values(plugins).map((plugin) => (
                                 <label
                                     key={plugin.name}
                                     className="inline-flex items-center space-x-2 px-2 py-1 bg-background rounded"

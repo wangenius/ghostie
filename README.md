@@ -4,8 +4,6 @@
     <img src="public/icon.png" alt="echo Logo" width="400" />
 </div>
 
-
-
 echo 是一个基于 Tauri + React 开发的跨平台智能对话助手应用。它提供了一个简洁优雅的界面，让你可以轻松地与各种 AI 模型进行对话。
 
 ## ✨ 主要特性
@@ -21,6 +19,7 @@ echo 是一个基于 Tauri + React 开发的跨平台智能对话助手应用。
 - 🛠 丰富的设置选项
 
 ## 📸 界面预览
+
 <div align="center">
     <img src="docs/image.png" alt="echo Logo" width="600"/>
 </div>
@@ -47,7 +46,21 @@ echo 是一个基于 Tauri + React 开发的跨平台智能对话助手应用。
 - 可以添加和管理多个机器人
 - 支持开机自启动设置
 
+## ChatModel
 
+- 支持多种模型接入
+- 支持模型上下文管理
+- 支持模型参数配置
+- 支持模型历史记录
+- 支持模型流式输出
+
+## Bot(机器人)
+
+机器人是基于 ChatModel 的简单 Agent 封装.
+
+## Agent(代理)
+
+代理是基于 WorkFlow 的复杂 Agent 封装.
 
 ## 🤝 贡献指南
 

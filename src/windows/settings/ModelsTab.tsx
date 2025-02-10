@@ -1,18 +1,23 @@
-import { ModelEdit } from "@/components/popup/ModelEdit";
+import { ModelEdit } from "@/windows/edit/ModelEdit";
+import { Button } from "@/components/ui/button";
 import { ModelItem } from "@components/model/ModelItem";
 import { ModelManager } from "@services/manager/ModelManager";
 import { cmd } from "@utils/shell";
+import { PiDotsThreeBold } from "react-icons/pi";
 import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";
 
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 /* 模型管理 */
+
 export function ModelsTab() {
     /* 获取模型 */
     const models = ModelManager.use();
-
-
-
-
 
     /* 删除模型 */
     const handleDeleteModel = async (name: string) => {
@@ -27,13 +32,6 @@ export function ModelsTab() {
     };
 
 
-    const handleImportModels = () => {
-        // TODO: 实现模型导入功能
-    };
-
-    const handleExportModels = () => {
-        // TODO: 实现模型导出功能
-    };
 
     return (
         <div className="h-full flex flex-col gap-4">
@@ -41,32 +39,36 @@ export function ModelsTab() {
 
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <button
+                    <Button
                         onClick={() => ModelEdit.open()}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                         <TbPlus className="w-4 h-4" />
-                        <span>添加模型</span>
-                    </button>
-                    <span className="px-2 py-0.5 text-sm rounded-full bg-muted text-muted-foreground">
-                        {Object.keys(models).length} 个模型
-                    </span>
+                        <span>新建</span>
+                    </Button>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleImportModels}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md hover:bg-accent"
-                    >
-                        <TbUpload className="w-4 h-4" />
-                        <span>导入</span>
-                    </button>
-                    <button
-                        onClick={handleExportModels}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md hover:bg-accent"
-                    >
-                        <TbDownload className="w-4 h-4" />
-                        <span>导出</span>
-                    </button>
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <PiDotsThreeBold className="w-4 h-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+
+
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                                <TbUpload className="w-4 h-4" />
+                                <span>导入</span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem>
+                                <TbDownload className="w-4 h-4" />
+                                <span>导出</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
 
                 </div>
             </div>
@@ -83,7 +85,6 @@ export function ModelsTab() {
                             onEdit={() => ModelEdit.open(name)}
                             onDelete={handleDeleteModel}
                         />
-
                     ))}
                 </div>
             </div>

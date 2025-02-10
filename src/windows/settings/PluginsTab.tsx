@@ -1,111 +1,92 @@
-import { TbPencil, TbPlayerPlay, TbPlus, TbPuzzle, TbTrash } from "react-icons/tb";
-import { useEffect } from "react";
+import { PluginItem } from "@/components/model/PluginItem";
+import { PluginEdit } from "@/windows/edit/PluginEdit";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PluginManager } from "@services/manager/PluginManager";
+import { cmd } from "@utils/shell";
+import { PiDotsThreeBold } from "react-icons/pi";
+import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";
 
 /**
  * 插件管理
  */
+
 export function PluginsTab() {
-    const { list: plugins } = PluginManager.use();
-
-    useEffect(() => {
-        // 初始加载
-        PluginManager.loadPlugins();
-
-        // 监听插件更新事件
-        // const unlisten = listen("plugin-updated", () => {
-        //     PluginManager.loadPlugins();
-        // });
-
-        return () => {
-            // unlisten.then((fn) => fn());
-        };
-    }, []);
-
-    const handleOpenPluginAdd = async () => {
-        // await invoke("open_window", { name: "plugin-edit" });
-    };
-
-    const handleOpenPluginEdit = async (name: string) => {
-        // await invoke("open_window", {
-        //     name: "plugin-edit",
-        //     query: { name }
-        // });
-    };
+    const plugins = PluginManager.use();
 
     const handleRemovePlugin = async (name: string) => {
-        // const answer = await ask(`确定要删除插件 "${name}" 吗？`, {
-        //     title: "Tauri",
-        //     kind: "warning"
-        // });
-        // if (answer) {
-        //     try {
-        //         await PluginManager.removePlugin(name);
-        //     } catch (error) {
-        //         console.error("删除插件失败:", error);
-        //     }
-        // }
+        const answer = await cmd.confirm(`确定要删除插件 "${name}" 吗？`);
+
+        if (answer) {
+            try {
+                await PluginManager.removePlugin(name);
+            } catch (error) {
+                console.error("删除插件失败:", error);
+            }
+        }
     };
 
-    const handleRunPlugin = async (name: string) => {
-        // await invoke("open_window", {
-        //     name: "plugin-run",
-        //     query: { name }
-        // });
-    };
+
+
 
     return (
-        <div>
-            <div className="grid grid-cols-2 gap-2">
-                <button
-                    onClick={handleOpenPluginAdd}
-                    className="flex items-center justify-center gap-2 p-2.5 rounded-lg border border-dashed border-border hover:bg-secondary text-muted-foreground hover:text-foreground"
-                >
-                    <TbPlus className="w-4 h-4" />
-                    <span className="text-sm font-medium">添加插件</span>
-                </button>
-
-                {plugins.map((plugin) => (
-                    <div
-                        key={plugin.name}
-                        className="flex items-center justify-between p-2.5 rounded-lg border border-border hover:bg-secondary"
+        <div className="h-full flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Button
+                        onClick={() => PluginEdit.open()}
                     >
-                        <div className="flex items-center gap-2 min-w-0">
-                            <div className="text-muted-foreground">
-                                <TbPuzzle className="w-4 h-4" />
-                            </div>
-                            <div className="min-w-0">
-                                <div className="text-sm font-medium text-foreground truncate">
-                                    {plugin.name}
-                                </div>
-                                <div className="text-xs text-muted-foreground truncate">
-                                    {plugin.description}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-0.5 ml-2">
-                            <button
-                                onClick={() => handleRunPlugin(plugin.name)}
-                                className="p-1.5 text-muted-foreground hover:text-green-500"
-                            >
-                                <TbPlayerPlay className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                                onClick={() => handleOpenPluginEdit(plugin.name)}
-                                className="p-1.5 text-muted-foreground hover:text-primary"
-                            >
-                                <TbPencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                                onClick={() => handleRemovePlugin(plugin.name)}
-                                className="p-1.5 text-muted-foreground hover:text-destructive"
-                            >
-                                <TbTrash className="w-3.5 h-3.5" />
-                            </button>
-                        </div>
-                    </div>
-                ))}
+                        <TbPlus className="w-4 h-4" />
+                        <span>新建</span>
+                    </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <PiDotsThreeBold className="w-4 h-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+
+
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => PluginEdit.open()}>
+                                <TbPlus className="w-4 h-4" />
+                                <span>新建</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>
+
+                                <TbUpload className="w-4 h-4" />
+                                <span>导入</span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem>
+                                <TbDownload className="w-4 h-4" />
+                                <span>导出</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+
+                </div>
             </div>
+
+            <div className="flex-1 min-h-0 overflow-y-auto">
+                <div className="grid grid-cols-1 gap-3">
+                    {Object.values(plugins).map((plugin) => {
+                        if (!plugin) return null;
+                        return (
+                            <PluginItem
+                                key={plugin.name} name={plugin?.name} description={plugin.description || ""} onEdit={() => { PluginEdit.open(plugin.name) }} onDelete={() => { handleRemovePlugin(plugin.name) }} />
+                        )
+                    })}
+                </div>
+            </div>
+
+
+
+
         </div>
     );
 }

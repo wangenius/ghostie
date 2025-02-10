@@ -4,6 +4,7 @@ import { cmd } from "@utils/shell";
 import { useEffect, useRef, useState } from "react";
 import { BsStars } from "react-icons/bs";
 import { TbLoader2, TbX } from "react-icons/tb";
+import { Button } from "@/components/ui/button";
 
 export function MainView() {
     const [inputValue, setInputValue] = useState("");
@@ -94,17 +95,19 @@ export function MainView() {
     }, []);
 
     return (
-        <div className="flex flex-col h-screen bg-background">
+        <div className="flex draggable flex-col h-screen bg-background">
             <div className="pt-2 px-4 draggable">
                 <div className="flex items-center gap-2 h-10">
-                    <span
+                    <Button
+                        size="icon"
+                        variant="ghost"
                         onClick={async () => {
                             await cmd.open("settings", {});
                         }}
                         className="z-10 btn cursor-pointer"
                     >
                         <BsStars className="w-[18px] h-[18px]" />
-                    </span>
+                    </Button>
 
                     <div className="flex-1 relative">
                         <input
@@ -112,6 +115,7 @@ export function MainView() {
                             type="text"
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
+
                             onKeyDown={handleKeyDown}
                             className="w-full text-sm h-10 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
                             placeholder={isChat ? `与 ${currentBot?.name} 对话...` : "选择一个机器人开始对话..."}
@@ -132,16 +136,22 @@ export function MainView() {
                         ) : (
                             <button
                                 onClick={() => {
-                                    setIsChat(false);
-                                    setCurrentBot(new Bot({
-                                        name: "",
-                                        system: "",
-                                        model: "",
-                                        tools: []
-                                    }));
+                                    if (isChat) {
+                                        setIsChat(false);
+                                        setCurrentBot(new Bot({
+                                            name: "",
+                                            system: "",
+                                            model: "",
+                                            tools: []
+                                        }));
+                                    } else {
+                                        cmd.close();
+                                    }
                                 }}
                                 className="p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-all duration-200 active:scale-95"
                             >
+
+
 
                                 <TbX className="w-[18px] h-[18px]" />
                             </button>

@@ -4,7 +4,7 @@ import {
   TaskStep,
   ActionResult,
 } from '@/common/types/agent';
-import { gen } from '@common/lib/generator';
+import { gen } from '@/utils/generator';
 
 /* Agent上下文 */
 

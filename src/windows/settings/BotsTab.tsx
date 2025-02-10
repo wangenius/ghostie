@@ -1,50 +1,14 @@
-import { cmd } from "@utils/shell";
-import { TbBolt, TbPencil, TbPlus, TbTrash, TbDownload, TbUpload } from "react-icons/tb";
+import { BotItem } from "@/components/model/BotItem";
+import { BotEdit } from "@/windows/edit/BotEdit";
 import { BotManager } from "@services/manager/BotManger";
-import { BotEdit } from "@/components/popup/BotEdit";
-import { BotProps } from "@/common/types/bot";
+import { cmd } from "@utils/shell";
+import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { PiDotsThreeBold } from "react-icons/pi";
 
-interface BotItemProps {
-    name: string;
-    bot: BotProps;
-    onEdit: () => void;
-    onDelete: (name: string) => void;
-}
 
-function BotItem({ name, bot, onEdit, onDelete }: BotItemProps) {
-    return (
-        <div className="flex items-center justify-between p-2.5 rounded-lg border border-border hover:bg-secondary">
-            <div className="flex items-center gap-2 min-w-0">
-                <div className="text-muted-foreground">
-                    <TbBolt className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                    <div className="text-sm font-medium text-foreground truncate">
-                        {bot.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                        {bot.system}
-                    </div>
-                </div>
-            </div>
 
-            <div className="flex items-center gap-0.5 ml-2">
-                <button
-                    onClick={onEdit}
-                    className="p-1.5 text-muted-foreground hover:text-primary"
-                >
-                    <TbPencil className="w-3.5 h-3.5" />
-                </button>
-                <button
-                    onClick={() => onDelete(name)}
-                    className="p-1.5 text-muted-foreground hover:text-destructive"
-                >
-                    <TbTrash className="w-3.5 h-3.5" />
-                </button>
-            </div>
-        </div>
-    );
-}
 
 export function BotsTab() {
     const bots = BotManager.use();
@@ -60,44 +24,43 @@ export function BotsTab() {
         }
     };
 
-    const handleImportBots = () => {
-        // TODO: 实现机器人导入功能
-    };
 
-    const handleExportBots = () => {
-        // TODO: 实现机器人导出功能
-    };
 
     return (
         <div className="h-full flex flex-col gap-4">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <button
+                    <Button
                         onClick={() => BotEdit.open()}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                         <TbPlus className="w-4 h-4" />
-                        <span>添加机器人</span>
-                    </button>
-                    <span className="px-2 py-0.5 text-sm rounded-full bg-muted text-muted-foreground">
-                        {Object.keys(bots).length} 个机器人
-                    </span>
+                        <span>新建</span>
+                    </Button>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleImportBots}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md hover:bg-accent"
-                    >
-                        <TbUpload className="w-4 h-4" />
-                        <span>导入</span>
-                    </button>
-                    <button
-                        onClick={handleExportBots}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md hover:bg-accent"
-                    >
-                        <TbDownload className="w-4 h-4" />
-                        <span>导出</span>
-                    </button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <PiDotsThreeBold className="w-4 h-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+
+
+                        <DropdownMenuContent align="end">
+
+                            <DropdownMenuItem>
+                                <TbUpload className="w-4 h-4" />
+                                <span>导入</span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem>
+                                <TbDownload className="w-4 h-4" />
+                                <span>导出</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+
                 </div>
             </div>
 

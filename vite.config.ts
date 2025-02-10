@@ -1,10 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { version } from './package.json';
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
   plugins: [react()],
+  define: {
+    PACKAGE_VERSION: JSON.stringify(version),
+    SALT_ROUNDS: 10,
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

@@ -12,6 +12,8 @@ export class Bot {
   model: ChatModel;
   tools: ToolFunctionInfo[];
   context: Context;
+
+  /** 加载状态 */
   loading = new Echo<{ status: boolean }>({
     status: false,
   });

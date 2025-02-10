@@ -1,17 +1,20 @@
-import { Model } from "@common/types/model";
 import { TbBox, TbPencil, TbTrash } from "react-icons/tb";
 
-interface ModelItemProps {
+interface PluginItemProps {
 	name: string;
-	model: Model;
+	description: string;
 	onEdit: (name: string) => void;
 	onDelete: (name: string) => void;
+
 }
 
-export function ModelItem({ name, model, onEdit, onDelete }: ModelItemProps) {
+
+export function PluginItem({ name, description, onEdit, onDelete }: PluginItemProps) {
 	return (
 		<div className="group relative bg-card hover:bg-accent/5 border border-border rounded-lg transition-all duration-200">
 			{/* 主内容区 */}
+
+
 			<div className="flex items-center p-3 gap-3">
 				{/* 左侧图标 */}
 				<div className="shrink-0">
@@ -29,10 +32,11 @@ export function ModelItem({ name, model, onEdit, onDelete }: ModelItemProps) {
 
 					</div>
 					<div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-						<span className="truncate">{model.model}</span>
-
+						<span className="truncate">{description}</span>
 					</div>
 				</div>
+
+
 
 				{/* 右侧操作区 */}
 				<div className="shrink-0 flex items-center gap-1">

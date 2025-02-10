@@ -1,6 +1,9 @@
 import { TbX, TbPlus, TbTrash } from "react-icons/tb";
 import { useEffect, useRef, useState } from "react";
 import { PluginManager, Plugin, PluginArg } from "../../services/manager/PluginManager";
+import { cmd } from "@/utils/shell";
+import { useQuery } from "@hook/useQuery";
+import { Header } from "@/components/custom/Header";
 
 export function PluginEdit() {
     const [name, setName] = useState("");
@@ -12,50 +15,44 @@ export function PluginEdit() {
     const [create, setCreate] = useState(true);
     const [plugin, setPlugin] = useState<Plugin | null>(null);
 
+    const query = useQuery("name");
+    const plugins = PluginManager.use();
+
     useEffect(() => {
         inputRef.current?.focus();
-    }, []);
-
-    // useEffect(() => {
-    //     const unlisten = listen<{ name: string; script_content: string }>(
-    //         "query-params",
-    //         async (event) => {
-    //             if (!event.payload) {
-    //                 setName("");
-    //                 setDescription("");
-    //                 setScriptContent("");
-    //                 setArgs([]);
-    //                 setPlugin(null);
-    //                 setCreate(true);
-    //                 return;
-    //             }
-    //             const { name } = event.payload;
-    //             if (name) {
-    //                 setName(name);
-    //                 const plugin = await PluginManager.getPlugin(name);
-    //                 setScriptContent(plugin?.script_content || "");
-    //                 setDescription(plugin?.description || "");
-    //                 setArgs(plugin?.args || []);
-    //                 setPlugin(plugin);
-    //                 setCreate(false);
-    //             }
-    //         }
-    //     );
-
-    //     inputRef.current?.focus();
-
-    //     return () => {
-    //         unlisten.then((fn) => fn());
-    //     };
-    // }, []);
+        if (query) {
+            const pluginData = plugins[query];
+            if (pluginData) {
+                setCreate(false);
+                setPlugin(pluginData);
+                setName(pluginData.name);
+                setDescription(pluginData.description || "");
+                setScriptContent(pluginData.script_content);
+                setArgs(pluginData.args);
+            } else {
+                setCreate(true);
+                setPlugin(null);
+                setName("");
+                setDescription("");
+                setScriptContent("");
+                setArgs([]);
+            }
+        } else {
+            setCreate(true);
+            setPlugin(null);
+            setName("");
+            setDescription("");
+            setScriptContent("");
+            setArgs([]);
+        }
+    }, [query, plugins]);
 
     const handleClose = async () => {
-        // const window = await getCurrentWindow();
         setName("");
         setDescription("");
         setScriptContent("");
         setArgs([]);
-        // window.hide();
+        cmd.close();
     };
 
     const addArg = () => {
@@ -123,19 +120,9 @@ export function PluginEdit() {
     };
 
     return (
-        <div className="app-container flex flex-col h-screen bg-background">
-            <div
-                className="flex items-center justify-between h-12 px-4 border-b border-border"
-                data-tauri-drag-region
-            >
-                <div className="text-sm font-medium text-foreground">添加插件</div>
-                <button
-                    onClick={handleClose}
-                    className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    <TbX className="w-4 h-4" />
-                </button>
-            </div>
+        <div className="flex flex-col h-screen bg-background">
+            <Header title={create ? "添加插件" : "编辑插件"} close={handleClose} />
+
 
             <div className="flex-1 overflow-auto p-4">
                 <div className="space-y-4">
@@ -168,7 +155,7 @@ export function PluginEdit() {
                             value={scriptContent}
                             onChange={(e) => setScriptContent(e.target.value)}
                             className="w-full px-3 py-2 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none min-h-[160px] resize-none placeholder:text-muted-foreground"
-                            placeholder="输入Python脚本内容"
+                            placeholder="输入js脚本内容"
                         />
                     </div>
 
@@ -274,3 +261,7 @@ export function PluginEdit() {
         </div>
     );
 }
+
+PluginEdit.open = (name?: string) => {
+    cmd.open("plugin-edit", { name }, { width: 500, height: 600 });
+};
