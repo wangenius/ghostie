@@ -80,7 +80,7 @@ export function ModelEdit() {
             <div className="flex-1 overflow-auto p-4">
                 <div className="space-y-4">
                     <div className="space-y-1.5">
-                        <label className="block text-xs text-muted-foreground">模型名称</label>
+                        <label className="block text-xs text-muted-foreground">配置名称</label>
                         <input
                             ref={inputRef}
                             type="text"
@@ -88,7 +88,7 @@ export function ModelEdit() {
                             value={model.name}
                             onChange={(e) => setModel({ ...model, name: e.target.value })}
                             className="w-full h-9 px-3 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground"
-                            placeholder="请输入模型名称"
+                            placeholder="请输入配置名称"
                         />
                     </div>
 
@@ -122,7 +122,7 @@ export function ModelEdit() {
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="block text-xs text-muted-foreground">模型名称</label>
+                        <label className="block text-xs text-muted-foreground">模型标识符</label>
                         <input
                             type="text"
                             spellCheck={false}
@@ -144,7 +144,7 @@ export function ModelEdit() {
                 </button>
                 <button
                     onClick={handleSubmit}
-                    disabled={!model.name || (create && !model.api_key) || isSubmitting}
+                    disabled={!model.name || !model.model || !model.api_url || (create && !model.api_key) || isSubmitting}
                     className="px-3 h-8 text-xs text-primary-foreground bg-primary rounded hover:opacity-90 disabled:opacity-50 transition-colors"
                 >
                     {isSubmitting ? (create ? "添加中..." : "更新中...") : create ? "添加" : "更新"}

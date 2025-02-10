@@ -1,4 +1,5 @@
-import { ChatManager } from "@services/manager/ChatManager";
+import { BotManager } from "@services/manager/BotManger";
+import { Bot } from "@services/agent/bot";
 import { cmd } from "@utils/shell";
 import { useEffect, useRef, useState } from "react";
 import { BsStars } from "react-icons/bs";
@@ -6,30 +7,62 @@ import { TbLoader2, TbX } from "react-icons/tb";
 
 export function MainView() {
     const [inputValue, setInputValue] = useState("");
+    const [isChat, setIsChat] = useState(false);
+    const [selectedBotIndex, setSelectedBotIndex] = useState(0);
+    const [currentBot, setCurrentBot] = useState<Bot>(new Bot({
+        name: "",
+        system: "",
+        model: "",
+        tools: []
+    }));
+    const [loading, setLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
-    const { list } = ChatManager.current.useHistory();
-    const { loading } = ChatManager.current.loading.use();
+    const bots = BotManager.use();
+    const { list } = currentBot.model.useHistory()
 
-    useEffect(() => {
-        ChatManager.create("deepseek");
-    }, []);
+
+    const botList = Object.values(bots);
+
+
+    const startChat = (bot: typeof botList[0]) => {
+        setIsChat(true);
+        const newBot = new Bot(bot);
+        setCurrentBot(newBot);
+    };
 
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        if (!isChat && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
             e.preventDefault();
+            const newIndex = e.key === "ArrowUp"
+                ? (selectedBotIndex - 1 + botList.length) % botList.length
+                : (selectedBotIndex + 1) % botList.length;
+            setSelectedBotIndex(newIndex);
         }
+
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             if (!inputValue.trim()) return;
+
+            if (!isChat) {
+                startChat(botList[selectedBotIndex]);
+                return;
+            }
+
+            if (!currentBot) return;
+
             try {
-                if (!inputValue.trim()) return;
-                await ChatManager.current.stream(inputValue);
+                setLoading(true);
+                const userInput = inputValue;
                 setInputValue("");
+                currentBot.chat(userInput);
             } catch (error) {
                 console.error("发送消息失败:", error);
+            } finally {
+                setLoading(false);
             }
         }
     };
+
     useEffect(() => {
         const handleFocus = () => inputRef.current?.focus();
         const handleVisibilityChange = () => {
@@ -38,28 +71,13 @@ export function MainView() {
             }
         };
 
-        // 添加全局快捷键监听
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.ctrlKey && e.key.toLowerCase() === "i") {
                 e.preventDefault();
                 inputRef.current?.focus();
-            } else if (e.ctrlKey && e.key.toLowerCase() === "h") {
-                e.preventDefault();
-            } else if (e.ctrlKey && (e.key.toLowerCase() === "n" || e.key.toLowerCase() === "r")) {
-                e.preventDefault();
-                inputRef.current?.focus();
-            } else if ((e.ctrlKey && e.key.toLowerCase() === ",") || e.key.toLowerCase() === "，") {
+            } else if (e.ctrlKey && e.key.toLowerCase() === ",") {
                 e.preventDefault();
                 cmd.open("settings", {}, { width: 800, height: 600 });
-            } else if (
-                e.ctrlKey &&
-                (e.key.toLowerCase() === "j" ||
-                    e.key.toLowerCase() === "u" ||
-                    e.key.toLowerCase() === "p" ||
-                    e.key.toLowerCase() === "f" ||
-                    e.key.toLowerCase() === "g")
-            ) {
-                e.preventDefault();
             }
         };
 
@@ -74,7 +92,6 @@ export function MainView() {
             document.removeEventListener("keydown", handleKeyDown);
         };
     }, []);
-
 
     return (
         <div className="flex flex-col h-screen bg-background">
@@ -97,37 +114,35 @@ export function MainView() {
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={handleKeyDown}
                             className="w-full text-sm h-10 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
-                            placeholder={`对话...`}
-
+                            placeholder={isChat ? `与 ${currentBot?.name} 对话...` : "选择一个机器人开始对话..."}
                         />
                     </div>
-
 
                     <div className="flex items-center gap-2">
                         {loading ? (
                             <button
                                 onClick={() => {
-                                    ChatManager.current.stop()
-
+                                    currentBot?.loading.set({ status: false });
+                                    setLoading(false);
                                 }}
                                 className="p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-all duration-200 active:scale-95"
                             >
-
                                 <TbLoader2 className="w-[18px] h-[18px] animate-spin" />
                             </button>
                         ) : (
                             <button
                                 onClick={() => {
-                                    if (list.length === 0) {
-                                        cmd.close();
-                                    }
-                                    ChatManager.current.new();
-
+                                    setIsChat(false);
+                                    setCurrentBot(new Bot({
+                                        name: "",
+                                        system: "",
+                                        model: "",
+                                        tools: []
+                                    }));
                                 }}
-
                                 className="p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-all duration-200 active:scale-95"
-
                             >
+
                                 <TbX className="w-[18px] h-[18px]" />
                             </button>
                         )}
@@ -136,13 +151,29 @@ export function MainView() {
             </div>
 
             <div className="flex-1 mt-2 overflow-y-auto">
-                {list.map((message, index) => (
-                    <div key={index} className={`p-4 ${message.role === 'user' ? 'bg-gray-100' : 'bg-white'}`}>
-                        <div className="font-bold">{message.role === 'user' ? '用户' : '助手'}</div>
-                        <div className="mt-2">{message.content}</div>
-
+                {!isChat ? (
+                    <div className="p-4">
+                        {botList.map((bot, index) => (
+                            <div
+                                key={bot.name}
+                                className={`p-4 cursor-pointer rounded-lg mb-2 ${index === selectedBotIndex ? 'bg-secondary' : 'hover:bg-secondary/50'
+                                    }`}
+                                onClick={() => startChat(bot)}
+                            >
+                                <div className="font-bold">{bot.name}</div>
+                                <div className="text-sm text-muted-foreground">{bot.system}</div>
+                            </div>
+                        ))}
                     </div>
-                ))}
+                ) : (
+                    list.map((message, index) => (
+                        <div key={index} className={`p-4 ${message.role === 'user' ? 'bg-gray-100' : 'bg-white'}`}>
+                            <div className="font-bold">{message.role === 'user' ? '用户' : '助手'}</div>
+                            <div className="mt-2 whitespace-pre-wrap">{message.content}</div>
+
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     );

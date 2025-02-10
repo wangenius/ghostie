@@ -22,24 +22,36 @@ export function BotEdit() {
     const inputRef = useRef<HTMLInputElement>(null);
 
     const query = useQuery("name");
+    console.log(query);
     const models = ModelManager.use();
     const { list: plugins } = PluginManager.use();
+
 
     useEffect(() => {
         inputRef.current?.focus();
         if (query) {
-            setCreate(false);
-            setOriginalName(query);
             const botData = BotManager.store.current[query];
             if (botData) {
+                setCreate(false);
+                setOriginalName(query);
                 setBot(botData);
+            } else {
+                setCreate(true);
+                setOriginalName("");
+                setBot(defaultBot);
             }
+        } else {
+            setCreate(true);
+            setOriginalName("");
+            setBot(defaultBot);
         }
     }, [query]);
 
     const handleClose = async () => {
-        setBot(defaultBot);
         cmd.close();
+        setBot(defaultBot);
+        setCreate(true);
+        setOriginalName("");
     };
 
 
