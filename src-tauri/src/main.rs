@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use echo::utils;
 use std::sync::atomic::{AtomicI64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{
@@ -10,7 +11,6 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_updater::UpdaterExt;
-use echo::{agents, bots, config, llm, model, plugins};
 
 static LAST_WINDOW_ACTION: AtomicI64 = AtomicI64::new(0);
 
@@ -80,38 +80,8 @@ fn main() {
                 .build(),
         )
         .invoke_handler(tauri::generate_handler![
-            model::command::add_model,
-            model::command::remove_model,
-            model::command::list_models,
-            model::command::set_current_model,
-            model::command::update_model,
-            model::command::get_model,
-            bots::command::add_bot,
-            bots::command::remove_bot,
-            bots::command::list_bots,
-            bots::command::set_current_bot,
-            bots::command::get_current_bot,
-            bots::command::update_bot,
-            bots::command::get_bot,
-            llm::chat::chat,
-            llm::chat::create_chat_history,
-            llm::chat::update_chat_history,
-            llm::chat::list_histories,
-            llm::chat::delete_history,
-            config::window::open_window,
-            config::window::hide_window,
-            agents::command::add_agent,
-            agents::command::remove_agent,
-            agents::command::execute_agent,
-            agents::command::list_agents,
-            agents::command::get_agent,
-            agents::command::update_agent,
-            plugins::command::get_plugin,
-            plugins::command::add_plugin,
-            plugins::command::remove_plugin,
-            plugins::command::list_plugins,
-            plugins::command::update_plugin,
-            plugins::command::execute_plugin,
+            utils::window::open_window,
+            utils::window::hide_window,
             check_update,
             install_update
         ])

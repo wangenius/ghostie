@@ -30,9 +30,26 @@
         "minimizable": false
       },
       {
-        "title": "编辑模型",
-        "width": 400,
-        "height": 500,
+        "title": "设置",
+        "width": 800,
+        "height": 600,
+        "resizable": false,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "label": "settings",
+        "parent": "main",
+        "center": true,
+        "url": "/settings",
+        "visible": false,
+        "focus": true,
+        "maximizable": false,
+        "minimizable": false
+      },
+      {
+        "title": "模型编辑",
         "resizable": false,
         "fullscreen": false,
         "decorations": false,
@@ -46,9 +63,9 @@
         "minimizable": false
       },
       {
-        "title": "编辑机器人",
-        "width": 400,
-        "height": 500,
+        "title": "机器人编辑",
+        "width": 600,
+        "height": 800,
         "resizable": false,
         "fullscreen": false,
         "decorations": false,
@@ -62,7 +79,7 @@
         "minimizable": false
       },
       {
-        "title": "编辑代理",
+        "title": "代理编辑",
         "width": 600,
         "height": 800,
         "resizable": false,
@@ -78,7 +95,7 @@
         "minimizable": false
       },
       {
-        "title": "添加插件",
+        "title": "插件编辑",
         "width": 900,
         "height": 600,
         "resizable": false,
@@ -88,22 +105,6 @@
         "label": "plugin-edit",
         "center": true,
         "url": "/plugin-edit",
-        "visible": false,
-        "parent": "main",
-        "maximizable": false,
-        "minimizable": false
-      },
-      {
-        "title": "运行插件",
-        "width": 400,
-        "height": 500,
-        "resizable": false,
-        "fullscreen": false,
-        "decorations": false,
-        "transparent": true,
-        "label": "plugin-run",
-        "center": true,
-        "url": "/plugin-run",
         "visible": false,
         "parent": "main",
         "maximizable": false,

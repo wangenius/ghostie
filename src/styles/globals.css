@@ -3,138 +3,152 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 255 255 255;
-    --foreground: 15 23 42;
+    :root {
+        --background: 255 255 255;
+        --foreground: 15 23 42;
 
-    --card: 255 255 255;
-    --card-foreground: 15 23 42;
+        --card: 255 255 255;
+        --card-foreground: 15 23 42;
 
-    --popover: 255 255 255;
-    --popover-foreground: 15 23 42;
+        --popover: 255 255 255;
+        --popover-foreground: 15 23 42;
 
-    --primary: 59 130 246;
-    --primary-foreground: 255 255 255;
+        --primary: 59 130 246;
+        --primary-foreground: 255 255 255;
 
-    --secondary: 241 245 249;
-    --secondary-foreground: 15 23 42;
+        --secondary: 241 245 249;
+        --secondary-foreground: 15 23 42;
 
-    --muted: 241 245 249;
-    --muted-foreground: 100 116 139;
+        --muted: 241 245 249;
+        --muted-foreground: 100 116 139;
 
-    --accent: 241 245 249;
-    --accent-foreground: 15 23 42;
+        --accent: 241 245 249;
+        --accent-foreground: 15 23 42;
 
-    --destructive: 239 68 68;
-    --destructive-foreground: 255 255 255;
+        --destructive: 239 68 68;
+        --destructive-foreground: 255 255 255;
 
-    --border: 226 232 240;
-    --input: 226 232 240;
-    --ring: 59 130 246;
+        --border: 226 232 240;
+        --input: 226 232 240;
+        --ring: 59 130 246;
 
-    --radius: 0.5rem;
+        --radius: 0.5rem;
 
-    --hover: 248 250 252;
-    --hover-foreground: 15 23 42;
-  }
+        --hover: 248 250 252;
+        --hover-foreground: 15 23 42;
+    }
 
-  .dark {
-    --background: 26 26 29;
-    --foreground: 248 250 252;
+    .dark {
+        --background: 26 26 29;
+        --foreground: 248 250 252;
 
-    --card: 30 41 59;
-    --card-foreground: 248 250 252;
+        --card: 30 41 59;
+        --card-foreground: 248 250 252;
 
-    --popover: 30 41 59;
-    --popover-foreground: 248 250 252;
+        --popover: 30 41 59;
+        --popover-foreground: 248 250 252;
 
-    --primary: 59 130 246;
-    --primary-foreground: 255 255 255;
+        --primary: 59 130 246;
+        --primary-foreground: 255 255 255;
 
-    --secondary: 30 41 59;
-    --secondary-foreground: 248 250 252;
+        --secondary: 30 41 59;
+        --secondary-foreground: 248 250 252;
 
-    --muted: 30 41 59;
-    --muted-foreground: 148 163 184;
+        --muted: 30 41 59;
+        --muted-foreground: 148 163 184;
 
-    --accent: 30 41 59;
-    --accent-foreground: 248 250 252;
+        --accent: 30 41 59;
+        --accent-foreground: 248 250 252;
 
-    --destructive: 127 29 29;
-    --destructive-foreground: 248 250 252;
+        --destructive: 127 29 29;
+        --destructive-foreground: 248 250 252;
 
-    --border: 30 41 59;
-    --input: 30 41 59;
-    --ring: 59 130 246;
+        --border: 30 41 59;
+        --input: 30 41 59;
+        --ring: 59 130 246;
 
-    --hover: 15 23 42;
-    --hover-foreground: 248 250 252;
-  }
-}
+        --hover: 15 23 42;
+        --hover-foreground: 248 250 252;
+    }
 
-@layer base {
-  body {
-    @apply bg-background text-foreground;
-  }
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-transparent text-foreground;
+    }
 }
 
 /* 禁止滚动 */
 html,
 body {
-  overflow: hidden;
-  height: 100%;
-  position: fixed;
-  width: 100%;
+    overflow: hidden;
+    height: 100%;
+    position: fixed;
+    width: 100%;
+    background: transparent;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
 }
 
 #root {
-  height: 100%;
-  overflow: hidden;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
 }
 
 /* 应用圆角和背景 */
 .app-container {
-  @apply rounded-lg backdrop-blur-sm;
-  height: 100%;
-  width: 100%;
+    @apply rounded-xl;
+    height: 100%;
+    width: 100%;
+    background: rgb(var(--background));
+    border: 1px solid rgba(var(--border) / 0.1);
+    overflow: hidden;
+    -webkit-app-region: drag;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+    backface-visibility: hidden;
 }
 
 /* 自定义滚动条样式 */
 ::-webkit-scrollbar {
-  @apply w-1.5;
+    @apply w-1.5;
 }
 
 ::-webkit-scrollbar-track {
-  background-color: rgb(var(--background));
+    background-color: rgb(var(--background));
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgb(var(--muted-foreground) / 0.3);
-  border-radius: 9999px;
-  border: 2px solid rgb(var(--background));
-  transition: background-color 0.2s ease;
+    background-color: rgb(var(--muted-foreground) / 0.3);
+    border-radius: 9999px;
+    border: 2px solid rgb(var(--background));
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgb(var(--muted-foreground) / 0.5);
+    background-color: rgb(var(--muted-foreground) / 0.5);
 }
 
 /* 当鼠标悬停在可滚动区域时才显示滚动条 */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(var(--muted-foreground) / 0.3) rgb(var(--background));
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--muted-foreground) / 0.3) rgb(var(--background));
 }
 
 .overflow-y-auto,
 .overflow-x-auto {
-  &::-webkit-scrollbar-thumb {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
+    &::-webkit-scrollbar-thumb {
+        opacity: 0;
+    }
 
-  &:hover::-webkit-scrollbar-thumb {
-    opacity: 1;
-  }
+    &:hover::-webkit-scrollbar-thumb {
+        opacity: 1;
+    }
 }
 
 p,
@@ -146,6 +160,27 @@ textarea,
 select,
 option,
 a {
-  user-select: none !important;
-  -webkit-user-select: none !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+/* 可拖拽区域样式 */
+.draggable {
+    -webkit-app-region: drag;
+}
+
+.draggable button,
+.draggable input,
+.draggable span,
+.draggable div,
+.draggable a {
+    -webkit-app-region: no-drag;
+}
+
+.btn {
+    @apply p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground !cursor-pointer active:scale-95;
+}
+
+button {
+    @apply p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground !cursor-pointer active:scale-95;
 }
