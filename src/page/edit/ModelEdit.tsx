@@ -1,10 +1,9 @@
 import { Header } from "@/components/custom/Header";
+import { ModelManager } from "@/services/model/ModelManager";
 import { Model } from "@common/types/model";
 import { useQuery } from "@hook/useQuery";
-import { ModelManager } from "@/services/model/ModelManager";
 import { cmd } from "@utils/shell";
 import { useEffect, useRef, useState } from "react";
-import { TbX } from "react-icons/tb";
 
 
 const defaultModel: Model = {
@@ -26,14 +25,20 @@ export function ModelEdit() {
     useEffect(() => {
         inputRef.current?.focus();
         if (query) {
-            // 如果有name参数，说明是编辑模式
-            setCreate(false);
-            setOriginalName(query);
-            // 获取对应的模型数据
             const modelData = ModelManager.store.current[query];
             if (modelData) {
+                setCreate(false);
+                setOriginalName(query);
                 setModel(modelData);
+            } else {
+                setCreate(true);
+                setOriginalName("");
+                setModel(defaultModel);
             }
+        } else {
+            setCreate(true);
+            setOriginalName("");
+            setModel(defaultModel);
         }
     }, [query]);
 
@@ -41,6 +46,8 @@ export function ModelEdit() {
     const handleClose = async () => {
         cmd.close();
         setModel(defaultModel);
+        setCreate(true);
+        setOriginalName("");
     };
 
     const handleSubmit = async () => {

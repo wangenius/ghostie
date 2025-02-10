@@ -84,7 +84,7 @@ export function PluginEdit() {
         if (create) {
             try {
                 setIsSubmitting(true);
-                await ToolsManager.addPlugin({
+                await ToolsManager.add({
                     enabled: true,
                     name,
                     description,
@@ -102,7 +102,7 @@ export function PluginEdit() {
             try {
                 setIsSubmitting(true);
                 if (!plugin) return;
-                await ToolsManager.updatePlugin(plugin.name, {
+                await ToolsManager.update(plugin.name, {
                     name,
                     description,
                     script_content: scriptContent,

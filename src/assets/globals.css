@@ -4,12 +4,13 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 125 100% 100%;
     --foreground: 240 10% 25%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 25%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 25%;
+
     --primary: 220 60% 16%;
     --primary-foreground: 0 0% 98%;
     --secondary: 240 4.8% 95.9%;
@@ -117,7 +118,6 @@ body {
 /* 当鼠标悬停在可滚动区域时才显示滚动条 */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgb(var(--muted-foreground) / 0.3) rgb(var(--background));
 }
 
 .overflow-y-auto,
@@ -152,6 +152,7 @@ a {
 .draggable button,
 .draggable input,
 .draggable span,
+.draggable div,
 .draggable a {
   -webkit-app-region: no-drag;
 }

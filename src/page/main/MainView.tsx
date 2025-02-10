@@ -1,25 +1,21 @@
-import { BotManager } from "@services/manager/BotManger";
-import { Bot } from "@/services/manager/bot";
+import { BotManager } from "@/services/bot/BotManger";
+import { Bot } from "@/services/bot/bot";
 import { cmd } from "@utils/shell";
 import { useEffect, useRef, useState } from "react";
 import { BsStars } from "react-icons/bs";
-import { TbLoader2, TbX } from "react-icons/tb";
+import { TbInfoSquare, TbLoader2, TbX } from "react-icons/tb";
 import { Button } from "@/components/ui/button";
+import { BotEdit } from "../edit/BotEdit";
 
 export function MainView() {
     const [inputValue, setInputValue] = useState("");
     const [isChat, setIsChat] = useState(false);
     const [selectedBotIndex, setSelectedBotIndex] = useState(0);
-    const [currentBot, setCurrentBot] = useState<Bot>(new Bot({
-        name: "",
-        system: "",
-        model: "",
-        tools: []
-    }));
     const [loading, setLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const bots = BotManager.use();
-    const { list } = currentBot.model.useHistory()
+    const { list } = BotManager.current.model.useHistory();
+
 
 
     const botList = Object.values(bots);
@@ -27,9 +23,11 @@ export function MainView() {
 
     const startChat = (bot: typeof botList[0]) => {
         setIsChat(true);
-        const newBot = new Bot(bot);
-        setCurrentBot(newBot);
+        console.log(bot);
+        BotManager.setCurrent(bot);
     };
+
+
 
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (!isChat && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
@@ -49,13 +47,14 @@ export function MainView() {
                 return;
             }
 
-            if (!currentBot) return;
+            if (!BotManager.current) return;
 
             try {
                 setLoading(true);
                 const userInput = inputValue;
                 setInputValue("");
-                currentBot.chat(userInput);
+                BotManager.current.chat(userInput);
+
             } catch (error) {
                 console.error("发送消息失败:", error);
             } finally {
@@ -95,10 +94,11 @@ export function MainView() {
     }, []);
 
     return (
-        <div className="flex draggable flex-col h-screen bg-background">
-            <div className="pt-2 px-4 draggable">
-                <div className="flex items-center gap-2 h-10">
+        <div data-tauri-drag-region className="flex  flex-col h-screen bg-background">
+            <div data-tauri-drag-region className="pt-2 px-4 ">
+                <div data-tauri-drag-region className="flex items-center gap-2 h-10">
                     <Button
+
                         size="icon"
                         variant="ghost"
                         onClick={async () => {
@@ -118,18 +118,20 @@ export function MainView() {
 
                             onKeyDown={handleKeyDown}
                             className="w-full text-sm h-10 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
-                            placeholder={isChat ? `与 ${currentBot?.name} 对话...` : "选择一个助手开始对话..."}
+                            placeholder={isChat ? `与 ${BotManager.current.name} 对话...` : "选择一个助手开始对话..."}
                         />
                     </div>
+
 
                     <div className="flex items-center gap-2">
                         {loading ? (
                             <button
                                 onClick={() => {
-                                    currentBot?.loading.set({ status: false });
+                                    BotManager.current.loading.set({ status: false });
                                     setLoading(false);
                                 }}
                                 className="p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-all duration-200 active:scale-95"
+
                             >
                                 <TbLoader2 className="w-[18px] h-[18px] animate-spin" />
                             </button>
@@ -138,12 +140,12 @@ export function MainView() {
                                 onClick={() => {
                                     if (isChat) {
                                         setIsChat(false);
-                                        setCurrentBot(new Bot({
+                                        BotManager.setCurrent({
                                             name: "",
                                             system: "",
                                             model: "",
                                             tools: []
-                                        }));
+                                        });
                                     } else {
                                         cmd.close();
                                     }
@@ -172,6 +174,13 @@ export function MainView() {
                             >
                                 <div className="font-bold">{bot.name}</div>
                                 <div className="text-sm text-muted-foreground">{bot.system}</div>
+                                <Button variant="ghost" size="icon" onClick={() => {
+                                    BotEdit.open(bot.name)
+                                }} className="w-4 h-4">
+                                    <TbInfoSquare className="w-[18px] h-[18px]" />
+                                </Button>
+
+
                             </div>
                         ))}
                     </div>

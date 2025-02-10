@@ -1,5 +1,6 @@
 import { BotProps } from "@common/types/bot";
 import { Echo } from "echo-state";
+import { Bot } from "./bot";
 
 /** 助手管理器, 用于管理助手 */
 export class BotManager {
@@ -10,6 +11,17 @@ export class BotManager {
       sync: true,
     }
   );
+
+  static current = new Bot({
+    name: "",
+    system: "",
+    model: "",
+    tools: [],
+  });
+
+  static setCurrent(bot: BotProps) {
+    BotManager.current = new Bot(bot);
+  }
 
   static use = BotManager.store.use.bind(BotManager.store);
 
@@ -39,3 +51,5 @@ export class BotManager {
     });
   }
 }
+
+console.log(BotManager.store.current);

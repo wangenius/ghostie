@@ -17,7 +17,7 @@ interface ZhihuResponse {
 export class Zhihu {
   private static readonly API_ENDPOINT =
     "https://api.istero.com/resource/zhihu/top";
-  private static readonly API_TOKEN = process.env.ZHIHU_API_TOKEN;
+  private static readonly API_TOKEN = import.meta.env.ZHIHU_API_TOKEN;
 
   @tool("获取知乎热搜榜", {
     limit: {

@@ -1,6 +1,6 @@
 import { BotItem } from "@/components/model/BotItem";
 import { BotEdit } from "@/page/edit/BotEdit";
-import { BotManager } from "@services/manager/BotManger";
+import { BotManager } from "@/services/bot/BotManger";
 import { cmd } from "@utils/shell";
 import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";
 import { Button } from "@/components/ui/button";

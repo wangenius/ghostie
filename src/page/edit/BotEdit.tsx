@@ -2,7 +2,7 @@ import { Header } from "@/components/custom/Header";
 import { cmd } from "@/utils/shell";
 import { BotProps } from "@common/types/bot";
 import { useQuery } from "@hook/useQuery";
-import { BotManager } from "@services/manager/BotManger";
+import { BotManager } from "@/services/bot/BotManger";
 import { ModelManager } from "@/services/model/ModelManager";
 import { ToolsManager } from "@/services/tool/ToolsManager";
 import { useEffect, useRef, useState } from "react";

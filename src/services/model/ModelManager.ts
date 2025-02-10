@@ -25,16 +25,17 @@ export class ModelManager {
       throw new Error("模型名称不能为空");
     }
     /* 判断是否已经有这个模型 */
-    if (this.store.current[model.name]) {
+    if (ModelManager.store.current[model.name]) {
       throw new Error(`模型 ${model.name} 已存在`);
     }
-    this.store.set({
+
+    ModelManager.store.set({
       [model.name]: model,
     });
   }
 
   static remove(name: string) {
-    this.store.delete(name);
+    ModelManager.store.delete(name);
   }
 
   static update(name: string, model: Model) {
@@ -42,9 +43,9 @@ export class ModelManager {
       throw new Error("模型名称不能为空");
     }
     if (name !== model.name) {
-      this.remove(name);
+      ModelManager.remove(name);
     }
-    this.store.set({
+    ModelManager.store.set({
       [model.name]: model,
     });
   }

@@ -1,4 +1,4 @@
-import { ToolItem } from "@/components/model/PluginItem";
+import { ToolItem } from "@/components/model/ToolItem";
 import { PluginEdit } from "@/page/edit/PluginEdit";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -7,22 +7,52 @@ import { cmd } from "@utils/shell";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";
 import { Plugin } from "@/services/tool/ToolsManager";
+import { useEffect } from "react";
 
 /**
  * 工具管理
  */
 
-
 export function ToolsTab() {
     const tools = ToolsManager.use();
+
+    // 在组件加载时自动加载工具目录下的所有工具
+    useEffect(() => {
+        const loadTools = async () => {
+            try {
+                // 动态导入 tools 目录下的所有工具
+                const toolModules = import.meta.glob('@/tools/*.ts', { eager: true });
+
+                // 遍历所有模块
+                for (const path in toolModules) {
+                    const module = toolModules[path] as any;
+                    // 遍历模块中的所有导出
+                    for (const exportName in module) {
+                        const exportedItem = module[exportName];
+                        // 如果是类，则实例化它
+                        if (typeof exportedItem === 'function' && exportedItem.prototype) {
+                            try {
+                                new exportedItem();
+                                console.log(`成功加载工具: ${exportName}`);
+                            } catch (error) {
+                                console.error(`加载工具失败 ${exportName}:`, error);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("加载工具失败:", error);
+            }
+        };
+        loadTools();
+    }, []);
 
     const handleRemoveTool = async (name: string) => {
         const answer = await cmd.confirm(`确定要删除工具 "${name}" 吗？`);
 
-
         if (answer) {
             try {
-                await ToolsManager.removePlugin(name);
+                await ToolsManager.delete(name);
             } catch (error) {
                 console.error("删除插件失败:", error);
             }
@@ -45,7 +75,7 @@ export function ToolsTab() {
 
                 // 导入每个插件
                 for (const plugin of importedPlugins) {
-                    await ToolsManager.addPlugin(plugin);
+                    await ToolsManager.add(plugin);
                 }
 
                 cmd.message({
@@ -73,10 +103,8 @@ export function ToolsTab() {
             // 获取所有插件数据
             const toolsToExport = Object.values(tools).filter(Boolean);
 
-
             // 转换为 JSON
             const toolsJson = JSON.stringify(toolsToExport, null, 2);
-
 
             // 打开保存文件对话框
             await cmd.invoke("save_file", {
@@ -94,7 +122,6 @@ export function ToolsTab() {
                 buttons: ["确定"],
                 defaultId: 0,
                 cancelId: 0
-
             });
         } catch (error) {
             console.error("导出插件失败:", error);

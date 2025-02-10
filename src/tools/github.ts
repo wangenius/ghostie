@@ -31,7 +31,7 @@ interface GitHubResponse {
 export class GitHub {
   private static readonly API_ENDPOINT =
     "https://api.github.com/search/repositories";
-  private static readonly API_TOKEN = process.env.GITHUB_API_TOKEN;
+  private static readonly API_TOKEN = import.meta.env.GITHUB_API_TOKEN;
 
   @tool("获取 GitHub Trending 仓库", {
     language: {

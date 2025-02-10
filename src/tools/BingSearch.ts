@@ -14,7 +14,7 @@ interface BingSearchResponse {
 export class BingSearch {
   private static readonly API_ENDPOINT =
     "https://api.bing.microsoft.com/v7.0/search";
-  private static readonly API_KEY = process.env.BING_API_KEY;
+  private static readonly API_KEY = import.meta.env.BING_API_KEY;
 
   @tool("使用必应搜索", {
     query: {
