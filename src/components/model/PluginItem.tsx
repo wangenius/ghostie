@@ -1,18 +1,19 @@
 import { TbBox, TbPencil, TbTrash } from "react-icons/tb";
 
-interface PluginItemProps {
+interface ToolItemProps {
 	name: string;
 	description: string;
 	onEdit: (name: string) => void;
 	onDelete: (name: string) => void;
-
 }
 
 
-export function PluginItem({ name, description, onEdit, onDelete }: PluginItemProps) {
+
+export function ToolItem({ name, description, onEdit, onDelete }: ToolItemProps) {
 	return (
 		<div className="group relative bg-card hover:bg-accent/5 border border-border rounded-lg transition-all duration-200">
 			{/* 主内容区 */}
+
 
 
 			<div className="flex items-center p-3 gap-3">
@@ -46,20 +47,22 @@ export function PluginItem({ name, description, onEdit, onDelete }: PluginItemPr
 							onEdit(name);
 						}}
 						className="p-2 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-						title="编辑模型"
+						title="编辑工具"
 					>
 						<TbPencil className="w-4 h-4" />
 					</button>
+
 					<button
 						onClick={(e) => {
 							e.stopPropagation();
 							onDelete(name);
 						}}
 						className="p-2 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-						title="删除模型"
+						title="删除工具"
 					>
 						<TbTrash className="w-4 h-4" />
 					</button>
+
 				</div>
 			</div>
 		</div>

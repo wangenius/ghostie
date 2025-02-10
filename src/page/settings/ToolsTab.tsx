@@ -1,4 +1,4 @@
-import { PluginItem } from "@/components/model/PluginItem";
+import { ToolItem } from "@/components/model/PluginItem";
 import { PluginEdit } from "@/page/edit/PluginEdit";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -9,14 +9,16 @@ import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";
 import { Plugin } from "@/services/tool/ToolsManager";
 
 /**
- * 插件管理
+ * 工具管理
  */
 
-export function PluginsTab() {
-    const plugins = ToolsManager.use();
 
-    const handleRemovePlugin = async (name: string) => {
-        const answer = await cmd.confirm(`确定要删除插件 "${name}" 吗？`);
+export function ToolsTab() {
+    const tools = ToolsManager.use();
+
+    const handleRemoveTool = async (name: string) => {
+        const answer = await cmd.confirm(`确定要删除工具 "${name}" 吗？`);
+
 
         if (answer) {
             try {
@@ -66,30 +68,33 @@ export function PluginsTab() {
         }
     };
 
-    const handleExportPlugins = async () => {
+    const handleExportTools = async () => {
         try {
             // 获取所有插件数据
-            const pluginsToExport = Object.values(plugins).filter(Boolean);
+            const toolsToExport = Object.values(tools).filter(Boolean);
+
 
             // 转换为 JSON
-            const pluginsJson = JSON.stringify(pluginsToExport, null, 2);
+            const toolsJson = JSON.stringify(toolsToExport, null, 2);
+
 
             // 打开保存文件对话框
             await cmd.invoke("save_file", {
-                title: "保存插件文件",
+                title: "保存工具文件",
                 filters: {
-                    "插件文件": ["json"]
+                    "工具文件": ["json"]
                 },
-                defaultPath: "plugins.json",
-                content: pluginsJson
+                defaultPath: "tools.json",
+                content: toolsJson
             });
 
             cmd.message({
                 title: "导出成功",
-                message: `成功导出 ${pluginsToExport.length} 个插件`,
+                message: `成功导出 ${toolsToExport.length} 个工具`,
                 buttons: ["确定"],
                 defaultId: 0,
                 cancelId: 0
+
             });
         } catch (error) {
             console.error("导出插件失败:", error);
@@ -133,7 +138,7 @@ export function PluginsTab() {
                                 <span>导入</span>
                             </DropdownMenuItem>
 
-                            <DropdownMenuItem onClick={handleExportPlugins}>
+                            <DropdownMenuItem onClick={handleExportTools}>
                                 <TbDownload className="w-4 h-4" />
                                 <span>导出</span>
                             </DropdownMenuItem>
@@ -144,18 +149,19 @@ export function PluginsTab() {
 
             <div className="flex-1 min-h-0 overflow-y-auto">
                 <div className="grid grid-cols-1 gap-3">
-                    {Object.values(plugins).map((plugin) => {
-                        if (!plugin) return null;
+                    {Object.values(tools).map((tool) => {
+                        if (!tool) return null;
                         return (
-                            <PluginItem
-                                key={plugin.name}
-                                name={plugin.name}
-                                description={plugin.description || ""}
-                                onEdit={() => PluginEdit.open(plugin.name)}
-                                onDelete={() => handleRemovePlugin(plugin.name)}
+                            <ToolItem
+                                key={tool.name}
+                                name={tool.name}
+                                description={tool.description || ""}
+                                onEdit={() => PluginEdit.open(tool.name)}
+                                onDelete={() => handleRemoveTool(tool.name)}
                             />
                         );
                     })}
+
                 </div>
             </div>
         </div>

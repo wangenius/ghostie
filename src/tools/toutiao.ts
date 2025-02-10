@@ -1,7 +1,7 @@
 import { tool } from "@/services/tool/Tool";
 import axios from "axios";
 
-const API_KEY = "3cf84f47e6a24dfd6d8c87a0c7ca0b22";
+const API_KEY = import.meta.env.API_KEY;
 
 export class Toutiao {
   @tool("获取头条新闻", {

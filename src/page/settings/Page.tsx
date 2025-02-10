@@ -6,7 +6,7 @@ import { TbBox, TbColorSwatch, TbDatabase, TbGhost3, TbSettings } from "react-ic
 import { BotsTab } from "./BotsTab";
 import { GeneralTab } from "./GeneralTab";
 import { ModelsTab } from "./ModelsTab";
-import { PluginsTab } from "./PluginsTab";
+import { ToolsTab } from "./ToolsTab";
 import { SpaceTab } from "./SpaceTab";
 
 const SETTINGS_NAV_ITEMS = [
@@ -37,7 +37,7 @@ export function SettingsPage() {
             case "bots":
                 return <BotsTab />;
             case "plugins":
-                return <PluginsTab />;
+                return <ToolsTab />;
             case "space":
                 return <SpaceTab />;
             default:

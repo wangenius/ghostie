@@ -27,3 +27,4 @@ Cargo.lock
 *.sw?
 *.key
 *.key.pub
+.env
