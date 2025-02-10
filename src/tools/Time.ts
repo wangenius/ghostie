@@ -1,4 +1,4 @@
-import { tool } from "@/services/model/Tool";
+import { tool } from "@/services/tool/Tool";
 
 export class Time {
   @tool("获取当前时间", {})

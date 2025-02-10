@@ -1,6 +1,6 @@
 import { TbX, TbPlus, TbTrash } from "react-icons/tb";
 import { useEffect, useRef, useState } from "react";
-import { PluginManager, Plugin, PluginArg } from "../../services/manager/PluginManager";
+import { ToolsManager, Plugin, PluginArg } from "../../services/tool/ToolsManager";
 import { cmd } from "@/utils/shell";
 import { useQuery } from "@hook/useQuery";
 import { Header } from "@/components/custom/Header";
@@ -16,7 +16,7 @@ export function PluginEdit() {
     const [plugin, setPlugin] = useState<Plugin | null>(null);
 
     const query = useQuery("name");
-    const plugins = PluginManager.use();
+    const plugins = ToolsManager.use();
 
     useEffect(() => {
         inputRef.current?.focus();
@@ -84,7 +84,7 @@ export function PluginEdit() {
         if (create) {
             try {
                 setIsSubmitting(true);
-                await PluginManager.addPlugin({
+                await ToolsManager.addPlugin({
                     enabled: true,
                     name,
                     description,
@@ -102,7 +102,7 @@ export function PluginEdit() {
             try {
                 setIsSubmitting(true);
                 if (!plugin) return;
-                await PluginManager.updatePlugin(plugin.name, {
+                await ToolsManager.updatePlugin(plugin.name, {
                     name,
                     description,
                     script_content: scriptContent,

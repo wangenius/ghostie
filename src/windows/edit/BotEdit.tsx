@@ -3,8 +3,8 @@ import { cmd } from "@/utils/shell";
 import { BotProps } from "@common/types/bot";
 import { useQuery } from "@hook/useQuery";
 import { BotManager } from "@services/manager/BotManger";
-import { ModelManager } from "@services/manager/ModelManager";
-import { PluginManager } from "@services/manager/PluginManager";
+import { ModelManager } from "@/services/model/ModelManager";
+import { ToolsManager } from "@/services/tool/ToolsManager";
 import { useEffect, useRef, useState } from "react";
 import { TbX } from "react-icons/tb";
 
@@ -25,7 +25,7 @@ export function BotEdit() {
     const query = useQuery("name");
     console.log(query);
     const models = ModelManager.use();
-    const plugins = PluginManager.use();
+    const plugins = ToolsManager.use();
 
 
     useEffect(() => {
@@ -68,7 +68,7 @@ export function BotEdit() {
             }
             await handleClose();
         } catch (error) {
-            console.error(create ? "添加机器人失败:" : "更新机器人失败:", error);
+            console.error(create ? "添加助手失败:" : "更新助手失败:", error);
         } finally {
             setIsSubmitting(false);
         }
@@ -76,13 +76,13 @@ export function BotEdit() {
 
     return (
         <div className="flex flex-col h-screen bg-background">
-            <Header title={create ? "添加机器人" : "编辑机器人"} close={handleClose} />
+            <Header title={create ? "添加助手" : "编辑助手"} close={handleClose} />
 
 
             <div className="flex-1 overflow-auto p-4">
                 <div className="space-y-4">
                     <div className="space-y-1.5">
-                        <label className="block text-xs text-muted-foreground">机器人名称</label>
+                        <label className="block text-xs text-muted-foreground">助手名称</label>
                         <input
                             ref={inputRef}
                             type="text"
@@ -90,7 +90,7 @@ export function BotEdit() {
                             value={bot.name}
                             onChange={(e) => setBot({ ...bot, name: e.target.value })}
                             className="w-full h-9 px-3 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground"
-                            placeholder="请输入机器人名称"
+                            placeholder="请输入助手名称"
                         />
                     </div>
 
@@ -143,12 +143,12 @@ export function BotEdit() {
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="block text-xs text-muted-foreground">机器人提示词</label>
+                        <label className="block text-xs text-muted-foreground">助手提示词</label>
                         <textarea
                             value={bot.system}
                             onChange={(e) => setBot({ ...bot, system: e.target.value })}
                             className="w-full h-40 px-3 py-2 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground resize-none"
-                            placeholder="请输入机器人提示词"
+                            placeholder="请输入助手提示词"
                         />
                     </div>
                 </div>

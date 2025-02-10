@@ -1,6 +1,6 @@
-import { ModelName } from './model';
+import { ModelName } from "./model";
 
-/** 机器人
+/** 助手
  * @param name 名称
  * @param system 系统提示
  * @param model 模型

@@ -1,4 +1,4 @@
-import { tool } from "@/services/model/Tool";
+import { tool } from "@/services/tool/Tool";
 
 /** 测试用工具函数 */
 

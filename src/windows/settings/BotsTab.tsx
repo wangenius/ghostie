@@ -14,12 +14,12 @@ export function BotsTab() {
     const bots = BotManager.use();
 
     const handleDeleteBot = async (name: string) => {
-        const answer = await cmd.confirm(`确定要删除机器人 "${name}" 吗？`);
+        const answer = await cmd.confirm(`确定要删除助手 "${name}" 吗？`);
         if (answer) {
             try {
                 BotManager.remove(name);
             } catch (error) {
-                console.error("删除机器人失败:", error);
+                console.error("删除助手失败:", error);
             }
         }
     };

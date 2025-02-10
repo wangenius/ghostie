@@ -1,7 +1,7 @@
 import { Header } from "@/components/custom/Header";
 import { Model } from "@common/types/model";
 import { useQuery } from "@hook/useQuery";
-import { ModelManager } from "@services/manager/ModelManager";
+import { ModelManager } from "@/services/model/ModelManager";
 import { cmd } from "@utils/shell";
 import { useEffect, useRef, useState } from "react";
 import { TbX } from "react-icons/tb";

@@ -1,5 +1,5 @@
 import { BotManager } from "@services/manager/BotManger";
-import { Bot } from "@services/agent/bot";
+import { Bot } from "@/services/manager/bot";
 import { cmd } from "@utils/shell";
 import { useEffect, useRef, useState } from "react";
 import { BsStars } from "react-icons/bs";
@@ -118,7 +118,7 @@ export function MainView() {
 
                             onKeyDown={handleKeyDown}
                             className="w-full text-sm h-10 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
-                            placeholder={isChat ? `与 ${currentBot?.name} 对话...` : "选择一个机器人开始对话..."}
+                            placeholder={isChat ? `与 ${currentBot?.name} 对话...` : "选择一个助手开始对话..."}
                         />
                     </div>
 

@@ -1,11 +1,12 @@
-import { BotProps } from '@common/types/bot';
-import { Echo } from 'echo-state';
+import { BotProps } from "@common/types/bot";
+import { Echo } from "echo-state";
 
+/** 助手管理器, 用于管理助手 */
 export class BotManager {
   static store = new Echo<Record<string, BotProps>>(
     {},
     {
-      name: 'bots',
+      name: "bots",
       sync: true,
     }
   );
@@ -15,7 +16,7 @@ export class BotManager {
   static add(bot: BotProps) {
     /* 判断是否已经有这个模型 */
     if (BotManager.store.current[bot.name]) {
-      throw new Error(`机器人 ${bot.name} 已存在`);
+      throw new Error(`助手 ${bot.name} 已存在`);
     }
     BotManager.store.set({
       [bot.name]: bot,
@@ -28,7 +29,7 @@ export class BotManager {
 
   static update(name: string, bot: BotProps) {
     if (!BotManager.store.current[name]) {
-      throw new Error(`机器人 ${name} 不存在`);
+      throw new Error(`助手 ${name} 不存在`);
     }
     if (name !== bot.name) {
       BotManager.store.delete(name);

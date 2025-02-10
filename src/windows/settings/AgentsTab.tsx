@@ -1,6 +1,6 @@
 import { TbBolt, TbPencil, TbPlus, TbTrash } from "react-icons/tb";
 import { useEffect } from "react";
-import { AgentManager } from "@services/manager/AgentManager";
+import { AgentManager } from "@/services/agent/AgentManager";
 
 export function AgentsTab() {
     const { list: agents } = AgentManager.use();

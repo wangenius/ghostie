@@ -1,8 +1,8 @@
 /** Chat模型
  * 该模型依赖于工具模块。
  */
-import { gen } from '@/utils/generator';
-import { ModelInfo } from '@common/types/agent';
+import { gen } from "@/utils/generator";
+import { ModelInfo } from "@common/types/agent";
 import {
   ChatModelRequestBody,
   ChatModelResponse,
@@ -11,10 +11,11 @@ import {
   Message,
   StreamResponse,
   ToolFunctionInfo,
-} from '@common/types/model';
-import { Echo } from 'echo-state';
-import { HistoryMessage } from './HistoryMessage';
-import { Tool } from './Tool';
+} from "@common/types/model";
+import { Echo } from "echo-state";
+import { HistoryMessage } from "./HistoryMessage";
+import { Tool } from "../tool/Tool";
+import { ModelManager } from "./ModelManager";
 
 /** Chat模型, 用于与模型进行交互 */
 export class ChatModel {
@@ -41,10 +42,18 @@ export class ChatModel {
    * @param config 模型配置
    */
   constructor(config?: Partial<ModelInfo>) {
-    this.api_key = config?.api_key || '';
-    this.api_url = config?.api_url || '';
-    this.model = config?.model || '';
+    this.api_key = config?.api_key || "";
+    this.api_url = config?.api_url || "";
+    this.model = config?.model || "";
     this.abortControllers = new Map();
+  }
+
+  public setModel(model_name: string): this {
+    const modelInfo = ModelManager.get(model_name);
+    this.model = modelInfo.model;
+    this.api_key = modelInfo.api_key;
+    this.api_url = modelInfo.api_url;
+    return this;
   }
 
   /** 添加工具
@@ -118,7 +127,7 @@ export class ChatModel {
     const toolResult = await toolResultPromise;
 
     if (toolResult === undefined || toolResult === null) {
-      throw new Error('工具执行结果无效');
+      throw new Error("工具执行结果无效");
     }
 
     /* 返回工具调用结果 */
@@ -143,15 +152,15 @@ export class ChatModel {
       /* 创建请求体 */
       const requestBody: ChatModelRequestBody = {
         model: this.model,
-        messages: this.historyMessage.push([{ role: 'user', content: prompt }]),
+        messages: this.historyMessage.push([{ role: "user", content: prompt }]),
         functions: this.tools,
       };
       this.loading.set({ loading: true });
       /* 发送请求 */
       const response = await fetch(this.api_url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${this.api_key}`,
         },
         body: JSON.stringify(requestBody),
@@ -168,7 +177,7 @@ export class ChatModel {
       const assistantMessage = data.choices[0].message;
       /* 创建基本响应结果 */
       const result: ChatModelResponse<string> = {
-        body: assistantMessage.content || '',
+        body: assistantMessage.content || "",
         stop: () => this.stop(requestId),
         tool: await this.tool_call(assistantMessage.function_call),
       };
@@ -177,7 +186,7 @@ export class ChatModel {
       if (result.tool) {
         // 将工具函数执行结果添加到消息历史
         const functionResultMessage: Message = {
-          role: 'function',
+          role: "function",
           name: assistantMessage.function_call.name,
           content: JSON.stringify(result.tool.result),
         };
@@ -209,7 +218,7 @@ export class ChatModel {
       const abortController = this.getAbortController(requestId);
 
       let messages: Message[] = [];
-      const newMessages: Message = { role: 'user', content: prompt };
+      const newMessages: Message = { role: "user", content: prompt };
 
       if (template) {
         const templatePrompt = `请严格按照以下JSON格式返回(不添加额外字符)：\n${JSON.stringify(
@@ -224,13 +233,13 @@ export class ChatModel {
         model: this.model,
         messages,
         functions: this.tools,
-        response_format: { type: 'json_object' },
+        response_format: { type: "json_object" },
       };
       this.loading.set({ loading: true });
       const response = await fetch(this.api_url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${this.api_key}`,
         },
         body: JSON.stringify(requestBody),
@@ -260,7 +269,7 @@ export class ChatModel {
       if (result.tool) {
         // 将工具函数执行结果添加到消息历史
         const functionResultMessage: Message = {
-          role: 'function',
+          role: "function",
           name: assistantMessage.function_call.name,
           content: JSON.stringify(result.tool.result),
         };
@@ -289,7 +298,7 @@ export class ChatModel {
     let functionCallData: FunctionCallReply | undefined;
 
     // 添加用户消息并创建助手消息
-    this.historyMessage.push([{ role: 'user', content: prompt }]);
+    this.historyMessage.push([{ role: "user", content: prompt }]);
     this.historyMessage.createAssistantMessage();
 
     const requestBody: ChatModelRequestBody = {
@@ -302,11 +311,11 @@ export class ChatModel {
     this.loading.set({ loading: true });
     try {
       const response = await fetch(this.api_url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${this.api_key}`,
-          'X-DashScope-SSE': 'enable',
+          "X-DashScope-SSE": "enable",
         },
         body: JSON.stringify(requestBody),
         signal: this.getAbortController(requestId).signal,
@@ -327,10 +336,10 @@ export class ChatModel {
               if (done) break;
 
               const text = decoder.decode(value);
-              const lines = text.split('\n');
+              const lines = text.split("\n");
 
               for (const line of lines) {
-                if (!line.startsWith('data: ') || line.includes('[DONE]'))
+                if (!line.startsWith("data: ") || line.includes("[DONE]"))
                   continue;
 
                 const json = JSON.parse(line.slice(5));
@@ -345,8 +354,8 @@ export class ChatModel {
 
                 if (delta?.function_call) {
                   functionCallData = functionCallData || {
-                    name: '',
-                    arguments: '',
+                    name: "",
+                    arguments: "",
                   };
                   if (delta.function_call.arguments) {
                     functionCallData.arguments += delta.function_call.arguments;
@@ -401,7 +410,7 @@ export class ChatModel {
         if (toolResult) {
           this.historyMessage.push([
             {
-              role: 'function',
+              role: "function",
               name: functionCallData.name,
               content: JSON.stringify(toolResult.result),
             },

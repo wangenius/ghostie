@@ -1,8 +1,11 @@
 import { Model } from "@common/types/model";
 import { Echo } from "echo-state";
 
-/* 模型管理器 */
+/** 模型管理器, 用于管理模型
+
+ */
 export class ModelManager {
+  /** 模型存储 */
   static store = new Echo<Record<string, Model>>(
     {},
     {

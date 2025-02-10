@@ -1,4 +1,4 @@
-import { tool } from "@/services/model/Tool";
+import { tool } from "@/services/tool/Tool";
 import axios from "axios";
 
 const API_KEY = "3cf84f47e6a24dfd6d8c87a0c7ca0b22";

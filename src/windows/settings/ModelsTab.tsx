@@ -1,7 +1,7 @@
 import { ModelEdit } from "@/windows/edit/ModelEdit";
 import { Button } from "@/components/ui/button";
 import { ModelItem } from "@components/model/ModelItem";
-import { ModelManager } from "@services/manager/ModelManager";
+import { ModelManager } from "@/services/model/ModelManager";
 import { cmd } from "@utils/shell";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";

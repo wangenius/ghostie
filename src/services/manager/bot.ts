@@ -1,10 +1,9 @@
-import { BotProps } from '@/common/types/bot';
-import { ChatModel } from '../model/ChatModel';
-import { ModelManager } from '../manager/ModelManager';
-import { Tool } from '../model/Tool';
-import { Context } from './Context';
-import { ToolFunctionInfo } from '@/common/types/model';
-import { Echo } from 'echo-state';
+import { BotProps } from "@/common/types/bot";
+import { ToolFunctionInfo } from "@/common/types/model";
+import { Echo } from "echo-state";
+import { Context } from "../agent/Context";
+import { ChatModel } from "../model/ChatModel";
+import { Tool } from "../tool/Tool";
 
 export class Bot {
   name: string;
@@ -21,8 +20,7 @@ export class Bot {
   constructor(config: BotProps) {
     this.name = config.name;
     this.system = config.system;
-
-    this.model = new ChatModel(ModelManager.get(config.model))
+    this.model = new ChatModel()
       .setTools(Tool.get(config.tools))
       .system(config.system);
     this.tools = Tool.get(config.tools);

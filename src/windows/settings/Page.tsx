@@ -1,20 +1,18 @@
 import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
+import { cmd } from "@/utils/shell";
 import { Echo } from "echo-state";
-import { TbBox, TbColorSwatch, TbDatabase, TbGhost3, TbSettings, TbUsers } from "react-icons/tb";
-import { AgentsTab } from "./AgentsTab";
+import { TbBox, TbColorSwatch, TbDatabase, TbGhost3, TbSettings } from "react-icons/tb";
 import { BotsTab } from "./BotsTab";
 import { GeneralTab } from "./GeneralTab";
 import { ModelsTab } from "./ModelsTab";
 import { PluginsTab } from "./PluginsTab";
 import { SpaceTab } from "./SpaceTab";
-import { cmd } from "@/utils/shell";
 
 const SETTINGS_NAV_ITEMS = [
     { id: "general", label: "通用", icon: TbSettings },
     { id: "models", label: "模型", icon: TbBox },
-    { id: "bots", label: "机器人", icon: TbGhost3 },
-    { id: "agents", label: "代理", icon: TbUsers },
+    { id: "bots", label: "助手", icon: TbGhost3 },
     { id: "plugins", label: "插件", icon: TbColorSwatch },
     { id: "space", label: "空间", icon: TbDatabase }
 ] as const;
@@ -38,8 +36,6 @@ export function SettingsPage() {
                 return <ModelsTab />;
             case "bots":
                 return <BotsTab />;
-            case "agents":
-                return <AgentsTab />;
             case "plugins":
                 return <PluginsTab />;
             case "space":
