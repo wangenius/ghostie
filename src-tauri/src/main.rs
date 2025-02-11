@@ -84,6 +84,11 @@ fn main() {
             utils::window::hide_window,
             utils::utils::open_file,
             utils::utils::save_file,
+            utils::npm::get_npm_package,
+            utils::npm::install_package,
+            utils::npm::uninstall_package,
+            utils::npm::list_packages,
+            utils::npm::check_package_installed,
             check_update,
             install_update
         ])
@@ -163,7 +168,10 @@ fn main() {
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
-
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(utils::npm::init_npm_package())
+        .unwrap();
     app.run(|app_handle, event| match event {
         tauri::RunEvent::ExitRequested { api, .. } => {
             api.prevent_exit();

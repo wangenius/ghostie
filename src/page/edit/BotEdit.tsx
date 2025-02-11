@@ -6,7 +6,6 @@ import { BotManager } from "@/services/bot/BotManger";
 import { ModelManager } from "@/services/model/ModelManager";
 import { ToolsManager } from "@/services/tool/ToolsManager";
 import { useEffect, useRef, useState } from "react";
-import { TbX } from "react-icons/tb";
 
 const defaultBot: BotProps = {
     name: "",

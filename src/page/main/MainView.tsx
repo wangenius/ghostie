@@ -7,6 +7,7 @@ import { BsStars } from "react-icons/bs";
 import { TbLoader2, TbSettings, TbX } from "react-icons/tb";
 import { BotItem } from "./components/BotItem";
 import { MessageItem } from "./components/MessageItem";
+import { Input } from "@/components/ui/input";
 
 export function MainView() {
     const [inputValue, setInputValue] = useState("");
@@ -112,13 +113,13 @@ export function MainView() {
                     </DropdownMenu>
 
                     <div className="flex-1 relative">
-                        <input
+                        <Input
                             ref={inputRef}
-                            type="text"
                             value={inputValue}
+                            variant="ghost"
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            className="w-full h-9 px-3 rounded-md bg-secondary/20 text-foreground outline-none placeholder:text-muted-foreground"
+                            className="text-sm"
                             placeholder={isChat ? `与 ${BotManager.current.name} 对话...` : "选择一个助手开始对话..."}
                         />
                     </div>

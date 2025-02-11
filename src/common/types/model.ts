@@ -62,12 +62,25 @@ export interface ToolFunctionInfo {
   };
 }
 
+/** 工具依赖 */
+export interface PackageInfo {
+  /* 名称 */
+  name: string;
+  /* 版本 */
+  version: string;
+  /* 描述 */
+  description?: string;
+}
+
 /**
  * 工具参数, 存储在Tool.ToolStore中, 包括script
  * script: 工具脚本
  */
 export interface ToolProps extends ToolFunctionInfo {
+  /* 工具脚本 */
   script: string;
+  /* 工具依赖 */
+  dependencies: string[];
 }
 
 /**
@@ -148,29 +161,6 @@ export interface ChatModelResponse<
 > {
   /* 响应体 */
   body: T;
-  /* 停止方法 */
-  stop: () => void;
-  /* 工具调用结果 */
-  tool?: FunctionCallResult<ToolArguments, ToolResult>;
-}
-
-/** 流式响应
- * @param T 响应类型
- * @param ToolArguments 工具调用参数类型
- * @param ToolResult 工具调用结果类型
- * @param body 响应体
- * @param stop 停止方法
- * @param tool 工具调用
- */
-export interface StreamResponse<
-  T = string,
-  ToolArguments = any,
-  ToolResult = any
-> extends ChatModelResponse<
-    ReadableStream<T> & {
-      [Symbol.asyncIterator](): AsyncIterator<T>;
-    }
-  > {
   /* 停止方法 */
   stop: () => void;
   /* 工具调用结果 */

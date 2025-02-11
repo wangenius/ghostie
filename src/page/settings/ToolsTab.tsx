@@ -4,7 +4,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { ToolEdit } from "@/page/edit/ToolEdit";
 import { ToolsManager } from "@/services/tool/ToolsManager";
 import { PiDotsThreeBold } from "react-icons/pi";
-import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";
+import { TbDownload, TbPackage, TbPlus, TbUpload } from "react-icons/tb";
+import { PackageManager } from "../package/packageManager";
 
 /**
  * 工具管理
@@ -56,6 +57,12 @@ export function ToolsTab() {
                             <DropdownMenuItem onClick={handleImportTool}>
                                 <TbUpload className="w-4 h-4" />
                                 <span>导入工具</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                                PackageManager.open();
+                            }}>
+                                <TbPackage className="w-4 h-4" />
+                                <span>依赖包管理</span>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={handleImportPlugins}>

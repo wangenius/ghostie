@@ -63,6 +63,20 @@
         "minimizable": false
       },
       {
+        "title": "依赖包管理",
+        "resizable": false,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": true,
+        "label": "package-manager",
+        "center": true,
+        "url": "/package-manager",
+        "visible": false,
+        "parent": "main",
+        "maximizable": false,
+        "minimizable": false
+      },
+      {
         "title": "助手编辑",
         "width": 600,
         "height": 800,

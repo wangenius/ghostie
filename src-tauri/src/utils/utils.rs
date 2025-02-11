@@ -9,7 +9,7 @@ use tauri_plugin_dialog::DialogExt;
 pub fn get_config_dir() -> Option<PathBuf> {
     let home = env::var("HOME").or_else(|_| env::var("USERPROFILE")).ok()?;
     let mut path = PathBuf::from(home);
-    path.push(".pip-shell");
+    path.push("echos");
     Some(path)
 }
 

@@ -9,7 +9,6 @@ import {
   FunctionCallReply,
   FunctionCallResult,
   Message,
-  StreamResponse,
   ToolFunctionInfo,
 } from "@common/types/model";
 import { Echo } from "echo-state";

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { TbPlus, TbTrash } from "react-icons/tb";
 import { ToolsManager } from "../../services/tool/ToolsManager";
 import { Button } from "@/components/ui/button";
-import { ToolProperty, ToolProps } from "@/common/types/model";
+import { PackageInfo, ToolProperty, ToolProps } from "@/common/types/model";
 
 interface Parameter extends Omit<ToolProperty, "properties"> {
     id: string;
@@ -243,10 +243,29 @@ export function ToolEdit() {
     const [create, setCreate] = useState(true);
     /* 测试参数 */
     const [testArgs, setTestArgs] = useState<Record<string, any>>({});
+    /* 依赖包 */
+    const [dependencies, setDependencies] = useState<string[]>([]);
+    /* 已安装的包 */
+    const [packages, setPackages] = useState<PackageInfo[]>([]);
     /* 查询地址参数 */
     const query = useQuery("name");
     /* 工具 */
     const tools = ToolsManager.use();
+    // 加载已安装的包
+    const loadPackages = async () => {
+        try {
+            const pkgs = await cmd.invoke<PackageInfo[]>("list_packages");
+            console.log(pkgs);
+            setPackages(pkgs);
+        } catch (error) {
+            console.error("加载包列表失败:", error);
+            cmd.message(String(error), "错误", "error");
+        }
+    };
+
+    useEffect(() => {
+        loadPackages();
+    }, []);
 
 
     useEffect(() => {
@@ -397,6 +416,7 @@ export function ToolEdit() {
             name,
             description,
             script: scriptContent,
+            dependencies,
             parameters: {
                 type: "object",
                 properties,
@@ -427,57 +447,83 @@ export function ToolEdit() {
     };
 
     const test = async () => {
-        async () => {
-            try {
-                // 将脚本包装在异步函数中，通过参数注入依赖
-                const fn = new Function('return async function(params) { ' + scriptContent + ' }')() as (args: Record<string, any>) => Promise<any>;
+        try {
+            // 解析依赖
+            const deps = dependencies
+            // 将脚本包装在异步函数中，使用 invoke 来调用依赖
+            const wrappedScript = `
+                return (async function(params) {
+                    ${deps.map(dep => {
+                const varName = dep.replace('@', "").replace(/-/g, "_");
+                return `const ${varName} = await this.getDep('${dep}');
+                        if (typeof ${varName} === 'object' && ${varName}.default) {
+                            Object.assign(${varName}, ${varName}.default);
+                        }`;
+            }).join('\n')}
+                    ${scriptContent}
+                }).call(this, params);
+            `;
 
-                // 类型转换函数
-                const convertValue = (value: string, type: string): any => {
-                    if (value === undefined || value === null || value === '') return undefined;
+            console.log(wrappedScript);
 
-                    switch (type) {
-                        case 'number':
-                            return Number(value);
-                        case 'boolean':
-                            return value.toLowerCase() === 'true';
-                        case 'array':
-                            try {
-                                return JSON.parse(value);
-                            } catch {
-                                return value.split(',').map(v => v.trim());
-                            }
-                        case 'object':
-                            try {
-                                return JSON.parse(value);
-                            } catch {
-                                return value;
-                            }
-                        default:
+            const fn = new Function('params', wrappedScript).bind({
+                getDep: async (name: string) => {
+                    const bundledCode = await cmd.invoke<string>('get_npm_package', { name });
+                    // 执行打包后的代码，它会在全局定义 __MODULE__
+                    eval(bundledCode);
+                    // @ts-ignore
+                    const mod = window.__MODULE__;
+                    // 清理全局变量
+                    // @ts-ignore
+                    delete window.__MODULE__;
+                    return mod;
+                }
+            }) as (args: Record<string, any>) => Promise<any>;
+
+            // 类型转换函数
+            const convertValue = (value: string, type: string): any => {
+                if (value === undefined || value === null || value === '') return undefined;
+
+                switch (type) {
+                    case 'number':
+                        return Number(value);
+                    case 'boolean':
+                        return value.toLowerCase() === 'true';
+                    case 'array':
+                        try {
+                            return JSON.parse(value);
+                        } catch {
+                            return value.split(',').map(v => v.trim());
+                        }
+                    case 'object':
+                        try {
+                            return JSON.parse(value);
+                        } catch {
                             return value;
-                    }
-                };
+                        }
+                    default:
+                        return value;
+                }
+            };
 
-                const argsObject = Object.values(parameters).reduce<Record<string, any>>((acc, param) => {
+            const argsObject = Object.values(parameters).reduce<Record<string, any>>((acc, param) => {
+                const value = testArgs[param.id];
+                if (param.required && !value) {
+                    throw new Error(`参数 ${param.name} 不能为空`);
+                }
+                acc[param.name] = convertValue(value, param.type);
+                return acc;
+            }, {});
 
-                    const value = testArgs[param.id];
-                    if (param.required && !value) {
-                        throw new Error(`参数 ${param.name} 不能为空`);
-                    }
-                    acc[param.name] = convertValue(value, param.type);
-                    return acc;
-                }, {});
-
-                // 执行函数并等待结果
-                const result = await fn(argsObject);
-                console.log(result);
-                cmd.message(JSON.stringify(result), "测试结果");
-            } catch (error) {
-                console.log(error);
-                cmd.message(String(error), "测试失败", 'warning');
-            }
+            // 执行函数并等待结果
+            const result = await fn(argsObject);
+            console.log(result);
+            cmd.message(JSON.stringify(result), "测试结果");
+        } catch (error) {
+            console.log(error);
+            cmd.message(String(error), "测试失败", 'warning');
         }
-    }
+    };
 
     return (
         <div className="flex flex-col h-screen bg-background">
@@ -506,6 +552,46 @@ export function ToolEdit() {
                             className="w-full h-9 px-3 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground"
                             placeholder="输入插件描述"
                         />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="block text-xs text-muted-foreground">依赖包</label>
+                        <div className="flex flex-wrap gap-2 p-2 min-h-[40px] bg-secondary rounded-md">
+                            {dependencies.map((dep) => (
+                                <div
+                                    key={dep}
+                                    className="flex items-center gap-1 px-2 py-1 bg-background rounded text-xs"
+                                >
+                                    <span>{dep}</span>
+                                    <button
+                                        onClick={() => setDependencies(deps => deps.filter(d => d !== dep))}
+                                        className="text-muted-foreground hover:text-destructive"
+                                    >
+                                        <TbTrash className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            ))}
+                            <select
+                                className="h-7 px-2 bg-background rounded text-xs focus:bg-background/80 transition-colors outline-none"
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (value && !dependencies.includes(value)) {
+                                        setDependencies(deps => [...deps, value]);
+                                    }
+                                    e.target.value = '';
+                                }}
+                            >
+                                <option value="">选择依赖包...</option>
+                                {packages
+                                    .filter(pkg => !dependencies.includes(pkg.name))
+                                    .map(pkg => (
+                                        <option key={pkg.name} value={pkg.name}>
+                                            {pkg.name} ({pkg.version})
+                                        </option>
+                                    ))
+                                }
+                            </select>
+                        </div>
                     </div>
 
                     <div className="space-y-1.5">
