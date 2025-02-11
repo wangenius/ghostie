@@ -38,17 +38,27 @@ pub async fn get_npm_package(_: tauri::AppHandle, name: String) -> Result<String
     let temp_dir = utils::get_config_dir().unwrap().join("npm");
 
     // 创建临时的入口文件
-    let entry_content = format!("module.exports = require('{}');", name);
+    let entry_content = format!(
+        "const mod = require('{}');
+         if (typeof mod === 'function' || (typeof mod === 'object' && !mod.default)) {{
+             window.__MODULE__ = mod;
+         }} else {{
+             window.__MODULE__ = {{ ...mod.default, ...mod }};
+         }}",
+        name
+    );
     let entry_file = temp_dir.join("temp_entry.js");
     std::fs::write(&entry_file, entry_content).map_err(|e| e.to_string())?;
 
-    // 使用 esbuild 打包
-    let output = Command::new("npx")
+    // 使用 esbuild 打包，添加更多配置
+    let output = Command::new("npx.cmd")
         .arg("esbuild")
         .arg(entry_file.to_str().unwrap())
         .arg("--bundle")
         .arg("--format=iife")
-        .arg("--global-name=__MODULE__")
+        .arg("--platform=browser")
+        .arg("--target=es2015")
+        .arg("--minify")
         .current_dir(&temp_dir)
         .output()
         .map_err(|e| e.to_string())?;

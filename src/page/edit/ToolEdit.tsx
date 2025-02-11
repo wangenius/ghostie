@@ -468,15 +468,30 @@ export function ToolEdit() {
 
             const fn = new Function('params', wrappedScript).bind({
                 getDep: async (name: string) => {
-                    const bundledCode = await cmd.invoke<string>('get_npm_package', { name });
-                    // 执行打包后的代码，它会在全局定义 __MODULE__
-                    eval(bundledCode);
-                    // @ts-ignore
-                    const mod = window.__MODULE__;
-                    // 清理全局变量
-                    // @ts-ignore
-                    delete window.__MODULE__;
-                    return mod;
+                    try {
+                        const bundledCode = await cmd.invoke<string>('get_npm_package', { name });
+
+                        // 创建一个新的 Function 来执行打包后的代码，避免污染全局作用域
+                        const executeModule = new Function(`
+                            try {
+                                ${bundledCode}
+                                return window.__MODULE__;
+                            } finally {
+                                delete window.__MODULE__;
+                            }
+                        `);
+
+                        const mod = executeModule();
+
+                        if (!mod) {
+                            throw new Error(`模块 ${name} 加载失败`);
+                        }
+
+                        return mod;
+                    } catch (error) {
+                        console.error(`加载模块 ${name} 失败:`, error);
+                        throw error;
+                    }
                 }
             }) as (args: Record<string, any>) => Promise<any>;
 
