@@ -3,8 +3,8 @@ import { ToolFunctionInfo } from "@/common/types/model";
 import { Echo } from "echo-state";
 import { Context } from "../agent/Context";
 import { ChatModel } from "../model/ChatModel";
-import { Tool } from "../tool/Tool";
 import { ModelManager } from "../model/ModelManager";
+import { ToolsManager } from "../tool/ToolsManager";
 
 /*  */
 export class Bot {
@@ -24,9 +24,9 @@ export class Bot {
     this.system = config.system;
     const model = ModelManager.get(config.model);
     this.model = new ChatModel(model)
-      .setTools(Tool.get(config.tools))
+      .setTools(ToolsManager.get(config.tools))
       .system(config.system);
-    this.tools = Tool.get(config.tools);
+    this.tools = ToolsManager.get(config.tools);
     this.context = new Context();
   }
 

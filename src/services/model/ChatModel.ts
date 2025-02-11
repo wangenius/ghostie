@@ -14,8 +14,8 @@ import {
 } from "@common/types/model";
 import { Echo } from "echo-state";
 import { HistoryMessage } from "./HistoryMessage";
-import { Tool } from "../tool/Tool";
 import { ModelManager } from "./ModelManager";
+import { ToolsManager } from "../tool/ToolsManager";
 
 /** Chat模型, 用于与模型进行交互 */
 export class ChatModel {
@@ -118,7 +118,7 @@ export class ChatModel {
 
     /* 解析工具参数 */
     const toolArgs = JSON.parse(function_call.arguments);
-    const toolResultPromise = Tool.exe({
+    const toolResultPromise = ToolsManager.exe({
       name: function_call.name,
       arguments: toolArgs,
     });

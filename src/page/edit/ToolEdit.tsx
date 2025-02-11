@@ -4,6 +4,7 @@ import { useQuery } from "@hook/useQuery";
 import { useEffect, useRef, useState } from "react";
 import { TbPlus, TbTrash } from "react-icons/tb";
 import { Tool, ToolArg, ToolsManager } from "../../services/tool/ToolsManager";
+import { Button } from "@/components/ui/button";
 
 export function ToolEdit() {
     const [name, setName] = useState("");
@@ -244,19 +245,33 @@ export function ToolEdit() {
             </div>
 
             <div className="flex justify-end gap-2 px-4 py-3 border-t border-border">
-                <button
+                <Button
+                    onClick={() => {
+                        try {
+                            const fn = new Function(scriptContent)
+                            const result = fn()
+                            cmd.message(result, "测试结果")
+                        } catch (error) {
+                            cmd.message(`测试失败: ${error}`, "测试失败")
+                        }
+                    }}
+                    className="mr-auto"
+                >
+                    测试
+                </Button>
+                <Button
                     onClick={handleClose}
-                    className="px-3 h-8 text-xs text-muted-foreground hover:bg-secondary rounded transition-colors"
+
                 >
                     取消
-                </button>
-                <button
+                </Button>
+                <Button
+                    variant="primary"
                     onClick={handleSubmit}
                     disabled={!name || !scriptContent || isSubmitting}
-                    className="px-3 h-8 text-xs text-primary-foreground bg-primary rounded hover:opacity-90 disabled:opacity-50 transition-colors"
                 >
                     {isSubmitting ? (create ? "创建中..." : "更新中...") : create ? "创建" : "更新"}
-                </button>
+                </Button>
             </div>
         </div>
     );

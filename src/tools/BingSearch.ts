@@ -1,5 +1,6 @@
-import { tool } from "@/services/tool/Tool";
+import { register } from "@/services/tool/decorators";
 import axios from "axios";
+import { Env } from "@/services/data/env";
 
 interface BingSearchResponse {
   webPages?: {
@@ -12,11 +13,7 @@ interface BingSearchResponse {
 }
 
 export class BingSearch {
-  private static readonly API_ENDPOINT =
-    "https://api.bing.microsoft.com/v7.0/search";
-  private static readonly API_KEY = import.meta.env.BING_API_KEY;
-
-  @tool("使用必应搜索", {
+  @register("使用必应搜索", {
     query: {
       type: "string",
       description: "搜索关键词",
@@ -32,7 +29,8 @@ export class BingSearch {
     query: string,
     count: number = 5
   ): Promise<Array<{ title: string; url: string; snippet: string }>> {
-    if (!BingSearch.API_KEY) {
+    const apiKey = Env.get("BING_API_KEY");
+    if (!apiKey) {
       throw new Error(
         "未配置必应搜索 API 密钥，请在环境变量中设置 BING_API_KEY"
       );
@@ -40,10 +38,10 @@ export class BingSearch {
 
     try {
       const response = await axios.get<BingSearchResponse>(
-        BingSearch.API_ENDPOINT,
+        "https://api.bing.microsoft.com/v7.0/search",
         {
           headers: {
-            "Ocp-Apim-Subscription-Key": BingSearch.API_KEY,
+            "Ocp-Apim-Subscription-Key": apiKey,
           },
           params: {
             q: query,

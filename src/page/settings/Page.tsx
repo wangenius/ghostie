@@ -51,7 +51,7 @@ export function SettingsPage() {
             {/* 标题栏 */}
             <Header title="设置" close={() => {
                 cmd.close();
-                SettingsNav.set({ activeTab: SETTINGS_NAV_ITEMS[0].id });
+
             }} />
 
 

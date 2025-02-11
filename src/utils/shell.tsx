@@ -1,7 +1,7 @@
 import { Echo } from "echo-state";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { confirm } from '@tauri-apps/plugin-dialog';
+import { confirm, message } from '@tauri-apps/plugin-dialog';
 
 export const download_state = new Echo<{ current: any; checking: boolean; downloading: boolean }>(
     {
@@ -66,15 +66,9 @@ export abstract class cmd {
 
     }
 
-    static async message(options: {
-        title: string;
-        message: string;
-        buttons: string[];
-        defaultId: number;
-        cancelId: number;
-    }) {
-        return await cmd.invoke("message", options);
+    static async message(msg: string, title: string = "信息") {
+        return await message(msg, {
+            title
+        });
     }
-
-
-}
+}   

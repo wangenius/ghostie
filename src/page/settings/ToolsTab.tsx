@@ -1,13 +1,10 @@
 import { ToolItem } from "@/components/model/ToolItem";
-import { ToolEdit } from "@/page/edit/ToolEdit";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ToolEdit } from "@/page/edit/ToolEdit";
 import { ToolsManager } from "@/services/tool/ToolsManager";
-import { cmd } from "@utils/shell";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";
-import { Tool } from "@/services/tool/ToolsManager";
-import { useEffect } from "react";
 
 /**
  * 工具管理
@@ -16,125 +13,20 @@ import { useEffect } from "react";
 export function ToolsTab() {
     const tools = ToolsManager.use();
 
-    // 在组件加载时自动加载工具目录下的所有工具
-    useEffect(() => {
-        const loadTools = async () => {
-            try {
-                // 动态导入 tools 目录下的所有工具
-                const toolModules = import.meta.glob('@/tools/*.ts', { eager: true });
-
-                // 遍历所有模块
-                for (const path in toolModules) {
-                    const module = toolModules[path] as any;
-                    // 遍历模块中的所有导出
-                    for (const exportName in module) {
-                        const exportedItem = module[exportName];
-                        // 如果是类，则实例化它
-                        if (typeof exportedItem === 'function' && exportedItem.prototype) {
-                            try {
-                                new exportedItem();
-                                console.log(`成功加载工具: ${exportName}`);
-                            } catch (error) {
-                                console.error(`加载工具失败 ${exportName}:`, error);
-                            }
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error("加载工具失败:", error);
-            }
-        };
-        loadTools();
-    }, []);
-
     const handleRemoveTool = async (name: string) => {
-        const answer = await cmd.confirm(`确定要删除工具 "${name}" 吗？`);
-
-        if (answer) {
-            try {
-                await ToolsManager.delete(name);
-            } catch (error) {
-                console.error("删除插件失败:", error);
-            }
-        }
+        await ToolsManager.remove(name);
     };
 
     const handleImportPlugins = async () => {
-        try {
-            // 打开文件选择对话框
-            const result = await cmd.invoke<{ path: string; content: string }>("open_file", {
-                title: "选择插件文件",
-                filters: {
-                    "插件文件": ["json"]
-                }
-            });
+        await ToolsManager.importFromJSON();
+    };
 
-            if (result) {
-                // 解析插件文件
-                const importedPlugins = JSON.parse(result.content) as Tool[];
-
-                // 导入每个插件
-                for (const plugin of importedPlugins) {
-                    await ToolsManager.add(plugin);
-                }
-
-                cmd.message({
-                    title: "导入成功",
-                    message: `成功导入 ${importedPlugins.length} 个插件`,
-                    buttons: ["确定"],
-                    defaultId: 0,
-                    cancelId: 0
-                });
-            }
-        } catch (error) {
-            console.error("导入插件失败:", error);
-            cmd.message({
-                title: "导入失败",
-                message: `导入插件失败: ${error}`,
-                buttons: ["确定"],
-                defaultId: 0,
-                cancelId: 0
-            });
-        }
+    const handleImportTool = async () => {
+        await ToolsManager.import();
     };
 
     const handleExportTools = async () => {
-        try {
-            // 获取所有插件数据
-            const toolsToExport = Object.values(tools).filter(Boolean);
-
-            // 转换为 JSON
-            const toolsJson = JSON.stringify(toolsToExport, null, 2);
-
-            // 打开保存文件对话框
-            const result = await cmd.invoke<boolean>("save_file", {
-                title: "保存工具文件",
-                filters: {
-                    "工具文件": ["json"]
-                },
-                defaultName: "tools.json",
-                content: toolsJson
-            });
-
-            if (result) {
-                cmd.message({
-                    title: "导出成功",
-                    message: `成功导出 ${toolsToExport.length} 个工具`,
-                    buttons: ["确定"],
-                    defaultId: 0,
-                    cancelId: 0
-                });
-            }
-        } catch (error) {
-            console.error("导出插件失败:", error);
-            cmd.message({
-                title: "导出失败",
-                message: `导出插件失败: ${error}`,
-                buttons: ["确定"],
-                defaultId: 0,
-                cancelId: 0
-            });
-        }
+        await ToolsManager.exportToJSON();
     };
 
     return (
@@ -159,17 +51,20 @@ export function ToolsTab() {
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => ToolEdit.open()}>
                                 <TbPlus className="w-4 h-4" />
-                                <span>新建</span>
+                                <span>新建工具</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleImportTool}>
+                                <TbUpload className="w-4 h-4" />
+                                <span>导入工具</span>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={handleImportPlugins}>
                                 <TbUpload className="w-4 h-4" />
-                                <span>导入</span>
+                                <span>导入配置集</span>
                             </DropdownMenuItem>
-
                             <DropdownMenuItem onClick={handleExportTools}>
                                 <TbDownload className="w-4 h-4" />
-                                <span>导出</span>
+                                <span>导出配置集</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

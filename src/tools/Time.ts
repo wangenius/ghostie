@@ -1,17 +1,12 @@
-import { tool } from "@/services/tool/Tool";
+import { register } from "@/services/tool/decorators";
 
 export class Time {
-  constructor() {
-    // 构造函数中不需要特殊处理，装饰器会自动注册
-    console.log("Time 工具类已初始化");
-  }
-
-  @tool("获取当前时间", {})
+  @register("获取当前时间")
   static getCurrentTime(): string {
     return new Date().toLocaleString();
   }
 
-  @tool("格式化日期", {
+  @register("格式化日期", {
     date: {
       type: "string",
       description: "要格式化的日期字符串",

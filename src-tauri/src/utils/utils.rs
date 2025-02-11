@@ -47,11 +47,11 @@ pub struct FileContent {
 
 #[tauri::command]
 pub async fn open_file(
-    app: tauri::AppHandle,
+    window: tauri::Window,
     title: String,
     filters: std::collections::HashMap<String, Vec<String>>,
 ) -> Result<Option<FileContent>, String> {
-    let mut file_dialog = app.dialog().file().set_title(&title);
+    let mut file_dialog = window.dialog().file().set_title(&title).set_parent(&window);
 
     for (name, extensions) in filters.iter() {
         file_dialog = file_dialog.add_filter(
@@ -82,17 +82,18 @@ pub async fn open_file(
 
 #[tauri::command]
 pub async fn save_file(
-    app: tauri::AppHandle,
+    window: tauri::Window,
     title: String,
     default_name: String,
     filters: std::collections::HashMap<String, Vec<String>>,
     content: String,
 ) -> Result<bool, String> {
-    let mut file_dialog = app
+    let mut file_dialog = window
         .dialog()
         .file()
         .set_file_name(default_name)
-        .set_title(&title);
+        .set_title(&title)
+        .set_parent(&window);
 
     for (name, extensions) in filters.iter() {
         file_dialog = file_dialog.add_filter(

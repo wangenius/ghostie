@@ -1,5 +1,10 @@
+import { cmd } from "@/utils/shell";
+import {
+  ToolFunction,
+  ToolFunctionHandler,
+  ToolFunctionInfo,
+} from "@common/types/model";
 import { Echo } from "echo-state";
-import { ToolFunction, ToolFunctionInfo } from "@common/types/model";
 
 export interface Tool {
   name: string;
@@ -7,7 +12,6 @@ export interface Tool {
   script_content: string;
   enabled: boolean;
   args: ToolArg[];
-  handler?: (...args: any[]) => Promise<any>;
 }
 
 export interface ToolArg {
@@ -32,7 +36,42 @@ export class ToolsManager {
 
   // 工具函数执行缓存
   private static toolFunctions = new Map<string, ToolFunction>();
+  static async exe(functionCall: {
+    name: string;
+    arguments: Record<string, any>;
+  }): Promise<any> {
+    return await ToolsManager.executeTool(
+      functionCall.name,
+      functionCall.arguments
+    );
+  }
 
+  /**
+   * 获取工具函数信息
+   * @param names 工具函数名称
+   * @returns 工具函数信息
+   */
+  static get(names: ToolFunctionHandler[]): ToolFunctionInfo[] {
+    return names
+      .map((n) => {
+        // 如果是字符串或symbol
+        if (typeof n === "string" || typeof n === "symbol") {
+          return ToolsManager.getTool(n.toString())?.info;
+        }
+
+        // 如果是函数或方法
+        if (
+          typeof n === "function" ||
+          (typeof n === "object" && n !== null && typeof n.name === "string")
+        ) {
+          const name = typeof n === "function" ? n.name : n.name;
+          return ToolsManager.getTool(name)?.info;
+        }
+
+        return undefined;
+      })
+      .filter((tool) => tool !== undefined) as ToolFunctionInfo[];
+  }
   /**
    * 从store加载工具函数到缓存
    */
@@ -64,7 +103,7 @@ export class ToolsManager {
             .map((arg: ToolArg) => arg.name),
         },
       },
-      fn: tool.handler || (new Function(tool.script_content) as any),
+      fn: new Function(tool.script_content) as any,
     };
 
     this.toolFunctions.set(name, toolFunction);
@@ -171,5 +210,153 @@ export class ToolsManager {
 
   static async run(name: string, args?: Record<string, any>) {
     return await this.executeTool(name, args);
+  }
+
+  static async remove(name: string) {
+    const answer = await cmd.confirm(`确定要删除工具 "${name}" 吗？`);
+
+    if (answer) {
+      try {
+        await ToolsManager.delete(name);
+      } catch (error) {
+        console.error("删除插件失败:", error);
+      }
+    }
+  }
+
+  static async importFromJSON() {
+    try {
+      // 打开文件选择对话框
+      const result = await cmd.invoke<{ path: string; content: string }>(
+        "open_file",
+        {
+          title: "选择插件文件",
+          filters: {
+            插件文件: ["json"],
+          },
+        }
+      );
+
+      if (result) {
+        // 解析插件文件
+        const importedPlugins = JSON.parse(result.content) as Tool[];
+
+        // 导入每个插件
+        for (const plugin of importedPlugins) {
+          await ToolsManager.add(plugin);
+        }
+
+        cmd.message(`成功导入 ${importedPlugins.length} 个插件`, "导入成功");
+      }
+    } catch (error) {
+      console.error("导入插件失败:", error);
+      cmd.message(`导入插件失败: ${error}`, "导入失败");
+    }
+  }
+
+  static async import() {
+    try {
+      // 打开文件选择对话框
+      const result = await cmd.invoke<{ path: string; content: string }>(
+        "open_file",
+        {
+          title: "选择工具文件",
+          filters: {
+            TypeScript文件: ["ts"],
+          },
+        }
+      );
+
+      if (result) {
+        try {
+          const content = result.content;
+
+          // 解析类名
+          const classMatch = content.match(/export\s+class\s+(\w+)/);
+          if (!classMatch) {
+            throw new Error("未找到工具类定义");
+          }
+          const className = classMatch[1];
+
+          // 查找所有带装饰器的方法
+          const methodRegex =
+            /@register\s*\(\s*["'](.+?)["'](?:\s*,\s*({[\s\S]+?}))?\s*\)\s*static\s+(?:async\s+)?(\w+)\s*\([^)]*\)\s*(?::\s*[^{]+)?\s*{([\s\S]+?)}/g;
+          let methodMatch;
+          const tools: Tool[] = [];
+
+          while ((methodMatch = methodRegex.exec(content)) !== null) {
+            const description = methodMatch[1];
+            const argsObject = methodMatch[2]
+              ? eval("(" + methodMatch[2] + ")")
+              : {};
+            const methodName = methodMatch[3];
+            const functionBody = methodMatch[4].trim();
+
+            // 构建工具配置
+            const tool: Tool = {
+              name: `${className}.${methodName}`,
+              description: description,
+              script_content: `return ${functionBody}`,
+              enabled: true,
+              args: Object.entries(argsObject).map(
+                ([name, prop]: [string, any]) => ({
+                  name,
+                  arg_type: prop.type,
+                  description: prop.description || "",
+                  required: prop.required || false,
+                  default_value: prop.default,
+                })
+              ),
+            };
+
+            tools.push(tool);
+          }
+
+          if (tools.length === 0) {
+            throw new Error("未找到有效的工具方法");
+          }
+
+          // 添加所有工具
+          for (const tool of tools) {
+            await ToolsManager.add(tool);
+          }
+
+          cmd.message(`成功导入 ${tools.length} 个工具`, "导入成功");
+        } catch (error) {
+          console.error("解析工具文件失败:", error);
+          cmd.message(`解析工具文件失败: ${error}`, "导入失败");
+        }
+      }
+    } catch (error) {
+      console.error("导入工具失败:", error);
+      cmd.message(`导入工具失败: ${error}`, "导入失败");
+    }
+  }
+
+  static async exportToJSON() {
+    try {
+      // 获取所有插件数据
+      const toolsToExport = Object.values(this.store.current).filter(Boolean);
+
+      // 转换为 JSON
+      const toolsJson = JSON.stringify(toolsToExport, null, 2);
+
+      // 打开保存文件对话框
+      const result = await cmd.invoke<boolean>("save_file", {
+        title: "保存工具文件",
+        filters: {
+          工具文件: ["json"],
+        },
+        defaultName: "tools.json",
+        content: toolsJson,
+      });
+
+      if (result) {
+        cmd.message(`成功导出 ${toolsToExport.length} 个工具`, "导出成功");
+      }
+    } catch (error) {
+      console.error("导出插件失败:", error);
+      cmd.message(`导出插件失败: ${error}`, "导出失败");
+    }
   }
 }
