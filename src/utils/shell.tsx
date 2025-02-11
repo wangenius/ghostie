@@ -66,9 +66,10 @@ export abstract class cmd {
 
     }
 
-    static async message(msg: string, title: string = "信息") {
+    static async message(msg: string, title: string = "信息", kind: "info" | "warning" | "error" = "info") {
         return await message(msg, {
-            title
+            title,
+            kind
         });
     }
 }   

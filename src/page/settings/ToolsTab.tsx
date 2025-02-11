@@ -22,7 +22,7 @@ export function ToolsTab() {
     };
 
     const handleImportTool = async () => {
-        await ToolsManager.import();
+        await ToolsManager.importTSModule();
     };
 
     const handleExportTools = async () => {

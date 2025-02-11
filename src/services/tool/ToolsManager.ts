@@ -71,7 +71,9 @@ export class ToolsManager {
     /* 工具函数 */
     const toolFunction: ToolFunction = {
       info,
-      fn: new Function(script) as any,
+      fn: new Function(`return async function(params) { ${script} }`) as (
+        args: Record<string, any>
+      ) => Promise<any>,
     };
     this.toolFunctions.set(name, toolFunction);
     return toolFunction;
@@ -191,7 +193,7 @@ export class ToolsManager {
     }
   }
 
-  static async import() {
+  static async importTSModule() {
     try {
       // 打开文件选择对话框
       const result = await cmd.invoke<{ path: string; content: string }>(
@@ -312,9 +314,19 @@ export class ToolsManager {
                             .filter(([_, value]) => value.required !== false)
                             .map(([key, _]) => key),
                         },
-                        script: body.getText(),
+                        script: ts
+                          .transpileModule(body.getText(), {
+                            compilerOptions: {
+                              target: ts.ScriptTarget.ESNext,
+                              module: ts.ModuleKind.None,
+                              removeComments: true,
+                            },
+                          })
+                          .outputText.replace(/^\s*{/, "")
+                          .replace(/}\s*$/, "")
+                          .replace(/export {};?/, "")
+                          .trim(),
                       };
-
                       tools.push(tool);
                     }
                   }

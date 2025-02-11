@@ -6,8 +6,6 @@ import { TbPlus, TbTrash } from "react-icons/tb";
 import { ToolsManager } from "../../services/tool/ToolsManager";
 import { Button } from "@/components/ui/button";
 import { ToolProperty, ToolProps } from "@/common/types/model";
-import { Env } from "@/services/data/env";
-import axios from "axios";
 
 interface Parameter extends Omit<ToolProperty, "properties"> {
     id: string;
@@ -158,7 +156,7 @@ const ParameterItem: React.FC<ParameterItemProps> = ({
                 />
                 <input
                     type="text"
-                    onChange={(e) => onTestArgChange(param.name, e.target.value)}
+                    onChange={(e) => onTestArgChange(param.id, e.target.value)}
                     className="h-7 px-2 bg-background rounded text-xs focus:bg-background/80 transition-colors outline-none"
                     placeholder="测试参数"
                 />
@@ -424,8 +422,8 @@ export function ToolEdit() {
         }
     };
 
-    const handleTestArgChange = (name: string, value: string) => {
-        setTestArgs(prev => ({ ...prev, [name]: value }));
+    const handleTestArgChange = (id: string, value: string) => {
+        setTestArgs(prev => ({ ...prev, [id]: value }));
     };
 
     return (
@@ -502,21 +500,51 @@ export function ToolEdit() {
                     onClick={async () => {
                         try {
                             // 将脚本包装在异步函数中，通过参数注入依赖
-                            const fn = new Function('return async function(params, { Env, axios }) { ' + scriptContent + ' }')() as (args: Record<string, any>, deps: { Env: typeof Env, axios: typeof axios }) => Promise<any>;
-                            const argsObject = Object.entries(Object.values(parameters).reduce<Record<string, any>>((acc, param) => {
-                                acc[param.name] = testArgs[param.name];
-                                return acc;
-                            }, {})).reduce<Record<string, any>>((acc, [name, value]) => {
-                                acc[name] = value;
+                            const fn = new Function('return async function(params) { ' + scriptContent + ' }')() as (args: Record<string, any>) => Promise<any>;
+
+                            // 类型转换函数
+                            const convertValue = (value: string, type: string): any => {
+                                if (value === undefined || value === null || value === '') return undefined;
+
+                                switch (type) {
+                                    case 'number':
+                                        return Number(value);
+                                    case 'boolean':
+                                        return value.toLowerCase() === 'true';
+                                    case 'array':
+                                        try {
+                                            return JSON.parse(value);
+                                        } catch {
+                                            return value.split(',').map(v => v.trim());
+                                        }
+                                    case 'object':
+                                        try {
+                                            return JSON.parse(value);
+                                        } catch {
+                                            return value;
+                                        }
+                                    default:
+                                        return value;
+                                }
+                            };
+
+                            const argsObject = Object.values(parameters).reduce<Record<string, any>>((acc, param) => {
+
+                                const value = testArgs[param.id];
+                                if (param.required && !value) {
+                                    throw new Error(`参数 ${param.name} 不能为空`);
+                                }
+                                acc[param.name] = convertValue(value, param.type);
                                 return acc;
                             }, {});
 
                             // 执行函数并等待结果
-                            const result = await fn(argsObject, { Env, axios });
+                            const result = await fn(argsObject);
                             console.log(result);
-                            cmd.message(result, "测试结果");
+                            cmd.message(JSON.stringify(result), "测试结果");
                         } catch (error) {
-                            cmd.message(`测试失败: ${String(error)}`, "测试失败");
+                            console.log(error);
+                            cmd.message(String(error), "测试失败", 'warning');
                         }
                     }}
                     className="mr-auto"
