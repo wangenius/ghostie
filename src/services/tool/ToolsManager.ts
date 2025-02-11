@@ -87,6 +87,7 @@ export class ToolsManager {
     const tool: ToolProps = {
       ...toolFunction.info,
       script: toolFunction.fn.toString(),
+      dependencies: [],
     };
     this.store.set({
       [toolFunction.info.name]: tool,
@@ -324,6 +325,7 @@ export class ToolsManager {
                           .replace(/}\s*$/, "")
                           .replace(/export {};?/, "")
                           .trim(),
+                        dependencies: [],
                       };
                       tools.push(tool);
                     }

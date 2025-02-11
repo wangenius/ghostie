@@ -6,6 +6,7 @@ import { TbPlus, TbTrash } from "react-icons/tb";
 import { ToolsManager } from "../../services/tool/ToolsManager";
 import { Button } from "@/components/ui/button";
 import { PackageInfo, ToolProperty, ToolProps } from "@/common/types/model";
+import { BundleManager } from "@/services/bundle/BundleManager";
 
 interface Parameter extends Omit<ToolProperty, "properties"> {
     id: string;
@@ -254,7 +255,7 @@ export function ToolEdit() {
     // 加载已安装的包
     const loadPackages = async () => {
         try {
-            const pkgs = await cmd.invoke<PackageInfo[]>("list_packages");
+            const pkgs = await BundleManager.getAllBundles();
             console.log(pkgs);
             setPackages(pkgs);
         } catch (error) {
@@ -277,6 +278,7 @@ export function ToolEdit() {
                 setName(toolData.name);
                 setDescription(toolData.description || "");
                 setScriptContent(toolData.script);
+                setDependencies(toolData.dependencies);
                 const params = convertToParameterWithId(toolData.parameters.properties);
                 setParameters(params);
             } else {
@@ -469,12 +471,15 @@ export function ToolEdit() {
             const fn = new Function('params', wrappedScript).bind({
                 getDep: async (name: string) => {
                     try {
-                        const bundledCode = await cmd.invoke<string>('get_npm_package', { name });
-
-                        // 创建一个新的 Function 来执行打包后的代码，避免污染全局作用域
+                        // 先从 IndexDB 获取
+                        const bundle = await BundleManager.getBundle(name);
+                        if (!bundle) {
+                            throw new Error(`模块 ${name} 未找到，请先安装`);
+                        }
+                        // 执行打包后的代码
                         const executeModule = new Function(`
                             try {
-                                ${bundledCode}
+                                ${bundle}
                                 return window.__MODULE__;
                             } finally {
                                 delete window.__MODULE__;
@@ -482,7 +487,6 @@ export function ToolEdit() {
                         `);
 
                         const mod = executeModule();
-
                         if (!mod) {
                             throw new Error(`模块 ${name} 加载失败`);
                         }

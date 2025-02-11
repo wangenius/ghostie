@@ -86,9 +86,6 @@ fn main() {
             utils::utils::save_file,
             utils::npm::get_npm_package,
             utils::npm::install_package,
-            utils::npm::uninstall_package,
-            utils::npm::list_packages,
-            utils::npm::check_package_installed,
             check_update,
             install_update
         ])

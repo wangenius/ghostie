@@ -70,6 +70,8 @@ export interface PackageInfo {
   version: string;
   /* 描述 */
   description?: string;
+  /* 脚本 */
+  script: string;
 }
 
 /**

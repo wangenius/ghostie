@@ -2,11 +2,10 @@ import { PackageInfo } from "@/common/types/model";
 import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BundleManager } from "@/services/bundle/BundleManager";
 import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
 import { TbPackage, TbTrash } from "react-icons/tb";
-
-
 
 export const PackageManager = () => {
 	const [packages, setPackages] = useState<PackageInfo[]>([]);
@@ -17,8 +16,7 @@ export const PackageManager = () => {
 	// 加载已安装的包
 	const loadPackages = async () => {
 		try {
-			const pkgs = await cmd.invoke<PackageInfo[]>("list_packages");
-			console.log(pkgs);
+			const pkgs = await BundleManager.getAllBundles();
 			setPackages(pkgs);
 		} catch (error) {
 			console.error("加载包列表失败:", error);
@@ -38,10 +36,14 @@ export const PackageManager = () => {
 			setLoading(true);
 			console.log(newPackage);
 
-			await cmd.invoke("install_package", {
+			const [name, bundle] = await cmd.invoke<[string, string]>("install_package", {
 				name: newPackage,
 				version: version || undefined
 			});
+
+			// 保存打包结果到 IndexDB
+			await BundleManager.saveBundle(name, bundle, version || "latest");
+
 			setNewPackage("");
 			setVersion("");
 
@@ -59,7 +61,8 @@ export const PackageManager = () => {
 	const handleUninstall = async (name: string) => {
 		try {
 			setLoading(true);
-			await cmd.invoke("uninstall_package", { name });
+			// 从 IndexDB 中删除打包结果
+			await BundleManager.deleteBundle(name);
 			await loadPackages();
 			cmd.message(`包 ${name} 卸载成功`, "成功");
 		} catch (error) {
@@ -69,6 +72,9 @@ export const PackageManager = () => {
 			setLoading(false);
 		}
 	};
+
+
+	console.log(packages);
 
 	return (
 		<div className="flex flex-col h-screen bg-background">
@@ -120,11 +126,6 @@ export const PackageManager = () => {
 												{pkg.version}
 											</span>
 										</div>
-										{pkg.description && (
-											<div className="text-xs text-muted-foreground">
-												{pkg.description}
-											</div>
-										)}
 									</div>
 								</div>
 								<Button

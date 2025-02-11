@@ -79,78 +79,70 @@ pub async fn install_package(
     _: tauri::AppHandle,
     name: String,
     version: Option<String>,
-) -> Result<(), String> {
+) -> Result<(String, String), String> {
     let temp_dir = utils::get_config_dir().unwrap().join("npm");
-    println!("安装包: {}", name);
+    std::fs::create_dir_all(&temp_dir).map_err(|e| format!("创建临时目录失败: {}", e))?;
+
+    // 创建临时的 package.json
+    let package_json = r#"{"name": "temp", "version": "1.0.0"}"#;
+    std::fs::write(temp_dir.join("package.json"), package_json)
+        .map_err(|e| format!("创建 package.json 失败: {}", e))?;
 
     let package_spec = match version {
         Some(v) => format!("{}@{}", name, v),
-        None => name,
+        None => name.clone(),
     };
 
-    println!("package_spec: {}", package_spec);
-
-    Command::new("npm.cmd")
+    // 在临时目录中安装包
+    let output = Command::new("npm.cmd")
         .arg("install")
         .arg(&package_spec)
         .current_dir(&temp_dir)
         .output()
         .map_err(|e| e.to_string())?;
 
-    Ok(())
-}
+    if !output.status.success() {
+        let error = String::from_utf8_lossy(&output.stderr);
+        // 清理临时目录
+        std::fs::remove_dir_all(&temp_dir).ok();
+        return Err(format!("安装失败: {}", error));
+    }
 
-#[tauri::command]
-pub async fn uninstall_package(name: String) -> Result<(), String> {
-    let temp_dir = utils::get_config_dir().unwrap().join("npm");
+    // 打包
+    let entry_content = format!(
+        "const mod = require('{}');
+         if (typeof mod === 'function' || (typeof mod === 'object' && !mod.default)) {{
+             window.__MODULE__ = mod;
+         }} else {{
+             window.__MODULE__ = {{ ...mod.default, ...mod }};
+         }}",
+        name
+    );
+    let entry_file = temp_dir.join("temp_entry.js");
+    std::fs::write(&entry_file, entry_content).map_err(|e| e.to_string())?;
 
-    Command::new("npm.cmd")
-        .arg("uninstall")
-        .arg(&name)
+    let output = Command::new("npx.cmd")
+        .arg("esbuild")
+        .arg(entry_file.to_str().unwrap())
+        .arg("--bundle")
+        .arg("--format=iife")
+        .arg("--platform=browser")
+        .arg("--target=es2015")
+        .arg("--minify")
         .current_dir(&temp_dir)
         .output()
         .map_err(|e| e.to_string())?;
 
-    Ok(())
-}
+    // 清理临时文件和目录
+    std::fs::remove_file(&entry_file).ok();
+    std::fs::remove_dir_all(&temp_dir).ok();
 
-#[tauri::command]
-pub async fn list_packages(_: tauri::AppHandle) -> Result<Vec<PackageInfo>, String> {
-    let temp_dir = utils::get_config_dir().unwrap().join("npm");
-
-    if !temp_dir.exists() {
-        return Ok(Vec::new());
+    if !output.status.success() {
+        let error = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("打包失败: {}", error));
     }
 
-    let output = Command::new("npm.cmd")
-        .arg("list")
-        .arg("--json")
-        .current_dir(&temp_dir)
-        .output()
-        .map_err(|e| e.to_string())?;
+    let bundle = String::from_utf8(output.stdout).map_err(|e| e.to_string())?;
 
-    let output_str = String::from_utf8(output.stdout).map_err(|e| e.to_string())?;
-    let json: serde_json::Value = serde_json::from_str(&output_str).map_err(|e| e.to_string())?;
-
-    let mut packages = Vec::new();
-    if let Some(deps) = json["dependencies"].as_object() {
-        for (name, info) in deps {
-            if let Some(version) = info["version"].as_str() {
-                packages.push(PackageInfo {
-                    name: name.clone(),
-                    version: version.to_string(),
-                    description: info["description"].as_str().map(String::from),
-                });
-            }
-        }
-    }
-
-    Ok(packages)
-}
-
-#[tauri::command]
-pub async fn check_package_installed(_: tauri::AppHandle, name: String) -> Result<bool, String> {
-    let temp_dir = utils::get_config_dir().unwrap().join("npm");
-    let package_dir = temp_dir.join("node_modules").join(&name);
-    Ok(package_dir.exists())
+    Ok((name, bundle))
 }
