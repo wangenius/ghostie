@@ -293,9 +293,10 @@ export class ChatModel {
     }
   }
 
-  public async stream(prompt: string): Promise<StreamResponse> {
+  public async stream(prompt: string): Promise<ChatModelResponse<string>> {
     const requestId = gen.id();
     let functionCallData: FunctionCallReply | undefined;
+    let content = "";
 
     // 添加用户消息并创建助手消息
     this.historyMessage.push([{ role: "user", content: prompt }]);
@@ -325,88 +326,56 @@ export class ChatModel {
         throw new Error(`API请求失败: ${response.status}`);
       }
 
-      const stream = new ReadableStream({
-        start: async (controller) => {
-          const reader = response.body!.getReader();
-          const decoder = new TextDecoder();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
 
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-              const text = decoder.decode(value);
-              const lines = text.split("\n");
+          const text = decoder.decode(value);
+          const lines = text.split("\n");
 
-              for (const line of lines) {
-                if (!line.startsWith("data: ") || line.includes("[DONE]"))
-                  continue;
+          for (const line of lines) {
+            if (!line.startsWith("data: ") || line.includes("[DONE]")) continue;
 
-                const json = JSON.parse(line.slice(5));
-                const delta = json.choices[0]?.delta;
+            const json = JSON.parse(line.slice(5));
+            const delta = json.choices[0]?.delta;
 
-                if (delta?.content) {
-                  this.historyMessage.updateLastMessage((msg) => {
-                    msg.content += delta.content;
-                  });
-                  controller.enqueue(delta.content);
-                }
-
-                if (delta?.function_call) {
-                  functionCallData = functionCallData || {
-                    name: "",
-                    arguments: "",
-                  };
-                  if (delta.function_call.arguments) {
-                    functionCallData.arguments += delta.function_call.arguments;
-                  }
-                  if (delta.function_call.name) {
-                    functionCallData.name = delta.function_call.name;
-                  }
-                  this.historyMessage.updateLastMessage((msg) => {
-                    msg.function_call = functionCallData;
-                  });
-                }
-              }
+            if (delta?.content) {
+              content += delta.content;
+              this.historyMessage.updateLastMessage((msg) => {
+                msg.content = content;
+              });
             }
-          } catch (error) {
-            controller.error(error);
-          } finally {
-            reader.releaseLock();
-            controller.close();
-            this.loading.set({ loading: false });
-          }
-        },
-        cancel: () => {
-          this.stop(requestId);
-        },
-      });
 
-      // 添加异步迭代器支持
-      const streamWithIterator = Object.assign(stream, {
-        [Symbol.asyncIterator]() {
-          const reader = stream.getReader();
-          return {
-            async next() {
-              try {
-                const { done, value } = await reader.read();
-                return { done, value };
-              } catch (error) {
-                reader.releaseLock();
-                throw error;
+            if (delta?.function_call) {
+              functionCallData = functionCallData || {
+                name: "",
+                arguments: "",
+              };
+              if (delta.function_call.arguments) {
+                functionCallData.arguments += delta.function_call.arguments;
               }
-            },
-            async return() {
-              reader.releaseLock();
-              return { done: true, value: undefined };
-            },
-          };
-        },
-      });
+              if (delta.function_call.name) {
+                functionCallData.name = delta.function_call.name;
+              }
+              this.historyMessage.updateLastMessage((msg) => {
+                msg.function_call = functionCallData;
+                msg.content = content;
+              });
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
 
+      let toolResult;
       // 如果有函数调用，处理工具调用结果
       if (functionCallData) {
-        const toolResult = await this.tool_call(functionCallData);
+        toolResult = await this.tool_call(functionCallData);
         if (toolResult) {
           this.historyMessage.push([
             {
@@ -419,18 +388,17 @@ export class ChatModel {
       }
 
       return {
-        body: streamWithIterator as ReadableStream<string> & {
-          [Symbol.asyncIterator](): AsyncIterator<string>;
-        },
+        body: content,
         stop: () => this.stop(requestId),
-        tool: functionCallData
-          ? await this.tool_call(functionCallData)
-          : undefined,
+        tool: toolResult,
       };
     } catch (error) {
       this.loading.set({ loading: false });
       this.removeAbortController(requestId);
       throw error;
+    } finally {
+      this.loading.set({ loading: false });
+      this.removeAbortController(requestId);
     }
   }
 

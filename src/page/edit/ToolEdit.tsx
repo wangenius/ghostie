@@ -426,6 +426,59 @@ export function ToolEdit() {
         setTestArgs(prev => ({ ...prev, [id]: value }));
     };
 
+    const test = async () => {
+        async () => {
+            try {
+                // 将脚本包装在异步函数中，通过参数注入依赖
+                const fn = new Function('return async function(params) { ' + scriptContent + ' }')() as (args: Record<string, any>) => Promise<any>;
+
+                // 类型转换函数
+                const convertValue = (value: string, type: string): any => {
+                    if (value === undefined || value === null || value === '') return undefined;
+
+                    switch (type) {
+                        case 'number':
+                            return Number(value);
+                        case 'boolean':
+                            return value.toLowerCase() === 'true';
+                        case 'array':
+                            try {
+                                return JSON.parse(value);
+                            } catch {
+                                return value.split(',').map(v => v.trim());
+                            }
+                        case 'object':
+                            try {
+                                return JSON.parse(value);
+                            } catch {
+                                return value;
+                            }
+                        default:
+                            return value;
+                    }
+                };
+
+                const argsObject = Object.values(parameters).reduce<Record<string, any>>((acc, param) => {
+
+                    const value = testArgs[param.id];
+                    if (param.required && !value) {
+                        throw new Error(`参数 ${param.name} 不能为空`);
+                    }
+                    acc[param.name] = convertValue(value, param.type);
+                    return acc;
+                }, {});
+
+                // 执行函数并等待结果
+                const result = await fn(argsObject);
+                console.log(result);
+                cmd.message(JSON.stringify(result), "测试结果");
+            } catch (error) {
+                console.log(error);
+                cmd.message(String(error), "测试失败", 'warning');
+            }
+        }
+    }
+
     return (
         <div className="flex flex-col h-screen bg-background">
             <Header title={create ? "添加插件" : "编辑插件"} close={handleClose} />
@@ -497,56 +550,7 @@ export function ToolEdit() {
 
             <div className="flex justify-end gap-2 px-4 py-3 border-t border-border">
                 <Button
-                    onClick={async () => {
-                        try {
-                            // 将脚本包装在异步函数中，通过参数注入依赖
-                            const fn = new Function('return async function(params) { ' + scriptContent + ' }')() as (args: Record<string, any>) => Promise<any>;
-
-                            // 类型转换函数
-                            const convertValue = (value: string, type: string): any => {
-                                if (value === undefined || value === null || value === '') return undefined;
-
-                                switch (type) {
-                                    case 'number':
-                                        return Number(value);
-                                    case 'boolean':
-                                        return value.toLowerCase() === 'true';
-                                    case 'array':
-                                        try {
-                                            return JSON.parse(value);
-                                        } catch {
-                                            return value.split(',').map(v => v.trim());
-                                        }
-                                    case 'object':
-                                        try {
-                                            return JSON.parse(value);
-                                        } catch {
-                                            return value;
-                                        }
-                                    default:
-                                        return value;
-                                }
-                            };
-
-                            const argsObject = Object.values(parameters).reduce<Record<string, any>>((acc, param) => {
-
-                                const value = testArgs[param.id];
-                                if (param.required && !value) {
-                                    throw new Error(`参数 ${param.name} 不能为空`);
-                                }
-                                acc[param.name] = convertValue(value, param.type);
-                                return acc;
-                            }, {});
-
-                            // 执行函数并等待结果
-                            const result = await fn(argsObject);
-                            console.log(result);
-                            cmd.message(JSON.stringify(result), "测试结果");
-                        } catch (error) {
-                            console.log(error);
-                            cmd.message(String(error), "测试失败", 'warning');
-                        }
-                    }}
+                    onClick={test}
                     className="mr-auto"
                 >
                     测试

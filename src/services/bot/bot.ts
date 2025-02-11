@@ -31,13 +31,23 @@ export class Bot {
   }
 
   public async chat(input: string) {
-    /* 重置上下文 */
-    this.context.reset();
-    this.loading.set({ status: true });
-    await this.model.text(`${input} 请思考后回答,可调用相关工具`);
-    // 生成最终响应
-    const prompt = `请生成简约回应`;
-    await this.model.stream(prompt);
-    this.loading.set({ status: false });
+    try {
+      /* 重置上下文 */
+      this.context.reset();
+      this.loading.set({ status: true });
+
+      const response = await this.model.stream(`${input}`);
+
+      // 如果有工具调用，等待工具执行完成后再生成最终响应
+      if (response.tool) {
+        const prompt = `基于以上工具调用结果，请生成简约回应`;
+        await this.model.stream(prompt);
+      }
+    } catch (error) {
+      console.error("Chat error:", error);
+      throw error;
+    } finally {
+      this.loading.set({ status: false });
+    }
   }
 }

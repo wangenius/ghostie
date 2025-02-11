@@ -71,7 +71,7 @@ export class ToolsManager {
     /* 工具函数 */
     const toolFunction: ToolFunction = {
       info,
-      fn: new Function(`return async function(params) { ${script} }`) as (
+      fn: new Function(`return async function(params) { ${script} }`)() as (
         args: Record<string, any>
       ) => Promise<any>,
     };
@@ -293,10 +293,8 @@ export class ToolsManager {
                         args[1] && ts.isObjectLiteralExpression(args[1])
                           ? parseObjectLiteral(args[1])
                           : {};
-
                       // 获取方法名
                       const methodName = (member.name as ts.Identifier).text;
-
                       // 获取方法体
                       const body = member.body;
                       if (!body) {
