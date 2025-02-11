@@ -3,28 +3,14 @@ import {
   ToolFunction,
   ToolFunctionHandler,
   ToolFunctionInfo,
+  ToolProps,
 } from "@common/types/model";
 import { Echo } from "echo-state";
-
-export interface Tool {
-  name: string;
-  description?: string;
-  script_content: string;
-  enabled: boolean;
-  args: ToolArg[];
-}
-
-export interface ToolArg {
-  name: string;
-  arg_type: string;
-  description: string;
-  required: boolean;
-  default_value?: string;
-}
+import ts from "typescript";
 
 export class ToolsManager {
   /* 保存所有的工具 */
-  static store = new Echo<Record<string, Tool>>(
+  static store = new Echo<Record<string, ToolProps>>(
     {},
     {
       name: "tools",
@@ -80,32 +66,13 @@ export class ToolsManager {
     const tool = tools[name];
     if (!tool) return undefined;
 
+    // 删除script
+    const { script, ...info } = tool;
+    /* 工具函数 */
     const toolFunction: ToolFunction = {
-      info: {
-        name: tool.name,
-        description: tool.description || "",
-        parameters: {
-          type: "object",
-          properties: tool.args.reduce(
-            (acc: Record<string, any>, arg: ToolArg) => ({
-              ...acc,
-              [arg.name]: {
-                type: arg.arg_type,
-                description: arg.description,
-                required: arg.required,
-                default: arg.default_value,
-              },
-            }),
-            {}
-          ),
-          required: tool.args
-            .filter((arg: ToolArg) => arg.required)
-            .map((arg: ToolArg) => arg.name),
-        },
-      },
-      fn: new Function(tool.script_content) as any,
+      info,
+      fn: new Function(script) as any,
     };
-
     this.toolFunctions.set(name, toolFunction);
     return toolFunction;
   }
@@ -115,22 +82,10 @@ export class ToolsManager {
    */
   static registerTool(toolFunction: ToolFunction) {
     // 只更新store，不更新缓存
-    const tool: Tool = {
-      name: toolFunction.info.name,
-      description: toolFunction.info.description,
-      script_content: toolFunction.fn.toString(),
-      enabled: true,
-      args: Object.entries(toolFunction.info.parameters.properties).map(
-        ([name, prop]: [string, any]) => ({
-          name,
-          arg_type: prop.type,
-          description: prop.description,
-          required: toolFunction.info.parameters.required.includes(name),
-          default_value: prop.default,
-        })
-      ),
+    const tool: ToolProps = {
+      ...toolFunction.info,
+      script: toolFunction.fn.toString(),
     };
-
     this.store.set({
       [toolFunction.info.name]: tool,
     });
@@ -142,28 +97,10 @@ export class ToolsManager {
   static getAllTools(): ToolFunctionInfo[] {
     // 直接从store中获取
     const tools = this.store.current;
-    return Object.values(tools).map((tool) => ({
-      name: tool.name,
-      description: tool.description || "",
-      parameters: {
-        type: "object",
-        properties: tool.args.reduce(
-          (acc: Record<string, any>, arg: ToolArg) => ({
-            ...acc,
-            [arg.name]: {
-              type: arg.arg_type,
-              description: arg.description,
-              required: arg.required,
-              default: arg.default_value,
-            },
-          }),
-          {}
-        ),
-        required: tool.args
-          .filter((arg: ToolArg) => arg.required)
-          .map((arg: ToolArg) => arg.name),
-      },
-    }));
+    return Object.values(tools).map((tool) => {
+      const { script, ...info } = tool;
+      return info;
+    });
   }
 
   /**
@@ -190,12 +127,12 @@ export class ToolsManager {
     return await tool.fn(args);
   }
 
-  static async add(plugin: Tool) {
+  static async add(tool: ToolProps) {
     this.store.set({
-      [plugin.name]: plugin,
+      [tool.name]: tool,
     });
     // 清除缓存
-    this.toolFunctions.delete(plugin.name);
+    this.toolFunctions.delete(tool.name);
   }
 
   static async delete(name: string) {
@@ -203,9 +140,9 @@ export class ToolsManager {
     this.store.delete(name);
   }
 
-  static async update(oldName: string, plugin: Tool) {
+  static async update(oldName: string, tool: ToolProps) {
     await this.delete(oldName);
-    await this.add(plugin);
+    await this.add(tool);
   }
 
   static async run(name: string, args?: Record<string, any>) {
@@ -239,7 +176,7 @@ export class ToolsManager {
 
       if (result) {
         // 解析插件文件
-        const importedPlugins = JSON.parse(result.content) as Tool[];
+        const importedPlugins = JSON.parse(result.content) as ToolProps[];
 
         // 导入每个插件
         for (const plugin of importedPlugins) {
@@ -271,46 +208,124 @@ export class ToolsManager {
         try {
           const content = result.content;
 
-          // 解析类名
-          const classMatch = content.match(/export\s+class\s+(\w+)/);
-          if (!classMatch) {
-            throw new Error("未找到工具类定义");
+          // 创建源文件
+          const sourceFile = ts.createSourceFile(
+            "temp.ts",
+            content,
+            ts.ScriptTarget.Latest,
+            true
+          );
+
+          const tools: ToolProps[] = [];
+
+          // 解析对象字面量表达式
+          function parseObjectLiteral(
+            node: ts.ObjectLiteralExpression
+          ): Record<string, any> {
+            const obj: Record<string, any> = {};
+            node.properties.forEach((prop) => {
+              if (ts.isPropertyAssignment(prop)) {
+                const name = prop.name.getText();
+                if (ts.isObjectLiteralExpression(prop.initializer)) {
+                  obj[name] = parseObjectLiteral(prop.initializer);
+                } else {
+                  const value = prop.initializer.getText();
+                  // 处理字符串字面量
+                  if (ts.isStringLiteral(prop.initializer)) {
+                    obj[name] = prop.initializer.text;
+                  }
+                  // 处理布尔值
+                  else if (value === "true") {
+                    obj[name] = true;
+                  } else if (value === "false") {
+                    obj[name] = false;
+                  }
+                  // 处理数字
+                  else if (!isNaN(Number(value))) {
+                    obj[name] = Number(value);
+                  }
+                  // 其他情况保持原样
+                  else {
+                    obj[name] = value;
+                  }
+                }
+              }
+            });
+            return obj;
           }
-          const className = classMatch[1];
 
-          // 查找所有带装饰器的方法
-          const methodRegex =
-            /@register\s*\(\s*["'](.+?)["'](?:\s*,\s*({[\s\S]+?}))?\s*\)\s*static\s+(?:async\s+)?(\w+)\s*\([^)]*\)\s*(?::\s*[^{]+)?\s*{([\s\S]+?)}/g;
-          let methodMatch;
-          const tools: Tool[] = [];
+          // 遍历AST
+          function visit(node: ts.Node) {
+            if (ts.isClassDeclaration(node) && node.name) {
+              // 遍历类的成员
+              node.members.forEach((member) => {
+                if (
+                  ts.isMethodDeclaration(member) &&
+                  member.modifiers?.some(
+                    (mod) =>
+                      mod.kind === ts.SyntaxKind.StaticKeyword &&
+                      ts.getDecorators?.(member)?.length
+                  )
+                ) {
+                  const decorators = ts.getDecorators?.(member) || [];
+                  // 查找@register装饰器
+                  const registerDecorator = decorators.find(
+                    (dec: ts.Decorator) => {
+                      const expr = dec.expression;
+                      return (
+                        ts.isCallExpression(expr) &&
+                        ts.isIdentifier(expr.expression) &&
+                        expr.expression.text === "register"
+                      );
+                    }
+                  );
 
-          while ((methodMatch = methodRegex.exec(content)) !== null) {
-            const description = methodMatch[1];
-            const argsObject = methodMatch[2]
-              ? eval("(" + methodMatch[2] + ")")
-              : {};
-            const methodName = methodMatch[3];
-            const functionBody = methodMatch[4].trim();
+                  if (
+                    registerDecorator &&
+                    ts.isCallExpression(registerDecorator.expression)
+                  ) {
+                    const args = registerDecorator.expression.arguments;
+                    if (args.length > 0) {
+                      const description = (args[0] as ts.StringLiteral).text;
+                      const argsObject =
+                        args[1] && ts.isObjectLiteralExpression(args[1])
+                          ? parseObjectLiteral(args[1])
+                          : {};
 
-            // 构建工具配置
-            const tool: Tool = {
-              name: `${className}.${methodName}`,
-              description: description,
-              script_content: `return ${functionBody}`,
-              enabled: true,
-              args: Object.entries(argsObject).map(
-                ([name, prop]: [string, any]) => ({
-                  name,
-                  arg_type: prop.type,
-                  description: prop.description || "",
-                  required: prop.required || false,
-                  default_value: prop.default,
-                })
-              ),
-            };
+                      // 获取方法名
+                      const methodName = (member.name as ts.Identifier).text;
 
-            tools.push(tool);
+                      // 获取方法体
+                      const body = member.body;
+                      if (!body) {
+                        throw new Error(`方法体为空: ${methodName}`);
+                      }
+
+                      // 构建tool对象
+                      const tool: ToolProps = {
+                        name: methodName,
+                        description: description,
+                        parameters: {
+                          type: "object",
+                          properties: argsObject,
+                          required: Object.entries(argsObject)
+                            .filter(([_, value]) => value.required !== false)
+                            .map(([key, _]) => key),
+                        },
+                        script: body.getText(),
+                      };
+
+                      tools.push(tool);
+                    }
+                  }
+                }
+              });
+            }
+            ts.forEachChild(node, visit);
           }
+
+          // 开始遍历
+          visit(sourceFile);
 
           if (tools.length === 0) {
             throw new Error("未找到有效的工具方法");

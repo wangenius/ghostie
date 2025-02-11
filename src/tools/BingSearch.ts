@@ -25,10 +25,10 @@ export class BingSearch {
       required: false,
     },
   })
-  static async search(
-    query: string,
-    count: number = 5
-  ): Promise<Array<{ title: string; url: string; snippet: string }>> {
+  static async search(params: {
+    query: string;
+    count: number;
+  }): Promise<Array<{ title: string; url: string; snippet: string }>> {
     const apiKey = Env.get("BING_API_KEY");
     if (!apiKey) {
       throw new Error(
@@ -44,8 +44,8 @@ export class BingSearch {
             "Ocp-Apim-Subscription-Key": apiKey,
           },
           params: {
-            q: query,
-            count: count,
+            q: params.query,
+            count: params.count,
             responseFilter: "Webpages",
             mkt: "zh-CN",
           },
