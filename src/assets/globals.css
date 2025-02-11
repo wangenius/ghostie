@@ -147,12 +147,12 @@ a {
 /* 可拖拽区域样式 */
 .draggable {
   -webkit-app-region: drag;
+  cursor: grab !important;
 }
 
 .draggable button,
 .draggable input,
 .draggable span,
-.draggable div,
 .draggable a {
   -webkit-app-region: no-drag;
 }

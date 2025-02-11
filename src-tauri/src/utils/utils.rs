@@ -4,22 +4,13 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
-
+use tauri_plugin_dialog::DialogExt;
 /// 获取配置目录
 pub fn get_config_dir() -> Option<PathBuf> {
     let home = env::var("HOME").or_else(|_| env::var("USERPROFILE")).ok()?;
     let mut path = PathBuf::from(home);
     path.push(".pip-shell");
     Some(path)
-}
-
-/// 保存文件
-pub fn save_file(content: &str, file_path: &PathBuf) -> Result<()> {
-    if let Some(parent) = file_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    fs::write(file_path, content)?;
-    Ok(())
 }
 
 pub fn gen_id() -> String {
@@ -46,4 +37,83 @@ pub fn gen_id() -> String {
     }
 
     id
+}
+
+#[derive(serde::Serialize)]
+pub struct FileContent {
+    pub path: String,
+    pub content: String,
+}
+
+#[tauri::command]
+pub async fn open_file(
+    app: tauri::AppHandle,
+    title: String,
+    filters: std::collections::HashMap<String, Vec<String>>,
+) -> Result<Option<FileContent>, String> {
+    let mut file_dialog = app.dialog().file().set_title(&title);
+
+    for (name, extensions) in filters.iter() {
+        file_dialog = file_dialog.add_filter(
+            name,
+            extensions
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<&str>>()
+                .as_slice(),
+        );
+    }
+
+    let file_path = file_dialog.blocking_pick_file();
+
+    if let Some(path) = file_path {
+        let path_str = path.to_string();
+        match fs::read_to_string(&path_str) {
+            Ok(content) => Ok(Some(FileContent {
+                path: path_str,
+                content,
+            })),
+            Err(e) => Err(format!("读取文件失败: {}", e)),
+        }
+    } else {
+        Ok(None)
+    }
+}
+
+#[tauri::command]
+pub async fn save_file(
+    app: tauri::AppHandle,
+    title: String,
+    default_name: String,
+    filters: std::collections::HashMap<String, Vec<String>>,
+    content: String,
+) -> Result<bool, String> {
+    let mut file_dialog = app
+        .dialog()
+        .file()
+        .set_file_name(default_name)
+        .set_title(&title);
+
+    for (name, extensions) in filters.iter() {
+        file_dialog = file_dialog.add_filter(
+            name,
+            extensions
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<&str>>()
+                .as_slice(),
+        );
+    }
+
+    let file_path = file_dialog.blocking_save_file();
+
+    if let Some(path) = file_path {
+        let path_str = path.to_string();
+        match fs::write(&path_str, content) {
+            Ok(_) => Ok(true),
+            Err(e) => Err(format!("保存文件失败: {}", e)),
+        }
+    } else {
+        Ok(false)
+    }
 }

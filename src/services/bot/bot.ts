@@ -6,6 +6,7 @@ import { ChatModel } from "../model/ChatModel";
 import { Tool } from "../tool/Tool";
 import { ModelManager } from "../model/ModelManager";
 
+/*  */
 export class Bot {
   name: string;
   system: string;

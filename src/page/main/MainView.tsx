@@ -1,11 +1,12 @@
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { BotManager } from "@/services/bot/BotManger";
-import { Bot } from "@/services/bot/bot";
 import { cmd } from "@utils/shell";
 import { useEffect, useRef, useState } from "react";
 import { BsStars } from "react-icons/bs";
-import { TbInfoSquare, TbLoader2, TbX } from "react-icons/tb";
-import { Button } from "@/components/ui/button";
-import { BotEdit } from "../edit/BotEdit";
+import { TbLoader2, TbSettings, TbX } from "react-icons/tb";
+import { BotItem } from "./components/BotItem";
+import { MessageItem } from "./components/MessageItem";
 
 export function MainView() {
     const [inputValue, setInputValue] = useState("");
@@ -15,19 +16,12 @@ export function MainView() {
     const inputRef = useRef<HTMLInputElement>(null);
     const bots = BotManager.use();
     const { list } = BotManager.current.model.useHistory();
-
-
-
     const botList = Object.values(bots);
-
 
     const startChat = (bot: typeof botList[0]) => {
         setIsChat(true);
-        console.log(bot);
         BotManager.setCurrent(bot);
     };
-
-
 
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (!isChat && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
@@ -54,7 +48,6 @@ export function MainView() {
                 const userInput = inputValue;
                 setInputValue("");
                 BotManager.current.chat(userInput);
-
             } catch (error) {
                 console.error("发送消息失败:", error);
             } finally {
@@ -94,20 +87,29 @@ export function MainView() {
     }, []);
 
     return (
-        <div data-tauri-drag-region className="flex  flex-col h-screen bg-background">
-            <div data-tauri-drag-region className="pt-2 px-4 ">
-                <div data-tauri-drag-region className="flex items-center gap-2 h-10">
-                    <Button
-
-                        size="icon"
-                        variant="ghost"
-                        onClick={async () => {
-                            await cmd.open("settings", {});
-                        }}
-                        className="z-10 btn cursor-pointer"
-                    >
-                        <BsStars className="w-[18px] h-[18px]" />
-                    </Button>
+        <div className="flex flex-col h-screen bg-background">
+            {/* 顶部工具栏 */}
+            <div className="px-4 draggable">
+                <div className="mx-auto flex items-center h-14">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-9 w-9"
+                            >
+                                <BsStars className="w-[18px] h-[18px]" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                            <DropdownMenuItem onClick={async () => {
+                                await cmd.open("settings", {});
+                            }}>
+                                <TbSettings className="mr-2 h-4 w-4" />
+                                <span>设置</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
 
                     <div className="flex-1 relative">
                         <input
@@ -115,84 +117,71 @@ export function MainView() {
                             type="text"
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
-
                             onKeyDown={handleKeyDown}
-                            className="w-full text-sm h-10 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+                            className="w-full h-9 px-3 rounded-md bg-secondary/20 text-foreground outline-none placeholder:text-muted-foreground"
                             placeholder={isChat ? `与 ${BotManager.current.name} 对话...` : "选择一个助手开始对话..."}
                         />
                     </div>
 
-
-                    <div className="flex items-center gap-2">
-                        {loading ? (
-                            <button
-                                onClick={() => {
-                                    BotManager.current.loading.set({ status: false });
-                                    setLoading(false);
-                                }}
-                                className="p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-all duration-200 active:scale-95"
-
-                            >
-                                <TbLoader2 className="w-[18px] h-[18px] animate-spin" />
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => {
-                                    if (isChat) {
-                                        setIsChat(false);
-                                        BotManager.setCurrent({
-                                            name: "",
-                                            system: "",
-                                            model: "",
-                                            tools: []
-                                        });
-                                    } else {
-                                        cmd.close();
-                                    }
-                                }}
-                                className="p-1.5 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-all duration-200 active:scale-95"
-                            >
-
-
-
-                                <TbX className="w-[18px] h-[18px]" />
-                            </button>
-                        )}
-                    </div>
+                    {loading ? (
+                        <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                                BotManager.current.loading.set({ status: false });
+                                setLoading(false);
+                            }}
+                        >
+                            <TbLoader2 className="h-4 w-4 animate-spin" />
+                        </Button>
+                    ) : (
+                        <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                                if (isChat) {
+                                    setIsChat(false);
+                                    BotManager.setCurrent({
+                                        name: "",
+                                        system: "",
+                                        model: "",
+                                        tools: []
+                                    });
+                                } else {
+                                    cmd.close();
+                                }
+                            }}
+                        >
+                            <TbX className="h-4 w-4" />
+                        </Button>
+                    )}
                 </div>
             </div>
 
-            <div className="flex-1 mt-2 overflow-y-auto">
-                {!isChat ? (
-                    <div className="p-4">
-                        {botList.map((bot, index) => (
-                            <div
-                                key={bot.name}
-                                className={`p-4 cursor-pointer rounded-lg mb-2 ${index === selectedBotIndex ? 'bg-secondary' : 'hover:bg-secondary/50'
-                                    }`}
-                                onClick={() => startChat(bot)}
-                            >
-                                <div className="font-bold">{bot.name}</div>
-                                <div className="text-sm text-muted-foreground">{bot.system}</div>
-                                <Button variant="ghost" size="icon" onClick={() => {
-                                    BotEdit.open(bot.name)
-                                }} className="w-4 h-4">
-                                    <TbInfoSquare className="w-[18px] h-[18px]" />
-                                </Button>
-
-
+            {/* 主内容区 */}
+            <div className="flex-1 overflow-hidden">
+                <div className="h-full overflow-y-auto">
+                    {!isChat ? (
+                        <div className="container mx-auto px-4 max-w-2xl">
+                            <div className="space-y-2">
+                                {botList.map((bot, index) => (
+                                    <BotItem
+                                        key={bot.name}
+                                        bot={bot}
+                                        isSelected={index === selectedBotIndex}
+                                        onClick={() => startChat(bot)}
+                                    />
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                ) : (
-                    list.map((message, index) => (
-                        <div key={index} className={`p-4 ${message.role === 'user' ? 'bg-gray-100' : 'bg-white'}`}>
-                            <div className="font-bold">{message.role === 'user' ? '用户' : '助手'}</div>
-                            <div className="mt-2 whitespace-pre-wrap">{message.content}</div>
-
                         </div>
-                    ))
-                )}
+                    ) : (
+                        <div className="divide-y divide-border">
+                            {list.map((message, index) => (
+                                <MessageItem key={index} message={message} />
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

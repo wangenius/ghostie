@@ -1,12 +1,12 @@
 import { ToolItem } from "@/components/model/ToolItem";
-import { PluginEdit } from "@/page/edit/PluginEdit";
+import { ToolEdit } from "@/page/edit/ToolEdit";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ToolsManager } from "@/services/tool/ToolsManager";
 import { cmd } from "@utils/shell";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";
-import { Plugin } from "@/services/tool/ToolsManager";
+import { Tool } from "@/services/tool/ToolsManager";
 import { useEffect } from "react";
 
 /**
@@ -71,7 +71,7 @@ export function ToolsTab() {
 
             if (result) {
                 // 解析插件文件
-                const importedPlugins = JSON.parse(result.content) as Plugin[];
+                const importedPlugins = JSON.parse(result.content) as Tool[];
 
                 // 导入每个插件
                 for (const plugin of importedPlugins) {
@@ -107,22 +107,24 @@ export function ToolsTab() {
             const toolsJson = JSON.stringify(toolsToExport, null, 2);
 
             // 打开保存文件对话框
-            await cmd.invoke("save_file", {
+            const result = await cmd.invoke<boolean>("save_file", {
                 title: "保存工具文件",
                 filters: {
                     "工具文件": ["json"]
                 },
-                defaultPath: "tools.json",
+                defaultName: "tools.json",
                 content: toolsJson
             });
 
-            cmd.message({
-                title: "导出成功",
-                message: `成功导出 ${toolsToExport.length} 个工具`,
-                buttons: ["确定"],
-                defaultId: 0,
-                cancelId: 0
-            });
+            if (result) {
+                cmd.message({
+                    title: "导出成功",
+                    message: `成功导出 ${toolsToExport.length} 个工具`,
+                    buttons: ["确定"],
+                    defaultId: 0,
+                    cancelId: 0
+                });
+            }
         } catch (error) {
             console.error("导出插件失败:", error);
             cmd.message({
@@ -140,7 +142,7 @@ export function ToolsTab() {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Button
-                        onClick={() => PluginEdit.open()}
+                        onClick={() => ToolEdit.open()}
                     >
                         <TbPlus className="w-4 h-4" />
                         <span>新建</span>
@@ -155,7 +157,7 @@ export function ToolsTab() {
                         </DropdownMenuTrigger>
 
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => PluginEdit.open()}>
+                            <DropdownMenuItem onClick={() => ToolEdit.open()}>
                                 <TbPlus className="w-4 h-4" />
                                 <span>新建</span>
                             </DropdownMenuItem>
@@ -183,7 +185,7 @@ export function ToolsTab() {
                                 key={tool.name}
                                 name={tool.name}
                                 description={tool.description || ""}
-                                onEdit={() => PluginEdit.open(tool.name)}
+                                onEdit={() => ToolEdit.open(tool.name)}
                                 onDelete={() => handleRemoveTool(tool.name)}
                             />
                         );

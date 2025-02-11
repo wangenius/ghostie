@@ -1,17 +1,16 @@
 import { Echo } from "echo-state";
 import { ToolFunction, ToolFunctionInfo } from "@common/types/model";
-import { Tool } from "./Tool";
 
-export interface Plugin {
+export interface Tool {
   name: string;
   description?: string;
   script_content: string;
   enabled: boolean;
-  args: PluginArg[];
+  args: ToolArg[];
   handler?: (...args: any[]) => Promise<any>;
 }
 
-export interface PluginArg {
+export interface ToolArg {
   name: string;
   arg_type: string;
   description: string;
@@ -20,7 +19,8 @@ export interface PluginArg {
 }
 
 export class ToolsManager {
-  static state = new Echo<Record<string, Plugin>>(
+  /* 保存所有的工具 */
+  static store = new Echo<Record<string, Tool>>(
     {},
     {
       name: "tools",
@@ -28,62 +28,116 @@ export class ToolsManager {
     }
   );
 
-  static use = this.state.use.bind(this.state);
+  static use = this.store.use.bind(this.store);
 
-  // 存储所有工具函数
+  // 工具函数执行缓存
   private static toolFunctions = new Map<string, ToolFunction>();
+
+  /**
+   * 从store加载工具函数到缓存
+   */
+  private static loadToolFunction(name: string): ToolFunction | undefined {
+    const tools = this.store.current;
+    const tool = tools[name];
+    if (!tool) return undefined;
+
+    const toolFunction: ToolFunction = {
+      info: {
+        name: tool.name,
+        description: tool.description || "",
+        parameters: {
+          type: "object",
+          properties: tool.args.reduce(
+            (acc: Record<string, any>, arg: ToolArg) => ({
+              ...acc,
+              [arg.name]: {
+                type: arg.arg_type,
+                description: arg.description,
+                required: arg.required,
+                default: arg.default_value,
+              },
+            }),
+            {}
+          ),
+          required: tool.args
+            .filter((arg: ToolArg) => arg.required)
+            .map((arg: ToolArg) => arg.name),
+        },
+      },
+      fn: tool.handler || (new Function(tool.script_content) as any),
+    };
+
+    this.toolFunctions.set(name, toolFunction);
+    return toolFunction;
+  }
 
   /**
    * 注册工具函数
    */
-  static registerTool(tool: ToolFunction) {
-    console.log(`正在注册工具: ${tool.info.name}`);
-
-    // 检查工具函数是否已存在
-    if (this.toolFunctions.has(tool.info.name)) {
-      console.log(`工具 ${tool.info.name} 已存在，跳过注册`);
-      return;
-    }
-
-    this.toolFunctions.set(tool.info.name, tool);
-
-    // 同时更新到插件状态
-    const plugin: Plugin = {
-      name: tool.info.name,
-      description: tool.info.description,
-      script_content: tool.fn.toString(),
+  static registerTool(toolFunction: ToolFunction) {
+    // 只更新store，不更新缓存
+    const tool: Tool = {
+      name: toolFunction.info.name,
+      description: toolFunction.info.description,
+      script_content: toolFunction.fn.toString(),
       enabled: true,
-      args: Object.entries(tool.info.parameters.properties).map(
+      args: Object.entries(toolFunction.info.parameters.properties).map(
         ([name, prop]: [string, any]) => ({
           name,
           arg_type: prop.type,
           description: prop.description,
-          required: tool.info.parameters.required.includes(name),
+          required: toolFunction.info.parameters.required.includes(name),
           default_value: prop.default,
         })
       ),
     };
 
-    this.state.set({
-      [tool.info.name]: plugin,
+    this.store.set({
+      [toolFunction.info.name]: tool,
     });
-
-    console.log(`工具 ${tool.info.name} 注册成功`);
-    console.log("当前已注册工具:", Array.from(this.toolFunctions.keys()));
   }
 
   /**
    * 获取所有工具函数信息
    */
   static getAllTools(): ToolFunctionInfo[] {
-    return Array.from(this.toolFunctions.values()).map((tool) => tool.info);
+    // 直接从store中获取
+    const tools = this.store.current;
+    return Object.values(tools).map((tool) => ({
+      name: tool.name,
+      description: tool.description || "",
+      parameters: {
+        type: "object",
+        properties: tool.args.reduce(
+          (acc: Record<string, any>, arg: ToolArg) => ({
+            ...acc,
+            [arg.name]: {
+              type: arg.arg_type,
+              description: arg.description,
+              required: arg.required,
+              default: arg.default_value,
+            },
+          }),
+          {}
+        ),
+        required: tool.args
+          .filter((arg: ToolArg) => arg.required)
+          .map((arg: ToolArg) => arg.name),
+      },
+    }));
   }
 
   /**
    * 获取指定工具函数
    */
   static getTool(name: string): ToolFunction | undefined {
-    return this.toolFunctions.get(name);
+    // 先从缓存中查找
+    let tool = this.toolFunctions.get(name);
+    if (!tool) {
+      // 如果缓存中没有，尝试从store中加载
+      tool = this.loadToolFunction(name);
+    }
+    return tool;
   }
 
   /**
@@ -97,43 +151,20 @@ export class ToolsManager {
     return await tool.fn(args);
   }
 
-  static async add(plugin: Plugin) {
-    // 注册为工具函数
-    const toolFunction: ToolFunction = {
-      info: {
-        name: plugin.name,
-        description: plugin.description || "",
-        parameters: {
-          type: "object",
-          properties: plugin.args.reduce(
-            (acc, arg) => ({
-              ...acc,
-              [arg.name]: {
-                type: arg.arg_type,
-                description: arg.description,
-                required: arg.required,
-                default: arg.default_value,
-              },
-            }),
-            {}
-          ),
-          required: plugin.args
-            .filter((arg) => arg.required)
-            .map((arg) => arg.name),
-        },
-      },
-      fn: plugin.handler || (new Function(plugin.script_content) as any),
-    };
-
-    this.registerTool(toolFunction);
+  static async add(plugin: Tool) {
+    this.store.set({
+      [plugin.name]: plugin,
+    });
+    // 清除缓存
+    this.toolFunctions.delete(plugin.name);
   }
 
   static async delete(name: string) {
     this.toolFunctions.delete(name);
-    this.state.delete(name);
+    this.store.delete(name);
   }
 
-  static async update(oldName: string, plugin: Plugin) {
+  static async update(oldName: string, plugin: Tool) {
     await this.delete(oldName);
     await this.add(plugin);
   }

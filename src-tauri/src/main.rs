@@ -82,6 +82,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             utils::window::open_window,
             utils::window::hide_window,
+            utils::utils::open_file,
+            utils::utils::save_file,
             check_update,
             install_update
         ])

@@ -1,34 +1,34 @@
-import { TbX, TbPlus, TbTrash } from "react-icons/tb";
-import { useEffect, useRef, useState } from "react";
-import { ToolsManager, Plugin, PluginArg } from "../../services/tool/ToolsManager";
+import { Header } from "@/components/custom/Header";
 import { cmd } from "@/utils/shell";
 import { useQuery } from "@hook/useQuery";
-import { Header } from "@/components/custom/Header";
+import { useEffect, useRef, useState } from "react";
+import { TbPlus, TbTrash } from "react-icons/tb";
+import { Tool, ToolArg, ToolsManager } from "../../services/tool/ToolsManager";
 
-export function PluginEdit() {
+export function ToolEdit() {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [scriptContent, setScriptContent] = useState("");
-    const [args, setArgs] = useState<PluginArg[]>([]);
+    const [args, setArgs] = useState<ToolArg[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const [create, setCreate] = useState(true);
-    const [plugin, setPlugin] = useState<Plugin | null>(null);
+    const [plugin, setPlugin] = useState<Tool | null>(null);
 
     const query = useQuery("name");
-    const plugins = ToolsManager.use();
+    const tools = ToolsManager.use();
 
     useEffect(() => {
         inputRef.current?.focus();
         if (query) {
-            const pluginData = plugins[query];
-            if (pluginData) {
+            const toolData = tools[query];
+            if (toolData) {
                 setCreate(false);
-                setPlugin(pluginData);
-                setName(pluginData.name);
-                setDescription(pluginData.description || "");
-                setScriptContent(pluginData.script_content);
-                setArgs(pluginData.args);
+                setPlugin(toolData);
+                setName(toolData.name);
+                setDescription(toolData.description || "");
+                setScriptContent(toolData.script_content);
+                setArgs(toolData.args);
             } else {
                 setCreate(true);
                 setPlugin(null);
@@ -45,7 +45,7 @@ export function PluginEdit() {
             setScriptContent("");
             setArgs([]);
         }
-    }, [query, plugins]);
+    }, [query, tools]);
 
     const handleClose = async () => {
         setName("");
@@ -72,7 +72,7 @@ export function PluginEdit() {
         setArgs(args.filter((_, i) => i !== index));
     };
 
-    const updateArg = (index: number, field: keyof PluginArg, value: string | boolean) => {
+    const updateArg = (index: number, field: keyof ToolArg, value: string | boolean) => {
         const newArgs = [...args];
         newArgs[index] = { ...newArgs[index], [field]: value };
         setArgs(newArgs);
@@ -262,6 +262,6 @@ export function PluginEdit() {
     );
 }
 
-PluginEdit.open = (name?: string) => {
+ToolEdit.open = (name?: string) => {
     cmd.open("plugin-edit", { name }, { width: 500, height: 600 });
 };
