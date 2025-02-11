@@ -1,13 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { BotManager } from "@/services/bot/BotManger";
 import { cmd } from "@utils/shell";
 import { useEffect, useRef, useState } from "react";
 import { BsStars } from "react-icons/bs";
-import { TbLoader2, TbSettings, TbX } from "react-icons/tb";
+import { TbLoader2, TbSettings } from "react-icons/tb";
 import { BotItem } from "./components/BotItem";
 import { MessageItem } from "./components/MessageItem";
-import { Input } from "@/components/ui/input";
 
 export function MainView() {
     const [inputValue, setInputValue] = useState("");
@@ -17,6 +16,7 @@ export function MainView() {
     const inputRef = useRef<HTMLInputElement>(null);
     const bots = BotManager.use();
     const { list } = BotManager.current.model.useHistory();
+    console.log(list);
     const botList = Object.values(bots);
 
     const startChat = (bot: typeof botList[0]) => {
@@ -33,13 +33,22 @@ export function MainView() {
             setSelectedBotIndex(newIndex);
         }
 
+        if (e.key === "Backspace" && inputValue.length === 0 && isChat) {
+            setIsChat(false);
+            BotManager.setCurrent({
+                name: "",
+                system: "",
+                model: "",
+                tools: []
+            });
+        }
+
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             if (!inputValue.trim()) return;
 
             if (!isChat) {
                 startChat(botList[selectedBotIndex]);
-                return;
             }
 
             if (!BotManager.current) return;
@@ -92,27 +101,24 @@ export function MainView() {
             {/* 顶部工具栏 */}
             <div className="px-4 draggable">
                 <div className="mx-auto flex items-center h-14">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-9 w-9"
-                            >
-                                <BsStars className="w-[18px] h-[18px]" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start">
-                            <DropdownMenuItem onClick={async () => {
-                                await cmd.open("settings", {});
-                            }}>
-                                <TbSettings className="mr-2 h-4 w-4" />
-                                <span>设置</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                            setIsChat(false);
+                            BotManager.setCurrent({
+                                name: "",
+                                system: "",
+                                model: "",
+                                tools: []
+                            });
+                        }}
+                    >
+                        <BsStars className="w-[18px] h-[18px]" />
+                    </Button>
 
-                    <div className="flex-1 relative">
+
+                    <div className="flex-1 pl-2 relative">
                         <Input
                             ref={inputRef}
                             value={inputValue}
@@ -123,6 +129,7 @@ export function MainView() {
                             placeholder={isChat ? `与 ${BotManager.current.name} 对话...` : "选择一个助手开始对话..."}
                         />
                     </div>
+
 
                     {loading ? (
                         <Button
@@ -139,21 +146,9 @@ export function MainView() {
                         <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() => {
-                                if (isChat) {
-                                    setIsChat(false);
-                                    BotManager.setCurrent({
-                                        name: "",
-                                        system: "",
-                                        model: "",
-                                        tools: []
-                                    });
-                                } else {
-                                    cmd.close();
-                                }
-                            }}
+                            onClick={() => cmd.open("settings", {}, { width: 800, height: 600 })}
                         >
-                            <TbX className="h-4 w-4" />
+                            <TbSettings className="h-4 w-4" />
                         </Button>
                     )}
                 </div>
@@ -176,7 +171,7 @@ export function MainView() {
                             </div>
                         </div>
                     ) : (
-                        <div className="divide-y divide-border">
+                        <div className="px-2 space-y-2">
                             {list.map((message, index) => (
                                 <MessageItem key={index} message={message} />
                             ))}

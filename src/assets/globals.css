@@ -131,15 +131,11 @@ body {
   }
 }
 
-p,
-div,
-span,
 button,
 input,
 textarea,
 select,
-option,
-a {
+option {
   user-select: none !important;
   -webkit-user-select: none !important;
 }

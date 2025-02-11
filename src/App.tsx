@@ -6,10 +6,22 @@ import { MainView } from "./page/main/MainView";
 import { SettingsPage } from "./page/settings/Page";
 import { SettingsManager } from "./services/settings/SettingsManager";
 import { PackageManager } from "./page/package/packageManager";
+import { useEffect } from "react";
 
 /* 主应用,提供路由 */
 function App() {
     const theme = SettingsManager.use(selector => selector.theme);
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Alt") {
+                e.preventDefault();
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, []);
     return (
         <div data-theme={theme} className="h-full w-full bg-background">
             <BrowserRouter>

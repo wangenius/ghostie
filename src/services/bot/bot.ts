@@ -35,7 +35,6 @@ export class Bot {
       /* 重置上下文 */
       this.context.reset();
       this.loading.set({ status: true });
-
       const response = await this.model.stream(`${input}`);
 
       // 如果有工具调用，等待工具执行完成后再生成最终响应

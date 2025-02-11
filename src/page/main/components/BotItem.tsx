@@ -39,20 +39,6 @@ export function BotItem({ bot, isSelected, onClick }: BotItemProps) {
 					<p className="mt-0.5 text-xs text-muted-foreground/60 line-clamp-1">{bot.system}</p>
 				</div>
 			</div>
-
-			{bot.tools?.length > 0 && (
-				<div className="mt-1.5 flex flex-wrap gap-1">
-					{bot.tools.map((tool: string, i: number) => (
-						<span
-							key={i}
-							className="text-[10px] text-muted-foreground/50"
-						>
-							{tool}
-							{i < bot.tools.length - 1 && "·"}
-						</span>
-					))}
-				</div>
-			)}
 		</div>
 	);
 } 
