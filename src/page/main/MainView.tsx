@@ -24,6 +24,8 @@ export function MainView() {
         BotManager.setCurrent(bot);
     };
 
+
+
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (!isChat && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
             e.preventDefault();
@@ -32,6 +34,13 @@ export function MainView() {
                 : (selectedBotIndex + 1) % botList.length;
             setSelectedBotIndex(newIndex);
         }
+
+        if (e.key === "," && e.ctrlKey) {
+            e.preventDefault();
+            cmd.open("settings", {}, { width: 800, height: 600 });
+        }
+
+
 
         if (e.key === "Backspace" && inputValue.length === 0 && isChat) {
             setIsChat(false);

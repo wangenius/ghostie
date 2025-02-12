@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { BundleManager } from "@/services/bundle/BundleManager";
 import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
-import { TbPackage, TbTrash } from "react-icons/tb";
+import { TbPackage, TbTrash, TbLoader2 } from "react-icons/tb";
 
 export const PackageManager = () => {
 	const [packages, setPackages] = useState<PackageInfo[]>([]);
@@ -36,13 +36,13 @@ export const PackageManager = () => {
 			setLoading(true);
 			console.log(newPackage);
 
-			const [name, bundle] = await cmd.invoke<[string, string]>("install_package", {
+			const [name, bundle, actualVersion] = await cmd.invoke<[string, string, string]>("install_package", {
 				name: newPackage,
 				version: version || undefined
 			});
 
 			// 保存打包结果到 IndexDB
-			await BundleManager.saveBundle(name, bundle, version || "latest");
+			await BundleManager.saveBundle(name, bundle, actualVersion);
 
 			setNewPackage("");
 			setVersion("");
@@ -99,11 +99,19 @@ export const PackageManager = () => {
 						/>
 						<Button
 							variant="primary"
-							className="h-10"
+							className={`h-10 relative ${loading ? 'min-w-[120px]' : 'min-w-[80px]'}`}
 							onClick={handleInstall}
 							disabled={!newPackage || loading}
 						>
-							安装
+							<span className={`flex items-center gap-2 transition-opacity ${loading ? 'opacity-0' : 'opacity-100'}`}>
+								安装
+							</span>
+							{loading && (
+								<span className="absolute inset-0 flex items-center justify-center gap-2">
+									<TbLoader2 className="w-4 h-4 animate-spin" />
+									<span className="text-sm">安装中...</span>
+								</span>
+							)}
 						</Button>
 					</div>
 				</div>
@@ -133,6 +141,7 @@ export const PackageManager = () => {
 									size="icon"
 									onClick={() => handleUninstall(pkg.name)}
 									disabled={loading}
+									className="hover:bg-destructive/10 hover:text-destructive transition-colors"
 								>
 									<TbTrash className="w-4 h-4" />
 								</Button>

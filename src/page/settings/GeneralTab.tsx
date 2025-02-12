@@ -46,23 +46,22 @@ export function GeneralTab() {
                     <div>
                         <div className="text-sm text-foreground">主题设置</div>
                         <div className="text-xs text-muted-foreground">当前主题:
-                            <span className="pl-2">{settings.theme}</span>
+                            <span className="pl-2">{settings.theme.label}</span>
                         </div>
                     </div>
                 </div>
 
                 <div className="flex gap-1">
-                    {["light", "dark"].map(theme => (
+                    {[{ name: "light", label: "浅色" }, { name: "dark", label: "深色" }].map(theme => (
                         <Button
-                            key={theme}
+                            key={theme.name}
                             size="sm"
-                            variant={settings.theme === theme ? "secondary" : "ghost"}
+                            variant={settings.theme.name === theme.name ? "secondary" : "ghost"}
                             onClick={() => {
                                 SettingsManager.setTheme(theme);
-                                document.documentElement.setAttribute('data-theme', theme);
                             }}
                         >
-                            {theme}
+                            {theme.label}
                         </Button>
                     ))}
                 </div>

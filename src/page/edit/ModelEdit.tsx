@@ -1,4 +1,6 @@
 import { Header } from "@/components/custom/Header";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { ModelManager } from "@/services/model/ModelManager";
 import { Model } from "@common/types/model";
 import { useQuery } from "@hook/useQuery";
@@ -77,25 +79,24 @@ export function ModelEdit() {
                 <div className="space-y-4">
                     <div className="space-y-1.5">
                         <label className="block text-xs text-muted-foreground">配置名称</label>
-                        <input
+                        <Input
                             ref={inputRef}
                             type="text"
                             spellCheck={false}
                             value={model.name}
                             onChange={(e) => setModel({ ...model, name: e.target.value })}
-                            className="w-full h-9 px-3 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground"
+
                             placeholder="请输入配置名称"
                         />
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="block text-xs text-muted-foreground">API Key</label>
-                        <input
+                        <Input
                             type="password"
                             spellCheck={false}
                             value={model.api_key}
                             onChange={(e) => setModel({ ...model, api_key: e.target.value })}
-                            className="w-full h-9 px-3 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground"
                             placeholder={
                                 create ? "请输入 API Key" : "如需更新 API Key 请输入新的值"
                             }
@@ -104,12 +105,11 @@ export function ModelEdit() {
 
                     <div className="space-y-1.5">
                         <label className="block text-xs text-muted-foreground">API URL：</label>
-                        <input
+                        <Input
                             type="text"
                             spellCheck={false}
                             value={model.api_url}
                             onChange={(e) => setModel({ ...model, api_url: e.target.value })}
-                            className="w-full h-9 px-3 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground"
                             placeholder="整个 API URL，包括base_url/v1/chat/completions"
                         />
                         <small className="text-xs text-muted-foreground">
@@ -119,12 +119,11 @@ export function ModelEdit() {
 
                     <div className="space-y-1.5">
                         <label className="block text-xs text-muted-foreground">模型标识符</label>
-                        <input
+                        <Input
                             type="text"
                             spellCheck={false}
                             value={model.model}
                             onChange={(e) => setModel({ ...model, model: e.target.value })}
-                            className="w-full h-9 px-3 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground"
                             placeholder="如：gpt-3.5-turbo"
                         />
                     </div>
@@ -132,19 +131,19 @@ export function ModelEdit() {
             </div>
 
             <div className="flex justify-end gap-2 px-4 py-3">
-                <button
+                <Button
+                    variant="ghost"
                     onClick={handleClose}
-                    className="px-3 h-8 text-xs text-muted-foreground hover:bg-secondary rounded transition-colors"
                 >
                     取消
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={handleSubmit}
                     disabled={!model.name || !model.model || !model.api_url || (create && !model.api_key) || isSubmitting}
-                    className="px-3 h-8 text-xs text-primary-foreground bg-primary rounded hover:opacity-90 disabled:opacity-50 transition-colors"
+                    variant="primary"
                 >
                     {isSubmitting ? (create ? "添加中..." : "更新中...") : create ? "添加" : "更新"}
-                </button>
+                </Button>
             </div>
         </div>
     );

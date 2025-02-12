@@ -1,13 +1,16 @@
+import { PackageInfo, ToolProperty, ToolProps } from "@/common/types/model";
 import { Header } from "@/components/custom/Header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { BundleManager } from "@/services/bundle/BundleManager";
 import { cmd } from "@/utils/shell";
 import { useQuery } from "@hook/useQuery";
 import { useEffect, useRef, useState } from "react";
 import { TbPlus, TbTrash } from "react-icons/tb";
 import { ToolsManager } from "../../services/tool/ToolsManager";
-import { Button } from "@/components/ui/button";
-import { PackageInfo, ToolProperty, ToolProps } from "@/common/types/model";
-import { BundleManager } from "@/services/bundle/BundleManager";
-
 interface Parameter extends Omit<ToolProperty, "properties"> {
     id: string;
     name: string;
@@ -17,10 +20,8 @@ interface Parameter extends Omit<ToolProperty, "properties"> {
 /** 将普通参数转换为带有id的参数结构 */
 const convertToParameterWithId = (properties: Record<string, ToolProperty>, parentId?: string): Record<string, Parameter> => {
     const result: Record<string, Parameter> = {};
-    // 如果传入的是单个ToolProperty，将其转换为Record格式
-    console.log(properties);
-
     for (const [name, property] of Object.entries(properties)) {
+        console.log(name, property);
         const id = crypto.randomUUID();
         const param: Parameter = {
             id,
@@ -69,19 +70,27 @@ const convertToToolProperty = (parameters: Record<string, Parameter>): Record<st
             property.required = param.required;
         }
 
-        if (param.items) {
-            if (typeof param.items === 'string' || 'type' in param.items) {
-                property.items = param.items;
-            } else {
-                // 查找该参数的所有子参数
-                const childParams = paramsByParent[param.id];
-                if (childParams) {
-                    const childProperties: Record<string, Parameter> = {};
-                    childParams.forEach(child => {
-                        childProperties[child.name] = child;
-                    });
-                    property.properties = convertToToolProperty(childProperties);
-                }
+        if (param.type === 'array' && param.items) {
+            property.items = param.items;
+        } else if (param.type === 'object') {
+            // 查找该参数的所有子参数
+            const childParams = paramsByParent[param.id];
+            if (childParams && childParams.length > 0) {
+                property.properties = {};
+                // 为每个子参数创建一个新的参数对象
+                childParams.forEach(child => {
+                    property.properties![child.name] = {
+                        type: child.type,
+                        description: child.description,
+                        required: child.required,
+                        ...(child.type === 'array' && child.items && { items: child.items }),
+                        ...(child.type === 'object' && {
+                            properties: convertToToolProperty({
+                                [child.id]: { ...child, parent: undefined }
+                            })
+                        })
+                    };
+                });
             }
         }
 
@@ -104,7 +113,6 @@ interface ParameterItemProps {
 
 const ParameterItem: React.FC<ParameterItemProps> = ({
     param,
-    index,
     level = 0,
     onRemove,
     onUpdate,
@@ -116,54 +124,8 @@ const ParameterItem: React.FC<ParameterItemProps> = ({
     const items = Object.values(parameters).filter(p => p.parent === param.id);
 
     return (
-        <div className={`p-3 bg-secondary rounded-md space-y-2`}>
+        <div className={`p-3 bg-primary/5 rounded-md space-y-2`}>
             <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">
-                    参数 {index + 1}
-                </span>
-                <button
-                    onClick={() => onRemove(param.id)}
-                    className="p-1 text-muted-foreground hover:text-destructive transition-colors"
-                >
-                    <TbTrash className="w-3 h-3" />
-                </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-                <input
-                    type="text"
-                    value={param.name}
-                    onChange={(e) => onUpdate(param.id, "name", e.target.value)}
-                    className="h-7 px-2 bg-background rounded text-xs focus:bg-background/80 transition-colors outline-none"
-                    placeholder="参数名称"
-                />
-                <select
-                    value={param.type}
-                    onChange={(e) => onUpdate(param.id, "type", e.target.value)}
-                    className="h-7 px-2 bg-background rounded text-xs focus:bg-background/80 transition-colors outline-none"
-                >
-                    <option value="string">字符串</option>
-                    <option value="number">数字</option>
-                    <option value="boolean">布尔值</option>
-                    <option value="object">对象</option>
-                    <option value="array">数组</option>
-                </select>
-                <input
-                    type="text"
-                    value={param.description}
-                    onChange={(e) => onUpdate(param.id, "description", e.target.value)}
-                    className="h-7 px-2 bg-background rounded text-xs focus:bg-background/80 transition-colors outline-none"
-                    placeholder="参数描述"
-                />
-                <input
-                    type="text"
-                    onChange={(e) => onTestArgChange(param.id, e.target.value)}
-                    className="h-7 px-2 bg-background rounded text-xs focus:bg-background/80 transition-colors outline-none"
-                    placeholder="测试参数"
-                />
-            </div>
-
-            <div className="flex gap-2 items-center">
                 <div className="flex-1 flex items-center gap-2">
                     <input
                         type="checkbox"
@@ -173,56 +135,121 @@ const ParameterItem: React.FC<ParameterItemProps> = ({
                     />
                     <span className="text-xs text-muted-foreground">必填</span>
                 </div>
-                {param.type === "object" && (
-                    <>
-                        <div className="mt-2">
-                            <button
-                                onClick={() => onAdd(param.id)}
-                                className="flex items-center gap-1 px-2 h-6 text-xs text-muted-foreground hover:bg-background rounded transition-colors"
-                            >
-                                <TbPlus className="w-3 h-3" />
-                                添加子参数
-                            </button>
-                        </div>
+                <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => onRemove(param.id)}
+                >
+                    <TbTrash className="w-3 h-3" />
+                </Button>
+            </div>
 
-                    </>
-                )}
-                {param.type === "array" && (
-                    <div className="mt-2">
-                        <select
+            <div className="grid grid-cols-2 gap-2">
+                <Input
+                    value={param.name}
+                    onChange={(e) => onUpdate(param.id, "name", e.target.value)}
+                    variant="background"
+                    placeholder="参数名称"
+                />
+                <div className="flex items-center gap-2">
+                    <Select
+                        value={param.type}
+                        onValueChange={(value) => onUpdate(param.id, "type", value)}
+                    >
+                        <SelectTrigger variant="background">
+                            <SelectValue placeholder="请选择类型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {[
+                                {
+                                    label: "字符串",
+                                    value: "string"
+                                },
+                                {
+                                    label: "数字",
+                                    value: "number"
+                                },
+                                {
+                                    label: "布尔值",
+                                    value: "boolean"
+                                },
+                                {
+                                    label: "对象",
+                                    value: "object"
+                                },
+                                {
+                                    label: "数组",
+                                    value: "array"
+                                }
+                            ].map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                    {type.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {param.type === "array" && (
+                        <Select
                             value={(param.items as { type: string })?.type || "string"}
-                            onChange={(e) => onUpdate(param.id, "items", { type: e.target.value })}
-                            className="h-7 px-2 bg-background rounded text-xs focus:bg-background/80 transition-colors outline-none"
+                            onValueChange={(value) => onUpdate(param.id, "items", { type: value })}
                         >
-                            <option value="string">字符串数组</option>
-                            <option value="number">数字数组</option>
-                            <option value="boolean">布尔值数组</option>
-                            <option value="object">对象数组</option>
-                        </select>
-                    </div>
-                )}
+                            <SelectTrigger className="text-xs h-8">
+                                <SelectValue placeholder="请选择类型" />
+                            </SelectTrigger>
+                            <SelectContent align="end">
+                                <SelectItem value="string">字符串数组</SelectItem>
+                                <SelectItem value="number">数字数组</SelectItem>
+                                <SelectItem value="boolean">布尔值数组</SelectItem>
+                                <SelectItem value="object">对象数组</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    )}
+                </div>
+                <Input
+                    value={param.description}
+                    onChange={(e) => onUpdate(param.id, "description", e.target.value)}
+                    variant="background"
+                    placeholder="参数描述"
+                />
+                <Input
+                    onChange={(e) => onTestArgChange(param.id, e.target.value)}
+                    variant="background"
+                    placeholder="测试参数"
+                />
             </div>
-            <div>
-                {items.length > 0 && (
-                    <div className="mt-2 pl-4 space-y-2 border-l-2 border-border">
-                        {items.map((childParam, childIndex) => {
-                            return (
-                                <ParameterItem
-                                    key={`${param.id}-${childParam.name}`}
-                                    parameters={parameters}
-                                    param={childParam}
-                                    index={childIndex}
-                                    level={level + 1}
-                                    onRemove={onRemove}
-                                    onUpdate={onUpdate}
-                                    onAdd={onAdd}
-                                    onTestArgChange={onTestArgChange}
-                                />
-                            );
-                        })}
-                    </div>
+
+            <div className="flex gap-2 items-center">
+                {param.type === "object" && (
+                    <Button
+                        variant="ghost"
+                        onClick={() => onAdd(param.id)}
+                        className="flex items-center gap-1 px-2 h-6 text-xs text-muted-foreground hover:bg-background rounded transition-colors"
+                    >
+                        <TbPlus className="w-3 h-3" />
+                        添加子参数
+                    </Button>
                 )}
+
             </div>
+            {param.type === "object" && items.length > 0 && (
+                <div className="mt-2 pl-4 space-y-2">
+                    {items.map((childParam, childIndex) => {
+                        return (
+                            <ParameterItem
+                                key={childParam.id}
+                                parameters={parameters}
+                                param={childParam}
+                                index={childIndex}
+                                level={level + 1}
+                                onRemove={onRemove}
+                                onUpdate={onUpdate}
+                                onAdd={onAdd}
+                                onTestArgChange={onTestArgChange}
+                            />
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 };
@@ -279,7 +306,9 @@ export function ToolEdit() {
                 setDescription(toolData.description || "");
                 setScriptContent(toolData.script);
                 setDependencies(toolData.dependencies);
+                console.log(toolData.parameters);
                 const params = convertToParameterWithId(toolData.parameters.properties);
+                console.log(params);
                 setParameters(params);
             } else {
                 setCreate(true);
@@ -317,10 +346,7 @@ export function ToolEdit() {
                 parent: parentId
             };
 
-            if (parentId) {
-                const parentParam = prev[parentId];
-                if (!parentParam) return prev;
-            }
+
 
             return { ...prev, [newId]: baseProperty };
         });
@@ -362,44 +388,46 @@ export function ToolEdit() {
             const result = { ...prev };
             const param = result[id];
 
-            // 如果是更新参数名称，需要同步更新testArgs和子参数名称
+            // 如果是更新参数名称
             if (field === "name") {
-                const oldName = param.name;
-                // 更新测试参数
-                setTestArgs(prevArgs => {
-                    const newArgs = { ...prevArgs };
-                    if (oldName in newArgs) {
-                        newArgs[value] = newArgs[oldName];
-                        delete newArgs[oldName];
-                    }
-                    return newArgs;
-                });
+                // 只更新当前参数的名称
+                result[id] = { ...param, name: value };
 
-                // 更新所有子参数的名称
-                const updateChildNames = (parentId: string, parentNewName: string) => {
-                    Object.keys(result).forEach(key => {
-                        if (result[key].parent === parentId) {
-                            const childParam = result[key];
-                            const oldChildName = childParam.name;
-                            const newChildName = oldChildName.replace(oldName, parentNewName);
-                            result[key] = { ...childParam, name: newChildName };
-                            // 递归更新子参数的名称
-                            updateChildNames(key, newChildName);
-                        }
-                    });
-                };
-                updateChildNames(id, value);
+                return result;
             }
 
-            // 如果是更新参数类型，且从object/array改为其他类型，需要清理子参数
-            if (field === "type" &&
-                (param.type === "object" || param.type === "array") &&
-                (value !== "object" && value !== "array")) {
-                Object.keys(result).forEach(key => {
-                    if (result[key].parent === id) {
-                        delete result[key];
-                    }
-                });
+            // 如果是更新参数类型
+            if (field === "type") {
+                if (value === "array") {
+                    // 如果切换到数组类型，确保有默认的items设置
+                    result[id] = {
+                        ...result[id],
+                        [field]: value,
+                        items: { type: "string" }
+                    };
+                    // 清理可能存在的子参数
+                    Object.keys(result).forEach(key => {
+                        if (result[key].parent === id) {
+                            delete result[key];
+                        }
+                    });
+                    return result;
+                } else if (value === "object") {
+                    // 对象类型可以有子参数，不需要特殊处理
+                    result[id] = { ...result[id], [field]: value };
+                    return result;
+                } else if (param.type === "object" || param.type === "array") {
+                    // 从复杂类型切换到简单类型，清理子参数和items
+                    Object.keys(result).forEach(key => {
+                        if (result[key].parent === id) {
+                            delete result[key];
+                        }
+                    });
+                    const updatedParam = { ...result[id], [field]: value };
+                    delete updatedParam.items;
+                    result[id] = updatedParam;
+                    return result;
+                }
             }
 
             result[id] = { ...result[id], [field]: value };
@@ -552,72 +580,42 @@ export function ToolEdit() {
                 <div className="space-y-4">
                     <div className="space-y-1.5">
                         <label className="block text-xs text-muted-foreground">插件名称</label>
-                        <input
+                        <Input
                             ref={inputRef}
-                            type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full h-9 px-3 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground"
                             placeholder="输入插件名称"
                         />
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="block text-xs text-muted-foreground">插件描述</label>
-                        <input
-                            type="text"
+                        <Input
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="w-full h-9 px-3 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground"
                             placeholder="输入插件描述"
                         />
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="block text-xs text-muted-foreground">依赖包</label>
-                        <div className="flex flex-wrap gap-2 p-2 min-h-[40px] bg-secondary rounded-md">
-                            {dependencies.map((dep) => (
-                                <div
-                                    key={dep}
-                                    className="flex items-center gap-1 px-2 py-1 bg-background rounded text-xs"
-                                >
-                                    <span>{dep}</span>
-                                    <button
-                                        onClick={() => setDependencies(deps => deps.filter(d => d !== dep))}
-                                        className="text-muted-foreground hover:text-destructive"
-                                    >
-                                        <TbTrash className="w-3 h-3" />
-                                    </button>
-                                </div>
-                            ))}
-                            <select
-                                className="h-7 px-2 bg-background rounded text-xs focus:bg-background/80 transition-colors outline-none"
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    if (value && !dependencies.includes(value)) {
-                                        setDependencies(deps => [...deps, value]);
-                                    }
-                                    e.target.value = '';
-                                }}
-                            >
-                                <option value="">选择依赖包...</option>
-                                {packages
-                                    .filter(pkg => !dependencies.includes(pkg.name))
-                                    .map(pkg => (
-                                        <option key={pkg.name} value={pkg.name}>
-                                            {pkg.name} ({pkg.version})
-                                        </option>
-                                    ))
-                                }
-                            </select>
-                        </div>
+                        <MultiSelect
+                            options={packages.map(pkg => ({
+                                label: `${pkg.name} (${pkg.version})`,
+                                value: pkg.name
+                            }))}
+                            value={dependencies}
+                            onChange={setDependencies}
+                            className="bg-secondary"
+                            placeholder="选择依赖包..."
+                        />
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="block text-xs text-muted-foreground">脚本内容</label>
-                        <textarea
+                        <Textarea
                             value={scriptContent}
-                            onChange={(e) => setScriptContent(e.target.value)}
+                            onChange={(e) => setScriptContent(e)}
                             className="w-full px-3 py-2 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none min-h-[160px] resize-none placeholder:text-muted-foreground"
                             placeholder="输入js脚本内容"
                         />
@@ -626,16 +624,17 @@ export function ToolEdit() {
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
                             <label className="block text-xs text-muted-foreground">参数列表</label>
-                            <button
+                            <Button
+                                className="text-xs"
                                 onClick={() => addArg()}
-                                className="flex items-center gap-1 px-2 h-6 text-xs text-muted-foreground hover:bg-secondary rounded transition-colors"
                             >
                                 <TbPlus className="w-3 h-3" />
                                 添加参数
-                            </button>
+                            </Button>
                         </div>
                         <div className="space-y-3">
                             {Object.values(parameters)
+                                .filter(p => !p.parent)
                                 .map((param, index) => (
                                     <ParameterItem
                                         key={param.id}

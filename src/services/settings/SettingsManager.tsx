@@ -1,22 +1,17 @@
 import { Echo } from "echo-state";
 
 interface SettingsProps {
-	theme: string;
+	theme: { name: string, label: string };
 	language: string;
 }
 
 export class SettingsManager {
 	private static store = new Echo<SettingsProps>({
-		theme: "light",
+		theme: { name: "light", label: "浅色" },
 		language: "zh-CN",
 	}, {
 		name: "settings",
-		sync: true,
-		onChange: (value, oldValue) => {
-			if (value.theme !== oldValue.theme) {
-				document.documentElement.setAttribute('data-theme', value.theme);
-			}
-		},
+		sync: true
 	});
 
 	static use = this.store.use.bind(this.store)
@@ -25,7 +20,7 @@ export class SettingsManager {
 		return this.store.current.theme;
 	}
 
-	public static setTheme(theme: string) {
+	public static setTheme(theme: { name: string, label: string }) {
 		this.store.set((prev) => ({ ...prev, theme }), true);
 	}
 

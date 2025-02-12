@@ -6,6 +6,9 @@ import { BotManager } from "@/services/bot/BotManger";
 import { ModelManager } from "@/services/model/ModelManager";
 import { ToolsManager } from "@/services/tool/ToolsManager";
 import { useEffect, useRef, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 const defaultBot: BotProps = {
     name: "",
@@ -82,63 +85,48 @@ export function BotEdit() {
                 <div className="space-y-4">
                     <div className="space-y-1.5">
                         <label className="block text-xs text-muted-foreground">助手名称</label>
-                        <input
+                        <Input
                             ref={inputRef}
                             type="text"
                             spellCheck={false}
                             value={bot.name}
                             onChange={(e) => setBot({ ...bot, name: e.target.value })}
-                            className="w-full h-9 px-3 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground"
                             placeholder="请输入助手名称"
                         />
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="block text-xs text-muted-foreground">选择模型</label>
-                        <select
+                        <Select
                             value={bot.model}
-                            onChange={(e) => setBot({ ...bot, model: e.target.value })}
-                            className="w-full h-9 px-3 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground"
+                            onValueChange={(value) => setBot({ ...bot, model: value })}
                         >
-                            <option value="">请选择模型</option>
-                            {Object.keys(models).map((modelName) => (
-                                <option key={modelName} value={modelName}>
-                                    {modelName}
-                                </option>
-                            ))}
-                        </select>
+                            <SelectTrigger>
+                                <SelectValue placeholder="请选择模型" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.keys(models).map((modelName) => (
+                                    <SelectItem key={modelName} value={modelName}>
+                                        {modelName}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="block text-xs text-muted-foreground">选择插件</label>
-                        <div className="flex flex-wrap gap-2 p-2 bg-secondary rounded-md min-h-[2.25rem]">
-                            {Object.values(plugins).map((plugin) => (
-                                <label
-                                    key={plugin.name}
-                                    className="inline-flex items-center space-x-2 px-2 py-1 bg-background rounded"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={bot.tools.includes(plugin.name)}
-                                        onChange={(e) => {
-                                            if (e.target.checked) {
-                                                setBot({
-                                                    ...bot,
-                                                    tools: [...bot.tools, plugin.name]
-                                                });
-                                            } else {
-                                                setBot({
-                                                    ...bot,
-                                                    tools: bot.tools.filter((t) => t !== plugin.name)
-                                                });
-                                            }
-                                        }}
-                                        className="form-checkbox h-4 w-4"
-                                    />
-                                    <span className="text-sm">{plugin.name}</span>
-                                </label>
-                            ))}
-                        </div>
+                        <MultiSelect
+                            options={Object.values(plugins).map(plugin => ({
+                                label: plugin.name,
+                                value: plugin.name
+                            }))}
+                            value={bot.tools}
+                            onChange={(value) => setBot({ ...bot, tools: value })}
+                            className="bg-secondary"
+                            placeholder="选择插件..."
+                        />
+
                     </div>
 
                     <div className="space-y-1.5">

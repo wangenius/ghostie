@@ -23,7 +23,7 @@ function App() {
         };
     }, []);
     return (
-        <div data-theme={theme} className="h-full w-full bg-background">
+        <div data-theme={theme.name} className="h-full w-full bg-background">
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<MainView />} />

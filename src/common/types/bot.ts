@@ -15,4 +15,6 @@ export interface BotProps {
   model: ModelName;
   /* 工具 */
   tools: string[];
+  /* 头像 */
+  avatar?: string;
 }

@@ -1,6 +1,7 @@
 use crate::utils::utils;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use serde_json;
 use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -79,7 +80,7 @@ pub async fn install_package(
     _: tauri::AppHandle,
     name: String,
     version: Option<String>,
-) -> Result<(String, String), String> {
+) -> Result<(String, String, String), String> {
     let temp_dir = utils::get_config_dir().unwrap().join("npm");
     std::fs::create_dir_all(&temp_dir).map_err(|e| format!("创建临时目录失败: {}", e))?;
 
@@ -107,6 +108,23 @@ pub async fn install_package(
         std::fs::remove_dir_all(&temp_dir).ok();
         return Err(format!("安装失败: {}", error));
     }
+
+    // 获取实际安装的版本
+    let version_output = Command::new("npm.cmd")
+        .arg("list")
+        .arg(&name)
+        .arg("--json")
+        .current_dir(&temp_dir)
+        .output()
+        .map_err(|e| e.to_string())?;
+
+    let version_info: serde_json::Value = serde_json::from_slice(&version_output.stdout)
+        .map_err(|e| format!("解析版本信息失败: {}", e))?;
+
+    let actual_version = version_info["dependencies"][&name]["version"]
+        .as_str()
+        .ok_or_else(|| "无法获取版本信息".to_string())?
+        .to_string();
 
     // 打包
     let entry_content = format!(
@@ -144,5 +162,5 @@ pub async fn install_package(
 
     let bundle = String::from_utf8(output.stdout).map_err(|e| e.to_string())?;
 
-    Ok((name, bundle))
+    Ok((name, bundle, actual_version))
 }
