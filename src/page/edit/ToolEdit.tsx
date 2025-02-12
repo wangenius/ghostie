@@ -478,92 +478,21 @@ export function ToolEdit() {
 
     const test = async () => {
         try {
-            // 解析依赖
-            const deps = dependencies
-            // 将脚本包装在异步函数中，使用 invoke 来调用依赖
-            const wrappedScript = `
-                return (async function(params) {
-                    ${deps.map(dep => {
-                const varName = dep.replace('@', "").replace(/-/g, "_");
-                return `const ${varName} = await this.getDep('${dep}');
-                        if (typeof ${varName} === 'object' && ${varName}.default) {
-                            Object.assign(${varName}, ${varName}.default);
-                        }`;
-            }).join('\n')}
-                    ${scriptContent}
-                }).call(this, params);
-            `;
-
-            console.log(wrappedScript);
-
-            const fn = new Function('params', wrappedScript).bind({
-                getDep: async (name: string) => {
-                    try {
-                        // 先从 IndexDB 获取
-                        const bundle = await BundleManager.getBundle(name);
-                        if (!bundle) {
-                            throw new Error(`模块 ${name} 未找到，请先安装`);
-                        }
-                        // 执行打包后的代码
-                        const executeModule = new Function(`
-                            try {
-                                ${bundle}
-                                return window.__MODULE__;
-                            } finally {
-                                delete window.__MODULE__;
-                            }
-                        `);
-
-                        const mod = executeModule();
-                        if (!mod) {
-                            throw new Error(`模块 ${name} 加载失败`);
-                        }
-
-                        return mod;
-                    } catch (error) {
-                        console.error(`加载模块 ${name} 失败:`, error);
-                        throw error;
-                    }
-                }
-            }) as (args: Record<string, any>) => Promise<any>;
-
-            // 类型转换函数
-            const convertValue = (value: string, type: string): any => {
-                if (value === undefined || value === null || value === '') return undefined;
-
-                switch (type) {
-                    case 'number':
-                        return Number(value);
-                    case 'boolean':
-                        return value.toLowerCase() === 'true';
-                    case 'array':
-                        try {
-                            return JSON.parse(value);
-                        } catch {
-                            return value.split(',').map(v => v.trim());
-                        }
-                    case 'object':
-                        try {
-                            return JSON.parse(value);
-                        } catch {
-                            return value;
-                        }
-                    default:
-                        return value;
-                }
-            };
-
             const argsObject = Object.values(parameters).reduce<Record<string, any>>((acc, param) => {
                 const value = testArgs[param.id];
                 if (param.required && !value) {
                     throw new Error(`参数 ${param.name} 不能为空`);
                 }
-                acc[param.name] = convertValue(value, param.type);
+                acc[param.name] = value;
                 return acc;
             }, {});
 
-            // 执行函数并等待结果
-            const result = await fn(argsObject);
+            // 直接使用当前编辑的脚本和依赖进行测试
+            const result = await ToolsManager.executeTool(name, argsObject, {
+                script: scriptContent,
+                dependencies
+            });
+
             console.log(result);
             cmd.message(JSON.stringify(result), "测试结果");
         } catch (error) {

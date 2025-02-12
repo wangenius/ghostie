@@ -1,3 +1,4 @@
+import { BundleManager } from "@/services/bundle/BundleManager";
 import { cmd } from "@/utils/shell";
 import {
   ToolFunction,
@@ -8,6 +9,7 @@ import {
 import { Echo } from "echo-state";
 import ts from "typescript";
 
+/* 工具管理器 */
 export class ToolsManager {
   /* 保存所有的工具 */
   static store = new Echo<Record<string, ToolProps>>(
@@ -20,8 +22,6 @@ export class ToolsManager {
 
   static use = this.store.use.bind(this.store);
 
-  // 工具函数执行缓存
-  private static toolFunctions = new Map<string, ToolFunction>();
   static async exe(functionCall: {
     name: string;
     arguments: Record<string, any>;
@@ -42,7 +42,7 @@ export class ToolsManager {
       .map((n) => {
         // 如果是字符串或symbol
         if (typeof n === "string" || typeof n === "symbol") {
-          return ToolsManager.getTool(n.toString())?.info;
+          return ToolsManager.getTool(n.toString());
         }
 
         // 如果是函数或方法
@@ -51,7 +51,7 @@ export class ToolsManager {
           (typeof n === "object" && n !== null && typeof n.name === "string")
         ) {
           const name = typeof n === "function" ? n.name : n.name;
-          return ToolsManager.getTool(name)?.info;
+          return ToolsManager.getTool(name);
         }
 
         return undefined;
@@ -61,22 +61,11 @@ export class ToolsManager {
   /**
    * 从store加载工具函数到缓存
    */
-  private static loadToolFunction(name: string): ToolFunction | undefined {
+  private static loadToolFunction(name: string): ToolProps | undefined {
     const tools = this.store.current;
     const tool = tools[name];
     if (!tool) return undefined;
-
-    // 删除script
-    const { script, ...info } = tool;
-    /* 工具函数 */
-    const toolFunction: ToolFunction = {
-      info,
-      fn: new Function(`return async function(params) { ${script} }`)() as (
-        args: Record<string, any>
-      ) => Promise<any>,
-    };
-    this.toolFunctions.set(name, toolFunction);
-    return toolFunction;
+    return tool;
   }
 
   /**
@@ -109,12 +98,11 @@ export class ToolsManager {
   /**
    * 获取指定工具函数
    */
-  static getTool(name: string): ToolFunction | undefined {
+  static getTool(name: string): ToolProps | undefined {
     // 先从缓存中查找
-    let tool = this.toolFunctions.get(name);
+    let tool = this.loadToolFunction(name);
     if (!tool) {
-      // 如果缓存中没有，尝试从store中加载
-      tool = this.loadToolFunction(name);
+      throw new Error(`工具函数 ${name} 不存在`);
     }
     return tool;
   }
@@ -122,24 +110,127 @@ export class ToolsManager {
   /**
    * 执行工具函数
    */
-  static async executeTool(name: string, args: any): Promise<any> {
+  static async executeTool(
+    name: string,
+    args: Record<string, any>,
+    options?: {
+      script?: string;
+      dependencies?: string[];
+    }
+  ): Promise<any> {
     const tool = this.getTool(name);
+    console.log(tool);
     if (!tool) {
       throw new Error(`工具函数 ${name} 不存在`);
     }
-    return await tool.fn(args);
+
+    try {
+      // 解析依赖
+      const deps = options?.dependencies || tool.dependencies || [];
+      const wrappedScript = `
+        return (async function(params) {
+          ${deps
+            .map((dep: string) => {
+              const varName = dep.replace("@", "").replace(/-/g, "_");
+              return `const ${varName} = await this.getDep('${dep}');
+                    if (typeof ${varName} === 'object' && ${varName}.default) {
+                        Object.assign(${varName}, ${varName}.default);
+                    }`;
+            })
+            .join("\n")}
+          ${options?.script || tool.script}
+        }).call(this, params);
+      `;
+
+      console.log(wrappedScript);
+
+      const fn = new Function("params", wrappedScript).bind({
+        getDep: async (name: string) => {
+          try {
+            // 先从 IndexDB 获取
+            const bundle = await BundleManager.getBundle(name);
+            if (!bundle) {
+              throw new Error(`模块 ${name} 未找到，请先安装`);
+            }
+            // 执行打包后的代码
+            const executeModule = new Function(`
+              try {
+                ${bundle}
+                return window.__MODULE__;
+              } finally {
+                delete window.__MODULE__;
+              }
+            `);
+
+            const mod = executeModule();
+            if (!mod) {
+              throw new Error(`模块 ${name} 加载失败`);
+            }
+
+            return mod;
+          } catch (error) {
+            console.error(`加载模块 ${name} 失败:`, error);
+            throw error;
+          }
+        },
+      }) as (args: Record<string, any>) => Promise<any>;
+
+      // 类型转换函数
+      const convertValue = (value: string, type: string): any => {
+        if (value === undefined || value === null || value === "")
+          return undefined;
+
+        switch (type) {
+          case "number":
+            return Number(value);
+          case "boolean":
+            return value.toLowerCase() === "true";
+          case "array":
+            try {
+              return JSON.parse(value);
+            } catch {
+              return value.split(",").map((v) => v.trim());
+            }
+          case "object":
+            try {
+              return JSON.parse(value);
+            } catch {
+              return value;
+            }
+          default:
+            return value;
+        }
+      };
+
+      // 转换参数类型
+      const convertedArgs = Object.entries(args).reduce<Record<string, any>>(
+        (acc, [key, value]) => {
+          const paramType = tool.parameters?.properties?.[key]?.type;
+          if (paramType) {
+            acc[key] = convertValue(value, paramType);
+          } else {
+            acc[key] = value;
+          }
+          return acc;
+        },
+        {}
+      );
+
+      // 执行函数并返回结果
+      return await fn(convertedArgs);
+    } catch (error) {
+      console.error(`执行工具函数 ${name} 失败:`, error);
+      throw error;
+    }
   }
 
   static async add(tool: ToolProps) {
     this.store.set({
       [tool.name]: tool,
     });
-    // 清除缓存
-    this.toolFunctions.delete(tool.name);
   }
 
   static async delete(name: string) {
-    this.toolFunctions.delete(name);
     this.store.delete(name);
   }
 
@@ -149,7 +240,7 @@ export class ToolsManager {
   }
 
   static async run(name: string, args?: Record<string, any>) {
-    return await this.executeTool(name, args);
+    return await this.executeTool(name, args || {});
   }
 
   static async remove(name: string) {
