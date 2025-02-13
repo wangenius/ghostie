@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0-rc",
-  "productName": "echo",
+  "productName": "ghostie",
   "version": "0.1.16",
-  "identifier": "com.wangenius.echo",
+  "identifier": "com.wangenius.ghostie",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "echo",
+        "title": "ghostie",
         "width": 600,
         "height": 400,
         "resizable": false,
@@ -158,7 +158,7 @@
       },
       "active": true,
       "endpoints": [
-        "https://github.com/wangenius/echo/releases/latest/download/latest.json"
+        "https://github.com/wangenius/ghostie/releases/latest/download/latest.json"
       ],
       "dialog": false,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlGQzZBMkM3QkMwRjU3QUMKUldTc1Z3Kzh4NkxHbjEvOURYOHBpZEV4aWxYZjZrcWR1UVkza0tWTW9MYm1TVXkzRERiQ1pEcDAK"

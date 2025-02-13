@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use echo::utils;
+use ghostie::utils;
 use std::sync::atomic::{AtomicI64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{
@@ -121,7 +121,7 @@ fn main() {
                         }
                     }
                 })
-                .tooltip("echo智能助手")
+                .tooltip("ghostie")
                 .show_menu_on_left_click(false)
                 .on_tray_icon_event(|tray, event| {
                     if let Some(window) = tray.app_handle().get_webview_window("main") {

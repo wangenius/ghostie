@@ -110,21 +110,15 @@ export function MainView() {
             {/* 顶部工具栏 */}
             <div className="px-4 draggable">
                 <div className="mx-auto flex items-center h-14">
-                    <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                            setIsChat(false);
-                            BotManager.setCurrent({
-                                name: "",
-                                system: "",
-                                model: "",
-                                tools: []
-                            });
-                        }}
-                    >
-                        <BsStars className="w-[18px] h-[18px]" />
-                    </Button>
+                    <img src="/icon.gif" onClick={() => {
+                        setIsChat(false);
+                        BotManager.setCurrent({
+                            name: "",
+                            system: "",
+                            model: "",
+                            tools: []
+                        });
+                    }} className="w-[36px] cursor-pointer rounded-md" />
 
 
                     <div className="flex-1 pl-2 relative">
