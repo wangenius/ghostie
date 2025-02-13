@@ -3,7 +3,6 @@ import { Input } from "@/components/ui/input";
 import { BotManager } from "@/services/bot/BotManger";
 import { cmd } from "@utils/shell";
 import { useEffect, useRef, useState } from "react";
-import { BsStars } from "react-icons/bs";
 import { TbLoader2, TbSettings } from "react-icons/tb";
 import { BotItem } from "./components/BotItem";
 import { MessageItem } from "./components/MessageItem";
@@ -16,15 +15,18 @@ export function MainView() {
     const inputRef = useRef<HTMLInputElement>(null);
     const bots = BotManager.use();
     const { list } = BotManager.current.model.useHistory();
-    console.log(list);
     const botList = Object.values(bots);
 
-    const startChat = (bot: typeof botList[0]) => {
+    const startChat = (bot: typeof botList[0], initialMessage?: string) => {
         setIsChat(true);
         BotManager.setCurrent(bot);
+        if (initialMessage) {
+            setLoading(true);
+            BotManager.current.chat(initialMessage).finally(() => {
+                setLoading(false);
+            });
+        }
     };
-
-
 
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (!isChat && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
@@ -40,8 +42,6 @@ export function MainView() {
             cmd.open("settings", {}, { width: 800, height: 600 });
         }
 
-
-
         if (e.key === "Backspace" && inputValue.length === 0 && isChat) {
             setIsChat(false);
             BotManager.setCurrent({
@@ -54,24 +54,23 @@ export function MainView() {
 
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            if (!inputValue.trim()) return;
+            const trimmedInput = inputValue.trim();
+            if (!trimmedInput) return;
 
             if (!isChat) {
-                startChat(botList[selectedBotIndex]);
-            }
-
-            if (!BotManager.current) return;
-
-            try {
+                startChat(botList[selectedBotIndex], trimmedInput);
+            } else if (BotManager.current) {
                 setLoading(true);
-                const userInput = inputValue;
                 setInputValue("");
-                BotManager.current.chat(userInput);
-            } catch (error) {
-                console.error("发送消息失败:", error);
-            } finally {
-                setLoading(false);
+                try {
+                    await BotManager.current.chat(trimmedInput);
+                } catch (error) {
+                    console.error("发送消息失败:", error);
+                } finally {
+                    setLoading(false);
+                }
             }
+            setInputValue("");
         }
     };
 
@@ -111,14 +110,18 @@ export function MainView() {
             <div className="px-4 draggable">
                 <div className="mx-auto flex items-center h-14">
                     <img src="/icon.gif" onClick={() => {
-                        setIsChat(false);
-                        BotManager.setCurrent({
-                            name: "",
-                            system: "",
-                            model: "",
-                            tools: []
-                        });
-                    }} className="w-[36px] cursor-pointer rounded-md" />
+                        if (isChat) {
+                            setIsChat(false);
+                            BotManager.setCurrent({
+                                name: "",
+                                system: "",
+                                model: "",
+                                tools: []
+                            });
+                        } else {
+                            cmd.open("settings", {}, { width: 800, height: 600 });
+                        }
+                    }} className="w-[36px] hover:scale-110 transition-all rounded-md" />
 
 
                     <div className="flex-1 pl-2 relative">
@@ -168,7 +171,15 @@ export function MainView() {
                                         key={bot.name}
                                         bot={bot}
                                         isSelected={index === selectedBotIndex}
-                                        onClick={() => startChat(bot)}
+                                        onClick={() => {
+                                            const trimmedInput = inputValue.trim();
+                                            if (trimmedInput) {
+                                                startChat(bot, trimmedInput);
+                                                setInputValue("");
+                                            } else {
+                                                setSelectedBotIndex(index);
+                                            }
+                                        }}
                                     />
                                 ))}
                             </div>

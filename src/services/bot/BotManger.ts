@@ -50,6 +50,39 @@ export class BotManager {
       [bot.name]: bot,
     });
   }
+
+  /** 导出所有助手配置 */
+  static export(): string {
+    const bots = this.store.current;
+    return JSON.stringify(bots, null, 2);
+  }
+
+  /** 导入助手配置
+   * @param jsonStr JSON字符串
+   * @throws 如果JSON格式不正确或助手配置无效
+   */
+  static import(jsonStr: string) {
+    try {
+      const bots = JSON.parse(jsonStr) as Record<string, BotProps>;
+
+      // 验证每个助手的必要字段
+      Object.entries(bots).forEach(([name, bot]) => {
+        if (!bot.name || !bot.system || !bot.model) {
+          throw new Error(`助手 "${name}" 缺少必要字段`);
+        }
+        // 确保name字段与key一致
+        bot.name = name;
+      });
+
+      // 更新存储
+      this.store.set(bots);
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new Error("JSON格式不正确");
+      }
+      throw error;
+    }
+  }
 }
 
 console.log(BotManager.store.current);

@@ -49,4 +49,37 @@ export class ModelManager {
       [model.name]: model,
     });
   }
+
+  /** 导出所有模型配置 */
+  static export(): string {
+    const models = this.store.current;
+    return JSON.stringify(models, null, 2);
+  }
+
+  /** 导入模型配置
+   * @param jsonStr JSON字符串
+   * @throws 如果JSON格式不正确或模型配置无效
+   */
+  static import(jsonStr: string) {
+    try {
+      const models = JSON.parse(jsonStr) as Record<string, Model>;
+
+      // 验证每个模型的必要字段
+      Object.entries(models).forEach(([name, model]) => {
+        if (!model.api_key || !model.api_url || !model.model) {
+          throw new Error(`模型 "${name}" 缺少必要字段`);
+        }
+        // 确保name字段与key一致
+        model.name = name;
+      });
+
+      // 更新存储
+      this.store.set(models);
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new Error("JSON格式不正确");
+      }
+      throw error;
+    }
+  }
 }
