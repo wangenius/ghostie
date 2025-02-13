@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use ghostie::deno;
 use ghostie::utils;
 use std::sync::atomic::{AtomicI64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -84,10 +85,14 @@ fn main() {
             utils::window::hide_window,
             utils::utils::open_file,
             utils::utils::save_file,
-            utils::npm::get_npm_package,
-            utils::npm::install_package,
             check_update,
-            install_update
+            install_update,
+            // Deno plugin commands
+            deno::register_deno_plugin,
+            deno::register_deno_plugin_from_ts,
+            deno::execute_deno_plugin,
+            deno::list_deno_plugins,
+            deno::remove_deno_plugin
         ])
         .setup(|app| {
             let _ = app.handle();
@@ -161,14 +166,15 @@ fn main() {
                     }
                 })
                 .build(app)?;
+
+            // Initialize Deno runtime
+            if let Err(e) = deno::init_deno_runtime() {
+                eprintln!("Failed to initialize Deno runtime: {}", e);
+            }
             Ok(())
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(utils::npm::init_npm_package())
-        .unwrap();
     app.run(|app_handle, event| match event {
         tauri::RunEvent::ExitRequested { api, .. } => {
             api.prevent_exit();

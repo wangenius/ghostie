@@ -1,3 +1,4 @@
+pub mod deno;
 pub mod utils;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -28,6 +29,11 @@ pub fn run() {
             utils::window::hide_window,
             utils::utils::open_file,
             utils::utils::save_file,
+            deno::register_deno_plugin,
+            deno::register_deno_plugin_from_ts,
+            deno::execute_deno_plugin,
+            deno::list_deno_plugins,
+            deno::remove_deno_plugin,
         ])
         .plugin(tauri_plugin_dialog::init())
         .run(tauri::generate_context!())

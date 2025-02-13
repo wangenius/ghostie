@@ -37,11 +37,7 @@ export interface Message {
 /** 工具获取器
  * 可以是字符串, symbol, 函数, 对象
  */
-export type ToolFunctionHandler =
-  | string
-  | symbol
-  | Function
-  | { [key: string]: any };
+export type ToolFunctionHandler = string | symbol | Function | { name: string };
 
 /**
  * 工具函数信息, 存储在ToolFunction中
@@ -56,8 +52,11 @@ export interface ToolFunctionInfo {
   description: string;
   /* 工具函数参数 */
   parameters: {
-    type: string;
+    /** 参数类型，固定为 object */
+    type: "object";
+    /** 参数属性定义 */
     properties: Record<string, ToolProperty>;
+    /** 必填参数列表 */
     required: string[];
   };
 }
@@ -78,11 +77,17 @@ export interface PackageInfo {
  * 工具参数, 存储在Tool.ToolStore中, 包括script
  * script: 工具脚本
  */
-export interface ToolProps extends ToolFunctionInfo {
-  /* 工具脚本 */
-  script: string;
-  /* 工具依赖 */
-  dependencies: string[];
+export interface ToolProps {
+  /** 工具名称 */
+  name: string;
+  /** 工具描述 */
+  description: string;
+  /** Deno 脚本内容 */
+  content: string;
+  /** 依赖的包 */
+  dependencies?: string[];
+  /** 参数定义 */
+  parameters?: Record<string, ToolProperty>;
 }
 
 /**
@@ -108,18 +113,18 @@ export type ToolPropertyType =
 /**
  * 工具函数参数类型
  */
-export type ToolProperty = {
-  /** 参数类型, 可以是string, number, boolean, array, object */
+export interface ToolProperty {
+  /** 参数类型 */
   type: ToolPropertyType;
-  /** 参数类型, 如果是数组, 则需要指定items类型 */
-  items?: { type: string; description?: string };
-  /** 参数,如果是对象,可以嵌套 */
-  properties?: Record<string, ToolProperty>;
   /** 参数描述 */
-  description: string;
-  /** 参数是否必填 */
+  description?: string;
+  /** 是否必填 */
   required?: boolean;
-};
+  /** 如果是对象类型，可以包含子属性 */
+  properties?: Record<string, ToolProperty>;
+  /** 如果是数组类型，可以定义数组元素的类型 */
+  items?: ToolProperty;
+}
 
 /** 工具调用信息 */
 export interface FunctionCallResult<T = any, R = any> {
