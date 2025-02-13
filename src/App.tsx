@@ -5,7 +5,6 @@ import { PluginEdit } from "./page/edit/PluginEdit";
 import { MainView } from "./page/main/MainView";
 import { SettingsPage } from "./page/settings/Page";
 import { SettingsManager } from "./services/settings/SettingsManager";
-import { PackageManager } from "./page/package/packageManager";
 import { useEffect } from "react";
 
 /* 主应用,提供路由 */
@@ -31,7 +30,6 @@ function App() {
                     <Route path="/model-edit" element={<ModelEdit />} />
                     <Route path="/bot-edit" element={<BotEdit />} />
                     <Route path="/plugin-edit" element={<PluginEdit />} />
-                    <Route path="/package-manager" element={<PackageManager />} />
                 </Routes>
             </BrowserRouter>
         </div>

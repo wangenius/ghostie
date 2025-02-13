@@ -109,7 +109,7 @@ export function GeneralTab() {
                     onClick={() => {
                         cmd.invoke("open_config_dir");
                     }}
-                    variant="primary"
+                    variant="ghost"
                     size="sm"
                 >
                     打开目录

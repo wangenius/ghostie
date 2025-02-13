@@ -1,14 +1,14 @@
+import { PluginProps, ToolProps } from "@/common/types/plugin";
 import { Header } from "@/components/custom/Header";
+import { Input } from "@/components/ui/input";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BotManager } from "@/services/bot/BotManger";
+import { ModelManager } from "@/services/model/ModelManager";
 import { cmd } from "@/utils/shell";
 import { BotProps } from "@common/types/bot";
 import { useQuery } from "@hook/useQuery";
-import { BotManager } from "@/services/bot/BotManger";
-import { ModelManager } from "@/services/model/ModelManager";
-import { useEffect, useRef, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MultiSelect } from "@/components/ui/multi-select";
-import { FunctionCallProps } from "@/common/types/plugin";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const defaultBot: BotProps = {
     name: "",
@@ -28,10 +28,16 @@ export function BotEdit() {
     console.log(query);
     const models = ModelManager.use();
 
-    const [plugins, setPlugins] = useState<Record<string, FunctionCallProps>>({});
-    cmd.invoke<Record<string, FunctionCallProps>>("list_deno_plugins").then(tools => {
+    const [plugins, setPlugins] = useState<Record<string, PluginProps>>({});
+
+    const loadPlugins = useCallback(async () => {
+        const tools = await cmd.invoke<Record<string, PluginProps>>("plugins_list");
         setPlugins(tools);
-    });
+    }, []);
+
+    useEffect(() => {
+        loadPlugins();
+    }, [loadPlugins]);
 
     useEffect(() => {
         inputRef.current?.focus();
@@ -120,16 +126,17 @@ export function BotEdit() {
                     <div className="space-y-1.5">
                         <label className="block text-xs text-muted-foreground">选择插件</label>
                         <MultiSelect
-                            options={Object.values(plugins).map(plugin => ({
-                                label: plugin.name,
-                                value: plugin.name
-                            }))}
+                            options={Object.values(plugins).flatMap((plugin: PluginProps) =>
+                                plugin.tools.map((tool: ToolProps) => ({
+                                    label: "[" + plugin.name + "]" + tool.name,
+                                    value: "[" + plugin.name + "]" + tool.name
+                                }))
+                            )}
                             value={bot.tools}
                             onChange={(value) => setBot({ ...bot, tools: value })}
                             className="bg-secondary"
                             placeholder="选择插件..."
                         />
-
                     </div>
 
                     <div className="space-y-1.5">

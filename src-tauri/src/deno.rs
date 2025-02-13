@@ -287,8 +287,6 @@ pub async fn init() -> Result<(), String> {
     if !check_deno_installed() {
         return Err("Deno 未安装，请先安装 Deno: https://deno.land/#installation".to_string());
     }
-
-    let _ = get_plugins_dir();
     Ok(())
 }
 

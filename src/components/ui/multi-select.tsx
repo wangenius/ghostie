@@ -29,6 +29,8 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
 			onChange(value.filter(v => v !== optionValue))
 		}
 
+		console.log(value);
+
 		return (
 			<Popover open={open} onOpenChange={setOpen}>
 				<PopoverTrigger asChild>

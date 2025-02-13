@@ -3,10 +3,13 @@ import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { cmd } from "@/utils/shell";
+import { javascript } from '@codemirror/lang-javascript';
 import { useQuery } from "@hook/useQuery";
+import { githubLight } from '@uiw/codemirror-theme-github';
+import CodeMirror from '@uiw/react-codemirror';
 import { useEffect, useRef, useState } from "react";
+import { TbBook } from "react-icons/tb";
 
 // 添加新的 ParamInput 组件
 interface ParamInputProps {
@@ -23,7 +26,7 @@ function ParamInput({ property, name, value, onChange, path = [] }: ParamInputPr
     switch (property.type) {
         case 'object':
             return (
-                <div className="space-y-2 pl-4 border-l border-border">
+                <div className="pl-4 flex items-center justify-between gap-2">
                     <label className="block text-xs font-medium text-muted-foreground">{name}</label>
                     {property.properties && Object.entries(property.properties).map(([key, prop]) => (
                         <ParamInput
@@ -47,7 +50,7 @@ function ParamInput({ property, name, value, onChange, path = [] }: ParamInputPr
             );
         case 'array':
             return (
-                <div className="space-y-1">
+                <div className="pl-4 flex items-center justify-between gap-2">
                     <label className="block text-xs text-muted-foreground">{name}</label>
                     <Input
                         value={Array.isArray(value) ? value.join(',') : ''}
@@ -58,7 +61,7 @@ function ParamInput({ property, name, value, onChange, path = [] }: ParamInputPr
             );
         case 'boolean':
             return (
-                <div className="space-y-1">
+                <div className="pl-4 flex items-center justify-between gap-2">
                     <label className="block text-xs text-muted-foreground">{name}</label>
                     <Select
                         value={String(value)}
@@ -76,7 +79,7 @@ function ParamInput({ property, name, value, onChange, path = [] }: ParamInputPr
             );
         default:
             return (
-                <div className="space-y-1">
+                <div className="pl-4 flex items-center justify-between gap-2">
                     <label className="block text-xs text-muted-foreground">{name}</label>
                     <Input
                         value={value || ''}
@@ -104,9 +107,8 @@ export function PluginEdit() {
     const [plugin, setPlugin] = useState<PluginProps | undefined>();
     /* 测试工具 */
     const [testTool, setTestTool] = useState<string>("");
+    /* 脚本内容 */
     const [content, setContent] = useState('');
-
-    console.log(plugin);
 
     useEffect(() => {
         inputRef.current?.focus();
@@ -116,8 +118,6 @@ export function PluginEdit() {
                 if (plugin) {
                     setPlugin(plugin.info);
                     setContent(plugin.content);
-                    console.log(plugin);
-
                 } else {
                     setCreate(true);
                 }
@@ -129,6 +129,7 @@ export function PluginEdit() {
 
     const handleClose = async () => {
         setPlugin(undefined);
+        setContent('');
         setCreate(true);
         cmd.close();
     };
@@ -153,7 +154,6 @@ export function PluginEdit() {
                     content: content
                 });
                 cmd.message("更新成功", "success");
-                handleClose();
             }
         } catch (error) {
             console.error(error);
@@ -186,75 +186,123 @@ export function PluginEdit() {
         <div className="flex flex-col h-screen bg-background">
             <Header title={create ? "添加插件" : "编辑插件"} close={handleClose} />
 
-            <div className="flex-1 overflow-auto p-4 space-y-4">
-                <div>
-                    <h3 className="text-lg font-medium">{plugin?.name}</h3>
-                    <p className="text-sm text-muted-foreground">{plugin?.description}</p>
-                </div>
-                <div className="space-y-1.5">
-                    <label className="block text-xs text-muted-foreground">脚本内容</label>
-                    <Textarea
-                        value={content}
-                        onChange={(e) => setContent(e)}
-                        className="w-full px-3 py-2 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none min-h-[160px] resize-none placeholder:text-muted-foreground"
-                        placeholder="输入js脚本内容"
-                    />
-                </div>
-                <div className="space-y-1.5">
-                    <label className="block text-xs text-muted-foreground">测试工具</label>
-                    <Select
-                        value={testTool}
-                        onValueChange={(value) => setTestTool(value)}
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="选择测试工具" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {plugin?.tools.map((tool) => (
-                                <SelectItem key={tool.name} value={tool.name}>
-                                    {tool.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                {testTool &&
-                    <div className="space-y-1.5">
-                        <label className="block text-xs text-muted-foreground">测试参数</label>
-                        {plugin?.tools.find(tool => tool.name === testTool)?.parameters.properties &&
-                            Object.entries(plugin.tools.find(tool => tool.name === testTool)!.parameters.properties).map(([key, property]) => (
-                                <ParamInput
-                                    key={key}
-                                    name={key}
-                                    property={property}
-                                    value={testArgs[key]}
-                                    onChange={(value) => setTestArgs(prev => ({ ...prev, [key]: value }))}
-                                />
-                            ))
-                        }
+            <div className="flex-1 overflow-hidden flex">
+                {/* 左侧代码编辑区域 */}
+                <div className="flex-1 p-4 overflow-auto flex flex-col">
+                    <div className="mb-4">
+                        <h3 className="text-lg font-medium">{plugin?.name}</h3>
+                        <p className="text-sm text-muted-foreground">{plugin?.description}</p>
                     </div>
-                }
+                    <div className="space-y-1.5 flex-1">
+                        <div className="flex items-center justify-between">
+                            <label className="block text-xs text-muted-foreground">脚本内容</label>
+                            <Button onClick={() => {
+                                window.open("https://ccn0kkxjz1z2.feishu.cn/wiki/MxzywoXxaiyF08kRREkcEl1Vnfh");
+                            }} variant="ghost" >
+                                <TbBook className="w-4 h-4" />
+                                开发文档
+                            </Button>
+                        </div>
+                        <div className="rounded-md overflow-hidden flex-1">
+                            <CodeMirror
+                                value={content}
+                                height="calc(100vh - 300px)"
+                                theme={githubLight}
+                                extensions={[javascript({ typescript: true })]}
+                                onChange={(value) => setContent(value)}
+                                basicSetup={{
+                                    lineNumbers: false,
+                                    highlightActiveLineGutter: true,
+                                    highlightSpecialChars: true,
+                                    foldGutter: false,
+                                    drawSelection: true,
+                                    dropCursor: true,
+                                    allowMultipleSelections: true,
+                                    indentOnInput: true,
+                                    syntaxHighlighting: true,
+                                }}
+                                className="font-mono"
+                                style={{
+                                    fontFamily: "'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace",
+                                    fontSize: '14px'
+                                }}
+                            />
+                        </div>
+                    </div>
+                    <div className="mt-4">
+                        <Button
+                            variant="primary"
+                            onClick={handleUpdate}
+                            disabled={!content || isSubmitting}
+                            className="w-full"
+                        >
+                            {isSubmitting ? (create ? "创建中..." : "更新中...") : create ? "创建" : "更新"}
+                        </Button>
+                    </div>
+                </div>
+
+                {/* 右侧测试区域 */}
+                <div className="w-[400px] flex flex-col">
+                    <div className="flex-1 p-4 overflow-auto">
+                        <div className="space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-medium text-muted-foreground">测试工具</label>
+                                <Select
+                                    value={testTool}
+                                    onValueChange={(value) => setTestTool(value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="选择测试工具" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {plugin?.tools.map((tool) => (
+                                            <SelectItem key={tool.name} value={tool.name}>
+                                                {tool.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {testTool && (
+                                <div className="space-y-1.5">
+                                    <label className="block text-xs font-medium text-muted-foreground">测试参数</label>
+                                    <div className="space-y-3">
+                                        {plugin?.tools.find(tool => tool.name === testTool)?.parameters.properties &&
+                                            Object.entries(plugin.tools.find(tool => tool.name === testTool)!.parameters.properties).map(([key, property]) => (
+                                                <ParamInput
+                                                    key={key}
+                                                    name={key}
+                                                    property={property}
+                                                    value={testArgs[key]}
+                                                    onChange={(value) => setTestArgs(prev => ({ ...prev, [key]: value }))}
+                                                />
+                                            ))
+                                        }
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 底部按钮区域 */}
+                    <div className="p-4">
+                        <Button
+                            disabled={!plugin?.tools[0].name || !testTool}
+                            onClick={() => test(plugin?.tools[0].name || "")}
+                            className="w-full h-12 text-lg"
+                            variant="secondary"
+                        >
+                            运行测试
+                        </Button>
+                    </div>
+                </div>
             </div>
 
-            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border">
-                <Button
-                    disabled={!plugin?.tools[0].name || !testTool}
-                    onClick={() => test(plugin?.tools[0].name || "")}
-                    className="mr-auto"
-                >
-                    测试
-                </Button>
-                <Button
-                    onClick={handleClose}
-                >
-                    取消
-                </Button>
-                <Button
-                    variant="primary"
-                    onClick={handleUpdate}
-                    disabled={!plugin?.name || !content || isSubmitting}
-                >
-                    {isSubmitting ? (create ? "创建中..." : "更新中...") : create ? "创建" : "更新"}
+            {/* 底部改为只有关闭按钮 */}
+            <div className="flex justify-end px-4 py-3">
+                <Button onClick={handleClose}>
+                    关闭
                 </Button>
             </div>
         </div>
@@ -266,5 +314,5 @@ export function PluginEdit() {
  * @param id 插件id
  */
 PluginEdit.open = (id?: string) => {
-    cmd.open("plugin-edit", { id }, { width: 500, height: 600 });
+    cmd.open("plugin-edit", { id }, { width: 1200, height: 800 });
 };

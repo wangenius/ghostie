@@ -7,10 +7,12 @@ import { cmd } from "@/utils/shell";
 import { Echo } from "echo-state";
 import { useCallback, useEffect } from 'react';
 import { PiDotsThreeBold } from "react-icons/pi";
-import { TbPackage, TbPlus, TbUpload } from "react-icons/tb";
-import { PackageManager } from "../package/packageManager";
+import { TbPlus, TbUpload } from "react-icons/tb";
 /* 插件列表 */
-export const PluginsStore = new Echo<Record<string, PluginProps>>({})
+export const PluginsStore = new Echo<Record<string, PluginProps>>({}, {
+    name: "plugins",
+    sync: true
+})
 export function PluginsTab() {
     /* 插件列表 */
     const plugins = PluginsStore.use();
@@ -93,17 +95,12 @@ export function PluginsTab() {
                                 <TbPlus className="w-4 h-4" />
                                 <span>新建工具</span>
                             </DropdownMenuItem>
+
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={handleImportPlugin}>
                                 <TbUpload className="w-4 h-4" />
                                 <span>导入 TypeScript 插件</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => {
-                                PackageManager.open();
-                            }}>
-                                <TbPackage className="w-4 h-4" />
-                                <span>依赖包管理</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>

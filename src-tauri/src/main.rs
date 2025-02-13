@@ -53,14 +53,6 @@ async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
 
 #[tokio::main]
 async fn main() {
-    // 初始化插件系统
-    if let Err(e) = deno::init().await {
-        eprintln!("插件系统初始化失败: {}", e);
-        // 如果是开发环境，我们可能想要立即看到错误
-        #[cfg(debug_assertions)]
-        panic!("Failed to initialize plugin system: {:?}", e);
-    }
-
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::default().build())
         .plugin(tauri_plugin_global_shortcut::Builder::default().build())
@@ -124,20 +116,20 @@ async fn main() {
                 .on_menu_event(move |app, event| {
                     if let Some(window) = app.get_webview_window("main") {
                         match event.id().as_ref() {
-                            "quit" => std::process::exit(0),
+                            "quit" => {
+                                app.exit(0);
+                            }
                             "show" => {
-                                window.show().unwrap();
-                                window.set_focus().unwrap();
+                                let _ = window.show();
+                                let _ = window.set_focus();
                             }
                             "hide" => {
-                                window.hide().unwrap();
+                                let _ = window.hide();
                             }
                             _ => {}
                         }
                     }
                 })
-                .tooltip("ghostie")
-                .show_menu_on_left_click(false)
                 .on_tray_icon_event(|tray, event| {
                     if let Some(window) = tray.app_handle().get_webview_window("main") {
                         match event {
@@ -149,27 +141,20 @@ async fn main() {
                                     .duration_since(UNIX_EPOCH)
                                     .unwrap()
                                     .as_millis() as i64;
-                                let last = LAST_WINDOW_ACTION.load(Ordering::SeqCst);
+                                let last = LAST_WINDOW_ACTION.load(Ordering::Relaxed);
 
                                 if now - last < 500 {
                                     return;
                                 }
 
-                                LAST_WINDOW_ACTION.store(now, Ordering::SeqCst);
+                                LAST_WINDOW_ACTION.store(now, Ordering::Relaxed);
 
-                                let visible = window.is_visible().unwrap();
-                                if visible {
+                                if window.is_visible().unwrap_or(false) {
                                     let _ = window.hide();
                                 } else {
                                     let _ = window.show();
                                     let _ = window.set_focus();
                                 }
-                            }
-                            tauri::tray::TrayIconEvent::Click {
-                                button: tauri::tray::MouseButton::Right,
-                                ..
-                            } => {
-                                // 在 Tauri 2.0 中，菜单会自动显示，不需要手动调用
                             }
                             _ => {}
                         }
@@ -181,16 +166,19 @@ async fn main() {
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
+
     app.run(|app_handle, event| match event {
         tauri::RunEvent::ExitRequested { api, .. } => {
-            api.prevent_exit();
+            if let Some(window) = app_handle.get_webview_window("main") {
+                if window.is_visible().unwrap_or(false) {
+                    api.prevent_exit();
+                }
+            }
         }
         tauri::RunEvent::Ready => {
             if let Some(window) = app_handle.get_webview_window("main") {
-                let window_handle = window.clone();
                 window.on_window_event(move |event| {
                     if let WindowEvent::CloseRequested { api, .. } = event {
-                        let _ = window_handle.hide();
                         api.prevent_close();
                     }
                 });

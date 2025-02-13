@@ -128,11 +128,17 @@ export class ChatModel {
 
     /* 解析工具参数 */
     const toolArgs = JSON.parse(function_call.arguments);
+
+    /* 查找对应的工具 */
+    const tool = this.tools?.find((tool) => tool.name === function_call.name);
+    if (!tool) {
+      throw new Error(`找不到工具: ${function_call.name}`);
+    }
+
     /* 执行工具 */
     const toolResultPromise = cmd.invoke("plugin_execute", {
-      plugin: this.tools?.find((tool) => tool.name === function_call.name)
-        ?.plugin,
-      tool: function_call.name,
+      id: tool.plugin,
+      tool: tool.name.split("]")[1],
       args: toolArgs,
     });
 

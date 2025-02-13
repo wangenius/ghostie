@@ -1,4 +1,5 @@
 import { BotProps } from "@/common/types/bot";
+import { PluginsStore } from "@/page/settings/PluginsTab";
 import { Echo } from "echo-state";
 import { Context } from "../agent/Context";
 import { ChatModel } from "../model/ChatModel";
@@ -11,7 +12,7 @@ export class Bot {
   name: string;
   system: string;
   model: ChatModel;
-  tools: ToolProps[];
+  tools: string[];
   context: Context;
 
   /** 加载状态 */
@@ -23,11 +24,26 @@ export class Bot {
     this.name = config.name;
     this.system = config.system;
     const model = ModelManager.get(config.model);
-    this.model = new ChatModel(model)
-      // .setTools(config.tools)
-      .system(config.system);
-    // this.tools = config.tools;
-    this.tools = [];
+
+    // 解析工具字符串，格式为 "[plugin_name]tool_name"
+    const tools: ToolProps[] = Object.values(PluginsStore.current)
+      .flatMap((plugin) =>
+        plugin.tools.map((tool) => ({
+          ...tool,
+          plugin: plugin.id,
+          // 添加完整名称，用于匹配
+          name: `[${plugin.name}]${tool.name}`,
+          pluginName: plugin.name,
+        }))
+      )
+      .filter((tool) => {
+        return config.tools.includes(`${tool.name}`);
+      });
+
+    console.log(tools);
+
+    this.model = new ChatModel(model).setTools(tools).system(config.system);
+    this.tools = config.tools || [];
     this.context = new Context();
   }
 
