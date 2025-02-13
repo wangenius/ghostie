@@ -9,12 +9,12 @@ import {
   FunctionCallReply,
   FunctionCallResult,
   Message,
-  ToolFunctionInfo,
 } from "@common/types/model";
 import { Echo } from "echo-state";
 import { HistoryMessage } from "./HistoryMessage";
 import { ModelManager } from "./ModelManager";
-import { ToolsManager } from "../tool/ToolsManager";
+import { cmd } from "@/utils/shell";
+import { FunctionCallProps, ToolProps } from "@/common/types/plugin";
 
 /** Chat模型, 用于与模型进行交互 */
 export class ChatModel {
@@ -29,7 +29,7 @@ export class ChatModel {
   /** 消息历史 */
   public historyMessage: HistoryMessage = new HistoryMessage();
   /** 工具 */
-  private tools: ToolFunctionInfo[] | undefined;
+  private tools: ToolProps[] | undefined;
   /** 加载状态 */
   public loading = new Echo<{
     loading: boolean;
@@ -59,12 +59,13 @@ export class ChatModel {
    * @param tools 工具
    * @returns 当前模型实例
    */
-  public setTools(tools: ToolFunctionInfo[]): this {
+  public setTools(tools: ToolProps[]): this {
     this.tools = tools;
     return this;
   }
 
-  /** hook消息历史
+  /**
+   * hook消息历史
    */
   public useHistory = this.historyMessage.use.bind(
     this.historyMessage.messages
@@ -99,6 +100,16 @@ export class ChatModel {
     return this;
   }
 
+  static tool_to_function(
+    tools?: ToolProps[]
+  ): FunctionCallProps[] | undefined {
+    return tools?.map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      parameters: tool.parameters,
+    }));
+  }
+
   private getAbortController(requestId: string): AbortController {
     if (!this.abortControllers.has(requestId)) {
       this.abortControllers.set(requestId, new AbortController());
@@ -117,9 +128,12 @@ export class ChatModel {
 
     /* 解析工具参数 */
     const toolArgs = JSON.parse(function_call.arguments);
-    const toolResultPromise = ToolsManager.exe({
-      name: function_call.name,
-      arguments: toolArgs,
+    /* 执行工具 */
+    const toolResultPromise = cmd.invoke("plugin_execute", {
+      plugin: this.tools?.find((tool) => tool.name === function_call.name)
+        ?.plugin,
+      tool: function_call.name,
+      args: toolArgs,
     });
 
     /* 等待工具执行完成 */
@@ -152,7 +166,7 @@ export class ChatModel {
       const requestBody: ChatModelRequestBody = {
         model: this.model,
         messages: this.historyMessage.push([{ role: "user", content: prompt }]),
-        functions: this.tools,
+        functions: ChatModel.tool_to_function(this.tools),
       };
       this.loading.set({ loading: true });
       /* 发送请求 */
@@ -176,8 +190,11 @@ export class ChatModel {
       const assistantMessage = data.choices[0].message;
       /* 创建基本响应结果 */
       const result: ChatModelResponse<string> = {
+        /* 助手消息内容 */
         body: assistantMessage.content || "",
+        /* 停止请求 */
         stop: () => this.stop(requestId),
+        /* 工具调用结果 */
         tool: await this.tool_call(assistantMessage.function_call),
       };
 
@@ -231,7 +248,7 @@ export class ChatModel {
       const requestBody: ChatModelRequestBody = {
         model: this.model,
         messages,
-        functions: this.tools,
+        functions: ChatModel.tool_to_function(this.tools),
         response_format: { type: "json_object" },
       };
       this.loading.set({ loading: true });
@@ -305,7 +322,7 @@ export class ChatModel {
       model: this.model,
       messages: this.historyMessage.list(),
       stream: true,
-      functions: this.tools,
+      functions: ChatModel.tool_to_function(this.tools),
     };
 
     this.loading.set({ loading: true });

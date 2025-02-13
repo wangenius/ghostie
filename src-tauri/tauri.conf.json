@@ -37,7 +37,6 @@
         "fullscreen": false,
         "decorations": false,
         "transparent": true,
-        "alwaysOnTop": true,
         "skipTaskbar": true,
         "label": "settings",
         "parent": "main",

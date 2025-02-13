@@ -51,7 +51,16 @@ async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
+    // 初始化插件系统
+    if let Err(e) = deno::init().await {
+        eprintln!("插件系统初始化失败: {}", e);
+        // 如果是开发环境，我们可能想要立即看到错误
+        #[cfg(debug_assertions)]
+        panic!("Failed to initialize plugin system: {:?}", e);
+    }
+
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::default().build())
         .plugin(tauri_plugin_global_shortcut::Builder::default().build())
@@ -83,16 +92,17 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             utils::window::open_window,
             utils::window::hide_window,
+            utils::window::open_config_dir,
             utils::utils::open_file,
             utils::utils::save_file,
             check_update,
             install_update,
-            // Deno plugin commands
-            deno::register_deno_plugin,
-            deno::register_deno_plugin_from_ts,
-            deno::execute_deno_plugin,
-            deno::list_deno_plugins,
-            deno::remove_deno_plugin
+            deno::plugin_import,
+            deno::plugins_list,
+            deno::plugin_get,
+            deno::plugin_update,
+            deno::plugin_remove,
+            deno::plugin_execute,
         ])
         .setup(|app| {
             let _ = app.handle();
@@ -167,10 +177,6 @@ fn main() {
                 })
                 .build(app)?;
 
-            // Initialize Deno runtime
-            if let Err(e) = deno::init_deno_runtime() {
-                eprintln!("Failed to initialize Deno runtime: {}", e);
-            }
             Ok(())
         })
         .build(tauri::generate_context!())

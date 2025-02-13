@@ -1,6 +1,9 @@
+use open;
 use std::collections::HashMap;
 use tauri::{LogicalSize, Manager, Size, WindowEvent};
 use urlencoding;
+
+use super::utils::get_config_dir;
 
 #[tauri::command]
 pub async fn open_window(
@@ -68,5 +71,12 @@ pub async fn hide_window(window: tauri::Window) -> Result<(), String> {
     window
         .hide()
         .map_err(|e| format!("Failed to hide window: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn open_config_dir(_: tauri::AppHandle) -> Result<(), String> {
+    let config_dir = get_config_dir().unwrap();
+    open::that(config_dir).map_err(|e| format!("Failed to open config directory: {}", e))?;
     Ok(())
 }

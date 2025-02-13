@@ -15,10 +15,23 @@ interface TextAnalysisResult {
  * @param text 要分析的文本
  * @returns 文本统计信息
  */
-async function analyzeText(text: string): Promise<TextAnalysisResult> {
+async function analyzeText({
+  text,
+  length,
+}: {
+  text: string;
+  length: {
+    good: string;
+    description: string;
+  };
+}): Promise<TextAnalysisResult> {
   const lines = text.split("\n");
   const words = text.toLowerCase().match(/\b\w+\b/g) || [];
   const uniqueWords = new Set(words);
+
+  console.log(length.good);
+  console.log(length.description);
+  console.log(text);
 
   return {
     charCount: text.length,
@@ -34,10 +47,13 @@ async function analyzeText(text: string): Promise<TextAnalysisResult> {
  * @param format 目标格式 (upper/lower/title)
  * @returns 转换后的文本
  */
-async function convertTextCase(
-  text: string,
-  format: "upper" | "lower" | "title"
-): Promise<string> {
+async function convertTextCase({
+  text,
+  format,
+}: {
+  text: string;
+  format: "upper" | "lower" | "title";
+}): Promise<string> {
   switch (format) {
     case "upper":
       return text.toUpperCase();
@@ -56,7 +72,7 @@ async function convertTextCase(
 
 // 导出插件函数
 export default {
-  name: "text_tools",
+  name: "text_plugin",
   description: "文本处理工具集",
   functions: {
     analyze: {
@@ -68,6 +84,19 @@ export default {
           text: {
             type: "string",
             description: "要分析的文本内容",
+          },
+          length: {
+            type: "object",
+            properties: {
+              good: {
+                type: "string",
+                description: "文本长度类型",
+              },
+              description: {
+                type: "string",
+                description: "文本长度描述",
+              },
+            },
           },
         },
         required: ["text"],

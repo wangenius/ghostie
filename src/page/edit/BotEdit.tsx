@@ -4,11 +4,11 @@ import { BotProps } from "@common/types/bot";
 import { useQuery } from "@hook/useQuery";
 import { BotManager } from "@/services/bot/BotManger";
 import { ModelManager } from "@/services/model/ModelManager";
-import { ToolsManager } from "@/services/tool/ToolsManager";
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
+import { FunctionCallProps } from "@/common/types/plugin";
 
 const defaultBot: BotProps = {
     name: "",
@@ -27,8 +27,11 @@ export function BotEdit() {
     const query = useQuery("name");
     console.log(query);
     const models = ModelManager.use();
-    const plugins = ToolsManager.use();
 
+    const [plugins, setPlugins] = useState<Record<string, FunctionCallProps>>({});
+    cmd.invoke<Record<string, FunctionCallProps>>("list_deno_plugins").then(tools => {
+        setPlugins(tools);
+    });
 
     useEffect(() => {
         inputRef.current?.focus();

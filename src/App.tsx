@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { BotEdit } from "./page/edit/BotEdit";
 import { ModelEdit } from "./page/edit/ModelEdit";
-import { ToolEdit } from "./page/edit/ToolEdit";
+import { PluginEdit } from "./page/edit/PluginEdit";
 import { MainView } from "./page/main/MainView";
 import { SettingsPage } from "./page/settings/Page";
 import { SettingsManager } from "./services/settings/SettingsManager";
@@ -30,7 +30,7 @@ function App() {
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/model-edit" element={<ModelEdit />} />
                     <Route path="/bot-edit" element={<BotEdit />} />
-                    <Route path="/plugin-edit" element={<ToolEdit />} />
+                    <Route path="/plugin-edit" element={<PluginEdit />} />
                     <Route path="/package-manager" element={<PackageManager />} />
                 </Routes>
             </BrowserRouter>

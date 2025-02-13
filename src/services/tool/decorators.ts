@@ -1,5 +1,4 @@
 import { ToolFunction, ToolProperty } from "@common/types/model";
-import { ToolsManager } from "./ToolsManager";
 
 /**
  * 工具函数装饰器
@@ -33,9 +32,6 @@ export function register<TArgs = any, TResult = any>(
       },
       fn: originalMethod,
     };
-
-    /* 注册到 ToolsManager */
-    ToolsManager.registerTool(toolFunction);
 
     /* 返回增强的方法 */
     const enhancedMethod = function (this: any, ...args: any[]) {

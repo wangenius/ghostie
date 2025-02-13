@@ -1,17 +1,17 @@
 import { BotProps } from "@/common/types/bot";
-import { ToolFunctionInfo } from "@/common/types/model";
 import { Echo } from "echo-state";
 import { Context } from "../agent/Context";
 import { ChatModel } from "../model/ChatModel";
 import { ModelManager } from "../model/ModelManager";
-import { ToolsManager } from "../tool/ToolsManager";
-
-/*  */
+import { ToolProps } from "@/common/types/plugin";
+/*
+ * 机器人
+ */
 export class Bot {
   name: string;
   system: string;
   model: ChatModel;
-  tools: ToolFunctionInfo[];
+  tools: ToolProps[];
   context: Context;
 
   /** 加载状态 */
@@ -24,9 +24,10 @@ export class Bot {
     this.system = config.system;
     const model = ModelManager.get(config.model);
     this.model = new ChatModel(model)
-      .setTools(ToolsManager.get(config.tools))
+      // .setTools(config.tools)
       .system(config.system);
-    this.tools = ToolsManager.get(config.tools);
+    // this.tools = config.tools;
+    this.tools = [];
     this.context = new Context();
   }
 

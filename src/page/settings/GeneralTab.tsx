@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { SettingsManager } from "@/services/settings/SettingsManager";
 import { cmd } from "@/utils/shell";
 import { useState } from "react";
-import { TbPalette, TbRotate } from "react-icons/tb";
+import { TbDatabase, TbFolder, TbPalette, TbRotate } from "react-icons/tb";
 
 export function GeneralTab() {
     const settings = SettingsManager.use();
@@ -89,6 +89,30 @@ export function GeneralTab() {
                     size="sm"
                 >
                     {checking ? "检查中..." : "检查更新"}
+                </Button>
+            </div>
+
+            <div className="flex items-center justify-between h-12 px-3 -mx-3 rounded-lg">
+                <div className="flex items-center gap-3">
+                    <div className="text-muted-foreground">
+                        <TbFolder
+                            className={`w-[18px] h-[18px]`}
+                        />
+                    </div>
+                    <div>
+                        <div className="text-sm text-foreground">本地配置文件目录</div>
+
+                    </div>
+                </div>
+
+                <Button
+                    onClick={() => {
+                        cmd.invoke("open_config_dir");
+                    }}
+                    variant="primary"
+                    size="sm"
+                >
+                    打开目录
                 </Button>
             </div>
         </div>
