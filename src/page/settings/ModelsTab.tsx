@@ -12,6 +12,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { useEffect } from "react";
 
 /* 模型管理 */
 
@@ -20,16 +21,20 @@ export function ModelsTab() {
     const models = ModelManager.use();
 
     /* 删除模型 */
-    const handleDeleteModel = async (name: string) => {
-        const answer = await cmd.confirm(`确定要删除模型 "${name}" 吗？`);
+    const handleDeleteModel = async (id: string) => {
+        const answer = await cmd.confirm(`确定要删除模型 "${id}" 吗？`);
         if (answer) {
             try {
-                ModelManager.remove(name);
+                ModelManager.remove(id);
             } catch (error) {
                 console.error("删除模型失败:", error);
             }
         }
     };
+
+    useEffect(() => {
+        console.log(models);
+    }, [models]);
 
     /* 导入模型 */
     const handleImport = async () => {
@@ -118,12 +123,12 @@ export function ModelsTab() {
             {/* 模型列表区域 */}
             <div className="flex-1 min-h-0 overflow-y-auto">
                 <div className="grid grid-cols-1 gap-3">
-                    {Object.entries(models).map(([name, model]) => (
+                    {Object.entries(models).map(([id, model]) => (
                         <ModelItem
-                            key={name}
-                            name={name}
+                            key={id}
+                            id={id}
                             model={model}
-                            onEdit={() => ModelEdit.open(name)}
+                            onEdit={() => ModelEdit.open(id)}
                             onDelete={handleDeleteModel}
                         />
                     ))}

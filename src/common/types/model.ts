@@ -1,10 +1,10 @@
 import { FunctionCallProps } from "./plugin";
-/* 模型名称 */
-export type ModelName = string;
 /** 模型 */
 export interface Model {
-  /* 名称: 唯一标识,用于存储和识别 */
-  name?: ModelName;
+  /* 唯一标识,用于存储和识别 */
+  id: string;
+  /* 名称 */
+  name: string;
   /* API密钥 */
   api_key: string;
   /* API URL */
@@ -24,8 +24,24 @@ export interface FunctionCallReply {
   arguments: string;
 }
 
+/** 消息类型 */
+export type MessageType =
+  | "system"
+  | "user:input"
+  | "user:hidden"
+  | "assistant:loading"
+  | "assistant:reply"
+  | "assistant:tool"
+  | "function:result";
 /** 消息接口 */
-export interface Message {
+export interface Message extends PureMessage {
+  /* 消息类型 */
+  type: MessageType;
+  /* 创建时间 */
+  created_at: number;
+}
+
+export interface PureMessage {
   /* 角色 */
   role: MessageRole;
   /* 内容 */
@@ -56,7 +72,7 @@ export interface ChatModelRequestBody {
   /* 模型 */
   model: string;
   /* 消息 */
-  messages: Message[];
+  messages: PureMessage[];
   /* 流式 */
   stream?: boolean;
   /* 工具 */

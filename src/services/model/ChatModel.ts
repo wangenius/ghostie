@@ -9,12 +9,19 @@ import {
   FunctionCallReply,
   FunctionCallResult,
   Message,
+  MessageType,
 } from "@common/types/model";
 import { Echo } from "echo-state";
 import { HistoryMessage } from "./HistoryMessage";
 import { ModelManager } from "./ModelManager";
 import { cmd } from "@/utils/shell";
 import { FunctionCallProps, ToolProps } from "@/common/types/plugin";
+
+interface RequestConfig {
+  user: MessageType;
+  assistant: MessageType;
+  function: MessageType;
+}
 
 /** Chat模型, 用于与模型进行交互 */
 export class ChatModel {
@@ -45,14 +52,6 @@ export class ChatModel {
     this.api_url = config?.api_url || "";
     this.model = config?.model || "";
     this.abortControllers = new Map();
-  }
-
-  public setModel(model_name: string): this {
-    const modelInfo = ModelManager.get(model_name);
-    this.model = modelInfo.model;
-    this.api_key = modelInfo.api_key;
-    this.api_url = modelInfo.api_url;
-    return this;
   }
 
   /** 添加工具
@@ -162,16 +161,32 @@ export class ChatModel {
    * @param config 单独配置,可覆盖默认版本
    * @returns 文本生成结果
    */
-  public async text(prompt: string): Promise<ChatModelResponse<string>> {
+  public async text(
+    prompt: string,
+    config: RequestConfig = {
+      user: "user:input",
+      assistant: "assistant:reply",
+      function: "function:result",
+    }
+  ): Promise<ChatModelResponse<string>> {
     const requestId = gen.id();
     try {
       /* 获取请求控制器 */
       const abortController = this.getAbortController(requestId);
 
-      /* 创建请求体 */
+      /* 创建请求体
+       * 添加用户消息
+       */
       const requestBody: ChatModelRequestBody = {
         model: this.model,
-        messages: this.historyMessage.push([{ role: "user", content: prompt }]),
+        messages: this.historyMessage.push([
+          {
+            role: "user",
+            content: prompt,
+            type: config.user,
+            created_at: Date.now(),
+          },
+        ]),
         functions: ChatModel.tool_to_function(this.tools),
       };
       this.loading.set({ loading: true });
@@ -211,9 +226,14 @@ export class ChatModel {
           role: "function",
           name: assistantMessage.function_call.name,
           content: JSON.stringify(result.tool.result),
+          type: config.function,
+          created_at: Date.now(),
         };
         /* 添加消息到历史 */
-        this.historyMessage.push([assistantMessage, functionResultMessage]);
+        this.historyMessage.push([
+          { ...assistantMessage, type: config.assistant },
+          functionResultMessage,
+        ]);
         /* 创建工具调用结果 */
         result.tool = {
           name: assistantMessage.function_call.name,
@@ -222,7 +242,9 @@ export class ChatModel {
         };
       } else {
         // 如果没有工具调用，只添加用户消息和助手回复到历史
-        this.historyMessage.push([assistantMessage]);
+        this.historyMessage.push([
+          { ...assistantMessage, type: config.assistant },
+        ]);
       }
       this.loading.set({ loading: false });
       return result;
@@ -233,14 +255,24 @@ export class ChatModel {
 
   public async json<T = any>(
     prompt: string,
-    template: Record<keyof T, string | any>
+    template: Record<keyof T, string | any>,
+    config: RequestConfig = {
+      user: "user:input",
+      assistant: "assistant:reply",
+      function: "function:result",
+    }
   ): Promise<ChatModelResponse<T>> {
     const requestId = gen.id();
     try {
       const abortController = this.getAbortController(requestId);
 
       let messages: Message[] = [];
-      const newMessages: Message = { role: "user", content: prompt };
+      const newMessages: Message = {
+        role: "user",
+        content: prompt,
+        type: config.user,
+        created_at: Date.now(),
+      };
 
       if (template) {
         const templatePrompt = `请严格按照以下JSON格式返回(不添加额外字符)：\n${JSON.stringify(
@@ -294,9 +326,14 @@ export class ChatModel {
           role: "function",
           name: assistantMessage.function_call.name,
           content: JSON.stringify(result.tool.result),
+          type: config.function,
+          created_at: Date.now(),
         };
         /* 添加消息到历史 */
-        this.historyMessage.push([assistantMessage, functionResultMessage]);
+        this.historyMessage.push([
+          { ...assistantMessage, type: config.assistant },
+          functionResultMessage,
+        ]);
         /* 创建工具调用结果 */
         result.tool = {
           name: assistantMessage.function_call.name,
@@ -305,7 +342,9 @@ export class ChatModel {
         };
       } else {
         // 如果没有工具调用，只添加用户消息和助手回复到历史
-        this.historyMessage.push([assistantMessage]);
+        this.historyMessage.push([
+          { ...assistantMessage, type: config.assistant },
+        ]);
       }
       this.loading.set({ loading: false });
 
@@ -315,24 +354,49 @@ export class ChatModel {
     }
   }
 
-  public async stream(prompt: string): Promise<ChatModelResponse<string>> {
+  public async stream(
+    prompt: string,
+    config: RequestConfig = {
+      user: "user:input",
+      assistant: "assistant:reply",
+      function: "function:result",
+    }
+  ): Promise<ChatModelResponse<string>> {
     const requestId = gen.id();
     let functionCallData: FunctionCallReply | undefined;
     let content = "";
 
-    // 添加用户消息并创建助手消息
-    this.historyMessage.push([{ role: "user", content: prompt }]);
-    this.historyMessage.createAssistantMessage();
-
-    const requestBody: ChatModelRequestBody = {
-      model: this.model,
-      messages: this.historyMessage.list(),
-      stream: true,
-      functions: ChatModel.tool_to_function(this.tools),
-    };
-
-    this.loading.set({ loading: true });
     try {
+      // 添加用户消息
+      this.historyMessage.push([
+        {
+          role: "user",
+          content: prompt,
+          type: config.user,
+          created_at: Date.now(),
+        },
+      ]);
+
+      // 创建初始的助手消息
+      this.historyMessage.push([
+        {
+          role: "assistant",
+          content: "",
+          type: "assistant:loading",
+          created_at: Date.now(),
+        },
+      ]);
+
+      /* 创建请求体 */
+      const requestBody: ChatModelRequestBody = {
+        model: this.model,
+        messages: this.historyMessage.listWithOutType(),
+        stream: true,
+        functions: ChatModel.tool_to_function(this.tools),
+      };
+
+      this.loading.set({ loading: true });
+
       const response = await fetch(this.api_url, {
         method: "POST",
         headers: {
@@ -367,9 +431,10 @@ export class ChatModel {
 
             if (delta?.content) {
               content += delta.content;
-              this.historyMessage.updateLastMessage((msg) => {
-                msg.content = content;
-              });
+              this.historyMessage.updateAssistantContent(
+                content,
+                config.assistant
+              );
             }
 
             if (delta?.function_call) {
@@ -377,16 +442,13 @@ export class ChatModel {
                 name: "",
                 arguments: "",
               };
-              if (delta.function_call.arguments) {
-                functionCallData.arguments += delta.function_call.arguments;
-              }
               if (delta.function_call.name) {
                 functionCallData.name = delta.function_call.name;
               }
-              this.historyMessage.updateLastMessage((msg) => {
-                msg.function_call = functionCallData;
-                msg.content = content;
-              });
+              if (delta.function_call.arguments) {
+                functionCallData.arguments += delta.function_call.arguments;
+              }
+              this.historyMessage.updateAssistantFunctionCall(functionCallData);
             }
           }
         }
@@ -395,7 +457,7 @@ export class ChatModel {
       }
 
       let toolResult;
-      // 如果有函数调用，处理工具调用结果
+      // 处理函数调用
       if (functionCallData) {
         toolResult = await this.tool_call(functionCallData);
         if (toolResult) {
@@ -404,6 +466,8 @@ export class ChatModel {
               role: "function",
               name: functionCallData.name,
               content: JSON.stringify(toolResult.result),
+              type: config.function,
+              created_at: Date.now(),
             },
           ]);
         }
@@ -415,6 +479,7 @@ export class ChatModel {
         tool: toolResult,
       };
     } catch (error) {
+      // 发生错误时移除最后一条加载中的消息
       this.loading.set({ loading: false });
       this.removeAbortController(requestId);
       throw error;

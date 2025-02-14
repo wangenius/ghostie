@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 
 
 const defaultModel: Model = {
+    id: "",
     name: "",
     api_key: "",
     api_url: "",
@@ -18,11 +19,10 @@ const defaultModel: Model = {
 /* 模型编辑 */
 export function ModelEdit() {
     const [model, setModel] = useState<Model>(defaultModel);
-    const [originalName, setOriginalName] = useState<string>("");
     const [create, setCreate] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
-    const query = useQuery("name");
+    const query = useQuery("id");
 
     useEffect(() => {
         inputRef.current?.focus();
@@ -30,16 +30,13 @@ export function ModelEdit() {
             const modelData = ModelManager.store.current[query];
             if (modelData) {
                 setCreate(false);
-                setOriginalName(query);
                 setModel(modelData);
             } else {
                 setCreate(true);
-                setOriginalName("");
                 setModel(defaultModel);
             }
         } else {
             setCreate(true);
-            setOriginalName("");
             setModel(defaultModel);
         }
     }, [query]);
@@ -49,7 +46,6 @@ export function ModelEdit() {
         cmd.close();
         setModel(defaultModel);
         setCreate(true);
-        setOriginalName("");
     };
 
     const handleSubmit = async () => {
@@ -60,7 +56,7 @@ export function ModelEdit() {
             if (create) {
                 ModelManager.add(model);
             } else {
-                ModelManager.update(originalName, model);
+                ModelManager.update(model.id, model);
             }
 
             await handleClose();
@@ -149,7 +145,7 @@ export function ModelEdit() {
     );
 }
 
-ModelEdit.open = (name?: string) => {
-    cmd.open("model-edit", { name }, { width: 400, height: 600 });
+ModelEdit.open = (id?: string) => {
+    cmd.open("model-edit", { id }, { width: 400, height: 600 });
 };
 

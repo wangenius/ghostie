@@ -185,7 +185,7 @@ export function MainView() {
                             </div>
                         </div>
                     ) : (
-                        <div className="px-2 space-y-2">
+                        <div className="px-2 space-y-2 my-2">
                             {list.map((message, index) => (
                                 <MessageItem key={index} message={message} />
                             ))}

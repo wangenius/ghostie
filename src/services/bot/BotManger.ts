@@ -84,5 +84,3 @@ export class BotManager {
     }
   }
 }
-
-console.log(BotManager.store.current);

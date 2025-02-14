@@ -114,9 +114,9 @@ export function BotEdit() {
                                 <SelectValue placeholder="请选择模型" />
                             </SelectTrigger>
                             <SelectContent>
-                                {Object.keys(models).map((modelName) => (
-                                    <SelectItem key={modelName} value={modelName}>
-                                        {modelName}
+                                {Object.values(models).map((model) => (
+                                    <SelectItem key={model.id} value={model.id}>
+                                        {model.name}
                                     </SelectItem>
                                 ))}
                             </SelectContent>

@@ -2,7 +2,12 @@
  * 负责管理所有的消息历史记录
  */
 
-import { Message } from "@common/types/model";
+import {
+  FunctionCallReply,
+  Message,
+  MessageType,
+  PureMessage,
+} from "@common/types/model";
 import { Echo } from "echo-state";
 
 /** 消息历史记录类 */
@@ -12,7 +17,12 @@ export class HistoryMessage {
     system: Message;
     list: Message[];
   }>({
-    system: { role: "system", content: "" },
+    system: {
+      role: "system",
+      content: "",
+      type: "system",
+      created_at: Date.now(),
+    },
     list: [],
   });
 
@@ -34,10 +44,39 @@ export class HistoryMessage {
   /** 创建一个新的助手消息并返回
    * @returns 新创建的助手消息
    */
-  createAssistantMessage(): Message {
-    const assistantMessage: Message = { role: "assistant", content: "" };
+  createAssistantMessage(type: MessageType = "assistant:reply"): Message {
+    const assistantMessage: Message = {
+      role: "assistant",
+      content: "",
+      type,
+      created_at: Date.now(),
+    };
     this.push([assistantMessage]);
     return assistantMessage;
+  }
+
+  /** 创建一个加载中的助手消息并返回
+   * @returns 新创建的加载中的助手消息
+   */
+  createLoadingMessage(): Message {
+    const loadingMessage: Message = {
+      role: "assistant",
+      content: "",
+      type: "assistant:loading",
+      created_at: Date.now(),
+    };
+    this.push([loadingMessage]);
+    return loadingMessage;
+  }
+
+  /** 将加载中的助手消息转换为助手消息
+   * @param type 要转换的消息类型
+   */
+  loadingToOther(message: Message): void {
+    this.updateLastMessage((msg) => {
+      msg = message;
+      return msg;
+    });
   }
 
   /** 更新最后一条消息
@@ -69,7 +108,12 @@ export class HistoryMessage {
 
   system(content: string): void {
     this.messages.set({
-      system: { role: "system", content },
+      system: {
+        role: "system",
+        content,
+        type: "system",
+        created_at: Date.now(),
+      },
       list: this.messages.current.list,
     });
   }
@@ -79,6 +123,22 @@ export class HistoryMessage {
    */
   list(): Message[] {
     return [this.messages.current.system, ...this.messages.current.list];
+  }
+
+  /** 获取所有消息（不包括系统消息）
+   * @returns 所有消息的数组
+   */
+  listWithOutType(): PureMessage[] {
+    return [this.messages.current.system, ...this.messages.current.list].map(
+      (msg) => {
+        return {
+          role: msg.role,
+          content: msg.content,
+          name: msg.name,
+          function_call: msg.function_call,
+        };
+      }
+    );
   }
 
   /** 清空所有消息历史, 保留系统消息 */
@@ -102,5 +162,46 @@ export class HistoryMessage {
    */
   count(): number {
     return this.messages.current.list.length;
+  }
+
+  /** 替换最后一条消息
+   * @param message 新的消息
+   */
+  replaceLastMessage(message: Message): void {
+    const list = this.messages.current.list;
+    if (list.length === 0) return;
+
+    this.messages.set({
+      system: this.messages.current.system,
+      list: [...list.slice(0, -1), message],
+    });
+  }
+
+  /** 更新助手消息的内容
+   * @param content 新的内容
+   * @param type 消息类型
+   */
+  updateAssistantContent(
+    content: string,
+    type: MessageType = "assistant:reply"
+  ): void {
+    this.updateLastMessage((msg) => {
+      if (msg.role === "assistant") {
+        msg.content = content;
+        msg.type = type;
+      }
+    });
+  }
+
+  /** 更新助手消息的函数调用
+   * @param functionCall 函数调用数据
+   */
+  updateAssistantFunctionCall(functionCall: FunctionCallReply): void {
+    this.updateLastMessage((msg) => {
+      if (msg.role === "assistant") {
+        msg.function_call = functionCall;
+        msg.type = "assistant:tool";
+      }
+    });
   }
 }

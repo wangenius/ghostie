@@ -1,3 +1,4 @@
+import { gen } from "@/utils/generator";
 import { Model } from "@common/types/model";
 import { Echo } from "echo-state";
 
@@ -14,13 +15,13 @@ export class ModelManager {
     }
   );
 
-  static get(name: string) {
-    return this.store.current[name];
+  static get(id: string) {
+    return this.store.current[id];
   }
 
   static use = ModelManager.store.use.bind(ModelManager.store);
 
-  static add(model: Model) {
+  static add(model: Omit<Model, "id">) {
     if (!model.name) {
       throw new Error("模型名称不能为空");
     }
@@ -29,24 +30,23 @@ export class ModelManager {
       throw new Error(`模型 ${model.name} 已存在`);
     }
 
+    const id = gen.id();
+
     ModelManager.store.set({
-      [model.name]: model,
+      [id]: {
+        ...model,
+        id,
+      },
     });
   }
 
-  static remove(name: string) {
-    ModelManager.store.delete(name);
+  static remove(id: string) {
+    ModelManager.store.delete(id);
   }
 
-  static update(name: string, model: Model) {
-    if (!model.name) {
-      throw new Error("模型名称不能为空");
-    }
-    if (name !== model.name) {
-      ModelManager.remove(name);
-    }
+  static update(id: string, model: Model) {
     ModelManager.store.set({
-      [model.name]: model,
+      [id]: model,
     });
   }
 
@@ -63,18 +63,9 @@ export class ModelManager {
   static import(jsonStr: string) {
     try {
       const models = JSON.parse(jsonStr) as Record<string, Model>;
-
-      // 验证每个模型的必要字段
-      Object.entries(models).forEach(([name, model]) => {
-        if (!model.api_key || !model.api_url || !model.model) {
-          throw new Error(`模型 "${name}" 缺少必要字段`);
-        }
-        // 确保name字段与key一致
-        model.name = name;
+      Object.values(models).forEach((model) => {
+        ModelManager.add(model);
       });
-
-      // 更新存储
-      this.store.set(models);
     } catch (error) {
       if (error instanceof SyntaxError) {
         throw new Error("JSON格式不正确");

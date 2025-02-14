@@ -2,13 +2,13 @@ import { Model } from "@common/types/model";
 import { TbBox, TbPencil, TbTrash } from "react-icons/tb";
 
 interface ModelItemProps {
-	name: string;
+	id: string;
 	model: Model;
 	onEdit: (name: string) => void;
 	onDelete: (name: string) => void;
 }
 
-export function ModelItem({ name, model, onEdit, onDelete }: ModelItemProps) {
+export function ModelItem({ id, model, onEdit, onDelete }: ModelItemProps) {
 	return (
 		<div className="group relative bg-card hover:bg-accent/5 border border-border rounded-lg transition-all duration-200">
 			{/* 主内容区 */}
@@ -24,7 +24,7 @@ export function ModelItem({ name, model, onEdit, onDelete }: ModelItemProps) {
 				<div className="flex-1 min-w-0">
 					<div className="flex items-center gap-2">
 						<h3 className="text-sm font-medium text-foreground truncate">
-							{name}
+							{model.name}
 						</h3>
 
 					</div>
@@ -39,7 +39,7 @@ export function ModelItem({ name, model, onEdit, onDelete }: ModelItemProps) {
 					<button
 						onClick={(e) => {
 							e.stopPropagation();
-							onEdit(name);
+							onEdit(id);
 						}}
 						className="p-2 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
 						title="编辑模型"
@@ -49,7 +49,7 @@ export function ModelItem({ name, model, onEdit, onDelete }: ModelItemProps) {
 					<button
 						onClick={(e) => {
 							e.stopPropagation();
-							onDelete(name);
+							onDelete(id);
 						}}
 						className="p-2 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
 						title="删除模型"

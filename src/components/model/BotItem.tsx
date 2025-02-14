@@ -30,7 +30,7 @@ export function BotItem({ name, bot, onEdit, onDelete }: ModelItemProps) {
 
 					</div>
 					<div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-						<span className="truncate">{bot.model}</span>
+						<span className="truncate">{bot.system}</span>
 					</div>
 				</div>
 

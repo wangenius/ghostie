@@ -1,5 +1,3 @@
-import { ModelName } from "./model";
-
 /** 助手
  * @param name 名称
  * @param system 系统提示
@@ -11,8 +9,8 @@ export interface BotProps {
   name: string;
   /* 系统提示 */
   system: string;
-  /* 模型 */
-  model: ModelName;
+  /* 模型id */
+  model: string;
   /* 工具 */
   tools: string[];
   /* 头像 */
