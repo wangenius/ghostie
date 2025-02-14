@@ -95,6 +95,8 @@ async fn main() {
             deno::plugin_update,
             deno::plugin_remove,
             deno::plugin_execute,
+            deno::env_list,
+            deno::env_save,
         ])
         .setup(|app| {
             let _ = app.handle();

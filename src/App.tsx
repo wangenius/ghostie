@@ -6,6 +6,7 @@ import { MainView } from "./page/main/MainView";
 import { SettingsPage } from "./page/settings/Page";
 import { SettingsManager } from "./services/settings/SettingsManager";
 import { useEffect } from "react";
+import { EnvEdit } from "./page/edit/EnvEdit";
 
 /* 主应用,提供路由 */
 function App() {
@@ -30,6 +31,7 @@ function App() {
                     <Route path="/model-edit" element={<ModelEdit />} />
                     <Route path="/bot-edit" element={<BotEdit />} />
                     <Route path="/plugin-edit" element={<PluginEdit />} />
+                    <Route path="/env-edit" element={<EnvEdit />} />
                 </Routes>
             </BrowserRouter>
         </div>

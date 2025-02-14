@@ -102,6 +102,20 @@
         "parent": "main",
         "maximizable": false,
         "minimizable": false
+      },
+      {
+        "title": "环境变量",
+        "resizable": false,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": true,
+        "label": "env-edit",
+        "center": true,
+        "url": "/env-edit",
+        "visible": false,
+        "parent": "main",
+        "maximizable": false,
+        "minimizable": false
       }
     ],
     "security": {

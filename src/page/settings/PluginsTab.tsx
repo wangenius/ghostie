@@ -7,7 +7,8 @@ import { cmd } from "@/utils/shell";
 import { Echo } from "echo-state";
 import { useCallback, useEffect } from 'react';
 import { PiDotsThreeBold } from "react-icons/pi";
-import { TbPlus, TbUpload } from "react-icons/tb";
+import { TbDatabaseCog, TbPlus, TbUpload } from "react-icons/tb";
+import { EnvEdit } from "../edit/EnvEdit";
 
 /* 插件列表 */
 export const PluginsStore = new Echo<Record<string, PluginProps>>({}, {
@@ -93,11 +94,10 @@ export function PluginsTab() {
                         </DropdownMenuTrigger>
 
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => PluginEdit.open()}>
-                                <TbPlus className="w-4 h-4" />
-                                <span>新建工具</span>
+                            <DropdownMenuItem onClick={() => EnvEdit.open()}>
+                                <TbDatabaseCog className="w-4 h-4" />
+                                <span>环境变量</span>
                             </DropdownMenuItem>
-
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={handleImportPlugin}>
                                 <TbUpload className="w-4 h-4" />

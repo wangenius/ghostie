@@ -3,6 +3,8 @@ import { TbGhost3, TbInfoSquareRounded, TbRobot } from "react-icons/tb";
 import { BotEdit } from "../../edit/BotEdit";
 import { BotProps } from "@/common/types/bot";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
+import { context } from "@/components/custom/ContextMenu";
+import { Menu } from "@/components/ui/menu";
 
 interface BotItemProps {
 	bot: BotProps;
@@ -14,53 +16,49 @@ export function BotItem({ bot, isSelected, onClick }: BotItemProps) {
 	return (
 		<div
 			onClick={onClick}
+			onContextMenu={(e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				context({
+					event: e,
+					content: (close) => {
+						return <Menu items={[{
+							label: "编辑",
+							onClick: () => {
+								BotEdit.open(bot.name);
+								close();
+							}
+						}]}></Menu>
+					}
+				})
+			}}
 			className={`
-                group flex items-center gap-4 p-4 rounded-xl cursor-pointer
-                transition-all duration-300 ease-in-out
-                hover:shadow-sm
+                flex items-center gap-3 p-3 rounded-lg cursor-pointer
                 ${isSelected
-					? 'bg-primary/15 border border-primary/20'
-					: 'hover:bg-secondary/50 border border-transparent'
-				}
+					? 'bg-primary/10 border-primary/20'
+					: 'hover:bg-secondary'
+				} border border-transparent transition-colors
             `}
 		>
-			<Avatar className="w-12 h-12 ring-2 ring-offset-2 ring-offset-background transition-all duration-300
-                    ${isSelected ? 'ring-primary/30' : 'ring-transparent'}">
+			<Avatar className={`w-10 h-10 ring-1 transition-colors
+                    ${isSelected ? 'ring-primary/30' : 'ring-transparent'}`}>
 				{bot.avatar ? (
 					<AvatarImage src={bot.avatar} alt={bot.name} />
 				) : (
-					<AvatarFallback className="bg-gradient-to-br from-secondary to-secondary/50">
-						<TbGhost3 className="w-6 h-6" />
+					<AvatarFallback className="bg-secondary/50">
+						<TbGhost3 className="w-5 h-5" />
 					</AvatarFallback>
 				)}
 			</Avatar>
 
 			<div className="flex-1 min-w-0">
-				<div className="flex items-center justify-between">
-					<h3 className={`
-                        text-base font-semibold truncate
-                        transition-colors duration-300
+				<h3 className={`
+                        text-sm font-medium truncate
                         ${isSelected ? 'text-primary' : 'text-foreground'}
                     `}>
-						{bot.name}
-					</h3>
-
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={(e) => {
-							e.stopPropagation();
-							BotEdit.open(bot.name);
-						}}
-						className="h-8 w-8 opacity-0 group-hover:opacity-100 
-                            transition-opacity duration-300
-                            hover:bg-secondary/70"
-					>
-						<TbInfoSquareRounded className="w-4 h-4" />
-					</Button>
-				</div>
-
-				<p className="mt-1.5 text-sm text-muted-foreground/80 line-clamp-1">
+					{bot.name}
+				</h3>
+				<p className="mt-1 text-xs text-muted-foreground line-clamp-1">
 					{bot.system}
 				</p>
 			</div>

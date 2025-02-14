@@ -34,6 +34,13 @@ pub struct PluginWithContent {
     pub content: String,
 }
 
+// 在其他结构体定义附近添加
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct EnvVar {
+    pub key: String,
+    pub value: String,
+}
+
 // 获取插件目录
 fn get_plugins_dir() -> PathBuf {
     let mut config_dir = get_config_dir().expect("无法获取配置目录");
@@ -47,7 +54,40 @@ fn check_deno_installed() -> bool {
     Command::new("deno").arg("--version").output().is_ok()
 }
 
-// 执行 Deno 脚本
+// 在 execute_deno_script 函数之前添加
+fn get_env_file_path() -> PathBuf {
+    let mut plugins_dir = get_plugins_dir();
+    plugins_dir.push(".env");
+    plugins_dir
+}
+
+fn load_env_vars() -> Result<Vec<EnvVar>, String> {
+    let path = get_env_file_path();
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+
+    let content = fs::read_to_string(path).map_err(|e| format!("读取环境变量失败: {}", e))?;
+    let vars: Vec<EnvVar> = content
+        .lines()
+        .filter(|line| !line.trim().is_empty() && !line.starts_with('#'))
+        .filter_map(|line| {
+            let parts: Vec<&str> = line.splitn(2, '=').collect();
+            if parts.len() == 2 {
+                Some(EnvVar {
+                    key: parts[0].trim().to_string(),
+                    value: parts[1].trim().to_string(),
+                })
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    Ok(vars)
+}
+
+// 修改 execute_deno_script 函数，添加环境变量支持
 async fn execute_deno_script(script: &str, args: Option<&str>) -> Result<String, String> {
     if !check_deno_installed() {
         return Err("Deno 未安装，请先安装 Deno: https://deno.land/#installation".to_string());
@@ -57,15 +97,23 @@ async fn execute_deno_script(script: &str, args: Option<&str>) -> Result<String,
     temp_file.push("temp.ts");
     fs::write(&temp_file, script).map_err(|e| e.to_string())?;
 
+    // 加载环境变量
+    let env_vars = load_env_vars()?;
+
     let mut cmd = Command::new("deno");
     cmd.arg("run")
         .arg("--no-check")
-        .arg("--allow-read") // 允许读取文件
-        .arg("--allow-write") // 允许写入文件
-        .arg("--allow-net") // 允许网络访问
-        .arg("--allow-env") // 允许环境变量访问
-        .arg("--allow-run") // 允许运行命令
+        .arg("--allow-read")
+        .arg("--allow-write")
+        .arg("--allow-net")
+        .arg("--allow-env")
+        .arg("--allow-run")
         .arg(&temp_file);
+
+    // 添加环境变量到命令
+    for var in env_vars {
+        cmd.env(var.key, var.value);
+    }
 
     if let Some(args) = args {
         cmd.arg(args);
@@ -191,7 +239,7 @@ pub async fn plugin_import(content: String) -> Result<Plugin, String> {
         .collect::<Result<Vec<_>, String>>()?;
 
     let plugin = Plugin {
-        id: id.clone(), // 使用新的 ID 生成函数替代 uuid
+        id: id.clone(),
         name: plugin_info["name"]
             .as_str()
             .ok_or("插件格式错误：name 不是字符串")?
@@ -369,4 +417,21 @@ pub async fn plugin_update(id: String, content: String) -> Result<Plugin, String
     save_plugin_list(&plugins)?;
 
     Ok(updated_plugin)
+}
+
+#[tauri::command]
+pub async fn env_list() -> Result<Vec<EnvVar>, String> {
+    load_env_vars()
+}
+
+#[tauri::command]
+pub async fn env_save(vars: Vec<EnvVar>) -> Result<(), String> {
+    let content = vars
+        .iter()
+        .map(|var| format!("{}={}", var.key, var.value))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let path = get_env_file_path();
+    fs::write(path, content).map_err(|e| format!("保存环境变量失败: {}", e))
 }

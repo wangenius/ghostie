@@ -233,7 +233,7 @@ export function PluginEdit() {
                             variant="primary"
                             onClick={handleUpdate}
                             disabled={!content || isSubmitting}
-                            className="w-full"
+                            className="w-full h-12 text-lg"
                         >
                             {isSubmitting ? (create ? "创建中..." : "更新中...") : create ? "创建" : "更新"}
                         </Button>
