@@ -61,8 +61,10 @@ async fn execute_deno_script(script: &str, args: Option<&str>) -> Result<String,
     cmd.arg("run")
         .arg("--no-check")
         .arg("--allow-read") // 允许读取文件
+        .arg("--allow-write") // 允许写入文件
         .arg("--allow-net") // 允许网络访问
         .arg("--allow-env") // 允许环境变量访问
+        .arg("--allow-run") // 允许运行命令
         .arg(&temp_file);
 
     if let Some(args) = args {

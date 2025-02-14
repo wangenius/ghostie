@@ -1,12 +1,5 @@
-// import { gen } from "@/utils/generator";
-// import { tool } from "@/services/tool/Tool";
-
-// import { join } from "path";
-
 // /** 笔记存储目录 */
 // const noteDir = "./notes";
-// /** 笔记索引文件路径 */
-// const indexPath = join(noteDir, "index.json");
 
 // interface NoteMetadata {
 //   id: string;

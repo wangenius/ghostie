@@ -8,11 +8,13 @@ import { Echo } from "echo-state";
 import { useCallback, useEffect } from 'react';
 import { PiDotsThreeBold } from "react-icons/pi";
 import { TbPlus, TbUpload } from "react-icons/tb";
+
 /* 插件列表 */
 export const PluginsStore = new Echo<Record<string, PluginProps>>({}, {
     name: "plugins",
     sync: true
 })
+
 export function PluginsTab() {
     /* 插件列表 */
     const plugins = PluginsStore.use();

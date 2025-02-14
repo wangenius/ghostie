@@ -203,13 +203,14 @@ export function PluginEdit() {
                                 开发文档
                             </Button>
                         </div>
-                        <div className="rounded-md overflow-hidden flex-1">
+                        <div className="rounded-md overflow-hidden flex-1 border focus-within:border-primary/40">
                             <CodeMirror
                                 value={content}
                                 height="calc(100vh - 300px)"
                                 theme={githubLight}
                                 extensions={[javascript({ typescript: true })]}
                                 onChange={(value) => setContent(value)}
+                                placeholder={`编写你的插件代码, 参考开发文档`}
                                 basicSetup={{
                                     lineNumbers: false,
                                     highlightActiveLineGutter: true,
@@ -220,11 +221,9 @@ export function PluginEdit() {
                                     allowMultipleSelections: true,
                                     indentOnInput: true,
                                     syntaxHighlighting: true,
-                                }}
-                                className="font-mono"
-                                style={{
-                                    fontFamily: "'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace",
-                                    fontSize: '14px'
+                                    autocompletion: true,
+                                    lintKeymap: true,
+
                                 }}
                             />
                         </div>
@@ -297,13 +296,6 @@ export function PluginEdit() {
                         </Button>
                     </div>
                 </div>
-            </div>
-
-            {/* 底部改为只有关闭按钮 */}
-            <div className="flex justify-end px-4 py-3">
-                <Button onClick={handleClose}>
-                    关闭
-                </Button>
             </div>
         </div>
     );
