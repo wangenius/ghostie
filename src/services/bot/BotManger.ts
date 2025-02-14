@@ -1,7 +1,6 @@
-import { BotProps } from "@common/types/bot";
-import { Echo } from "echo-state";
-import { Bot } from "./bot";
+import { BotProps } from "@/common/types/bot";
 import { gen } from "@/utils/generator";
+import { Echo } from "echo-state";
 
 /** 助手管理器, 用于管理助手 */
 export class BotManager {
@@ -12,28 +11,6 @@ export class BotManager {
       sync: true,
     }
   );
-
-  static current = new Bot({
-    id: "",
-    name: "",
-    system: "",
-    model: "",
-    tools: [],
-  });
-
-  static setCurrent(id?: string) {
-    if (!id) {
-      BotManager.current = new Bot({
-        id: "",
-        name: "",
-        system: "",
-        model: "",
-        tools: [],
-      });
-    } else {
-      BotManager.current = new Bot(BotManager.store.current[id]);
-    }
-  }
 
   static use = BotManager.store.use.bind(BotManager.store);
 
@@ -70,8 +47,6 @@ export class BotManager {
   static import(jsonStr: string) {
     try {
       const bots = JSON.parse(jsonStr) as Record<string, BotProps>;
-
-      // 验证每个助手的必要字段
       Object.values(bots).forEach((bot) => {
         BotManager.add(bot);
       });

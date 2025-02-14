@@ -6,7 +6,7 @@ import {
   FunctionCallReply,
   Message,
   MessageType,
-  PureMessage,
+  MessagePrototype,
 } from "@common/types/model";
 import { Echo } from "echo-state";
 
@@ -128,15 +128,16 @@ export class HistoryMessage {
   /** 获取所有消息（不包括系统消息）
    * @returns 所有消息的数组
    */
-  listWithOutType(): PureMessage[] {
+  listWithOutType(): MessagePrototype[] {
     return [this.messages.current.system, ...this.messages.current.list].map(
       (msg) => {
-        return {
+        const result: Record<string, any> = {
           role: msg.role,
           content: msg.content,
-          name: msg.name,
-          function_call: msg.function_call,
         };
+        if (msg.name) result.name = msg.name;
+        if (msg.function_call) result.function_call = msg.function_call;
+        return result as MessagePrototype;
       }
     );
   }

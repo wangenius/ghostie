@@ -125,7 +125,7 @@ export class ChatModel {
     if (!function_call) return;
 
     /* 解析工具参数 */
-    const toolArgs = JSON.parse(function_call.arguments);
+    const toolArgs = JSON.parse(function_call.arguments || "{}");
 
     /* 查找对应的工具 */
     const tool = this.tools?.find((tool) => tool.name === function_call.name);

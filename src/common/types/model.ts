@@ -33,15 +33,9 @@ export type MessageType =
   | "assistant:reply"
   | "assistant:tool"
   | "function:result";
-/** 消息接口 */
-export interface Message extends PureMessage {
-  /* 消息类型 */
-  type: MessageType;
-  /* 创建时间 */
-  created_at: number;
-}
 
-export interface PureMessage {
+/** 消息原型 */
+export interface MessagePrototype {
   /* 角色 */
   role: MessageRole;
   /* 内容 */
@@ -51,7 +45,13 @@ export interface PureMessage {
   /* 函数调用 */
   function_call?: FunctionCallReply;
 }
-
+/** 消息接口 */
+export interface Message extends MessagePrototype {
+  /* 消息类型 */
+  type: MessageType;
+  /* 创建时间 */
+  created_at: number;
+}
 /** 工具获取器
  * 可以是字符串, symbol, 函数, 对象
  */
@@ -72,7 +72,7 @@ export interface ChatModelRequestBody {
   /* 模型 */
   model: string;
   /* 消息 */
-  messages: PureMessage[];
+  messages: MessagePrototype[];
   /* 流式 */
   stream?: boolean;
   /* 工具 */

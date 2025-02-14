@@ -1,6 +1,7 @@
 import { BotProps } from "@/common/types/bot";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
-import { TbGhost3 } from "react-icons/tb";
+import { Button } from "@/components/ui/button";
+import { BotEdit } from "@/page/edit/BotEdit";
+import { TbPencil } from "react-icons/tb";
 
 interface BotItemProps {
 	bot: BotProps;
@@ -13,26 +14,31 @@ export function BotItem({ bot, isSelected, onClick }: BotItemProps) {
 		<div
 			onClick={onClick}
 			className={`
-                flex items-center gap-3 p-3 rounded-lg cursor-pointer
+                	flex items-center gap-3 p-2.5 rounded-lg select-none group
                 ${isSelected
-					? 'bg-primary/10 border-primary/20'
+					? 'bg-primary/10'
 					: 'hover:bg-secondary'
-				} border border-transparent transition-colors
-            `}
+				}`}
 		>
-
-
 			<div className="flex-1 min-w-0">
 				<h3 className={`
-                        text-sm font-medium truncate
+                        text-xs font-bold truncate
                         ${isSelected ? 'text-primary' : 'text-foreground'}
                     `}>
 					{bot.name}
 				</h3>
-				<p className="mt-1 text-xs text-muted-foreground line-clamp-1">
+				<p className="text-xs text-muted-foreground line-clamp-1">
 					{bot.system}
 				</p>
+				<div className="flex items-center gap-2">
+
+				</div>
 			</div>
+			<Button onClick={() => {
+				BotEdit.open(bot.id);
+			}} variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity" size="icon">
+				<TbPencil className="w-4 h-4" />
+			</Button>
 		</div>
 	);
-} 
+}

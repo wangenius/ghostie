@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SettingsManager } from "@/services/settings/SettingsManager";
 import { cmd } from "@/utils/shell";
 import { useState } from "react";
-import { TbDatabase, TbFolder, TbPalette, TbRotate } from "react-icons/tb";
+import { TbArrowIteration, TbFolder, TbPalette, TbRotate } from "react-icons/tb";
 
 export function GeneralTab() {
     const settings = SettingsManager.use();
@@ -114,6 +115,38 @@ export function GeneralTab() {
                 >
                     打开目录
                 </Button>
+            </div>
+            <div className="flex items-center justify-between h-12 px-3 -mx-3 rounded-lg">
+                <div className="flex items-center gap-3">
+                    <div className="text-muted-foreground">
+                        <TbArrowIteration
+                            className={`w-[18px] h-[18px]`}
+                        />
+                    </div>
+                    <div>
+                        <div className="text-sm text-foreground font-bold">ReActMaxIterations</div>
+                        <div className="text-xs text-muted-foreground">
+                            <span >助手在执行Agent任务时，最大迭代次数。</span>
+                        </div>
+                    </div>
+                </div>
+                <Select
+                    value={settings.reActMaxIterations.toString()}
+                    onValueChange={(value) => {
+                        SettingsManager.setReactMaxIterations(Number(value));
+                    }}
+                >
+                    <SelectTrigger className="w-16">
+                        <SelectValue placeholder="请选择" />
+                    </SelectTrigger>
+                    <SelectContent align="end" className="h-64">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(value => (
+                            <SelectItem key={value} value={value.toString()}>
+                                {value}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
         </div>
     );

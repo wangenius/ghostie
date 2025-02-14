@@ -10,6 +10,7 @@ import { githubLight } from '@uiw/codemirror-theme-github';
 import CodeMirror from '@uiw/react-codemirror';
 import { useEffect, useState } from "react";
 import { TbBook } from "react-icons/tb";
+import { PluginsStore } from "../settings/PluginsTab";
 
 // 添加新的 ParamInput 组件
 interface ParamInputProps {
@@ -179,10 +180,19 @@ export function PluginEdit() {
                 handleClose();
             } else if (plugin) {
                 // 如果是更新现有插件，使用 plugin_update
-                await cmd.invoke<PluginProps>("plugin_update", {
+                const result = await cmd.invoke<PluginProps>("plugin_update", {
                     id: plugin.id,
                     content: content
                 });
+                console.log(result);
+
+
+                if (result) {
+                    PluginsStore.set({
+                        [result.id]: result
+                    });
+                }
+
                 cmd.message("更新成功", "success");
             }
         } catch (error) {

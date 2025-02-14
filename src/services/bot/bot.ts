@@ -20,7 +20,16 @@ export class Bot {
     status: false,
   });
 
-  constructor(config: BotProps) {
+  constructor(config?: BotProps) {
+    if (!config) {
+      config = {
+        id: "",
+        name: "",
+        system: "",
+        model: "",
+        tools: [],
+      };
+    }
     this.name = config.name;
     this.system = config.system;
     const model = ModelManager.get(config.model);
