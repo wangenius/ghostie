@@ -33,7 +33,7 @@ export class ChatModel {
   /** API URL */
   private api_url: string;
   /** 消息历史 */
-  public historyMessage: HistoryMessage = new HistoryMessage();
+  public historyMessage: HistoryMessage = HistoryMessage.create();
   /** 工具 */
   private tools: ToolProps[] | undefined;
   /** 加载状态 */

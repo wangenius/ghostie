@@ -28,13 +28,10 @@
         "focus": true,
         "maximizable": false,
         "minimizable": false,
-        "acceptFirstMouse": true,
-        "titleBarStyle": "Overlay"
+        "acceptFirstMouse": true
       },
       {
         "title": "设置",
-        "width": 800,
-        "height": 600,
         "resizable": false,
         "fullscreen": false,
         "decorations": false,
@@ -53,7 +50,6 @@
         "title": "历史",
         "width": 800,
         "height": 600,
-        "resizable": false,
         "fullscreen": false,
         "decorations": false,
         "transparent": true,

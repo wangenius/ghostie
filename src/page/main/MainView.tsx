@@ -4,11 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Bot } from "@/services/bot/Bot";
 import { BotManager } from "@/services/bot/BotManger";
 import { ChatManager } from "@/services/model/ChatManager";
-import { HistoryMessage } from "@/services/model/HistoryMessage";
+import { ChatHistory } from "@/services/model/HistoryMessage";
 import { cmd } from "@utils/shell";
 import { useEffect, useRef } from "react";
 import { TbHistory, TbLoader2, TbSettings } from "react-icons/tb";
-import { HistoryPage } from "../HistoryPage";
+import { HistoryPage } from "../history/HistoryPage";
 import { BotItem } from "./components/BotItem";
 import { MessageItem } from "./components/MessageItem";
 
@@ -76,6 +76,14 @@ export function MainView() {
                 e.preventDefault();
                 inputRef.current?.focus();
             }
+            if (e.ctrlKey && e.key.toLowerCase() === "h") {
+                e.preventDefault();
+                HistoryPage.open();
+            }
+            if (e.ctrlKey && e.key.toLowerCase() === "o") {
+                e.preventDefault();
+                endChat();
+            }
 
             // 选择助手
             if (!isActive && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
@@ -116,7 +124,7 @@ export function MainView() {
                     }
                     {
                         isActive && currentBot && (
-                            <ChatBox currentBot={currentBot} />
+                            <ChatBox currentBot={currentBot} onEndChat={endChat} />
                         )
                     }
                 </div>
@@ -216,12 +224,18 @@ function BotList({ botList, selectedIndex, currentInput, onSelectBot, onStartCha
 
 interface ChatBoxProps {
     currentBot: Bot;
+    onEndChat: () => void;
 }
 
-function ChatBox({ currentBot }: ChatBoxProps) {
-    const list = HistoryMessage.ChatHistory.use();
+function ChatBox({ currentBot, onEndChat }: ChatBoxProps) {
+    const list = ChatHistory.use();
     const message = list[currentBot.model.historyMessage.id];
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    if (!message) {
+        onEndChat();
+        return null;
+    }
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -229,7 +243,7 @@ function ChatBox({ currentBot }: ChatBoxProps) {
 
     useEffect(() => {
         scrollToBottom();
-    }, [message]);
+    }, [list]);
 
     return (
         <div className="px-2 space-y-2 my-2">

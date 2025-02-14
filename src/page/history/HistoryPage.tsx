@@ -2,13 +2,14 @@ import { Message } from "@/common/types/model";
 import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { HistoryMessage } from "@/services/model/HistoryMessage";
+import { BotManager } from "@/services/bot/BotManger";
+import { ChatHistory, HistoryMessage } from "@/services/model/HistoryMessage";
 import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
 import { TbClock, TbMessageCircle, TbTrash } from "react-icons/tb";
 
 export const HistoryPage = () => {
-	const history = HistoryMessage.ChatHistory.use();
+	const history = ChatHistory.use();
 	const [current, setCurrent] = useState<string>("");
 	const [selectedHistory, setSelectedHistory] = useState<{
 		bot?: string;
@@ -26,8 +27,14 @@ export const HistoryPage = () => {
 	return <div className="flex flex-col h-full">
 		<Header title="历史记录" />
 		<div className="flex-1 overflow-hidden flex">
+
 			{/* 左侧历史列表 */}
 			<div className="h-full overflow-y-auto p-4 border-r min-w-[300px] max-w-[300px] space-y-2">
+				<Button variant="destructive" className="w-full" onClick={() => {
+					HistoryMessage.clearAll();
+				}}>
+					删除所有
+				</Button>
 				{Object.entries(history).map(([key, value]) => (
 					<div
 						key={key}
@@ -35,12 +42,12 @@ export const HistoryPage = () => {
 							setCurrent(key);
 						}}
 						className={cn(
-							"p-3 rounded-lg border cursor-pointer transition-colors group",
+							"p-2 rounded-lg border cursor-pointer transition-colors group",
 							"hover:bg-muted/50",
 							selectedHistory === value && "bg-muted/50 border-primary/50"
 						)}
 					>
-						<div className="flex items-center justify-between mb-2 text-xs font-mono">
+						<div className="flex items-center justify-between text-xs font-mono">
 							<div className="flex items-center gap-2 text-muted-foreground">
 								<TbClock className="h-4 w-4" />
 								<span className="text-xs">
@@ -59,13 +66,13 @@ export const HistoryPage = () => {
 								}}
 								variant="ghost"
 								size="icon"
-								className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+								className="h-5 w-5 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
 							>
 								<TbTrash className="h-4 w-4" />
 							</Button>
 						</div>
-						<h3 className="text-xs font-medium line-clamp-2 mb-1">
-							{value.system.content}
+						<h3 className="text-xs my-1 font-medium line-clamp-2 ">
+							{value.list[0]?.content}
 						</h3>
 						<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
 							<TbMessageCircle className="h-3.5 w-3.5" />
@@ -80,12 +87,15 @@ export const HistoryPage = () => {
 				{selectedHistory ? (
 					<div className="p-4">
 						<div className="flex items-center justify-between mb-4">
-							<h2 className="text-lg font-medium">{selectedHistory.bot}</h2>
+							<h2 className="text-lg font-medium">{BotManager.get(selectedHistory.bot || "")?.name}</h2>
 							<Button variant="outline">
 								继续当前对话
 							</Button>
 						</div>
 						<div className="space-y-4">
+							<div className="p-4 text-xs rounded-lg bg-primary/10">
+								{selectedHistory.system.content}
+							</div>
 							{selectedHistory.list.map((message, index) => (
 								<div
 									key={index}

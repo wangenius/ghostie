@@ -7,7 +7,7 @@ import { SettingsPage } from "./page/settings/Page";
 import { SettingsManager } from "./services/settings/SettingsManager";
 import { useEffect } from "react";
 import { EnvEdit } from "./page/edit/EnvEdit";
-import { HistoryPage } from "./page/HistoryPage";
+import { HistoryPage } from "./page/history/HistoryPage";
 
 /* 主应用,提供路由 */
 function App() {

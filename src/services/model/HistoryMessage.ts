@@ -9,83 +9,127 @@ import {
 } from "@common/types/model";
 import { Echo } from "echo-state";
 
-/** 消息历史记录类 */
-export class HistoryMessage {
+/** 聊天历史记录 */
+export interface ChatHistoryItem {
+  /** 聊天ID */
   id: string;
+  /** 助手名称 */
   bot?: string;
+  /** 系统提示词 */
   system: Message;
+  /** 聊天记录 */
+  list: Message[];
+}
+
+/** 全部聊天的历史记录存档
+ * @todo: 需要迁移到 indexedDB 中, 目前不支持过量数据存储
+ */
+export const ChatHistory = new Echo<Record<string, ChatHistoryItem>>(
+  {},
+  {
+    name: "history",
+    sync: true,
+  }
+);
+
+/** 消息历史记录类
+ * 负责管理单个聊天的历史记录
+ */
+export class HistoryMessage implements ChatHistoryItem {
+  /** 聊天ID */
+  id: string;
+  /** 助手名称 */
+  bot?: string;
+  /** 系统提示词 */
+  system: Message;
+  /** 聊天记录 */
   list: Message[];
 
-  constructor() {
-    this.id = gen.id();
-    this.system = {
-      role: "system",
-      content: "",
-      type: "system",
-      created_at: Date.now(),
-    };
-    this.list = [];
-    HistoryMessage.ChatHistory.set({
-      [this.id]: {
-        bot: this.bot,
-        system: this.system,
-        list: this.list,
-      },
-    });
-  }
-  /* 聊天历史 */
-  static ChatHistory = new Echo<
-    Record<
-      string,
-      {
-        bot?: string;
-        /* 系统提示词 */
-        system: Message;
-        /* 聊天记录 */
-        list: Message[];
-      }
-    >
-  >(
-    {},
+  /** 当前使用的消息历史记录 */
+  static current = new Echo<{ id: string; bot?: string }>(
     {
-      name: "chatHistory",
+      id: "",
+      bot: "",
+    },
+    {
+      name: "current:history",
       sync: true,
     }
   );
 
+  /** 创建一个消息历史记录，id会生成一个新的，即历史记录中会出现一个新的内容 */
+  private constructor(history: ChatHistoryItem) {
+    this.id = history.id;
+    this.system = history.system;
+    this.list = history.list;
+    this.bot = history.bot;
+  }
+
+  /** 创建一个消息历史记录
+   * @param system 系统提示词
+   * @param bot 助手名称
+   * @returns 消息历史记录
+   */
+  static create(system: string = "", bot?: string): HistoryMessage {
+    const history: ChatHistoryItem = {
+      id: gen.id(),
+      bot,
+      system: {
+        role: "system",
+        content: system,
+        type: "system",
+        created_at: Date.now(),
+      },
+      list: [],
+    };
+    ChatHistory.set({
+      [history.id]: history,
+    });
+    return new HistoryMessage(history);
+  }
+
+  /** 获取一个消息历史记录
+   * @param id 消息历史记录ID
+   * @returns 消息历史记录, 如果id不存在, 则创建一个默认的消息历史记录
+   */
+  static getHistory(id: string): HistoryMessage {
+    const history = ChatHistory.current[id];
+    if (!history) {
+      throw new Error("History not found");
+    }
+    return new HistoryMessage(history);
+  }
+
+  /** 设置助手名称 */
   setBot(bot: string): void {
     this.bot = bot;
-    HistoryMessage.ChatHistory.set({
-      [this.id]: {
-        bot: this.bot,
-        system: this.system,
-        list: this.list,
-      },
+    ChatHistory.set((prev) => {
+      const newState = { ...prev };
+      newState[this.id].bot = bot;
+      return newState;
     });
   }
 
+  /** 设置系统提示词 */
   setSystem(system: string): void {
     this.system = {
       ...this.system,
       content: system,
     };
-    HistoryMessage.ChatHistory.set({
-      [this.id]: {
-        bot: this.bot,
-        system: this.system,
-        list: this.list,
-      },
+    ChatHistory.set((prev) => {
+      const newState = { ...prev };
+      newState[this.id].system = this.system;
+      return newState;
     });
   }
 
+  /** 设置聊天记录 */
   setList(list: Message[]): void {
     this.list = list;
-    HistoryMessage.ChatHistory.set({
-      [this.id]: {
-        bot: this.bot,
-        system: this.system,
-        list: this.list,
-      },
+    ChatHistory.set((prev) => {
+      const newState = { ...prev };
+      newState[this.id].list = list;
+      return newState;
     });
   }
 
@@ -95,12 +139,10 @@ export class HistoryMessage {
    */
   push(message: Message[]): Message[] {
     this.list = [...this.list, ...message];
-    HistoryMessage.ChatHistory.set({
-      [this.id]: {
-        bot: this.bot,
-        system: this.system,
-        list: this.list,
-      },
+    ChatHistory.set((prev) => {
+      const newState = { ...prev };
+      newState[this.id].list = this.list;
+      return newState;
     });
     return [this.system, ...this.list];
   }
@@ -111,25 +153,18 @@ export class HistoryMessage {
    */
   updateLastMessage(msg: Partial<Message>): Message | undefined {
     const list = this.list;
-    const system = this.system;
     if (list.length === 0) return undefined;
-
     const lastMessage = list[list.length - 1];
     const updatedMessage = {
       ...lastMessage,
       ...msg,
-      // 确保type字段只在明确指定时才更新
-      type: msg.type || lastMessage.type,
     };
 
     this.list = [...list.slice(0, -1), updatedMessage];
-
-    HistoryMessage.ChatHistory.set({
-      [this.id]: {
-        bot: this.bot,
-        system,
-        list: this.list,
-      },
+    ChatHistory.set((prev) => {
+      const newState = { ...prev };
+      newState[this.id].list = this.list;
+      return newState;
     });
     return updatedMessage;
   }
@@ -159,13 +194,16 @@ export class HistoryMessage {
   /** 清空所有消息历史, 保留系统消息 */
   clear(): void {
     this.list = [];
-    HistoryMessage.ChatHistory.set({
-      [this.id]: {
-        bot: this.bot,
-        system: this.system,
-        list: [],
-      },
+    ChatHistory.set((prev) => {
+      const newState = { ...prev };
+      newState[this.id].list = [];
+      return newState;
     });
+  }
+
+  /** 清空所有消息历史, 包括系统消息 */
+  static clearAll(): void {
+    ChatHistory.set({}, true);
   }
 
   /** 移除最后一条消息 */
@@ -173,12 +211,10 @@ export class HistoryMessage {
     const list = this.list;
     if (list.length === 0) return;
     this.list = list.slice(0, -1);
-    HistoryMessage.ChatHistory.set({
-      [this.id]: {
-        bot: this.bot,
-        system: this.system,
-        list: list.slice(0, -1),
-      },
+    ChatHistory.set((prev) => {
+      const newState = { ...prev };
+      newState[this.id].list = this.list;
+      return newState;
     });
   }
 
@@ -196,12 +232,10 @@ export class HistoryMessage {
     const list = this.list;
     if (list.length === 0) return;
 
-    HistoryMessage.ChatHistory.set({
-      [this.id]: {
-        bot: this.bot,
-        system: this.system,
-        list: [...list.slice(0, -1), message],
-      },
+    ChatHistory.set((prev) => {
+      const newState = { ...prev };
+      newState[this.id].list = [...list.slice(0, -1), message];
+      return newState;
     });
   }
   /** 删除聊天历史
@@ -209,7 +243,11 @@ export class HistoryMessage {
    */
   static deleteHistory(id: string) {
     // 删除历史记录
-    HistoryMessage.ChatHistory.delete(id);
+    ChatHistory.set((prev) => {
+      const newState = { ...prev };
+      delete newState[id];
+      return newState;
+    }, true);
   }
   /** 更新助手消息的函数调用
    * @param functionCall 函数调用数据
