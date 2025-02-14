@@ -2,8 +2,9 @@ import { BotProps } from "@/common/types/bot";
 import { gen } from "@/utils/generator";
 import { Echo } from "echo-state";
 
-/** 助手管理器, 用于管理助手 */
+/** 机器人管理器, 用于管理机器人 */
 export class BotManager {
+  /* 所有的机器人在这里存储 */
   static store = new Echo<Record<string, BotProps>>(
     {},
     {
@@ -12,8 +13,10 @@ export class BotManager {
     }
   );
 
+  /* 使用机器人管理器的hook方法 */
   static use = BotManager.store.use.bind(BotManager.store);
 
+  /* 添加机器人 */
   static add(bot: Omit<BotProps, "id">) {
     const id = gen.id();
     BotManager.store.set({
@@ -24,10 +27,12 @@ export class BotManager {
     });
   }
 
+  /* 删除机器人 */
   static remove(id: string) {
     BotManager.store.delete(id);
   }
 
+  /* 更新机器人 */
   static update(bot: BotProps) {
     BotManager.store.set({
       [bot.id]: bot,

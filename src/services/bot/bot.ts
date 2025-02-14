@@ -5,33 +5,41 @@ import { Context } from "../agent/Context";
 import { ChatModel } from "../model/ChatModel";
 import { ModelManager } from "../model/ModelManager";
 import { ToolProps } from "@/common/types/plugin";
+import { SettingsManager } from "../settings/SettingsManager";
+
+/* 机器人配置 */
+const defaultConfig: BotProps = {
+  id: "",
+  name: "",
+  system: "",
+  model: "",
+  tools: [],
+};
 /*
  * 机器人
  */
 export class Bot {
+  /* 机器人名称 */
   name: string;
+  /* 机器人系统提示 */
   system: string;
+  /* 机器人模型 */
   model: ChatModel;
+  /* 机器人工具 */
   tools: string[];
+  /* 机器人上下文 */
   context: Context;
-
-  /** 加载状态 */
+  /* 加载状态 */
   loading = new Echo<{ status: boolean }>({
     status: false,
   });
-
-  constructor(config?: BotProps) {
-    if (!config) {
-      config = {
-        id: "",
-        name: "",
-        system: "",
-        model: "",
-        tools: [],
-      };
-    }
+  /* 机器人配置 */
+  constructor(config: BotProps = defaultConfig) {
+    /* 机器人名称 */
     this.name = config.name;
+    /* 机器人系统提示 */
     this.system = config.system;
+    /* 机器人模型 */
     const model = ModelManager.get(config.model);
 
     // 解析工具字符串，格式为 "[plugin_name]tool_name"
@@ -48,11 +56,15 @@ export class Bot {
       .filter((tool) => {
         return config.tools.includes(`${tool.name}`);
       });
-    this.model = new ChatModel(model).setTools(tools).system(config.system);
+    this.model = new ChatModel(model)
+      .setBot(config.id)
+      .setTools(tools)
+      .system(config.system);
     this.tools = config.tools || [];
     this.context = new Context();
   }
 
+  /* 机器人对话，使用ReAct循环 */
   public async chat(input: string) {
     try {
       /* 重置上下文 */
@@ -62,7 +74,7 @@ export class Bot {
       // ReAct循环
       let currentInput = input;
       let iterations = 0;
-      const MAX_ITERATIONS = 5; // 防止无限循环
+      let MAX_ITERATIONS = SettingsManager.getReactMaxIterations();
 
       while (iterations < MAX_ITERATIONS) {
         iterations++;
@@ -81,7 +93,6 @@ export class Bot {
 
         // 观察阶段：执行工具调用并获取结果
         // 工具调用的结果会自动被添加到对话历史中
-
         // 更新输入，让模型基于工具执行结果继续思考
         currentInput = `基于以上继续分析并决定是否需要进一步操作。如果已经获得足够信息，请生成最终回应。`;
       }

@@ -4,12 +4,14 @@ import { BotManager } from "@/services/bot/BotManger";
 import { ChatManager } from "@/services/model/ChatManager";
 import { cmd } from "@utils/shell";
 import { useEffect, useRef } from "react";
-import { TbLoader2, TbSettings } from "react-icons/tb";
+import { TbHistory, TbLoader2, TbSettings } from "react-icons/tb";
 import { BotItem } from "./components/BotItem";
 import { MessageItem } from "./components/MessageItem";
-import { Bot } from "@/services/bot/bot";
+import { Bot } from "@/services/bot/Bot";
 import { BotProps } from "@/common/types/bot";
+import { HistoryPage } from "../HistoryPage";
 
+/* 主界面 */
 export function MainView() {
     const {
         isActive,
@@ -159,6 +161,9 @@ function Header({
                         placeholder={isActive ? `与 ${currentBot?.name} 对话...` : "选择一个助手开始对话..."}
                     />
                 </div>
+                <Button onClick={HistoryPage.open} size="icon">
+                    <TbHistory className="h-4 w-4" />
+                </Button>
                 <Button
                     size="icon"
                     variant="ghost"
@@ -227,6 +232,22 @@ function ChatBox({ currentBot }: ChatBoxProps) {
                 <MessageItem key={index} message={message} />
             ))}
             <div ref={messagesEndRef} />
+        </div>
+    );
+}
+
+
+function ChatHistory() {
+    const history = ChatManager.ChatHistory.use();
+    return (
+        <div>
+            {
+                Object.entries(history).map(([key, value]) => (
+                    <div key={key}>
+                        <h1>{value.system.content}</h1>
+                    </div>
+                ))
+            }
         </div>
     );
 }

@@ -50,6 +50,24 @@
         "minimizable": false
       },
       {
+        "title": "历史",
+        "width": 800,
+        "height": 600,
+        "resizable": false,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": true,
+        "skipTaskbar": true,
+        "label": "history",
+        "parent": "main",
+        "center": true,
+        "url": "/history",
+        "visible": false,
+        "focus": true,
+        "maximizable": false,
+        "minimizable": false
+      },
+      {
         "title": "模型编辑",
         "resizable": false,
         "fullscreen": false,

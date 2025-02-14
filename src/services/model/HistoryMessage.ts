@@ -2,6 +2,7 @@
  * 负责管理所有的消息历史记录
  */
 
+import { gen } from "@/utils/generator";
 import {
   FunctionCallReply,
   Message,
@@ -9,24 +10,48 @@ import {
   MessagePrototype,
 } from "@common/types/model";
 import { Echo } from "echo-state";
+import { ChatManager } from "./ChatManager";
 
 /** 消息历史记录类 */
 export class HistoryMessage {
+  id: string;
+  bot?: string;
   /** 消息列表 */
   messages = new Echo<{
     system: Message;
     list: Message[];
-  }>({
-    system: {
-      role: "system",
-      content: "",
-      type: "system",
-      created_at: Date.now(),
+  }>(
+    {
+      system: {
+        role: "system",
+        content: "",
+        type: "system",
+        created_at: Date.now(),
+      },
+      list: [],
     },
-    list: [],
-  });
+    {
+      onChange: (value) => {
+        ChatManager.ChatHistory.set({
+          [this.id]: {
+            bot: this.bot,
+            system: value.system,
+            list: value.list,
+          },
+        });
+      },
+    }
+  );
 
   use = this.messages.use.bind(this.messages);
+
+  constructor() {
+    this.id = gen.id();
+  }
+
+  setBot(bot: string): void {
+    this.bot = bot;
+  }
 
   /** 添加消息, 返回所有消息
    * @param message 要添加的消息

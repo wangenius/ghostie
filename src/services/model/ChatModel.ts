@@ -53,6 +53,11 @@ export class ChatModel {
     this.abortControllers = new Map();
   }
 
+  setBot(bot: string): this {
+    this.historyMessage.setBot(bot);
+    return this;
+  }
+
   /** 添加工具
    * @param tools 工具
    * @returns 当前模型实例
