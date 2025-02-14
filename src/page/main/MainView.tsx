@@ -1,15 +1,16 @@
+import { BotProps } from "@/common/types/bot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Bot } from "@/services/bot/Bot";
 import { BotManager } from "@/services/bot/BotManger";
 import { ChatManager } from "@/services/model/ChatManager";
+import { HistoryMessage } from "@/services/model/HistoryMessage";
 import { cmd } from "@utils/shell";
 import { useEffect, useRef } from "react";
 import { TbHistory, TbLoader2, TbSettings } from "react-icons/tb";
+import { HistoryPage } from "../HistoryPage";
 import { BotItem } from "./components/BotItem";
 import { MessageItem } from "./components/MessageItem";
-import { Bot } from "@/services/bot/Bot";
-import { BotProps } from "@/common/types/bot";
-import { HistoryPage } from "../HistoryPage";
 
 /* 主界面 */
 export function MainView() {
@@ -104,7 +105,7 @@ export function MainView() {
             />
             <main className="flex-1 overflow-hidden">
                 <div className="h-full overflow-y-auto">
-                    {!isActive ? (
+                    {!isActive &&
                         <BotList
                             botList={botList}
                             selectedIndex={selectedBotIndex}
@@ -112,9 +113,12 @@ export function MainView() {
                             onSelectBot={selectBot}
                             onStartChat={startChat}
                         />
-                    ) : (
-                        <ChatBox currentBot={currentBot} />
-                    )}
+                    }
+                    {
+                        isActive && currentBot && (
+                            <ChatBox currentBot={currentBot} />
+                        )
+                    }
                 </div>
             </main>
         </div>
@@ -211,11 +215,12 @@ function BotList({ botList, selectedIndex, currentInput, onSelectBot, onStartCha
 }
 
 interface ChatBoxProps {
-    currentBot?: Bot;
+    currentBot: Bot;
 }
 
 function ChatBox({ currentBot }: ChatBoxProps) {
-    const { list } = currentBot?.model.useHistory() || { list: [] };
+    const list = HistoryMessage.ChatHistory.use();
+    const message = list[currentBot.model.historyMessage.id];
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -224,11 +229,11 @@ function ChatBox({ currentBot }: ChatBoxProps) {
 
     useEffect(() => {
         scrollToBottom();
-    }, [list]);
+    }, [message]);
 
     return (
         <div className="px-2 space-y-2 my-2">
-            {list.map((message, index) => (
+            {message.list.map((message, index) => (
                 <MessageItem key={index} message={message} />
             ))}
             <div ref={messagesEndRef} />
@@ -236,18 +241,3 @@ function ChatBox({ currentBot }: ChatBoxProps) {
     );
 }
 
-
-function ChatHistory() {
-    const history = ChatManager.ChatHistory.use();
-    return (
-        <div>
-            {
-                Object.entries(history).map(([key, value]) => (
-                    <div key={key}>
-                        <h1>{value.system.content}</h1>
-                    </div>
-                ))
-            }
-        </div>
-    );
-}

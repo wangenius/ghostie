@@ -1,5 +1,4 @@
 import { BotProps } from "@/common/types/bot";
-import { Message } from "@/common/types/model";
 import { Bot } from "@/services/bot/Bot";
 import { Echo } from "echo-state";
 
@@ -18,26 +17,6 @@ interface ChatState {
 
 /* 聊天管理器 */
 export class ChatManager {
-  /* 聊天历史 */
-  static ChatHistory = new Echo<
-    Record<
-      string,
-      {
-        bot?: string;
-        /* 系统提示词 */
-        system: Message;
-        /* 聊天记录 */
-        list: Message[];
-      }
-    >
-  >(
-    {},
-    {
-      name: "chatHistory",
-      sync: true,
-    }
-  );
-
   private static state = new Echo<ChatState>({
     isActive: false,
     currentInput: "",

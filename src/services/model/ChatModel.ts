@@ -67,19 +67,12 @@ export class ChatModel {
     return this;
   }
 
-  /**
-   * hook消息历史
-   */
-  public useHistory = this.historyMessage.use.bind(
-    this.historyMessage.messages
-  );
-
   /** 设置系统提示词
    * @param prompt 系统提示词
    * @returns 当前模型实例
    */
   public system(prompt: string): this {
-    this.historyMessage.system(prompt);
+    this.historyMessage.setSystem(prompt);
     return this;
   }
 
@@ -435,10 +428,12 @@ export class ChatModel {
 
             if (delta?.content) {
               content += delta.content;
-              this.historyMessage.updateAssistantContent(
+              // 只在有实际内容时更新type
+              this.historyMessage.updateLastMessage({
                 content,
-                config.assistant
-              );
+                type:
+                  content.length > 0 ? config.assistant : "assistant:loading",
+              });
             }
 
             if (delta?.function_call) {
@@ -452,7 +447,12 @@ export class ChatModel {
               if (delta.function_call.arguments) {
                 functionCallData.arguments += delta.function_call.arguments;
               }
-              this.historyMessage.updateAssistantFunctionCall(functionCallData);
+              // 只在function_call完整时更新type
+              if (functionCallData.name && functionCallData.arguments) {
+                this.historyMessage.updateAssistantFunctionCall(
+                  functionCallData
+                );
+              }
             }
           }
         }

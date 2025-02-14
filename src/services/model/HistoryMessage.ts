@@ -1,56 +1,92 @@
 /** 消息管理类
  * 负责管理所有的消息历史记录
  */
-
 import { gen } from "@/utils/generator";
 import {
   FunctionCallReply,
   Message,
-  MessageType,
   MessagePrototype,
 } from "@common/types/model";
 import { Echo } from "echo-state";
-import { ChatManager } from "./ChatManager";
 
 /** 消息历史记录类 */
 export class HistoryMessage {
   id: string;
   bot?: string;
-  /** 消息列表 */
-  messages = new Echo<{
-    system: Message;
-    list: Message[];
-  }>(
-    {
-      system: {
-        role: "system",
-        content: "",
-        type: "system",
-        created_at: Date.now(),
-      },
-      list: [],
-    },
-    {
-      onChange: (value) => {
-        ChatManager.ChatHistory.set({
-          [this.id]: {
-            bot: this.bot,
-            system: value.system,
-            list: value.list,
-          },
-        });
-      },
-    }
-  );
-
-  use = this.messages.use.bind(this.messages);
+  system: Message;
+  list: Message[];
 
   constructor() {
     this.id = gen.id();
+    this.system = {
+      role: "system",
+      content: "",
+      type: "system",
+      created_at: Date.now(),
+    };
+    this.list = [];
+    HistoryMessage.ChatHistory.set({
+      [this.id]: {
+        bot: this.bot,
+        system: this.system,
+        list: this.list,
+      },
+    });
   }
+  /* 聊天历史 */
+  static ChatHistory = new Echo<
+    Record<
+      string,
+      {
+        bot?: string;
+        /* 系统提示词 */
+        system: Message;
+        /* 聊天记录 */
+        list: Message[];
+      }
+    >
+  >(
+    {},
+    {
+      name: "chatHistory",
+      sync: true,
+    }
+  );
 
   setBot(bot: string): void {
     this.bot = bot;
+    HistoryMessage.ChatHistory.set({
+      [this.id]: {
+        bot: this.bot,
+        system: this.system,
+        list: this.list,
+      },
+    });
+  }
+
+  setSystem(system: string): void {
+    this.system = {
+      ...this.system,
+      content: system,
+    };
+    HistoryMessage.ChatHistory.set({
+      [this.id]: {
+        bot: this.bot,
+        system: this.system,
+        list: this.list,
+      },
+    });
+  }
+
+  setList(list: Message[]): void {
+    this.list = list;
+    HistoryMessage.ChatHistory.set({
+      [this.id]: {
+        bot: this.bot,
+        system: this.system,
+        list: this.list,
+      },
+    });
   }
 
   /** 添加消息, 返回所有消息
@@ -58,128 +94,91 @@ export class HistoryMessage {
    * @returns 所有消息, 包括系统消息
    */
   push(message: Message[]): Message[] {
-    const result = [...this.messages.current.list, ...message];
-    this.messages.set({
-      system: this.messages.current.system,
-      list: result,
+    this.list = [...this.list, ...message];
+    HistoryMessage.ChatHistory.set({
+      [this.id]: {
+        bot: this.bot,
+        system: this.system,
+        list: this.list,
+      },
     });
-    return [this.messages.current.system, ...result];
-  }
-
-  /** 创建一个新的助手消息并返回
-   * @returns 新创建的助手消息
-   */
-  createAssistantMessage(type: MessageType = "assistant:reply"): Message {
-    const assistantMessage: Message = {
-      role: "assistant",
-      content: "",
-      type,
-      created_at: Date.now(),
-    };
-    this.push([assistantMessage]);
-    return assistantMessage;
-  }
-
-  /** 创建一个加载中的助手消息并返回
-   * @returns 新创建的加载中的助手消息
-   */
-  createLoadingMessage(): Message {
-    const loadingMessage: Message = {
-      role: "assistant",
-      content: "",
-      type: "assistant:loading",
-      created_at: Date.now(),
-    };
-    this.push([loadingMessage]);
-    return loadingMessage;
-  }
-
-  /** 将加载中的助手消息转换为助手消息
-   * @param type 要转换的消息类型
-   */
-  loadingToOther(message: Message): void {
-    this.updateLastMessage((msg) => {
-      msg = message;
-      return msg;
-    });
+    return [this.system, ...this.list];
   }
 
   /** 更新最后一条消息
    * @param updater 更新函数，接收最后一条消息并返回更新后的消息
    * @returns 更新后的消息，如果没有消息则返回undefined
    */
-  updateLastMessage(updater: (message: Message) => void): Message | undefined {
-    const list = this.messages.current.list;
+  updateLastMessage(msg: Partial<Message>): Message | undefined {
+    const list = this.list;
+    const system = this.system;
     if (list.length === 0) return undefined;
 
     const lastMessage = list[list.length - 1];
-    updater(lastMessage);
+    const updatedMessage = {
+      ...lastMessage,
+      ...msg,
+      // 确保type字段只在明确指定时才更新
+      type: msg.type || lastMessage.type,
+    };
 
-    this.messages.set({
-      system: this.messages.current.system,
-      list: [...list.slice(0, -1), lastMessage],
+    this.list = [...list.slice(0, -1), updatedMessage];
+
+    HistoryMessage.ChatHistory.set({
+      [this.id]: {
+        bot: this.bot,
+        system,
+        list: this.list,
+      },
     });
-
-    return lastMessage;
+    return updatedMessage;
   }
 
   /** 获取最后一条消息
    * @returns 最后一条消息，如果没有消息则返回undefined
    */
   getLastMessage(): Message | undefined {
-    const list = this.messages.current.list;
-    return list.length > 0 ? list[list.length - 1] : undefined;
-  }
-
-  system(content: string): void {
-    this.messages.set({
-      system: {
-        role: "system",
-        content,
-        type: "system",
-        created_at: Date.now(),
-      },
-      list: this.messages.current.list,
-    });
-  }
-
-  /** 获取所有消息（包括系统消息）
-   * @returns 所有消息的数组
-   */
-  list(): Message[] {
-    return [this.messages.current.system, ...this.messages.current.list];
+    return this.list.length > 0 ? this.list[this.list.length - 1] : undefined;
   }
 
   /** 获取所有消息（不包括系统消息）
    * @returns 所有消息的数组
    */
   listWithOutType(): MessagePrototype[] {
-    return [this.messages.current.system, ...this.messages.current.list].map(
-      (msg) => {
-        const result: Record<string, any> = {
-          role: msg.role,
-          content: msg.content,
-        };
-        if (msg.name) result.name = msg.name;
-        if (msg.function_call) result.function_call = msg.function_call;
-        return result as MessagePrototype;
-      }
-    );
+    return [this.system, ...this.list].map((msg) => {
+      const result: Record<string, any> = {
+        role: msg.role,
+        content: msg.content,
+      };
+      if (msg.name) result.name = msg.name;
+      if (msg.function_call) result.function_call = msg.function_call;
+      return result as MessagePrototype;
+    });
   }
 
   /** 清空所有消息历史, 保留系统消息 */
   clear(): void {
-    this.messages.set({
-      system: this.messages.current.system,
-      list: [],
+    this.list = [];
+    HistoryMessage.ChatHistory.set({
+      [this.id]: {
+        bot: this.bot,
+        system: this.system,
+        list: [],
+      },
     });
   }
 
   /** 移除最后一条消息 */
   removeLast(): void {
-    this.messages.set({
-      system: this.messages.current.system,
-      list: this.messages.current.list.slice(0, -1),
+    const list = this.list;
+    if (list.length === 0) return;
+    this.list = list.slice(0, -1);
+    HistoryMessage.ChatHistory.set({
+      [this.id]: {
+        bot: this.bot,
+        system: this.system,
+        list: list.slice(0, -1),
+      },
     });
   }
 
@@ -187,47 +186,38 @@ export class HistoryMessage {
    * @returns 消息数量
    */
   count(): number {
-    return this.messages.current.list.length;
+    return this.list.length;
   }
 
   /** 替换最后一条消息
    * @param message 新的消息
    */
   replaceLastMessage(message: Message): void {
-    const list = this.messages.current.list;
+    const list = this.list;
     if (list.length === 0) return;
 
-    this.messages.set({
-      system: this.messages.current.system,
-      list: [...list.slice(0, -1), message],
+    HistoryMessage.ChatHistory.set({
+      [this.id]: {
+        bot: this.bot,
+        system: this.system,
+        list: [...list.slice(0, -1), message],
+      },
     });
   }
-
-  /** 更新助手消息的内容
-   * @param content 新的内容
-   * @param type 消息类型
+  /** 删除聊天历史
+   * @param id 要删除的聊天历史ID
    */
-  updateAssistantContent(
-    content: string,
-    type: MessageType = "assistant:reply"
-  ): void {
-    this.updateLastMessage((msg) => {
-      if (msg.role === "assistant") {
-        msg.content = content;
-        msg.type = type;
-      }
-    });
+  static deleteHistory(id: string) {
+    // 删除历史记录
+    HistoryMessage.ChatHistory.delete(id);
   }
-
   /** 更新助手消息的函数调用
    * @param functionCall 函数调用数据
    */
   updateAssistantFunctionCall(functionCall: FunctionCallReply): void {
-    this.updateLastMessage((msg) => {
-      if (msg.role === "assistant") {
-        msg.function_call = functionCall;
-        msg.type = "assistant:tool";
-      }
+    this.updateLastMessage({
+      function_call: functionCall,
+      type: "assistant:tool",
     });
   }
 }

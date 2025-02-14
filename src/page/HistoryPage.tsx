@@ -1,14 +1,14 @@
 import { Message } from "@/common/types/model";
 import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
-import { ChatManager } from "@/services/model/ChatManager";
+import { cn } from "@/lib/utils";
+import { HistoryMessage } from "@/services/model/HistoryMessage";
 import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
 import { TbClock, TbMessageCircle, TbTrash } from "react-icons/tb";
-import { cn } from "@/lib/utils";
 
 export const HistoryPage = () => {
-	const history = ChatManager.ChatHistory.use();
+	const history = HistoryMessage.ChatHistory.use();
 	const [current, setCurrent] = useState<string>("");
 	const [selectedHistory, setSelectedHistory] = useState<{
 		bot?: string;
@@ -55,7 +55,7 @@ export const HistoryPage = () => {
 							<Button
 								onClick={(e) => {
 									e.stopPropagation();
-									ChatManager.ChatHistory.delete(key);
+									HistoryMessage.deleteHistory(key);
 								}}
 								variant="ghost"
 								size="icon"
