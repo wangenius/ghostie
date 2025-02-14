@@ -1,7 +1,9 @@
 /** Chat模型
  * 该模型依赖于工具模块。
  */
+import { FunctionCallProps, ToolProps } from "@/common/types/plugin";
 import { gen } from "@/utils/generator";
+import { cmd } from "@/utils/shell";
 import { ModelInfo } from "@common/types/agent";
 import {
   ChatModelRequestBody,
@@ -13,9 +15,6 @@ import {
 } from "@common/types/model";
 import { Echo } from "echo-state";
 import { HistoryMessage } from "./HistoryMessage";
-import { ModelManager } from "./ModelManager";
-import { cmd } from "@/utils/shell";
-import { FunctionCallProps, ToolProps } from "@/common/types/plugin";
 
 interface RequestConfig {
   user: MessageType;

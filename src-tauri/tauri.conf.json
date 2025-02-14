@@ -27,7 +27,9 @@
         "visible": false,
         "focus": true,
         "maximizable": false,
-        "minimizable": false
+        "minimizable": false,
+        "acceptFirstMouse": true,
+        "titleBarStyle": "Overlay"
       },
       {
         "title": "设置",

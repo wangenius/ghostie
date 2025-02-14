@@ -10,11 +10,11 @@ import { PiDotsThreeBold } from "react-icons/pi";
 export function BotsTab() {
     const bots = BotManager.use();
 
-    const handleDeleteBot = async (name: string) => {
-        const answer = await cmd.confirm(`确定要删除助手 "${name}" 吗？`);
+    const handleDeleteBot = async (id: string) => {
+        const answer = await cmd.confirm(`确定要删除助手 "${bots[id].name}" 吗？`);
         if (answer) {
             try {
-                BotManager.remove(name);
+                BotManager.remove(id);
             } catch (error) {
                 console.error("删除助手失败:", error);
             }
@@ -107,12 +107,12 @@ export function BotsTab() {
 
             <div className="flex-1 min-h-0 overflow-y-auto">
                 <div className="grid grid-cols-1 gap-3">
-                    {Object.entries(bots).map(([name, bot]) => (
+                    {Object.entries(bots).map(([id, bot]) => (
                         <BotItem
-                            key={name}
-                            name={name}
+                            key={id}
+                            id={id}
                             bot={bot}
-                            onEdit={() => BotEdit.open(name)}
+                            onEdit={() => BotEdit.open(id)}
                             onDelete={handleDeleteBot}
                         />
                     ))}

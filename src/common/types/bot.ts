@@ -5,6 +5,8 @@
  * @param plugins 插件
  */
 export interface BotProps {
+  /* 助手id */
+  id: string;
   /* 名称 */
   name: string;
   /* 系统提示 */

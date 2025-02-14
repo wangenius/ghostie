@@ -1,7 +1,7 @@
 import { Message } from "@/common/types/model";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { TbClock, TbCopy, TbLoader, TbTools } from "react-icons/tb";
+import { TbCopy, TbLoader, TbTools } from "react-icons/tb";
 import ReactMarkdown, { Components } from "react-markdown";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";

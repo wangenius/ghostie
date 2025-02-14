@@ -11,6 +11,7 @@ import { useQuery } from "@hook/useQuery";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const defaultBot: BotProps = {
+    id: "",
     name: "",
     system: "",
     model: "",
@@ -19,13 +20,12 @@ const defaultBot: BotProps = {
 
 export function BotEdit() {
     const [bot, setBot] = useState<BotProps>(defaultBot);
-    const [originalName, setOriginalName] = useState<string>("");
     const [create, setCreate] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const [loading, setLoading] = useState(true);
 
-    const query = useQuery("name");
-    console.log(query);
+    const query = useQuery("id");
     const models = ModelManager.use();
 
     const [plugins, setPlugins] = useState<Record<string, PluginProps>>({});
@@ -33,9 +33,11 @@ export function BotEdit() {
     const loadPlugins = useCallback(async () => {
         const tools = await cmd.invoke<Record<string, PluginProps>>("plugins_list");
         setPlugins(tools);
+        setLoading(false);
     }, []);
 
     useEffect(() => {
+        setLoading(true);
         loadPlugins();
     }, [loadPlugins]);
 
@@ -45,16 +47,13 @@ export function BotEdit() {
             const botData = BotManager.store.current[query];
             if (botData) {
                 setCreate(false);
-                setOriginalName(query);
                 setBot(botData);
             } else {
                 setCreate(true);
-                setOriginalName("");
                 setBot(defaultBot);
             }
         } else {
             setCreate(true);
-            setOriginalName("");
             setBot(defaultBot);
         }
     }, [query]);
@@ -63,7 +62,7 @@ export function BotEdit() {
         cmd.close();
         setBot(defaultBot);
         setCreate(true);
-        setOriginalName("");
+        setLoading(true);
     };
 
 
@@ -75,7 +74,7 @@ export function BotEdit() {
             if (create) {
                 BotManager.add(bot);
             } else {
-                BotManager.update(originalName, bot);
+                BotManager.update(bot);
             }
             await handleClose();
         } catch (error) {
@@ -84,6 +83,17 @@ export function BotEdit() {
             setIsSubmitting(false);
         }
     };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col h-screen bg-background">
+                <Header title="添加助手" close={handleClose} />
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-screen bg-background">
@@ -160,7 +170,7 @@ export function BotEdit() {
                 </button>
                 <button
                     onClick={handleSubmit}
-                    disabled={!bot.name || !bot.system || !bot.model || isSubmitting}
+                    disabled={!bot.name || !bot.system || isSubmitting}
                     className="px-3 h-8 text-xs text-primary-foreground bg-primary rounded hover:opacity-90 disabled:opacity-50 transition-colors"
                 >
                     {isSubmitting ? (create ? "添加中..." : "更新中...") : create ? "添加" : "更新"}
@@ -171,6 +181,6 @@ export function BotEdit() {
 }
 
 
-BotEdit.open = (name?: string) => {
-    cmd.open("bot-edit", { name }, { width: 400, height: 600 });
+BotEdit.open = (id: string = "new") => {
+    cmd.open("bot-edit", { id }, { width: 400, height: 600 });
 };

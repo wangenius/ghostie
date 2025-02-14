@@ -19,7 +19,7 @@ export function MainView() {
 
     const startChat = (bot: typeof botList[0], initialMessage?: string) => {
         setIsChat(true);
-        BotManager.setCurrent(bot);
+        BotManager.setCurrent(bot.id);
         if (initialMessage) {
             setLoading(true);
             BotManager.current.chat(initialMessage).finally(() => {
@@ -44,12 +44,7 @@ export function MainView() {
 
         if (e.key === "Backspace" && inputValue.length === 0 && isChat) {
             setIsChat(false);
-            BotManager.setCurrent({
-                name: "",
-                system: "",
-                model: "",
-                tools: []
-            });
+            BotManager.setCurrent();
         }
 
         if (e.key === "Enter" && !e.shiftKey) {
@@ -112,12 +107,7 @@ export function MainView() {
                     <img src="/icon.gif" onClick={() => {
                         if (isChat) {
                             setIsChat(false);
-                            BotManager.setCurrent({
-                                name: "",
-                                system: "",
-                                model: "",
-                                tools: []
-                            });
+                            BotManager.setCurrent();
                         } else {
                             cmd.open("settings", {}, { width: 800, height: 600 });
                         }

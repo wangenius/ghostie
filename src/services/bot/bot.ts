@@ -39,9 +39,6 @@ export class Bot {
       .filter((tool) => {
         return config.tools.includes(`${tool.name}`);
       });
-
-    console.log(tools);
-
     this.model = new ChatModel(model).setTools(tools).system(config.system);
     this.tools = config.tools || [];
     this.context = new Context();

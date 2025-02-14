@@ -23,10 +23,12 @@ export function ModelEdit() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const query = useQuery("id");
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         inputRef.current?.focus();
-        if (query) {
+        setLoading(true);
+        if (query !== "new" && query !== null) {
             const modelData = ModelManager.store.current[query];
             if (modelData) {
                 setCreate(false);
@@ -39,6 +41,7 @@ export function ModelEdit() {
             setCreate(true);
             setModel(defaultModel);
         }
+        setLoading(false);
     }, [query]);
 
 
@@ -46,6 +49,7 @@ export function ModelEdit() {
         cmd.close();
         setModel(defaultModel);
         setCreate(true);
+        setLoading(true);
     };
 
     const handleSubmit = async () => {
@@ -67,10 +71,20 @@ export function ModelEdit() {
         }
     };
 
+    if (loading) {
+        return (
+            <div className="flex flex-col h-screen bg-background">
+                <Header title={create ? "添加模型" : "编辑模型"} close={handleClose} />
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col h-screen bg-background">
             <Header title={create ? "添加模型" : "编辑模型"} close={handleClose} />
-
             <div className="flex-1 overflow-auto p-4">
                 <div className="space-y-4">
                     <div className="space-y-1.5">
@@ -145,7 +159,7 @@ export function ModelEdit() {
     );
 }
 
-ModelEdit.open = (id?: string) => {
+ModelEdit.open = (id: string = "new") => {
     cmd.open("model-edit", { id }, { width: 400, height: 600 });
 };
 

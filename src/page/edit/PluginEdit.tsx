@@ -8,7 +8,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { useQuery } from "@hook/useQuery";
 import { githubLight } from '@uiw/codemirror-theme-github';
 import CodeMirror from '@uiw/react-codemirror';
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { TbBook } from "react-icons/tb";
 
 // 添加新的 ParamInput 组件
@@ -92,11 +92,12 @@ function ParamInput({ property, name, value, onChange, path = [] }: ParamInputPr
     }
 }
 
+
 export function PluginEdit() {
+    /* 是否加载中 */
+    const [loading, setLoading] = useState(true);
     /* 是否提交中 */
     const [isSubmitting, setIsSubmitting] = useState(false);
-    /* 输入框 */
-    const inputRef = useRef<HTMLInputElement>(null);
     /* 是否创建 */
     const [create, setCreate] = useState(true);
     /* 测试参数 */
@@ -110,21 +111,49 @@ export function PluginEdit() {
     /* 脚本内容 */
     const [content, setContent] = useState('');
 
+
     useEffect(() => {
-        inputRef.current?.focus();
-        if (query) {
-            setCreate(false);
-            cmd.invoke<{ info: PluginProps, content: string }>("plugin_get", { id: query }).then(plugin => {
-                if (plugin) {
-                    setPlugin(plugin.info);
-                    setContent(plugin.content);
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                handleClose();
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
+
+    useEffect(() => {
+        setLoading(true);
+        const init = async () => {
+            try {
+                if (query !== "new") {
+                    setCreate(false);
+                    const plugin = await cmd.invoke<{ info: PluginProps, content: string }>("plugin_get", { id: query });
+                    if (plugin) {
+                        setPlugin(plugin.info);
+                        setContent(plugin.content);
+                    } else {
+                        setCreate(true);
+                        setPlugin(undefined);
+                        setContent("");
+                    }
                 } else {
                     setCreate(true);
+                    setPlugin(undefined);
+                    setContent("");
+                    setTestArgs({});
+                    setTestTool("");
                 }
-            });
-        } else {
-            setCreate(true);
-        }
+            } catch (error) {
+                console.error('加载插件失败:', error);
+                handleClose();
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        init();
     }, [query]);
 
     const handleClose = async () => {
@@ -132,6 +161,7 @@ export function PluginEdit() {
         setContent('');
         setCreate(true);
         cmd.close();
+        setLoading(true);
     };
 
     const handleUpdate = async (e: React.FormEvent) => {
@@ -181,6 +211,17 @@ export function PluginEdit() {
             setIsSubmitting(false);
         }
     };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col h-screen bg-background">
+                <Header title={create ? "添加插件" : "编辑插件"} close={handleClose} />
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-screen bg-background">
@@ -305,6 +346,6 @@ export function PluginEdit() {
  * 打开插件编辑页面
  * @param id 插件id
  */
-PluginEdit.open = (id?: string) => {
+PluginEdit.open = (id: string = "new") => {
     cmd.open("plugin-edit", { id }, { width: 1200, height: 800 });
 };

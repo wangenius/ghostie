@@ -1,9 +1,8 @@
+use super::utils::get_config_dir;
 use open;
 use std::collections::HashMap;
 use tauri::{LogicalSize, Manager, Size, WindowEvent};
 use urlencoding;
-
-use super::utils::get_config_dir;
 
 #[tauri::command]
 pub async fn open_window(
