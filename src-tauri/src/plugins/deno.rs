@@ -1,14 +1,67 @@
-use rand::{thread_rng, Rng};
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
+use thiserror::Error;
+use tokio::sync::Mutex;
 use toml;
 
+use crate::utils::gen::generate_id;
 use crate::utils::utils::get_config_dir;
+
+// 定义错误类型
+#[derive(Error, Debug, Serialize)]
+pub enum PluginError {
+    #[error("IO错误: {0}")]
+    Io(String),
+    #[error("JSON错误: {0}")]
+    Json(String),
+    #[error("TOML错误: {0}")]
+    Toml(String),
+    #[error("插件错误: {0}")]
+    Plugin(String),
+}
+
+impl From<std::io::Error> for PluginError {
+    fn from(err: std::io::Error) -> Self {
+        PluginError::Io(err.to_string())
+    }
+}
+
+impl From<serde_json::Error> for PluginError {
+    fn from(err: serde_json::Error) -> Self {
+        PluginError::Json(err.to_string())
+    }
+}
+
+impl From<toml::ser::Error> for PluginError {
+    fn from(err: toml::ser::Error) -> Self {
+        PluginError::Toml(err.to_string())
+    }
+}
+
+impl From<toml::de::Error> for PluginError {
+    fn from(err: toml::de::Error) -> Self {
+        PluginError::Toml(err.to_string())
+    }
+}
+
+impl From<String> for PluginError {
+    fn from(err: String) -> Self {
+        PluginError::Plugin(err)
+    }
+}
+
+impl<'a> From<&'a str> for PluginError {
+    fn from(err: &'a str) -> Self {
+        PluginError::Plugin(err.to_string())
+    }
+}
+
+type Result<T> = std::result::Result<T, PluginError>;
 
 // 插件信息结构
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -41,34 +94,87 @@ pub struct EnvVar {
     pub value: String,
 }
 
-// 获取插件目录
-fn get_plugins_dir() -> PathBuf {
+// 使用 Lazy 静态变量缓存插件目录和 Deno 运行时配置
+static PLUGINS_DIR: Lazy<PathBuf> = Lazy::new(|| {
     let mut config_dir = get_config_dir().expect("无法获取配置目录");
     config_dir.push("plugins");
     fs::create_dir_all(&config_dir).expect("无法创建插件目录");
     config_dir
+});
+
+static DENO_RUNTIME: Lazy<DenoRuntime> =
+    Lazy::new(|| DenoRuntime::new().expect("无法初始化 Deno 运行时"));
+
+// 缓存插件列表
+static PLUGIN_CACHE: Lazy<Mutex<Option<HashMap<String, Plugin>>>> = Lazy::new(|| Mutex::new(None));
+
+// Deno 运行时封装
+struct DenoRuntime {
+    is_installed: bool,
+    base_args: Vec<String>,
 }
 
-// 检查 deno 是否已安装
-fn check_deno_installed() -> bool {
-    Command::new("deno").arg("--version").output().is_ok()
+// 运行时实现
+impl DenoRuntime {
+    // 运行时初始化
+    fn new() -> std::io::Result<Self> {
+        let is_installed = Command::new("deno").arg("--version").output().is_ok();
+        Ok(Self {
+            is_installed,
+            base_args: vec![
+                "run".to_string(),
+                "--no-check".to_string(),
+                "--allow-read".to_string(),
+                "--allow-write".to_string(),
+                "--allow-net".to_string(),
+                "--allow-env".to_string(),
+                "--allow-run".to_string(),
+            ],
+        })
+    }
+
+    // 执行插件
+    async fn execute(&self, script: &str, env_vars: &[EnvVar]) -> std::io::Result<String> {
+        if !self.is_installed {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Deno 未安装，请先安装 Deno: https://deno.land/#installation",
+            ));
+        }
+
+        // 临时文件
+        let temp_file = PLUGINS_DIR.join("temp.ts");
+        fs::write(&temp_file, script)?;
+        // cmd
+        let mut cmd = Command::new("deno");
+        cmd.args(&self.base_args).arg(&temp_file);
+
+        for var in env_vars {
+            cmd.env(&var.key, &var.value);
+        }
+
+        let output = cmd.output()?;
+        fs::remove_file(temp_file)?;
+
+        if output.status.success() {
+            Ok(String::from_utf8_lossy(&output.stdout).to_string())
+        } else {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                String::from_utf8_lossy(&output.stderr).to_string(),
+            ))
+        }
+    }
 }
 
-// 在 execute_deno_script 函数之前添加
-fn get_env_file_path() -> PathBuf {
-    let mut plugins_dir = get_plugins_dir();
-    plugins_dir.push(".env");
-    plugins_dir
-}
-
-fn load_env_vars() -> Result<Vec<EnvVar>, String> {
-    let path = get_env_file_path();
+async fn load_env_vars() -> Result<Vec<EnvVar>> {
+    let path = PLUGINS_DIR.join(".env");
     if !path.exists() {
         return Ok(Vec::new());
     }
 
-    let content = fs::read_to_string(path).map_err(|e| format!("读取环境变量失败: {}", e))?;
-    let vars: Vec<EnvVar> = content
+    let content = fs::read_to_string(path)?;
+    Ok(content
         .lines()
         .filter(|line| !line.trim().is_empty() && !line.starts_with('#'))
         .filter_map(|line| {
@@ -82,356 +188,196 @@ fn load_env_vars() -> Result<Vec<EnvVar>, String> {
                 None
             }
         })
-        .collect();
-
-    Ok(vars)
+        .collect())
 }
 
-// 修改 execute_deno_script 函数，添加环境变量支持
-async fn execute_deno_script(script: &str, args: Option<&str>) -> Result<String, String> {
-    if !check_deno_installed() {
-        return Err("Deno 未安装，请先安装 Deno: https://deno.land/#installation".to_string());
+async fn load_plugin_list() -> Result<HashMap<String, Plugin>> {
+    let mut cache = PLUGIN_CACHE.lock().await;
+    if let Some(ref cached) = *cache {
+        return Ok(cached.clone());
     }
 
-    let mut temp_file = get_plugins_dir();
-    temp_file.push("temp.ts");
-    fs::write(&temp_file, script).map_err(|e| e.to_string())?;
-
-    // 加载环境变量
-    let env_vars = load_env_vars()?;
-
-    let mut cmd = Command::new("deno");
-    cmd.arg("run")
-        .arg("--no-check")
-        .arg("--allow-read")
-        .arg("--allow-write")
-        .arg("--allow-net")
-        .arg("--allow-env")
-        .arg("--allow-run")
-        .arg(&temp_file);
-
-    // 添加环境变量到命令
-    for var in env_vars {
-        cmd.env(var.key, var.value);
-    }
-
-    if let Some(args) = args {
-        cmd.arg(args);
-    }
-
-    let output = cmd.output().map_err(|e| e.to_string())?;
-    fs::remove_file(temp_file).map_err(|e| e.to_string())?;
-
-    if output.status.success() {
-        String::from_utf8(output.stdout).map_err(|e| e.to_string())
-    } else {
-        Err(String::from_utf8_lossy(&output.stderr).to_string())
-    }
-}
-
-// 添加生成ID的函数
-fn generate_id() -> String {
-    const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_millis();
-
-    let mut rng = thread_rng();
-    let mut id = String::with_capacity(16);
-
-    // 生成基于时间戳的前8位
-    for i in 0..8 {
-        let time_byte = ((timestamp >> (i * 4)) ^ (timestamp >> (i * 2))) & 0x3f;
-        let idx = time_byte as usize % CHARS.len();
-        id.push(CHARS[idx] as char);
-    }
-
-    // 生成随机的后8位
-    for _ in 0..8 {
-        let idx = rng.gen::<usize>() % CHARS.len();
-        id.push(CHARS[idx] as char);
-    }
-
-    id
-}
-
-// 添加新的函数来处理插件列表文件
-fn get_plugin_list_path() -> PathBuf {
-    let mut plugins_dir = get_plugins_dir();
-    plugins_dir.push("list.toml");
-    plugins_dir
-}
-
-fn load_plugin_list() -> Result<HashMap<String, Plugin>, String> {
-    let path = get_plugin_list_path();
+    let path = PLUGINS_DIR.join("list.toml");
     if !path.exists() {
-        return Ok(HashMap::new());
+        let empty_map = HashMap::new();
+        *cache = Some(empty_map.clone());
+        return Ok(empty_map);
     }
 
-    let content = fs::read_to_string(path).map_err(|e| format!("读取插件列表失败: {}", e))?;
-
-    toml::from_str(&content).map_err(|e| format!("解析插件列表失败: {}", e))
+    let content = fs::read_to_string(path)?;
+    let plugins: HashMap<String, Plugin> = toml::from_str(&content)?;
+    *cache = Some(plugins.clone());
+    Ok(plugins)
 }
 
-fn save_plugin_list(plugins: &HashMap<String, Plugin>) -> Result<(), String> {
-    let path = get_plugin_list_path();
-    let content = toml::to_string(plugins).map_err(|e| format!("序列化插件列表失败: {}", e))?;
+async fn save_plugin_list(plugins: &HashMap<String, Plugin>) -> Result<()> {
+    let content = toml::to_string(plugins)?;
+    fs::write(PLUGINS_DIR.join("list.toml"), content)?;
 
-    fs::write(path, content).map_err(|e| format!("保存插件列表失败: {}", e))
+    let mut cache = PLUGIN_CACHE.lock().await;
+    *cache = Some(plugins.clone());
+    Ok(())
 }
 
-// 修改 plugin_import 函数
-#[tauri::command]
-pub async fn plugin_import(content: String) -> Result<Plugin, String> {
-    let id = generate_id();
+async fn process_plugin_content(id: String, content: String) -> Result<Plugin> {
+    let plugin_file = PLUGINS_DIR.join(format!("{}.ts", id));
+    fs::write(&plugin_file, &content)?;
 
-    /* 保存插件内容到文件 */
-    let plugin_file = get_plugins_dir().join(format!("{}.ts", id));
-    fs::write(&plugin_file, &content).map_err(|e| e.to_string())?;
-
-    /* 执行脚本获取插件信息 */
-    let wrapper_script = format!(
+    let script = format!(
         r#"
-        // 导入插件
         const plugin = await import('file://{plugin_path}');
-        
-        // 获取插件信息
-        const tools = Object.entries(plugin.default.tools || {{}}).map(([key, value]) => {{
-            return {{
+        const tools = Object.entries(plugin.default.tools || {{}})
+            .map(([key, value]) => ({{
                 name: key || "undefined",
                 description: value.description || "",
                 parameters: value.parameters
-            }};
-        }});
-        
+            }}));
         console.log(JSON.stringify({{
             name: plugin.default.name || "undefined",
             description: plugin.default.description || "",
-            tools: tools
+            tools
         }}));
         "#,
         plugin_path = plugin_file.to_string_lossy().replace('\\', "/")
     );
 
-    let output = execute_deno_script(&wrapper_script, None).await?;
+    let env_vars = load_env_vars().await?;
+    let output = DENO_RUNTIME.execute(&script, &env_vars).await?;
+    let plugin_info: Value = serde_json::from_str(&output)?;
 
-    let plugin_info: Value = serde_json::from_str(&output).map_err(|e| e.to_string())?;
-
-    // 构造插件对象
     let tools = plugin_info["tools"]
         .as_array()
-        .ok_or("插件格式错误：tools 不是数组")?
+        .ok_or_else(|| PluginError::Plugin("tools 字段无效".to_string()))?
         .iter()
         .map(|tool| {
+            let name = tool["name"]
+                .as_str()
+                .ok_or_else(|| PluginError::Plugin("tool name 字段无效".to_string()))?
+                .to_string();
+            let description = tool["description"]
+                .as_str()
+                .ok_or_else(|| PluginError::Plugin("tool description 字段无效".to_string()))?
+                .to_string();
             Ok(Tool {
-                name: tool["name"]
-                    .as_str()
-                    .ok_or("插件格式错误：name 不是字符串")?
-                    .to_string(),
-                description: tool["description"]
-                    .as_str()
-                    .ok_or("插件格式错误：description 不是字符串")?
-                    .to_string(),
+                name,
+                description,
                 parameters: tool["parameters"].clone(),
             })
         })
-        .collect::<Result<Vec<_>, String>>()?;
+        .collect::<Result<Vec<_>>>()?;
 
     let plugin = Plugin {
         id: id.clone(),
         name: plugin_info["name"]
             .as_str()
-            .ok_or("插件格式错误：name 不是字符串")?
+            .ok_or_else(|| PluginError::Plugin("name 字段无效".to_string()))?
             .to_string(),
         description: plugin_info["description"].as_str().map(|s| s.to_string()),
         tools,
     };
 
-    // 保存插件信息到列表文件
-    let mut plugins = load_plugin_list()?;
-    plugins.insert(plugin.id.clone(), plugin.clone());
-    save_plugin_list(&plugins)?;
+    let mut plugins = load_plugin_list().await?;
+    plugins.insert(id, plugin.clone());
+    save_plugin_list(&plugins).await?;
+
     Ok(plugin)
 }
 
-// 修改 plugins_list 函数
 #[tauri::command]
-pub async fn plugins_list() -> Result<HashMap<String, Plugin>, String> {
-    load_plugin_list()
+pub async fn plugin_import(content: String) -> Result<Plugin> {
+    let id = generate_id();
+    process_plugin_content(id, content).await
 }
 
-// 修改 plugin_get 函数
 #[tauri::command]
-pub async fn plugin_get(id: String) -> Result<Option<PluginWithContent>, String> {
-    let plugins = load_plugin_list()?;
+pub async fn plugins_list() -> Result<HashMap<String, Plugin>> {
+    load_plugin_list().await
+}
 
-    if let Some(plugin) = plugins.get(&id) {
-        let plugin_file = get_plugins_dir().join(format!("{}.ts", id));
-        let content =
-            fs::read_to_string(plugin_file).map_err(|e| format!("读取插件文件失败: {}", e))?;
+#[tauri::command]
+pub async fn plugin_get(id: String) -> Result<Option<PluginWithContent>> {
+    let plugins = load_plugin_list().await?;
 
-        Ok(Some(PluginWithContent {
+    Ok(if let Some(plugin) = plugins.get(&id) {
+        let plugin_file = PLUGINS_DIR.join(format!("{}.ts", id));
+        let content = fs::read_to_string(plugin_file)?;
+        Some(PluginWithContent {
             info: plugin.clone(),
             content,
-        }))
+        })
     } else {
-        Ok(None)
-    }
+        None
+    })
 }
 
-// 修改 plugin_remove 函数
 #[tauri::command]
-pub async fn plugin_remove(id: String) -> Result<(), String> {
-    let mut plugins = load_plugin_list()?;
+pub async fn plugin_remove(id: String) -> Result<()> {
+    let mut plugins = load_plugin_list().await?;
     plugins.remove(&id);
-    save_plugin_list(&plugins)?;
+    save_plugin_list(&plugins).await?;
 
-    let plugin_path = get_plugins_dir().join(format!("{}.ts", id));
-
+    let plugin_path = PLUGINS_DIR.join(format!("{}.ts", id));
     if plugin_path.exists() {
-        fs::remove_file(plugin_path).map_err(|e| format!("删除插件脚本失败: {}", e))?;
+        fs::remove_file(plugin_path)?;
     }
 
     Ok(())
 }
 
-// 执行插件
+/* 执行插件,首先插件文件一定存在 */
 #[tauri::command]
-pub async fn plugin_execute(id: String, tool: String, args: Value) -> Result<Value, String> {
-    let plugin_file = get_plugins_dir().join(format!("{}.ts", id));
+pub async fn plugin_execute(id: String, tool: String, args: Value) -> Result<Value> {
+    /* 插件文件 */
+    let plugin_file = PLUGINS_DIR.join(format!("{}.ts", id));
+    /* 如果插件不存在则返回插件文件不存在的错误. */
     if !plugin_file.exists() {
-        return Err(format!("插件文件不存在: {}", id));
+        return Err(PluginError::Plugin(format!("插件文件不存在: {}", id)));
     }
 
-    // 修改执行脚本的格式
-    let wrapper_script = format!(
+    /* 执行脚本 */
+    let script = format!(
         r#"
-        // 导入插件
         const plugin = await import('file://{plugin_path}');
-        
-        // 检查函数是否存在
         const targetFunction = plugin.default.tools['{tool}'];
         if (!targetFunction) {{
             throw new Error('找不到指定的函数: {tool}');
         }}
-        
-        // 执行函数
         const result = await targetFunction.handler({args});
         console.log(JSON.stringify(result));
         "#,
         plugin_path = plugin_file.to_string_lossy().replace('\\', "/"),
         tool = tool,
-        args = serde_json::to_string(&args).map_err(|e| e.to_string())?
+        args = serde_json::to_string(&args)?
     );
 
-    let output = execute_deno_script(&wrapper_script, None).await?;
-
-    let result: Value = serde_json::from_str(&output).map_err(|e| e.to_string())?;
-
-    Ok(result)
+    /* 环境变量加载 */
+    let env_vars = load_env_vars().await?;
+    let output = DENO_RUNTIME.execute(&script, &env_vars).await?;
+    serde_json::from_str(&output).map_err(|e| PluginError::Json(e.to_string()))
 }
 
-// 修改 init 函数
-pub async fn init() -> Result<(), String> {
-    if !check_deno_installed() {
-        return Err("Deno 未安装，请先安装 Deno: https://deno.land/#installation".to_string());
-    }
-    Ok(())
-}
-
-// 添加 plugin_update 命令
 #[tauri::command]
-pub async fn plugin_update(id: String, content: String) -> Result<Plugin, String> {
-    // 检查插件是否存在
-    let plugins = load_plugin_list()?;
+pub async fn plugin_update(id: String, content: String) -> Result<Plugin> {
+    let plugins = load_plugin_list().await?;
     if !plugins.contains_key(&id) {
-        return Err(format!("插件不存在: {}", id));
+        return Err(PluginError::Plugin(format!("插件不存在: {}", id)));
     }
-
-    // 保存插件内容到文件
-    let plugin_file = get_plugins_dir().join(format!("{}.ts", id));
-    fs::write(&plugin_file, &content).map_err(|e| e.to_string())?;
-
-    // 执行脚本获取更新后的插件信息
-    let wrapper_script = format!(
-        r#"
-        // 导入插件
-        const plugin = await import('file://{plugin_path}');
-        
-        // 获取插件信息
-        const tools = Object.entries(plugin.default.tools || {{}}).map(([key, value]) => {{
-            return {{
-                name: key || "undefined",
-                description: value.description || "",
-                parameters: value.parameters
-            }};
-        }});
-        
-        console.log(JSON.stringify({{
-            name: plugin.default.name || "undefined",
-            description: plugin.default.description || "",
-            tools: tools
-        }}));
-        "#,
-        plugin_path = plugin_file.to_string_lossy().replace('\\', "/")
-    );
-
-    let output = execute_deno_script(&wrapper_script, None).await?;
-
-    let plugin_info: Value = serde_json::from_str(&output).map_err(|e| e.to_string())?;
-
-    // 构造更新后的插件对象
-    let tools = plugin_info["tools"]
-        .as_array()
-        .ok_or("插件格式错误：tools 不是数组")?
-        .iter()
-        .map(|tool| {
-            Ok(Tool {
-                name: tool["name"]
-                    .as_str()
-                    .ok_or("插件格式错误：name 不是字符串")?
-                    .to_string(),
-                description: tool["description"]
-                    .as_str()
-                    .ok_or("插件格式错误：description 不是字符串")?
-                    .to_string(),
-                parameters: tool["parameters"].clone(),
-            })
-        })
-        .collect::<Result<Vec<_>, String>>()?;
-
-    let updated_plugin = Plugin {
-        id: id.clone(),
-        name: plugin_info["name"]
-            .as_str()
-            .ok_or("插件格式错误：name 不是字符串")?
-            .to_string(),
-        description: plugin_info["description"].as_str().map(|s| s.to_string()),
-        tools,
-    };
-
-    // 更新插件列表
-    let mut plugins = load_plugin_list()?;
-    plugins.insert(id, updated_plugin.clone());
-    save_plugin_list(&plugins)?;
-
-    Ok(updated_plugin)
+    process_plugin_content(id, content).await
 }
 
 #[tauri::command]
-pub async fn env_list() -> Result<Vec<EnvVar>, String> {
-    load_env_vars()
+pub async fn env_list() -> Result<Vec<EnvVar>> {
+    load_env_vars().await
 }
 
 #[tauri::command]
-pub async fn env_save(vars: Vec<EnvVar>) -> Result<(), String> {
+pub async fn env_save(vars: Vec<EnvVar>) -> Result<()> {
     let content = vars
         .iter()
         .map(|var| format!("{}={}", var.key, var.value))
         .collect::<Vec<_>>()
         .join("\n");
 
-    let path = get_env_file_path();
-    fs::write(path, content).map_err(|e| format!("保存环境变量失败: {}", e))
+    fs::write(PLUGINS_DIR.join(".env"), content)?;
+    Ok(())
 }

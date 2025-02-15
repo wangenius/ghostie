@@ -1,7 +1,6 @@
 import { BotProps } from "@/common/types/bot";
 import { gen } from "@/utils/generator";
 import { Echo } from "echo-state";
-import { Bot } from "./Bot";
 
 /** 机器人管理器, 用于管理机器人 */
 export class BotManager {

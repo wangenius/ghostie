@@ -11,6 +11,7 @@ import {
   FunctionCallReply,
   FunctionCallResult,
   Message,
+  MessagePrototype,
   MessageType,
 } from "@common/types/model";
 import { Echo } from "echo-state";
@@ -121,36 +122,31 @@ export class ChatModel {
     function_call: FunctionCallReply
   ): Promise<FunctionCallResult | undefined> {
     if (!function_call) return;
-
-    /* 解析工具参数 */
     const toolArgs = JSON.parse(function_call.arguments || "{}");
+    try {
+      /* 执行工具 */
+      const toolResultPromise = cmd.invoke("plugin_execute", {
+        id: function_call.name.split("@")[1],
+        tool: function_call.name.split("@")[0],
+        args: toolArgs,
+      });
 
-    /* 查找对应的工具 */
-    const tool = this.tools?.find((tool) => tool.name === function_call.name);
-    if (!tool) {
-      throw new Error(`找不到工具: ${function_call.name}`);
+      /* 等待工具执行完成 */
+      const toolResult = await toolResultPromise;
+
+      /* 返回工具调用结果 */
+      return {
+        name: function_call.name,
+        arguments: toolArgs,
+        result: toolResult,
+      };
+    } catch (error) {
+      return {
+        name: function_call.name,
+        arguments: toolArgs,
+        result: String(error),
+      };
     }
-
-    /* 执行工具 */
-    const toolResultPromise = cmd.invoke("plugin_execute", {
-      id: tool.plugin,
-      tool: tool.name.split("]")[1],
-      args: toolArgs,
-    });
-
-    /* 等待工具执行完成 */
-    const toolResult = await toolResultPromise;
-
-    if (toolResult === undefined || toolResult === null) {
-      throw new Error("工具执行结果无效");
-    }
-
-    /* 返回工具调用结果 */
-    return {
-      name: function_call.name,
-      arguments: toolArgs,
-      result: toolResult,
-    };
   }
 
   /** 文本生成
@@ -263,7 +259,7 @@ export class ChatModel {
     try {
       const abortController = this.getAbortController(requestId);
 
-      let messages: Message[] = [];
+      let messages: MessagePrototype[] = [];
       const newMessages: Message = {
         role: "user",
         content: prompt,
@@ -365,7 +361,7 @@ export class ChatModel {
 
     try {
       // 添加用户消息
-      this.historyMessage.push([
+      const messages = this.historyMessage.push([
         {
           role: "user",
           content: prompt,
@@ -387,7 +383,7 @@ export class ChatModel {
       /* 创建请求体 */
       const requestBody: ChatModelRequestBody = {
         model: this.model,
-        messages: this.historyMessage.listWithOutType(),
+        messages,
         stream: true,
         functions: ChatModel.tool_to_function(this.tools),
       };
@@ -405,7 +401,10 @@ export class ChatModel {
         signal: this.getAbortController(requestId).signal,
       });
 
+      console.log(JSON.stringify(requestBody));
+
       if (!response.ok || !response.body) {
+        console.log(response);
         throw new Error(`API请求失败: ${response.status}`);
       }
 
@@ -436,23 +435,14 @@ export class ChatModel {
               });
             }
 
+            console.log(delta.function_call);
+
             if (delta?.function_call) {
-              functionCallData = functionCallData || {
-                name: "",
-                arguments: "",
+              functionCallData = {
+                name: delta.function_call.name,
+                arguments: delta.function_call.arguments,
               };
-              if (delta.function_call.name) {
-                functionCallData.name = delta.function_call.name;
-              }
-              if (delta.function_call.arguments) {
-                functionCallData.arguments += delta.function_call.arguments;
-              }
-              // 只在function_call完整时更新type
-              if (functionCallData.name && functionCallData.arguments) {
-                this.historyMessage.updateAssistantFunctionCall(
-                  functionCallData
-                );
-              }
+              this.historyMessage.updateAssistantFunctionCall(functionCallData);
             }
           }
         }
@@ -460,10 +450,13 @@ export class ChatModel {
         reader.releaseLock();
       }
 
+      // 工具调用结果
       let toolResult;
       // 处理函数调用
       if (functionCallData) {
+        // 执行工具
         toolResult = await this.tool_call(functionCallData);
+        // 添加工具调用结果到历史
         if (toolResult) {
           this.historyMessage.push([
             {

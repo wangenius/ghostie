@@ -49,7 +49,7 @@ export class Bot {
           ...tool,
           plugin: plugin.id,
           // 添加完整名称，用于匹配
-          name: `[${plugin.name}]${tool.name}`,
+          name: `${tool.name}@${plugin.id}`,
           pluginName: plugin.name,
         }))
       )

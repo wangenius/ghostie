@@ -137,14 +137,22 @@ export class HistoryMessage implements ChatHistoryItem {
    * @param message 要添加的消息
    * @returns 所有消息, 包括系统消息
    */
-  push(message: Message[]): Message[] {
+  push(message: Message[]): MessagePrototype[] {
     this.list = [...this.list, ...message];
     ChatHistory.set((prev) => {
       const newState = { ...prev };
       newState[this.id].list = this.list;
       return newState;
     });
-    return [this.system, ...this.list];
+    return [this.system, ...this.list].map((msg) => {
+      const result: Record<string, any> = {
+        role: msg.role,
+        content: msg.content,
+      };
+      if (msg.name) result.name = msg.name;
+      if (msg.function_call) result.function_call = msg.function_call;
+      return result as MessagePrototype;
+    });
   }
 
   /** 更新最后一条消息

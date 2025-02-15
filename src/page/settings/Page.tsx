@@ -2,13 +2,14 @@ import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
 import { cmd } from "@/utils/shell";
 import { Echo } from "echo-state";
-import { TbBox, TbColorSwatch, TbDatabase, TbGhost3, TbSettings, TbShape3 } from "react-icons/tb";
+import { TbActivity, TbBox, TbColorSwatch, TbDatabase, TbGhost3, TbSettings, TbShape3 } from "react-icons/tb";
 import { BotsTab } from "./BotsTab";
 import { GeneralTab } from "./GeneralTab";
 import { ModelsTab } from "./ModelsTab";
 import { PluginsTab } from "./PluginsTab";
 import { SpaceTab } from "./SpaceTab";
 import WorkflowsTab from "./WorkflowsTab";
+import ActivityTab from "./ActivityTab";
 
 const SETTINGS_NAV_ITEMS = [
     { id: "general", label: "通用", icon: TbSettings },
@@ -16,7 +17,8 @@ const SETTINGS_NAV_ITEMS = [
     { id: "bots", label: "助手", icon: TbGhost3 },
     { id: "workflows", label: "工作流", icon: TbShape3 },
     { id: "plugins", label: "插件", icon: TbColorSwatch },
-    { id: "space", label: "空间", icon: TbDatabase }
+    { id: "space", label: "空间", icon: TbDatabase },
+    { id: "activity", label: "活动", icon: TbActivity }
 ] as const;
 
 type SettingsTab = (typeof SETTINGS_NAV_ITEMS)[number]["id"];
@@ -44,6 +46,8 @@ export function SettingsPage() {
                 return <SpaceTab />;
             case "workflows":
                 return <WorkflowsTab />;
+            case "activity":
+                return <ActivityTab />;
             default:
                 return <GeneralTab />;
         }

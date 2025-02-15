@@ -30,7 +30,7 @@ export const HistoryPage = () => {
 
 			{/* 左侧历史列表 */}
 			<div className="h-full overflow-y-auto p-4 border-r min-w-[300px] max-w-[300px] space-y-2">
-				<Button variant="destructive" className="w-full" onClick={() => {
+				<Button variant="destructive" onClick={() => {
 					HistoryMessage.clearAll();
 				}}>
 					删除所有
@@ -109,6 +109,9 @@ export const HistoryPage = () => {
 									</div>
 									<div className="text-sm whitespace-pre-wrap">
 										{message.content}
+									</div>
+									<div className="text-sm whitespace-pre-wrap">
+										{JSON.stringify(message.function_call)}
 									</div>
 								</div>
 							))}

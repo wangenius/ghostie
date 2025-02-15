@@ -6,8 +6,8 @@ import { BotManager } from "@/services/bot/BotManger";
 import { ChatManager } from "@/services/model/ChatManager";
 import { ChatHistory } from "@/services/model/HistoryMessage";
 import { cmd } from "@utils/shell";
-import { useEffect, useRef } from "react";
-import { TbHistory, TbLoader2, TbSettings } from "react-icons/tb";
+import { useEffect, useRef, useCallback, memo } from "react";
+import { TbHistory, TbLoader2, TbSettings, TbX } from "react-icons/tb";
 import { HistoryPage } from "../history/HistoryPage";
 import { BotItem } from "./components/BotItem";
 import { MessageItem } from "./components/MessageItem";
@@ -31,7 +31,7 @@ export function MainView() {
     const botList = Object.values(bots);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyDown = useCallback(async (e: React.KeyboardEvent<HTMLInputElement>) => {
         // 打开设置
         if (e.ctrlKey && e.key === ",") {
             e.preventDefault();
@@ -67,7 +67,7 @@ export function MainView() {
                 }
             }
         }
-    };
+    }, [currentInput, isActive, selectedBotIndex, botList, currentBot]);
 
     useEffect(() => {
         const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -97,11 +97,11 @@ export function MainView() {
 
         document.addEventListener("keydown", handleGlobalKeyDown);
         return () => document.removeEventListener("keydown", handleGlobalKeyDown);
-    }, [isActive, selectedBotIndex, botList.length]);
+    }, [isActive, selectedBotIndex, botList.length, endChat, selectBot]);
 
     return (
         <div className="flex flex-col h-screen bg-background">
-            <Header
+            <MemoizedHeader
                 inputRef={inputRef}
                 currentInput={currentInput}
                 isLoading={isLoading}
@@ -114,7 +114,7 @@ export function MainView() {
             <main className="flex-1 overflow-hidden">
                 <div className="h-full overflow-y-auto">
                     {!isActive &&
-                        <BotList
+                        <MemoizedBotList
                             botList={botList}
                             selectedIndex={selectedBotIndex}
                             currentInput={currentInput}
@@ -124,7 +124,7 @@ export function MainView() {
                     }
                     {
                         isActive && currentBot && (
-                            <ChatBox currentBot={currentBot} onEndChat={endChat} />
+                            <MemoizedChatBox currentBot={currentBot} onEndChat={endChat} />
                         )
                     }
                 </div>
@@ -144,7 +144,7 @@ interface HeaderProps {
     onEndChat: () => void;
 }
 
-function Header({
+const Header = memo(function Header({
     inputRef,
     currentInput,
     isLoading,
@@ -154,35 +154,61 @@ function Header({
     onKeyDown,
     onEndChat
 }: HeaderProps) {
+    const handleSettingsClick = useCallback(() => {
+        cmd.open("settings", {}, { width: 800, height: 600 });
+    }, []);
+
+    const handleHistoryClick = useCallback(() => {
+        HistoryPage.open();
+    }, []);
+
+    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        onInputChange(e.target.value);
+    }, [onInputChange]);
+
+    const handleActionClick = useCallback(() => {
+        if (isActive) {
+            if (isLoading) {
+                currentBot?.model.stop();
+            } else {
+                onEndChat();
+            }
+        } else {
+            handleSettingsClick();
+        }
+    }, [isActive, isLoading, currentBot, onEndChat]);
+
     return (
         <div className="px-4 draggable">
             <div className="mx-auto flex items-center h-14">
-                <img
-                    src="/icon.gif"
-                    onClick={() => isActive ? onEndChat() : cmd.open("settings", {}, { width: 800, height: 600 })}
-                    className="w-[36px] hover:scale-110 transition-all rounded-md"
-                />
+                <div className="p-2 w-8 h-8 flex transition-all items-center justify-center hover:bg-muted rounded-md cursor-pointer">
+                    <img src="/icon.png" className="w-4" />
+                </div>
                 <div className="flex-1 pl-2">
                     <Input
                         ref={inputRef}
                         value={currentInput}
                         variant="ghost"
-                        onChange={(e) => onInputChange(e.target.value)}
+                        onChange={handleInputChange}
                         onKeyDown={onKeyDown}
                         className="text-sm"
                         placeholder={isActive ? `与 ${currentBot?.name} 对话...` : "选择一个助手开始对话..."}
                     />
                 </div>
-                <Button onClick={HistoryPage.open} size="icon">
+                <Button onClick={handleHistoryClick} size="icon">
                     <TbHistory className="h-4 w-4" />
                 </Button>
                 <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => cmd.open("settings", {}, { width: 800, height: 600 })}
+                    onClick={handleActionClick}
                 >
-                    {isLoading ? (
-                        <TbLoader2 className="h-4 w-4 animate-spin" />
+                    {isActive ? (
+                        isLoading ? (
+                            <TbLoader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <TbX className="h-4 w-4" />
+                        )
                     ) : (
                         <TbSettings className="h-4 w-4" />
                     )}
@@ -190,7 +216,7 @@ function Header({
             </div>
         </div>
     );
-}
+});
 
 interface BotListProps {
     botList: BotProps[];
@@ -200,7 +226,22 @@ interface BotListProps {
     onStartChat: (bot: BotProps) => void;
 }
 
-function BotList({ botList, selectedIndex, currentInput, onSelectBot, onStartChat }: BotListProps) {
+const BotList = memo(function BotList({
+    botList,
+    selectedIndex,
+    currentInput,
+    onSelectBot,
+    onStartChat
+}: BotListProps) {
+    const handleBotClick = useCallback((bot: BotProps, index: number) => {
+        const trimmedInput = currentInput.trim();
+        if (trimmedInput) {
+            onStartChat(bot);
+        } else {
+            onSelectBot(index);
+        }
+    }, [currentInput, onStartChat, onSelectBot]);
+
     return (
         <div className="container mx-auto px-4 max-w-2xl space-y-1">
             {botList.map((bot, index) => (
@@ -208,26 +249,19 @@ function BotList({ botList, selectedIndex, currentInput, onSelectBot, onStartCha
                     key={bot.name}
                     bot={bot}
                     isSelected={index === selectedIndex}
-                    onClick={() => {
-                        const trimmedInput = currentInput.trim();
-                        if (trimmedInput) {
-                            onStartChat(bot);
-                        } else {
-                            onSelectBot(index);
-                        }
-                    }}
+                    onClick={() => handleBotClick(bot, index)}
                 />
             ))}
         </div>
     );
-}
+});
 
 interface ChatBoxProps {
     currentBot: Bot;
     onEndChat: () => void;
 }
 
-function ChatBox({ currentBot, onEndChat }: ChatBoxProps) {
+const ChatBox = memo(function ChatBox({ currentBot, onEndChat }: ChatBoxProps) {
     const list = ChatHistory.use();
     const message = list[currentBot.model.historyMessage.id];
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -237,12 +271,8 @@ function ChatBox({ currentBot, onEndChat }: ChatBoxProps) {
         return null;
     }
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
-
     useEffect(() => {
-        scrollToBottom();
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [list]);
 
     return (
@@ -253,5 +283,9 @@ function ChatBox({ currentBot, onEndChat }: ChatBoxProps) {
             <div ref={messagesEndRef} />
         </div>
     );
-}
+});
+
+const MemoizedHeader = memo(Header);
+const MemoizedBotList = memo(BotList);
+const MemoizedChatBox = memo(ChatBox);
 

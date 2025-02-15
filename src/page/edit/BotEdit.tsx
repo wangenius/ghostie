@@ -139,7 +139,7 @@ export function BotEdit() {
                             options={Object.values(plugins).flatMap((plugin: PluginProps) =>
                                 plugin.tools.map((tool: ToolProps) => ({
                                     label: "[" + plugin.name + "]" + tool.name,
-                                    value: "[" + plugin.name + "]" + tool.name
+                                    value: tool.name + "@" + plugin.id
                                 }))
                             )}
                             value={bot.tools}
