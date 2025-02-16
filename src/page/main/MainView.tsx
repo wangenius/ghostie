@@ -10,10 +10,12 @@ import { ChatHistory } from "@/services/model/HistoryMessage";
 import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
 import { cmd } from "@utils/shell";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { TbArrowBigLeft, TbDots, TbHistory, TbLoader2, TbSettings } from "react-icons/tb";
+import { TbArrowBigLeft, TbDots, TbHistory, TbLoader2, TbSettings, TbSortAscending } from "react-icons/tb";
 import { HistoryPage } from "../history/HistoryPage";
 import { BotItem } from "./components/BotItem";
 import { MessageItem } from "./components/MessageItem";
+
+type SortType = 'default' | 'mostUsed' | 'recentUsed';
 
 /* 主界面 */
 export function MainView() {
@@ -28,10 +30,65 @@ export function MainView() {
         endChat
     } = ChatManager.useChat();
 
-    const [selectedBotIndex, setSelectedBotIndex] = useState(0);
     const bots = BotManager.use();
     const botList = Object.values(bots);
+    const [selectedBotId, setSelectedBotId] = useState<string>(() => botList[0]?.id || '');
+    const [sortType, setSortType] = useState<SortType>('default');
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // 计算综合得分
+    const calculateScore = useCallback((bot: BotProps) => {
+        if (!bot.lastUsed) return 0;
+
+        const now = Date.now();
+        const daysSinceLastUse = (now - bot.lastUsed) / (1000 * 60 * 60 * 24);
+        const usageScore = (bot.usageCount || 0) * 100;
+        const recencyScore = Math.max(0, 100 - Math.min(daysSinceLastUse, 100));
+
+        return usageScore + recencyScore;
+    }, []);
+
+    // 对机器人列表进行排序
+    const sortedBotList = useCallback(() => {
+        const list = [...botList];
+
+        return list.sort((a, b) => {
+            // 处理置顶状态
+            if (a.pinned !== b.pinned) {
+                return a.pinned ? -1 : 1;
+            }
+
+            // 根据排序类型处理
+            switch (sortType) {
+                case 'mostUsed': {
+                    const usageA = a.usageCount || 0;
+                    const usageB = b.usageCount || 0;
+                    if (usageA !== usageB) {
+                        return usageB - usageA;
+                    }
+                    // 使用次数相同时，按最近使用时间排序
+                    return (b.lastUsed || 0) - (a.lastUsed || 0);
+                }
+                case 'recentUsed': {
+                    const timeA = a.lastUsed || 0;
+                    const timeB = b.lastUsed || 0;
+                    return timeB - timeA;
+                }
+                default: {
+                    // 默认综合排序
+                    const scoreA = calculateScore(a);
+                    const scoreB = calculateScore(b);
+                    if (scoreA !== scoreB) {
+                        return scoreB - scoreA;
+                    }
+                    // 分数相同时，按最近使用时间排序
+                    return (b.lastUsed || 0) - (a.lastUsed || 0);
+                }
+            }
+        });
+    }, [botList, sortType, calculateScore]);
+
+    const sortedBots = sortedBotList();
 
     const handleKeyDown = useCallback(async (e: React.KeyboardEvent<HTMLInputElement>) => {
         // 打开设置
@@ -50,7 +107,9 @@ export function MainView() {
             /* 开始聊天 */
             if (!isActive) {
                 /* 选择助手 */
-                const selectedBot = botList[selectedBotIndex];
+                const selectedBot = sortedBots.find(bot => bot.id === selectedBotId) || sortedBots[0];
+                /* 记录使用历史 */
+                BotManager.recordUsage(selectedBot.id);
                 /* 开始聊天 */
                 const bot = startChat(selectedBot);
                 /* 设置加载状态 */
@@ -69,7 +128,7 @@ export function MainView() {
                 }
             }
         }
-    }, [currentInput, isActive, selectedBotIndex, botList, currentBot]);
+    }, [currentInput, isActive, selectedBotId, sortedBots, currentBot]);
 
     useEffect(() => {
         const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -90,16 +149,17 @@ export function MainView() {
             // 选择助手
             if (!isActive && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
                 e.preventDefault();
+                const currentIndex = sortedBots.findIndex(bot => bot.id === selectedBotId);
                 const newIndex = e.key === "ArrowUp"
-                    ? (selectedBotIndex - 1 + botList.length) % botList.length
-                    : (selectedBotIndex + 1) % botList.length;
-                setSelectedBotIndex(newIndex);
+                    ? (currentIndex - 1 + sortedBots.length) % sortedBots.length
+                    : (currentIndex + 1) % sortedBots.length;
+                setSelectedBotId(sortedBots[newIndex].id);
             }
         };
 
         document.addEventListener("keydown", handleGlobalKeyDown);
         return () => document.removeEventListener("keydown", handleGlobalKeyDown);
-    }, [isActive, selectedBotIndex, botList.length, endChat]);
+    }, [isActive, selectedBotId, sortedBots.length, endChat]);
 
     return (
         <div className="flex flex-col h-screen bg-background">
@@ -109,24 +169,49 @@ export function MainView() {
                 isLoading={isLoading}
                 isActive={isActive}
                 currentBot={currentBot}
-                botList={botList}
-                selectedBotIndex={selectedBotIndex}
+                botList={sortedBots}
+                selectedBotId={selectedBotId}
                 onInputChange={updateInput}
                 onKeyDown={handleKeyDown}
                 onEndChat={endChat}
-                onSelectBot={setSelectedBotIndex}
+                onSelectBot={setSelectedBotId}
             />
             <main className="flex-1 overflow-hidden">
                 <div className="h-full overflow-y-auto pb-4">
-                    {!isActive &&
-                        <MemoizedBotList
-                            botList={botList}
-                            selectedIndex={selectedBotIndex}
-                            currentInput={currentInput}
-                            onSelectBot={setSelectedBotIndex}
-                            onStartChat={startChat}
-                        />
-                    }
+                    {!isActive && (
+                        <>
+                            <div className="container mx-auto px-4 max-w-2xl mt-2">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="text-xs">
+                                            <TbSortAscending className="w-4 h-4 mr-1" />
+                                            {sortType === 'default' && '默认排序'}
+                                            {sortType === 'mostUsed' && '使用次数'}
+                                            {sortType === 'recentUsed' && '最近使用'}
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        <DropdownMenuItem onClick={() => setSortType('default')}>
+                                            默认排序
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setSortType('mostUsed')}>
+                                            按使用次数
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setSortType('recentUsed')}>
+                                            按最近使用
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                            <MemoizedBotList
+                                botList={sortedBots}
+                                selectedBotId={selectedBotId}
+                                currentInput={currentInput}
+                                onSelectBot={setSelectedBotId}
+                                onStartChat={startChat}
+                            />
+                        </>
+                    )}
                     {
                         isActive && currentBot && (
                             <MemoizedChatBox currentBot={currentBot} onEndChat={endChat} />
@@ -145,11 +230,11 @@ interface HeaderProps {
     isActive: boolean;
     currentBot?: Bot;
     botList: BotProps[];
-    selectedBotIndex: number;
+    selectedBotId: string;
     onInputChange: (value: string) => void;
     onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
     onEndChat: () => void;
-    onSelectBot: (index: number) => void;
+    onSelectBot: (id: string) => void;
 }
 
 const Header = memo(function Header({
@@ -159,7 +244,7 @@ const Header = memo(function Header({
     isActive,
     currentBot,
     botList,
-    selectedBotIndex,
+    selectedBotId,
     onInputChange,
     onKeyDown,
     onEndChat,
@@ -187,13 +272,27 @@ const Header = memo(function Header({
     }, [isActive, isLoading, currentBot, onEndChat]);
 
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.ctrlKey && e.key.toLowerCase() === "p") {
+                e.preventDefault();
+                if (isActive && isLoading) {
+                    currentBot?.model.stop();
+                }
+            }
+        };
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [isActive, isLoading, currentBot, onEndChat]);
+
+
 
     return (
         <div className="px-4 draggable">
             <div className="mx-auto flex items-center h-14">
                 <Button variant="ghost" className="p-1.5 bg-muted">
                     <LogoIcon className="w-4 h-4" />
-                    {botList[selectedBotIndex].name}
+                    {botList.find(bot => bot.id === selectedBotId)?.name || botList[0]?.name}
                 </Button>
                 <div className="flex-1 pl-2">
                     <Input
@@ -243,36 +342,36 @@ const Header = memo(function Header({
 
 interface BotListProps {
     botList: BotProps[];
-    selectedIndex: number;
+    selectedBotId: string;
     currentInput: string;
-    onSelectBot: (index: number) => void;
+    onSelectBot: (id: string) => void;
     onStartChat: (bot: BotProps) => void;
 }
 
 const BotList = memo(function BotList({
     botList,
-    selectedIndex,
+    selectedBotId,
     currentInput,
     onSelectBot,
     onStartChat
 }: BotListProps) {
-    const handleBotClick = useCallback((bot: BotProps, index: number) => {
+    const handleBotClick = useCallback((bot: BotProps) => {
         const trimmedInput = currentInput.trim();
         if (trimmedInput) {
             onStartChat(bot);
         } else {
-            onSelectBot(index);
+            onSelectBot(bot.id);
         }
     }, [currentInput, onStartChat, onSelectBot]);
 
     return (
         <div className="container mx-auto px-4 max-w-2xl space-y-1">
-            {botList.map((bot, index) => (
+            {botList.map((bot) => (
                 <BotItem
-                    key={bot.name}
+                    key={bot.id}
                     bot={bot}
-                    isSelected={index === selectedIndex}
-                    onClick={() => handleBotClick(bot, index)}
+                    isSelected={bot.id === selectedBotId}
+                    onClick={() => handleBotClick(bot)}
                 />
             ))}
         </div>

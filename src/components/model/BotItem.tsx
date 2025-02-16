@@ -1,5 +1,7 @@
 import { BotProps } from "@/common/types/bot";
-import { TbBox, TbPencil, TbTrash } from "react-icons/tb";
+import { Button } from "@/components/ui/button";
+import { BotManager } from "@/services/bot/BotManger";
+import { TbPencil, TbTrash, TbPin, TbPinFilled } from "react-icons/tb";
 import { LogoIcon } from "../custom/LogoIcon";
 
 interface ModelItemProps {
@@ -7,9 +9,16 @@ interface ModelItemProps {
 	bot: BotProps;
 	onEdit: (name: string) => void;
 	onDelete: (name: string) => void;
+	isSelected?: boolean;
+	onClick?: () => void;
 }
 
-export function BotItem({ id, bot, onEdit, onDelete }: ModelItemProps) {
+export function BotItem({ id, bot, onEdit, onDelete, isSelected, onClick }: ModelItemProps) {
+	const handlePinClick = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		BotManager.togglePin(id);
+	};
+
 	return (
 		<div className="group relative hover:bg-accent/5 rounded-lg transition-all duration-200">
 			{/* 主内容区 */}
@@ -57,6 +66,18 @@ export function BotItem({ id, bot, onEdit, onDelete }: ModelItemProps) {
 					>
 						<TbTrash className="w-4 h-4" />
 					</button>
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-8 w-8"
+						onClick={handlePinClick}
+					>
+						{bot.pinned ? (
+							<TbPinFilled className="h-4 w-4" />
+						) : (
+							<TbPin className="h-4 w-4" />
+						)}
+					</Button>
 				</div>
 			</div>
 		</div>

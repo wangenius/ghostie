@@ -17,4 +17,8 @@ export interface BotProps {
   tools: string[];
   /* 置顶 */
   pinned?: boolean;
+  /* 使用次数 */
+  usageCount?: number;
+  /* 最后使用时间 */
+  lastUsed?: number;
 }

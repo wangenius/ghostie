@@ -43,6 +43,29 @@ export class BotManager {
     });
   }
 
+  /* 切换置顶状态 */
+  static togglePin(id: string) {
+    const bot = this.get(id);
+    if (bot) {
+      this.update({
+        ...bot,
+        pinned: !bot.pinned,
+      });
+    }
+  }
+
+  /* 记录使用 */
+  static recordUsage(id: string) {
+    const bot = this.get(id);
+    if (bot) {
+      this.update({
+        ...bot,
+        usageCount: (bot.usageCount || 0) + 1,
+        lastUsed: Date.now(),
+      });
+    }
+  }
+
   /** 导出所有助手配置 */
   static export(): string {
     const bots = this.store.current;

@@ -1,10 +1,10 @@
 import { BotProps } from "@/common/types/bot";
 import { Button } from "@/components/ui/button";
 import { BotEdit } from "@/page/edit/BotEdit";
-
+import { BotManager } from "@/services/bot/BotManger";
 import { ModelManager } from "@/services/model/ModelManager";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { TbDots, TbPencil, TbPin } from "react-icons/tb";
+import { TbDots, TbPencil, TbPin, TbPinnedOff } from "react-icons/tb";
 import { useState } from "react";
 import { LogoIcon } from "@/components/custom/LogoIcon";
 
@@ -17,6 +17,7 @@ interface BotItemProps {
 export function BotItem({ bot, isSelected, onClick }: BotItemProps) {
 	const [open, setOpen] = useState(false);
 	const model = ModelManager.get(bot.model);
+
 	return (
 		<div
 			onClick={onClick}
@@ -34,9 +35,17 @@ export function BotItem({ bot, isSelected, onClick }: BotItemProps) {
                         text-xs font-bold truncate space-x-4 rounded-md flex-1
                         ${isSelected ? 'text-primary' : 'text-foreground'}
                     `}>
-				{bot.name}
+				<span className="flex items-center gap-1">
+					{bot.pinned && <TbPin className="w-3 h-3 text-primary" />}
+					{bot.name}
+				</span>
 			</div>
-			<div className="flex items-center gap-1 text-xs text-muted-foreground">
+			<div className="flex items-center gap-2 text-xs text-muted-foreground">
+				{bot.usageCount !== undefined && (
+					<span className="px-1.5 py-0.5 bg-muted rounded">
+						使用 {bot.usageCount} 次
+					</span>
+				)}
 				{model?.model}
 			</div>
 			<DropdownMenu open={open} onOpenChange={setOpen}>
@@ -49,22 +58,38 @@ export function BotItem({ bot, isSelected, onClick }: BotItemProps) {
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end">
-
-					<DropdownMenuItem className="flex items-center gap-2">
-						<TbPin className="w-4 h-4" />
-						置顶
+					<DropdownMenuItem
+						className="flex items-center gap-2"
+						onClick={(e) => {
+							e.stopPropagation();
+							BotManager.togglePin(bot.id);
+						}}
+					>
+						{bot.pinned ? (
+							<>
+								<TbPinnedOff className="w-4 h-4" />
+								取消置顶
+							</>
+						) : (
+							<>
+								<TbPin className="w-4 h-4" />
+								置顶
+							</>
+						)}
 					</DropdownMenuItem>
 
-					<DropdownMenuItem className="flex items-center gap-2" onClick={() => {
-						BotEdit.open(bot.id);
-					}}>
+					<DropdownMenuItem
+						className="flex items-center gap-2"
+						onClick={(e) => {
+							e.stopPropagation();
+							BotEdit.open(bot.id);
+						}}
+					>
 						<TbPencil className="w-4 h-4" />
 						编辑
 					</DropdownMenuItem>
-
 				</DropdownMenuContent>
 			</DropdownMenu>
-
-		</div >
+		</div>
 	);
 }

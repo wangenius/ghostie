@@ -1,5 +1,4 @@
-import { PiPlugsThin } from "react-icons/pi";
-import { TbBox, TbFileFunction, TbPencil, TbTrash } from "react-icons/tb";
+import { TbFileFunction, TbPencil, TbTrash } from "react-icons/tb";
 
 interface ToolItemProps {
 	name: string;
