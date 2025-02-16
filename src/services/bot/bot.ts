@@ -7,6 +7,8 @@ import { ModelManager } from "../model/ModelManager";
 import { ToolProps } from "@/common/types/plugin";
 import { SettingsManager } from "../settings/SettingsManager";
 
+export const TOOL_NAME_SPLIT = "-";
+
 /* 机器人配置 */
 const defaultConfig: BotProps = {
   id: "",
@@ -49,12 +51,12 @@ export class Bot {
           ...tool,
           plugin: plugin.id,
           // 添加完整名称，用于匹配
-          name: `${tool.name}@${plugin.id}`,
+          name: `${tool.name}${TOOL_NAME_SPLIT}${plugin.id}`,
           pluginName: plugin.name,
         }))
       )
       .filter((tool) => {
-        return config.tools.includes(`${tool.name}`);
+        return config.tools.includes(tool.name);
       });
     this.model = new ChatModel(model)
       .setBot(config.id)
@@ -72,7 +74,7 @@ export class Bot {
       this.loading.set({ status: true });
 
       // ReAct循环
-      let currentInput = input;
+      let currentInput = input || undefined;
       let iterations = 0;
       let MAX_ITERATIONS = SettingsManager.getReactMaxIterations();
 
@@ -94,7 +96,7 @@ export class Bot {
         // 观察阶段：执行工具调用并获取结果
         // 工具调用的结果会自动被添加到对话历史中
         // 更新输入，让模型基于工具执行结果继续思考
-        currentInput = `基于以上继续分析并决定是否需要进一步操作。如果已经获得足够信息，请生成最终回应。`;
+        currentInput = undefined;
       }
 
       // 如果达到最大迭代次数，生成一个说明

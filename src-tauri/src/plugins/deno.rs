@@ -77,7 +77,7 @@ pub struct Plugin {
 pub struct Tool {
     pub name: String,
     pub description: String,
-    pub parameters: Value,
+    pub parameters: Option<Value>,
 }
 
 // 在文件开头的其他结构体定义附近添加
@@ -227,11 +227,16 @@ async fn process_plugin_content(id: String, content: String) -> Result<Plugin> {
         r#"
         const plugin = await import('file://{plugin_path}');
         const tools = Object.entries(plugin.default.tools || {{}})
-            .map(([key, value]) => ({{
-                name: key || "undefined",
-                description: value.description || "",
-                parameters: value.parameters
-            }}));
+            .map(([key, value]) => {{
+                const res = {{
+                    name: key || "undefined",
+                    description: value.description || "",
+                }};
+                if (value.parameters) {{
+                   res.parameters = value.parameters;
+                }}
+                return res;
+            }});
         console.log(JSON.stringify({{
             name: plugin.default.name || "undefined",
             description: plugin.default.description || "",
@@ -261,7 +266,11 @@ async fn process_plugin_content(id: String, content: String) -> Result<Plugin> {
             Ok(Tool {
                 name,
                 description,
-                parameters: tool["parameters"].clone(),
+                parameters: if tool.get("parameters").is_some() {
+                    Some(tool["parameters"].clone())
+                } else {
+                    None
+                },
             })
         })
         .collect::<Result<Vec<_>>>()?;

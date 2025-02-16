@@ -3,6 +3,7 @@ import { Header } from "@/components/custom/Header";
 import { Input } from "@/components/ui/input";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TOOL_NAME_SPLIT } from "@/services/bot/Bot";
 import { BotManager } from "@/services/bot/BotManger";
 import { ModelManager } from "@/services/model/ModelManager";
 import { cmd } from "@/utils/shell";
@@ -139,7 +140,7 @@ export function BotEdit() {
                             options={Object.values(plugins).flatMap((plugin: PluginProps) =>
                                 plugin.tools.map((tool: ToolProps) => ({
                                     label: "[" + plugin.name + "]" + tool.name,
-                                    value: tool.name + "@" + plugin.id
+                                    value: tool.name + TOOL_NAME_SPLIT + plugin.id
                                 }))
                             )}
                             value={bot.tools}

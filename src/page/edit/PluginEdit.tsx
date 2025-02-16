@@ -222,6 +222,8 @@ export function PluginEdit() {
         }
     };
 
+    const parameters = plugin?.tools.find(tool => tool.name === testTool)?.parameters
+
     if (loading) {
         return (
             <div className="flex flex-col h-screen bg-background">
@@ -318,8 +320,8 @@ export function PluginEdit() {
                                 <div className="space-y-1.5">
                                     <label className="block text-xs font-medium text-muted-foreground">测试参数</label>
                                     <div className="space-y-3">
-                                        {plugin?.tools.find(tool => tool.name === testTool)?.parameters.properties &&
-                                            Object.entries(plugin.tools.find(tool => tool.name === testTool)!.parameters.properties).map(([key, property]) => (
+                                        {parameters &&
+                                            Object.entries(parameters.properties).map(([key, property]) => (
                                                 <ParamInput
                                                     key={key}
                                                     name={key}

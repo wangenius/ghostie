@@ -159,12 +159,11 @@ export function MessageItem({ message }: MessageItemProps) {
 						}
 					</div>
 					<div className="text-xs text-muted-foreground items-center flex justify-between">
-						{message.type === 'assistant:tool' && message.function_call
+						{message.type === 'assistant:tool' && message.tool_calls
 							&& <span className="flex items-center gap-1">
 								<TbTools className="h-3.5 w-3.5" />
-								调用工具: {message.function_call.name}
+								调用工具: {message.tool_calls?.[0]?.function.name}
 							</span>
-
 						}
 						{
 							message.type === 'assistant:reply' &&

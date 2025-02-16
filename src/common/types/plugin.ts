@@ -39,8 +39,8 @@ export interface FunctionCallProps {
   name: string;
   /* 工具函数描述 */
   description: string;
-  /* 工具函数参数 */
-  parameters: ToolParameters;
+  /* 工具函数参数, 如果不存在, 则表示没有参数 */
+  parameters?: ToolParameters;
 }
 
 /**

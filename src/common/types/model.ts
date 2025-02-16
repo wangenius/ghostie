@@ -13,8 +13,13 @@ export interface Model {
   model: string;
 }
 
-/** 消息角色类型 */
-export type MessageRole = "system" | "user" | "assistant" | "function";
+/** 消息角色类型
+ * system: 系统消息
+ * user: 用户消息
+ * assistant: 助手消息
+ * tool: 工具消息(工具调用消息)
+ */
+export type MessageRole = "system" | "user" | "assistant" | "tool";
 
 /** 大模型返回的函数调用信息 */
 export interface FunctionCallReply {
@@ -22,6 +27,14 @@ export interface FunctionCallReply {
   name: string;
   /* 参数 */
   arguments: string;
+}
+
+/** 工具调用信息 */
+export interface ToolCallReply {
+  id: string;
+  function: FunctionCallReply;
+  index: number;
+  type: "function";
 }
 
 /** 消息类型 */
@@ -41,10 +54,10 @@ export interface MessagePrototype {
   role: MessageRole;
   /* 内容 */
   content: string;
-  /* 名称 */
-  name?: string;
-  /* 函数调用 */
-  function_call?: FunctionCallReply;
+  /* 工具调用请求, 用于工具调用 */
+  tool_calls?: ToolCallReply[];
+  /* 工具调用ID, 用于工具调用结果 */
+  tool_call_id?: string;
 }
 /** 消息接口 */
 export interface Message extends MessagePrototype {
@@ -68,6 +81,14 @@ export interface FunctionCallResult<T = any, R = any> {
   result: R;
 }
 
+/** 工具请求体 */
+export interface FunctionRequestBody {
+  type: "function";
+  function: FunctionCallProps;
+}
+
+export type ToolRequestBody = FunctionRequestBody[];
+
 /** 消息请求体, 用于发送给模型, 是LLM API的请求体 */
 export interface ChatModelRequestBody {
   /* 模型 */
@@ -77,7 +98,7 @@ export interface ChatModelRequestBody {
   /* 流式 */
   stream?: boolean;
   /* 工具 */
-  functions?: FunctionCallProps[];
+  tools?: ToolRequestBody;
   /* 响应格式 */
   response_format?: {
     type: string;

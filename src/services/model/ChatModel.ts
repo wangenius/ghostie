@@ -1,22 +1,23 @@
 /** Chat模型
  * 该模型依赖于工具模块。
  */
-import { FunctionCallProps, ToolProps } from "@/common/types/plugin";
+import { ToolProps } from "@/common/types/plugin";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
 import { ModelInfo } from "@common/types/agent";
 import {
   ChatModelRequestBody,
   ChatModelResponse,
-  FunctionCallReply,
   FunctionCallResult,
-  Message,
   MessagePrototype,
   MessageType,
+  ToolCallReply,
+  ToolRequestBody,
 } from "@common/types/model";
-import { Echo } from "echo-state";
+import { TOOL_NAME_SPLIT } from "../bot/Bot";
 import { HistoryMessage } from "./HistoryMessage";
 
+/** 请求配置 */
 interface RequestConfig {
   user: MessageType;
   assistant: MessageType;
@@ -36,13 +37,7 @@ export class ChatModel {
   /** 消息历史 */
   public historyMessage: HistoryMessage = HistoryMessage.create();
   /** 工具 */
-  private tools: ToolProps[] | undefined;
-  /** 加载状态 */
-  public loading = new Echo<{
-    loading: boolean;
-  }>({
-    loading: false,
-  });
+  private tools: ToolRequestBody | undefined;
 
   /** 构造函数
    * @param config 模型配置
@@ -64,7 +59,14 @@ export class ChatModel {
    * @returns 当前模型实例
    */
   public setTools(tools: ToolProps[]): this {
-    this.tools = tools;
+    this.tools = tools?.map((tool) => ({
+      type: "function",
+      function: {
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters,
+      },
+    }));
     return this;
   }
 
@@ -97,16 +99,6 @@ export class ChatModel {
     return this;
   }
 
-  static tool_to_function(
-    tools?: ToolProps[]
-  ): FunctionCallProps[] | undefined {
-    return tools?.map((tool) => ({
-      name: tool.name,
-      description: tool.description,
-      parameters: tool.parameters,
-    }));
-  }
-
   private getAbortController(requestId: string): AbortController {
     if (!this.abortControllers.has(requestId)) {
       this.abortControllers.set(requestId, new AbortController());
@@ -119,15 +111,15 @@ export class ChatModel {
   }
 
   private async tool_call(
-    function_call: FunctionCallReply
+    tool_call: ToolCallReply
   ): Promise<FunctionCallResult | undefined> {
-    if (!function_call) return;
-    const toolArgs = JSON.parse(function_call.arguments || "{}");
+    if (!tool_call) return;
+    const toolArgs = JSON.parse(tool_call.function.arguments || "{}");
     try {
       /* 执行工具 */
       const toolResultPromise = cmd.invoke("plugin_execute", {
-        id: function_call.name.split("@")[1],
-        tool: function_call.name.split("@")[0],
+        id: tool_call.function.name.split(TOOL_NAME_SPLIT)[1],
+        tool: tool_call.function.name.split(TOOL_NAME_SPLIT)[0],
         args: toolArgs,
       });
 
@@ -136,240 +128,26 @@ export class ChatModel {
 
       /* 返回工具调用结果 */
       return {
-        name: function_call.name,
+        name: tool_call.function.name,
         arguments: toolArgs,
         result: toolResult,
       };
     } catch (error) {
       return {
-        name: function_call.name,
+        name: tool_call.function.name,
         arguments: toolArgs,
         result: String(error),
       };
     }
   }
 
-  /** 文本生成
+  /** 流式生成
    * @param prompt 提示词
-   * @param config 单独配置,可覆盖默认版本
-   * @returns 文本生成结果
+   * @param config 单独配置生成消息的显示类型
+   * @returns 流式生成结果
    */
-  public async text(
-    prompt: string,
-    config: RequestConfig = {
-      user: "user:input",
-      assistant: "assistant:reply",
-      function: "function:result",
-    }
-  ): Promise<ChatModelResponse<string>> {
-    const requestId = gen.id();
-    try {
-      /* 获取请求控制器 */
-      const abortController = this.getAbortController(requestId);
-
-      const messages = this.historyMessage.push([
-        {
-          role: "user",
-          content: prompt,
-          type: config.user,
-          created_at: Date.now(),
-        },
-      ]);
-
-      /* 创建请求体
-       * 添加用户消息
-       */
-      const requestBody: ChatModelRequestBody = {
-        model: this.model,
-        messages,
-        functions: ChatModel.tool_to_function(this.tools),
-      };
-      this.loading.set({ loading: true });
-      /* 发送请求 */
-      const response = await fetch(this.api_url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.api_key}`,
-        },
-        body: JSON.stringify(requestBody),
-        signal: abortController.signal,
-      });
-      /* 检查请求是否成功 */
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API请求失败: ${response.status} - ${errorText}`);
-      }
-      /* 获取响应数据 */
-      const data = await response.json();
-      /* 获取助手消息 */
-      const assistantMessage = data.choices[0].message;
-      /* 创建基本响应结果 */
-      const result: ChatModelResponse<string> = {
-        /* 助手消息内容 */
-        body: assistantMessage.content || "",
-        /* 停止请求 */
-        stop: () => this.stop(requestId),
-        /* 工具调用结果 */
-        tool: await this.tool_call(assistantMessage.function_call),
-      };
-
-      /* 处理工具函数调用 */
-      if (result.tool) {
-        // 将工具函数执行结果添加到消息历史
-        const functionResultMessage: Message = {
-          role: "function",
-          name: assistantMessage.function_call.name,
-          content: JSON.stringify(result.tool.result),
-          type: config.function,
-          created_at: Date.now(),
-        };
-        /* 添加消息到历史 */
-        this.historyMessage.push([
-          {
-            ...assistantMessage,
-            type: "assistant:tool",
-            created_at: Date.now(),
-          },
-          functionResultMessage,
-        ]);
-      } else {
-        // 如果没有工具调用，只添加用户消息和助手回复到历史
-        this.historyMessage.push([
-          {
-            ...assistantMessage,
-            type: config.assistant,
-            created_at: Date.now(),
-          },
-        ]);
-      }
-      this.loading.set({ loading: false });
-      return result;
-    } catch (error) {
-      this.loading.set({ loading: false });
-      this.removeAbortController(requestId);
-      // 如果没有工具调用，只添加用户消息和助手回复到历史
-      this.historyMessage.push([
-        {
-          role: "assistant",
-          content: String(error),
-          type: "assistant:error",
-          created_at: Date.now(),
-        },
-      ]);
-      return {
-        body: String(error),
-        stop: () => this.stop(requestId),
-        tool: undefined,
-      };
-    } finally {
-      this.removeAbortController(requestId);
-    }
-  }
-
-  public async json<T = any>(
-    prompt: string,
-    template: Record<keyof T, string | any>,
-    config: RequestConfig = {
-      user: "user:input",
-      assistant: "assistant:reply",
-      function: "function:result",
-    }
-  ): Promise<ChatModelResponse<T>> {
-    const requestId = gen.id();
-    try {
-      const abortController = this.getAbortController(requestId);
-
-      let messages: MessagePrototype[] = [];
-      const newMessages: Message = {
-        role: "user",
-        content: prompt,
-        type: config.user,
-        created_at: Date.now(),
-      };
-
-      if (template) {
-        const templatePrompt = `请严格按照以下JSON格式返回(不添加额外字符)：\n${JSON.stringify(
-          template
-        )}`;
-        newMessages.content += `\n\n${templatePrompt}`;
-      }
-      messages = this.historyMessage.push([newMessages]);
-
-      /* 创建请求体 */
-      const requestBody: ChatModelRequestBody = {
-        model: this.model,
-        messages,
-        functions: ChatModel.tool_to_function(this.tools),
-        response_format: { type: "json_object" },
-      };
-      this.loading.set({ loading: true });
-      const response = await fetch(this.api_url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.api_key}`,
-        },
-        body: JSON.stringify(requestBody),
-        signal: abortController.signal,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `API request failed: ${response.status} - ${errorText}`
-        );
-      }
-
-      /* 获取响应数据 */
-      const data = await response.json();
-      /* 获取助手消息 */
-      const assistantMessage = data.choices[0].message;
-
-      /* 创建基本响应结果 */
-      const result: ChatModelResponse<T> = {
-        body: JSON.parse(assistantMessage.content) as T,
-        stop: () => this.stop(requestId),
-        tool: await this.tool_call(assistantMessage.function_call),
-      };
-
-      /* 处理工具函数调用 */
-      if (result.tool) {
-        // 将工具函数执行结果添加到消息历史
-        const functionResultMessage: Message = {
-          role: "function",
-          name: assistantMessage.function_call.name,
-          content: JSON.stringify(result.tool.result),
-          type: config.function,
-          created_at: Date.now(),
-        };
-        /* 添加消息到历史 */
-        this.historyMessage.push([
-          { ...assistantMessage, type: config.assistant },
-          functionResultMessage,
-        ]);
-        /* 创建工具调用结果 */
-        result.tool = {
-          name: assistantMessage.function_call.name,
-          arguments: result.tool.arguments,
-          result: result.tool.result,
-        };
-      } else {
-        // 如果没有工具调用，只添加用户消息和助手回复到历史
-        this.historyMessage.push([
-          { ...assistantMessage, type: config.assistant },
-        ]);
-      }
-      this.loading.set({ loading: false });
-
-      return result;
-    } finally {
-      this.removeAbortController(requestId);
-    }
-  }
-
   public async stream(
-    prompt: string,
+    prompt?: string,
     config: RequestConfig = {
       user: "user:input",
       assistant: "assistant:reply",
@@ -377,21 +155,24 @@ export class ChatModel {
     }
   ): Promise<ChatModelResponse<string>> {
     const requestId = gen.id();
-    let functionCallData: FunctionCallReply | undefined;
     let content = "";
-
+    let messages: MessagePrototype[] = [];
     try {
-      // 添加用户消息
-      const messages = this.historyMessage.push([
-        {
-          role: "user",
-          content: prompt,
-          type: config.user,
-          created_at: Date.now(),
-        },
-      ]);
+      if (prompt) {
+        // 添加用户输入的消息, 返回请求消息
+        messages = this.historyMessage.push([
+          {
+            role: "user",
+            content: prompt,
+            type: config.user,
+            created_at: Date.now(),
+          },
+        ]);
+      } else {
+        messages = this.historyMessage.listWithOutType();
+      }
 
-      // 创建初始的助手消息
+      // 创建初始的助手消息, 用于显示加载中
       this.historyMessage.push([
         {
           role: "assistant",
@@ -400,17 +181,17 @@ export class ChatModel {
           created_at: Date.now(),
         },
       ]);
-
       /* 创建请求体 */
       const requestBody: ChatModelRequestBody = {
         model: this.model,
         messages,
         stream: true,
-        functions: ChatModel.tool_to_function(this.tools),
+        tools: this.tools,
       };
 
-      this.loading.set({ loading: true });
+      console.log(requestBody);
 
+      /* 发送请求 */
       const response = await fetch(this.api_url, {
         method: "POST",
         headers: {
@@ -420,7 +201,9 @@ export class ChatModel {
         body: JSON.stringify(requestBody),
         signal: this.getAbortController(requestId).signal,
       });
+      console.log(requestBody);
 
+      /* 检查请求是否成功, 如果失败, 检查相关问题. */
       if (!response.ok || !response.body) {
         const errorResponse = await fetch(this.api_url, {
           method: "POST",
@@ -432,34 +215,47 @@ export class ChatModel {
           signal: this.getAbortController(requestId).signal,
         });
 
+        /* 获取错误信息 */
         const errorText = await errorResponse.text();
+        /* 更新最后一条消息, 显示错误信息 */
         this.historyMessage.updateLastMessage({
-          content: `API请求失败: API request failed: ${errorResponse.status} - ${errorText}`,
+          content: `请求失败: ${errorResponse.status} - ${errorText}`,
           type: "assistant:error",
         });
         return {
-          body: "API请求失败",
+          body: `请求失败: ${errorResponse.status} - ${errorText}`,
           stop: () => this.stop(requestId),
           tool: undefined,
         };
       }
 
-      const reader = response.body.getReader();
+      /* 获取流式读取器 */
+      const reader = response.body!.getReader();
+      /* 解码器 */
       const decoder = new TextDecoder();
+      let tool_calls: ToolCallReply[] = [];
 
       try {
         while (true) {
+          /* 读取流式数据 */
           const { done, value } = await reader.read();
           if (done) break;
 
+          /* 解码数据 */
           const text = decoder.decode(value);
+          /* 按行分割 */
           const lines = text.split("\n");
 
           for (const line of lines) {
             if (!line.startsWith("data: ") || line.includes("[DONE]")) continue;
-
+            /* 解析数据 */
             const json = JSON.parse(line.slice(5));
+            /* 获取助手消息 */
             const delta = json.choices[0]?.delta;
+            /* 获取工具调用 */
+            const delta_tool_call = delta?.tool_calls?.[0] as ToolCallReply;
+
+            console.log(delta);
 
             if (delta?.content) {
               content += delta.content;
@@ -470,17 +266,24 @@ export class ChatModel {
               });
             }
 
-            if (delta?.function_call) {
-              functionCallData = {
-                name: delta.function_call.name,
-                arguments: delta.function_call.arguments,
-              };
-              this.historyMessage.updateLastMessage({
-                function_call: functionCallData,
-                type: "assistant:tool",
-              });
+            if (delta_tool_call) {
+              console.log(delta_tool_call);
+              // 处理工具调用
+              if (delta_tool_call.id) {
+                tool_calls[delta_tool_call.index] = delta_tool_call;
+              } else {
+                tool_calls[tool_calls.length - 1].function.arguments +=
+                  delta_tool_call.function.arguments;
+              }
             }
           }
+        }
+        if (tool_calls.length > 0) {
+          // 更新消息中的工具调用
+          this.historyMessage.updateLastMessage({
+            tool_calls,
+            type: "assistant:tool",
+          });
         }
       } finally {
         reader.releaseLock();
@@ -489,20 +292,21 @@ export class ChatModel {
       // 工具调用结果
       let toolResult;
       // 处理函数调用
-      if (functionCallData) {
-        // 执行工具
-        toolResult = await this.tool_call(functionCallData);
-        // 添加工具调用结果到历史
-        if (toolResult) {
-          this.historyMessage.push([
-            {
-              role: "function",
-              name: functionCallData.name,
-              content: JSON.stringify(toolResult.result),
-              type: config.function,
-              created_at: Date.now(),
-            },
-          ]);
+      if (tool_calls) {
+        for (const tool_call of tool_calls) {
+          toolResult = await this.tool_call(tool_call);
+          // 添加工具调用结果到历史
+          if (toolResult) {
+            this.historyMessage.push([
+              {
+                role: "tool",
+                tool_call_id: tool_call.id,
+                content: JSON.stringify(toolResult.result),
+                type: config.function,
+                created_at: Date.now(),
+              },
+            ]);
+          }
         }
       }
 
@@ -513,15 +317,231 @@ export class ChatModel {
       };
     } catch (error) {
       // 发生错误时移除最后一条加载中的消息
-      this.loading.set({ loading: false });
       this.removeAbortController(requestId);
       throw error;
     } finally {
-      this.loading.set({ loading: false });
       this.removeAbortController(requestId);
     }
   }
 
+  /** 文本生成
+   * @param prompt 提示词
+   * @param config 单独配置,可覆盖默认版本
+   * @returns 文本生成结果
+   */
+  // public async text(
+  //   prompt: string,
+  //   config: RequestConfig = {
+  //     user: "user:input",
+  //     assistant: "assistant:reply",
+  //     function: "function:result",
+  //   }
+  // ): Promise<ChatModelResponse<string>> {
+  //   const requestId = gen.id();
+  //   try {
+  //     /* 获取请求控制器 */
+  //     const abortController = this.getAbortController(requestId);
+
+  //     const messages = this.historyMessage.push([
+  //       {
+  //         role: "user",
+  //         content: prompt,
+  //         type: config.user,
+  //         created_at: Date.now(),
+  //       },
+  //     ]);
+
+  //     /* 创建请求体
+  //      * 添加用户消息
+  //      */
+  //     const requestBody: ChatModelRequestBody = {
+  //       model: this.model,
+  //       messages,
+  //       tools: ChatModel.tool_to_function(this.tools),
+  //     };
+  //     this.loading.set({ loading: true });
+  //     /* 发送请求 */
+  //     const response = await fetch(this.api_url, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${this.api_key}`,
+  //       },
+  //       body: JSON.stringify(requestBody),
+  //       signal: abortController.signal,
+  //     });
+  //     /* 检查请求是否成功 */
+  //     if (!response.ok) {
+  //       const errorText = await response.text();
+  //       throw new Error(`API请求失败: ${response.status} - ${errorText}`);
+  //     }
+  //     /* 获取响应数据 */
+  //     const data = await response.json();
+  //     /* 获取助手消息 */
+  //     const assistantMessage = data.choices[0].message;
+  //     /* 创建基本响应结果 */
+  //     const result: ChatModelResponse<string> = {
+  //       /* 助手消息内容 */
+  //       body: assistantMessage.content || "",
+  //       /* 停止请求 */
+  //       stop: () => this.stop(requestId),
+  //       /* 工具调用结果 */
+  //       tool: await this.tool_call(assistantMessage.function_call),
+  //     };
+
+  //     /* 处理工具函数调用 */
+  //     if (result.tool) {
+  //       // 将工具函数执行结果添加到消息历史
+  //       const functionResultMessage: Message = {
+  //         role: "tool",
+  //         name: assistantMessage.function_call.name,
+  //         content: JSON.stringify(result.tool.result),
+  //         type: config.function,
+  //         created_at: Date.now(),
+  //       };
+  //       /* 添加消息到历史 */
+  //       this.historyMessage.push([
+  //         {
+  //           ...assistantMessage,
+  //           type: "assistant:tool",
+  //           created_at: Date.now(),
+  //         },
+  //         functionResultMessage,
+  //       ]);
+  //     } else {
+  //       // 如果没有工具调用，只添加用户消息和助手回复到历史
+  //       this.historyMessage.push([
+  //         {
+  //           ...assistantMessage,
+  //           type: config.assistant,
+  //           created_at: Date.now(),
+  //         },
+  //       ]);
+  //     }
+  //     this.loading.set({ loading: false });
+  //     return result;
+  //   } catch (error) {
+  //     this.loading.set({ loading: false });
+  //     this.removeAbortController(requestId);
+  //     // 如果没有工具调用，只添加用户消息和助手回复到历史
+  //     this.historyMessage.push([
+  //       {
+  //         role: "assistant",
+  //         content: String(error),
+  //         type: "assistant:error",
+  //         created_at: Date.now(),
+  //       },
+  //     ]);
+  //     return {
+  //       body: String(error),
+  //       stop: () => this.stop(requestId),
+  //       tool: undefined,
+  //     };
+  //   } finally {
+  //     this.removeAbortController(requestId);
+  //   }
+  // }
+
+  // public async json<T = any>(
+  //   prompt: string,
+  //   template: Record<keyof T, string | any>,
+  //   config: RequestConfig = {
+  //     user: "user:input",
+  //     assistant: "assistant:reply",
+  //     function: "function:result",
+  //   }
+  // ): Promise<ChatModelResponse<T>> {
+  //   const requestId = gen.id();
+  //   try {
+  //     const abortController = this.getAbortController(requestId);
+
+  //     let messages: MessagePrototype[] = [];
+  //     const newMessages: Message = {
+  //       role: "user",
+  //       content: prompt,
+  //       type: config.user,
+  //       created_at: Date.now(),
+  //     };
+
+  //     if (template) {
+  //       const templatePrompt = `请严格按照以下JSON格式返回(不添加额外字符)：\n${JSON.stringify(
+  //         template
+  //       )}`;
+  //       newMessages.content += `\n\n${templatePrompt}`;
+  //     }
+  //     messages = this.historyMessage.push([newMessages]);
+
+  //     /* 创建请求体 */
+  //     const requestBody: ChatModelRequestBody = {
+  //       model: this.model,
+  //       messages,
+  //       tools: ChatModel.tool_to_function(this.tools),
+  //       response_format: { type: "json_object" },
+  //     };
+  //     this.loading.set({ loading: true });
+  //     const response = await fetch(this.api_url, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${this.api_key}`,
+  //       },
+  //       body: JSON.stringify(requestBody),
+  //       signal: abortController.signal,
+  //     });
+
+  //     if (!response.ok) {
+  //       const errorText = await response.text();
+  //       throw new Error(
+  //         `API request failed: ${response.status} - ${errorText}`
+  //       );
+  //     }
+
+  //     /* 获取响应数据 */
+  //     const data = await response.json();
+  //     /* 获取助手消息 */
+  //     const assistantMessage = data.choices[0].message;
+
+  //     /* 创建基本响应结果 */
+  //     const result: ChatModelResponse<T> = {
+  //       body: JSON.parse(assistantMessage.content) as T,
+  //       stop: () => this.stop(requestId),
+  //       tool: await this.tool_call(assistantMessage.function_call),
+  //     };
+
+  //     /* 处理工具函数调用 */
+  //     if (result.tool) {
+  //       // 将工具函数执行结果添加到消息历史
+  //       const functionResultMessage: Message = {
+  //         role: "tool",
+  //         name: assistantMessage.function_call.name,
+  //         content: JSON.stringify(result.tool.result),
+  //         type: config.function,
+  //         created_at: Date.now(),
+  //       };
+  //       /* 添加消息到历史 */
+  //       this.historyMessage.push([
+  //         { ...assistantMessage, type: config.assistant },
+  //         functionResultMessage,
+  //       ]);
+  //       /* 创建工具调用结果 */
+  //       result.tool = {
+  //         name: assistantMessage.function_call.name,
+  //         arguments: result.tool.arguments,
+  //         result: result.tool.result,
+  //       };
+  //     } else {
+  //       // 如果没有工具调用，只添加用户消息和助手回复到历史
+  //       this.historyMessage.push([
+  //         { ...assistantMessage, type: config.assistant },
+  //       ]);
+  //     }
+  //     this.loading.set({ loading: false });
+
+  //     return result;
+  //   } finally {
+  //     this.removeAbortController(requestId);
+  //   }
+  // }
   public stop(requestId?: string): void {
     if (requestId) {
       const controller = this.abortControllers.get(requestId);
@@ -531,7 +551,6 @@ export class ChatModel {
         } catch (e) {
           // 忽略停止错误
         } finally {
-          this.loading.set({ loading: false });
           this.removeAbortController(requestId);
         }
       }
@@ -540,9 +559,9 @@ export class ChatModel {
         try {
           controller.abort();
         } catch (e) {
-          // 忽略停止错误
+          console.log(e);
+          console.log(id);
         } finally {
-          this.loading.set({ loading: false });
           this.removeAbortController(id);
         }
       });

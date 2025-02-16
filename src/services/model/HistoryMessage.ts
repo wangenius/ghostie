@@ -148,8 +148,8 @@ export class HistoryMessage implements ChatHistoryItem {
           role: msg.role,
           content: msg.content,
         };
-        if (msg.name) result.name = msg.name;
-        if (msg.function_call) result.function_call = msg.function_call;
+        if (msg.tool_calls) result.tool_calls = msg.tool_calls;
+        if (msg.tool_call_id) result.tool_call_id = msg.tool_call_id;
         return result as MessagePrototype;
       });
   }
@@ -187,15 +187,17 @@ export class HistoryMessage implements ChatHistoryItem {
    * @returns 所有消息的数组
    */
   listWithOutType(): MessagePrototype[] {
-    return [this.system, ...this.list].map((msg) => {
-      const result: Record<string, any> = {
-        role: msg.role,
-        content: msg.content,
-      };
-      if (msg.name) result.name = msg.name;
-      if (msg.function_call) result.function_call = msg.function_call;
-      return result as MessagePrototype;
-    });
+    return [this.system, ...this.list]
+      .filter((msg) => msg.type !== "assistant:error")
+      .map((msg) => {
+        const result: Record<string, any> = {
+          role: msg.role,
+          content: msg.content,
+        };
+        if (msg.tool_calls) result.tool_calls = msg.tool_calls;
+        if (msg.tool_call_id) result.tool_call_id = msg.tool_call_id;
+        return result as MessagePrototype;
+      });
   }
 
   /** 清空所有消息历史, 保留系统消息 */
