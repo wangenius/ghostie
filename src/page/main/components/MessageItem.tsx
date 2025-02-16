@@ -1,7 +1,7 @@
 import { Message } from "@/common/types/model";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { TbCopy, TbLoader, TbTools } from "react-icons/tb";
+import { TbCopy, TbError404Off, TbLoader, TbTools } from "react-icons/tb";
 import ReactMarkdown, { Components } from "react-markdown";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -127,21 +127,36 @@ export function MessageItem({ message }: MessageItemProps) {
 						"text-foreground leading-6",
 						message.type === 'system' && "font-medium"
 					)}>
-						{message.type === 'assistant:loading' ? (
+						{message.type === 'assistant:loading' && (
 							<div className="flex items-center gap-2">
 								<TbLoader className="h-4 w-4 animate-spin" />
 								<span>{message.content}</span>
 							</div>
-						) : (
-							<ReactMarkdown
+						)}
+						{
+							message.type === 'user:input' &&
+							<div className="flex items-center gap-2">
+								<span>{message.content}</span>
+							</div>
+						}
+						{
+							message.type === 'assistant:reply' &&
+							(<ReactMarkdown
 								components={{
 									code: CodeBlock,
 									a: CustomLink
 								}}
 							>
 								{message.content}
-							</ReactMarkdown>
-						)}
+							</ReactMarkdown>)
+						}
+						{
+							message.type === 'assistant:error' &&
+							<span className="text-red-500">
+								<TbError404Off className="h-3.5 w-3.5" />
+								{message.content}
+							</span>
+						}
 					</div>
 					<div className="text-xs text-muted-foreground items-center flex justify-between">
 						{message.type === 'assistant:tool' && message.function_call

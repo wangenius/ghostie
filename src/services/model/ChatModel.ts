@@ -253,7 +253,7 @@ export class ChatModel {
         {
           role: "assistant",
           content: String(error),
-          type: "assistant:warning",
+          type: "assistant:error",
           created_at: Date.now(),
         },
       ]);
@@ -435,7 +435,7 @@ export class ChatModel {
         const errorText = await errorResponse.text();
         this.historyMessage.updateLastMessage({
           content: `API请求失败: API request failed: ${errorResponse.status} - ${errorText}`,
-          type: "assistant:warning",
+          type: "assistant:error",
         });
         return {
           body: "API请求失败",

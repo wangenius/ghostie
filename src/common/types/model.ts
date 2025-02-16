@@ -32,7 +32,7 @@ export type MessageType =
   | "assistant:loading"
   | "assistant:reply"
   | "assistant:tool"
-  | "assistant:warning"
+  | "assistant:error"
   | "function:result";
 
 /** 消息原型 */

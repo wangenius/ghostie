@@ -142,7 +142,7 @@ export class HistoryMessage implements ChatHistoryItem {
     });
 
     return [this.system, ...this.list]
-      .filter((msg) => msg.type !== "assistant:warning")
+      .filter((msg) => msg.type !== "assistant:error")
       .map((msg) => {
         const result: Record<string, any> = {
           role: msg.role,
