@@ -109,7 +109,7 @@ export function PluginsTab() {
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto">
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1">
                     {Object.values(plugins).map((plugin) => {
                         if (!plugin) return null;
                         return (

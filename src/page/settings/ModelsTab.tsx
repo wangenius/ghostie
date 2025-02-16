@@ -122,7 +122,10 @@ export function ModelsTab() {
 
             {/* 模型列表区域 */}
             <div className="flex-1 min-h-0 overflow-y-auto">
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 gap-1 ">
+                    <div className="text-xs text-gray-500 bg-muted p-2 rounded-md">
+                        模型支持: 阿里千问, deepseek, ChatGPT等gpt接口的模型。智谱或Claude等模型请等待更新。
+                    </div>
                     {Object.entries(models).map(([id, model]) => (
                         <ModelItem
                             key={id}

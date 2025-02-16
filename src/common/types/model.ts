@@ -103,6 +103,8 @@ export interface ChatModelRequestBody {
   response_format?: {
     type: string;
   };
+  /* 并行工具调用 */
+  parallel_tool_calls?: boolean;
 }
 
 /** 模型响应

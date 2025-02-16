@@ -213,6 +213,8 @@ export function PluginEdit() {
                 tool: tool,
                 args: testArgs,
             });
+            console.log(result);
+
             cmd.message(JSON.stringify(result), "测试成功");
         } catch (error) {
             console.log(error);

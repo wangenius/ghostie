@@ -15,4 +15,6 @@ export interface BotProps {
   model: string;
   /* 工具 */
   tools: string[];
+  /* 置顶 */
+  pinned?: boolean;
 }

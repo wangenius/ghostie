@@ -114,9 +114,11 @@ export class ChatModel {
     tool_call: ToolCallReply
   ): Promise<FunctionCallResult | undefined> {
     if (!tool_call) return;
+    console.log(tool_call.function.arguments);
+
     const toolArgs = JSON.parse(tool_call.function.arguments || "{}");
     try {
-      /* 执行工具 */
+      /** 执行工具 */
       const toolResultPromise = cmd.invoke("plugin_execute", {
         id: tool_call.function.name.split(TOOL_NAME_SPLIT)[1],
         tool: tool_call.function.name.split(TOOL_NAME_SPLIT)[0],
@@ -125,6 +127,8 @@ export class ChatModel {
 
       /* 等待工具执行完成 */
       const toolResult = await toolResultPromise;
+
+      console.log(toolResult);
 
       /* 返回工具调用结果 */
       return {
@@ -186,8 +190,11 @@ export class ChatModel {
         model: this.model,
         messages,
         stream: true,
-        tools: this.tools,
+        parallel_tool_calls: true,
       };
+      if (this.tools?.length) {
+        requestBody.tools = this.tools;
+      }
 
       console.log(requestBody);
 
@@ -255,10 +262,10 @@ export class ChatModel {
             /* 获取工具调用 */
             const delta_tool_call = delta?.tool_calls?.[0] as ToolCallReply;
 
-            console.log(delta);
-
             if (delta?.content) {
               content += delta.content;
+              console.log(content);
+
               // 只在有实际内容时更新type
               this.historyMessage.updateLastMessage({
                 content,
@@ -271,7 +278,7 @@ export class ChatModel {
               // 处理工具调用
               if (delta_tool_call.id) {
                 tool_calls[delta_tool_call.index] = delta_tool_call;
-              } else {
+              } else if (delta_tool_call.function.arguments) {
                 tool_calls[tool_calls.length - 1].function.arguments +=
                   delta_tool_call.function.arguments;
               }

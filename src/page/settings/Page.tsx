@@ -2,21 +2,21 @@ import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
 import { cmd } from "@/utils/shell";
 import { Echo } from "echo-state";
-import { TbActivity, TbBox, TbColorSwatch, TbDatabase, TbGhost3, TbSettings, TbShape3 } from "react-icons/tb";
+import { TbActivity, TbBox, TbDatabase, TbFileFunction, TbGhost3, TbSettings, TbShape3 } from "react-icons/tb";
+import ActivityTab from "./ActivityTab";
 import { BotsTab } from "./BotsTab";
 import { GeneralTab } from "./GeneralTab";
 import { ModelsTab } from "./ModelsTab";
 import { PluginsTab } from "./PluginsTab";
 import { SpaceTab } from "./SpaceTab";
 import WorkflowsTab from "./WorkflowsTab";
-import ActivityTab from "./ActivityTab";
 
 const SETTINGS_NAV_ITEMS = [
     { id: "general", label: "通用", icon: TbSettings },
     { id: "models", label: "模型", icon: TbBox },
     { id: "bots", label: "助手", icon: TbGhost3 },
     { id: "workflows", label: "工作流", icon: TbShape3 },
-    { id: "plugins", label: "插件", icon: TbColorSwatch },
+    { id: "plugins", label: "插件", icon: TbFileFunction },
     { id: "space", label: "空间", icon: TbDatabase },
     { id: "activity", label: "活动", icon: TbActivity }
 ] as const;
@@ -76,7 +76,7 @@ export function SettingsPage() {
                                 className={`flex items-center justify-start gap-2.5 py-2 px-3.5 rounded-lg text-sm transition-all h-10`}
                             >
 
-                                <Icon className="w-4 h-4" />
+                                <Icon className="w-5 h-5" />
                                 {label}
                             </Button>
                         ))}

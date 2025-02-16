@@ -3,6 +3,7 @@ import { Header } from "@/components/custom/Header";
 import { Input } from "@/components/ui/input";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { TOOL_NAME_SPLIT } from "@/services/bot/Bot";
 import { BotManager } from "@/services/bot/BotManger";
 import { ModelManager } from "@/services/model/ModelManager";
@@ -127,7 +128,7 @@ export function BotEdit() {
                             <SelectContent>
                                 {Object.values(models).map((model) => (
                                     <SelectItem key={model.id} value={model.id}>
-                                        {model.name}
+                                        {model.name + ":" + model.model}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -152,10 +153,10 @@ export function BotEdit() {
 
                     <div className="space-y-1.5">
                         <label className="block text-xs text-muted-foreground">助手提示词</label>
-                        <textarea
+                        <Textarea
                             value={bot.system}
-                            onChange={(e) => setBot({ ...bot, system: e.target.value })}
-                            className="w-full h-40 px-3 py-2 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground resize-none"
+                            onChange={(e) => setBot({ ...bot, system: e })}
+                            className="w-full h-56 px-3 py-2 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground resize-none"
                             placeholder="请输入助手提示词"
                         />
                     </div>

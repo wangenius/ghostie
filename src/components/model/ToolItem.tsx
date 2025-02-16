@@ -1,4 +1,5 @@
-import { TbBox, TbPencil, TbTrash } from "react-icons/tb";
+import { PiPlugsThin } from "react-icons/pi";
+import { TbBox, TbFileFunction, TbPencil, TbTrash } from "react-icons/tb";
 
 interface ToolItemProps {
 	name: string;
@@ -11,16 +12,16 @@ interface ToolItemProps {
 
 export function ToolItem({ name, description, onEdit, onDelete }: ToolItemProps) {
 	return (
-		<div className="group relative bg-card hover:bg-accent/5 border border-border rounded-lg transition-all duration-200">
+		<div className="group relative hover:bg-accent/5 rounded-lg transition-all duration-200">
 			{/* 主内容区 */}
 
 
 
-			<div className="flex items-center p-3 gap-3">
+			<div className="flex items-center p-2 gap-3">
 				{/* 左侧图标 */}
 				<div className="shrink-0">
 					<div className="w-12 h-12 flex items-center justify-center rounded-lg bg-muted">
-						<TbBox className="w-6 h-6 text-primary" />
+						<TbFileFunction className="w-6 h-6 text-primary" />
 					</div>
 				</div>
 

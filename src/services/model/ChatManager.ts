@@ -9,8 +9,6 @@ interface ChatState {
   currentInput: string;
   /* 是否正在加载 */
   isLoading: boolean;
-  /* 当前选中的助手索引 */
-  selectedBotIndex: number;
   /* 当前选中的助手 */
   currentBot?: Bot;
 }
@@ -21,7 +19,6 @@ export class ChatManager {
     isActive: false,
     currentInput: "",
     isLoading: false,
-    selectedBotIndex: 0,
     currentBot: undefined,
   });
 
@@ -32,7 +29,6 @@ export class ChatManager {
       ...state,
       updateInput: (input: string) => this.state.set({ currentInput: input }),
       setLoading: (loading: boolean) => this.state.set({ isLoading: loading }),
-      selectBot: (index: number) => this.state.set({ selectedBotIndex: index }),
       startChat: (bot: BotProps) => {
         const newBot = new Bot(bot);
         this.state.set({

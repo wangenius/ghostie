@@ -2,7 +2,7 @@ import { BotItem } from "@/components/model/BotItem";
 import { BotEdit } from "@/page/edit/BotEdit";
 import { BotManager } from "@/services/bot/BotManger";
 import { cmd } from "@utils/shell";
-import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";
+import { TbBuildingWarehouse, TbDownload, TbPlus, TbUpload } from "react-icons/tb";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PiDotsThreeBold } from "react-icons/pi";
@@ -83,6 +83,12 @@ export function BotsTab() {
                     </Button>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button onClick={() => {
+                        window.open("https://ccn0kkxjz1z2.feishu.cn/wiki/CNUbwM7xSizLoWk95Cuc3XgKnsf?from=from_copylink", "_blank");
+                    }} variant="primary" >
+                        <TbBuildingWarehouse className="w-4 h-4" />
+                        助手仓库
+                    </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
@@ -106,7 +112,9 @@ export function BotsTab() {
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto">
-                <div className="grid grid-cols-1 gap-3">
+
+
+                <div className="grid grid-cols-1">
                     {Object.entries(bots).map(([id, bot]) => (
                         <BotItem
                             key={id}

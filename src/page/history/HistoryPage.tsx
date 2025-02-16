@@ -7,6 +7,7 @@ import { ChatHistory, HistoryMessage } from "@/services/model/HistoryMessage";
 import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
 import { TbClock, TbMessageCircle, TbTrash } from "react-icons/tb";
+import ReactMarkdown from "react-markdown";
 
 export const HistoryPage = () => {
 	const history = ChatHistory.use();
@@ -26,13 +27,14 @@ export const HistoryPage = () => {
 
 	return <div className="flex flex-col h-full">
 		<Header title="历史记录" />
-		<div className="flex-1 overflow-hidden flex">
+		<div className="flex-1 overflow-hidden flex p-2">
 
 			{/* 左侧历史列表 */}
-			<div className="h-full overflow-y-auto p-4 border-r min-w-[300px] max-w-[300px] space-y-2">
+			<div className="h-full overflow-y-auto w-[300px] p-4 bg-muted/50 rounded-lg min-w-[300px] max-w-[300px] space-y-2">
 				<Button variant="destructive" onClick={() => {
 					HistoryMessage.clearAll();
 				}}>
+					<TbTrash className="h-4 w-4" />
 					删除所有
 				</Button>
 				{Object.entries(history).map(([key, value]) => (
@@ -107,11 +109,9 @@ export const HistoryPage = () => {
 									<div className="text-xs text-muted-foreground mb-2">
 										{message.role === "user" ? "用户" : "助手"}
 									</div>
-									<div className="text-sm whitespace-pre-wrap">
-										{message.content}
-									</div>
-									<div className="text-sm whitespace-pre-wrap">
-										{JSON.stringify(message.function_call)}
+									<ReactMarkdown className={"text-xs overflow-hidden"}>{message.content}</ReactMarkdown>
+									<div className="text-sm">
+										{JSON.stringify(message.tool_calls?.[0]?.function.name)}
 									</div>
 								</div>
 							))}

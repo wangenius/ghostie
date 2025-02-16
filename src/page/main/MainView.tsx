@@ -1,13 +1,16 @@
 import { BotProps } from "@/common/types/bot";
+import { LogoIcon } from "@/components/custom/LogoIcon";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Bot } from "@/services/bot/Bot";
 import { BotManager } from "@/services/bot/BotManger";
 import { ChatManager } from "@/services/model/ChatManager";
 import { ChatHistory } from "@/services/model/HistoryMessage";
+import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
 import { cmd } from "@utils/shell";
-import { useEffect, useRef, useCallback, memo } from "react";
-import { TbHistory, TbLoader2, TbSettings, TbX } from "react-icons/tb";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { TbArrowBigLeft, TbDots, TbHistory, TbLoader2, TbSettings } from "react-icons/tb";
 import { HistoryPage } from "../history/HistoryPage";
 import { BotItem } from "./components/BotItem";
 import { MessageItem } from "./components/MessageItem";
@@ -18,15 +21,14 @@ export function MainView() {
         isActive,
         currentInput,
         isLoading,
-        selectedBotIndex,
         currentBot,
         updateInput,
         setLoading,
-        selectBot,
         startChat,
         endChat
     } = ChatManager.useChat();
 
+    const [selectedBotIndex, setSelectedBotIndex] = useState(0);
     const bots = BotManager.use();
     const botList = Object.values(bots);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -91,13 +93,13 @@ export function MainView() {
                 const newIndex = e.key === "ArrowUp"
                     ? (selectedBotIndex - 1 + botList.length) % botList.length
                     : (selectedBotIndex + 1) % botList.length;
-                selectBot(newIndex);
+                setSelectedBotIndex(newIndex);
             }
         };
 
         document.addEventListener("keydown", handleGlobalKeyDown);
         return () => document.removeEventListener("keydown", handleGlobalKeyDown);
-    }, [isActive, selectedBotIndex, botList.length, endChat, selectBot]);
+    }, [isActive, selectedBotIndex, botList.length, endChat]);
 
     return (
         <div className="flex flex-col h-screen bg-background">
@@ -107,18 +109,21 @@ export function MainView() {
                 isLoading={isLoading}
                 isActive={isActive}
                 currentBot={currentBot}
+                botList={botList}
+                selectedBotIndex={selectedBotIndex}
                 onInputChange={updateInput}
                 onKeyDown={handleKeyDown}
                 onEndChat={endChat}
+                onSelectBot={setSelectedBotIndex}
             />
             <main className="flex-1 overflow-hidden">
-                <div className="h-full overflow-y-auto">
+                <div className="h-full overflow-y-auto pb-4">
                     {!isActive &&
                         <MemoizedBotList
                             botList={botList}
                             selectedIndex={selectedBotIndex}
                             currentInput={currentInput}
-                            onSelectBot={selectBot}
+                            onSelectBot={setSelectedBotIndex}
                             onStartChat={startChat}
                         />
                     }
@@ -139,9 +144,12 @@ interface HeaderProps {
     isLoading: boolean;
     isActive: boolean;
     currentBot?: Bot;
+    botList: BotProps[];
+    selectedBotIndex: number;
     onInputChange: (value: string) => void;
     onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
     onEndChat: () => void;
+    onSelectBot: (index: number) => void;
 }
 
 const Header = memo(function Header({
@@ -150,9 +158,11 @@ const Header = memo(function Header({
     isLoading,
     isActive,
     currentBot,
+    botList,
+    selectedBotIndex,
     onInputChange,
     onKeyDown,
-    onEndChat
+    onEndChat,
 }: HeaderProps) {
     const handleSettingsClick = useCallback(() => {
         cmd.open("settings", {}, { width: 800, height: 600 });
@@ -173,17 +183,18 @@ const Header = memo(function Header({
             } else {
                 onEndChat();
             }
-        } else {
-            handleSettingsClick();
         }
     }, [isActive, isLoading, currentBot, onEndChat]);
+
+
 
     return (
         <div className="px-4 draggable">
             <div className="mx-auto flex items-center h-14">
-                <div className="p-2 w-8 h-8 flex transition-all items-center justify-center hover:bg-muted rounded-md cursor-pointer">
-                    <img src="/icon.png" className="w-4" />
-                </div>
+                <Button variant="ghost" className="p-1.5 bg-muted">
+                    <LogoIcon className="w-4 h-4" />
+                    {botList[selectedBotIndex].name}
+                </Button>
                 <div className="flex-1 pl-2">
                     <Input
                         ref={inputRef}
@@ -192,27 +203,39 @@ const Header = memo(function Header({
                         onChange={handleInputChange}
                         onKeyDown={onKeyDown}
                         className="text-sm"
-                        placeholder={isActive ? `与 ${currentBot?.name} 对话...` : "选择一个助手开始对话..."}
+                        placeholder={"点击此处输入内容"}
                     />
                 </div>
-                <Button onClick={handleHistoryClick} size="icon">
-                    <TbHistory className="h-4 w-4" />
-                </Button>
-                <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={handleActionClick}
-                >
-                    {isActive ? (
-                        isLoading ? (
-                            <TbLoader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                            <TbX className="h-4 w-4" />
-                        )
-                    ) : (
-                        <TbSettings className="h-4 w-4" />
-                    )}
-                </Button>
+                {
+                    isActive && (
+                        <Button onClick={handleActionClick} size="icon">
+                            {
+                                isLoading ? (
+                                    <TbLoader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <TbArrowBigLeft className="h-4 w-4" />
+                                )
+                            }
+                        </Button>
+                    )
+                }
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button size="icon" variant="ghost">
+                            <TbDots className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem className="flex items-center gap-2" onClick={handleHistoryClick}>
+                            <TbHistory className="h-4 w-4" />
+                            历史记录
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="flex items-center gap-2" onClick={handleSettingsClick}>
+                            <TbSettings className="h-4 w-4" />
+                            设置
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </div>
     );

@@ -362,6 +362,7 @@ pub async fn plugin_execute(id: String, tool: String, args: Value) -> Result<Val
     /* 环境变量加载 */
     let env_vars = load_env_vars().await?;
     let output = DENO_RUNTIME.execute(&script, &env_vars).await?;
+    println!("{}", output);
     serde_json::from_str(&output).map_err(|e| PluginError::Json(e.to_string()))
 }
 
