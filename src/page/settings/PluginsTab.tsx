@@ -1,5 +1,5 @@
 import { PluginProps } from "@/common/types/plugin";
-import { ToolItem } from "@/components/model/ToolItem";
+import { PluginItem } from "@/components/model/ToolItem";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PluginEdit } from "@/page/edit/PluginEdit";
@@ -113,7 +113,7 @@ export function PluginsTab() {
                     {Object.values(plugins).map((plugin) => {
                         if (!plugin) return null;
                         return (
-                            <ToolItem
+                            <PluginItem
                                 key={plugin.id}
                                 name={plugin.name}
                                 description={plugin.description || ""}

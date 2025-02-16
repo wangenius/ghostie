@@ -8,7 +8,7 @@ import { BotsTab } from "./BotsTab";
 import { GeneralTab } from "./GeneralTab";
 import { ModelsTab } from "./ModelsTab";
 import { PluginsTab } from "./PluginsTab";
-import { SpaceTab } from "./SpaceTab";
+import { KnowledgeTab } from "./KnowledgeTab";
 import WorkflowsTab from "./WorkflowsTab";
 
 const SETTINGS_NAV_ITEMS = [
@@ -43,7 +43,7 @@ export function SettingsPage() {
             case "plugins":
                 return <PluginsTab />;
             case "space":
-                return <SpaceTab />;
+                return <KnowledgeTab />;
             case "workflows":
                 return <WorkflowsTab />;
             case "activity":

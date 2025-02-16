@@ -2,6 +2,7 @@ import { Echo } from "echo-state";
 
 interface SettingsProps {
 	theme: { name: string, label: string };
+	font: { name: string, label: string };
 	language: string;
 	reActMaxIterations: number;
 	sortType: 'default' | 'mostUsed' | 'recentUsed';
@@ -10,12 +11,13 @@ interface SettingsProps {
 export class SettingsManager {
 	private static store = new Echo<SettingsProps>({
 		theme: { name: "light", label: "浅色" },
+		font: { name: "siyuan", label: "思源" },
 		language: "zh-CN",
 		reActMaxIterations: 10,
 		sortType: 'default'
 	}, {
 		name: "settings",
-		sync: true
+		sync: true,
 	});
 
 	static use = this.store.use.bind(this.store)
@@ -44,5 +46,12 @@ export class SettingsManager {
 		this.store.set((prev) => ({ ...prev, sortType }), true);
 	}
 
+	public static getFont() {
+		return this.store.current.font;
+	}
+
+	public static setFont(font: { name: string, label: string }) {
+		this.store.set((prev) => ({ ...prev, font }), true);
+	}
 }
 

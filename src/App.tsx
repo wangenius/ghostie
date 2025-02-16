@@ -12,6 +12,7 @@ import { HistoryPage } from "./page/history/HistoryPage";
 /* 主应用,提供路由 */
 function App() {
     const theme = SettingsManager.use(selector => selector.theme);
+    const font = SettingsManager.use(selector => selector.font);
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Alt") {
@@ -27,7 +28,7 @@ function App() {
         };
     }, []);
     return (
-        <div data-theme={theme.name} className="h-full w-full bg-background">
+        <div data-theme={theme.name} data-font={font.name} id="app" className="h-full w-full bg-background">
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<MainView />} />

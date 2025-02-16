@@ -1,7 +1,7 @@
 import { Message } from "@/common/types/model";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { TbCopy, TbError404Off, TbLoader, TbTools } from "react-icons/tb";
+import { TbCopy, TbError404Off, TbLoader, TbMathFunction } from "react-icons/tb";
 import ReactMarkdown, { Components } from "react-markdown";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -140,7 +140,7 @@ export function MessageItem({ message }: MessageItemProps) {
 							</div>
 						}
 						{
-							message.type === 'assistant:reply' &&
+							(message.type === 'assistant:reply' || message.type === 'assistant:tool') &&
 							(<ReactMarkdown
 								components={{
 									code: CodeBlock,
@@ -149,6 +149,11 @@ export function MessageItem({ message }: MessageItemProps) {
 							>
 								{message.content}
 							</ReactMarkdown>)
+						}{message.tool_calls
+							&& <span className="flex items-center gap-1 p-2 rounded-md bg-primary/10 text-primary text-xs my-1">
+								<TbMathFunction className="h-3.5 w-3.5" />
+								调用工具: {message.tool_calls?.[0]?.function.name}
+							</span>
 						}
 						{
 							message.type === 'assistant:error' &&
@@ -159,12 +164,7 @@ export function MessageItem({ message }: MessageItemProps) {
 						}
 					</div>
 					<div className="text-xs text-muted-foreground items-center flex justify-between">
-						{message.type === 'assistant:tool' && message.tool_calls
-							&& <span className="flex items-center gap-1">
-								<TbTools className="h-3.5 w-3.5" />
-								调用工具: {message.tool_calls?.[0]?.function.name}
-							</span>
-						}
+
 						{
 							message.type === 'assistant:reply' &&
 							<span className="flex items-center gap-1 px-2">

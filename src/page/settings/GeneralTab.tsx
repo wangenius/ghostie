@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SettingsManager } from "@/services/settings/SettingsManager";
 import { cmd } from "@/utils/shell";
 import { useState } from "react";
-import { TbArrowIteration, TbFolder, TbPalette, TbRotate } from "react-icons/tb";
+import { TbArrowIteration, TbFolder, TbPalette, TbRotate, TbTypography } from "react-icons/tb";
 
 export function GeneralTab() {
     const settings = SettingsManager.use();
@@ -63,6 +63,37 @@ export function GeneralTab() {
                             }}
                         >
                             {theme.label}
+                        </Button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="flex items-center justify-between h-12 px-3 -mx-3 rounded-lg">
+                <div className="flex items-center gap-3">
+                    <div className="text-muted-foreground">
+                        <TbTypography
+                            className={`w-[18px] h-[18px]`}
+                        />
+                    </div>
+                    <div>
+                        <div className="text-sm text-foreground">字体设置</div>
+                        <div className="text-xs text-muted-foreground">当前字体:
+                            <span className="pl-2">{settings.font.label}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex gap-1">
+                    {[{ name: "siyuan", label: "思源" }, { name: "harmony", label: "鸿蒙" }, { name: "default", label: "默认" }].map(font => (
+                        <Button
+                            key={font.name}
+                            size="sm"
+                            variant={settings.font.name === font.name ? "secondary" : "ghost"}
+                            onClick={() => {
+                                SettingsManager.setFont(font);
+                            }}
+                        >
+                            {font.label}
                         </Button>
                     ))}
                 </div>

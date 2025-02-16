@@ -1,11 +1,11 @@
 import { BotItem } from "@/components/model/BotItem";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { BotEdit } from "@/page/edit/BotEdit";
 import { BotManager } from "@/services/bot/BotManger";
 import { cmd } from "@utils/shell";
-import { TbBuildingWarehouse, TbDownload, TbPlus, TbUpload } from "react-icons/tb";
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
+import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";
 
 export function BotsTab() {
     const bots = BotManager.use();

@@ -37,7 +37,15 @@ export class ModelManager {
       },
     });
   }
-
+  static copy(id: string) {
+    const model = ModelManager.get(id);
+    ModelManager.add({
+      name: model.name + " 副本",
+      model: model.model,
+      api_key: model.api_key,
+      api_url: model.api_url,
+    });
+  }
   static remove(id: string) {
     ModelManager.store.delete(id);
   }

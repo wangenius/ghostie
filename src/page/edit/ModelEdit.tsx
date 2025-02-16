@@ -1,11 +1,12 @@
 import { Header } from "@/components/custom/Header";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ModelManager } from "@/services/model/ModelManager";
 import { Model } from "@common/types/model";
 import { useQuery } from "@hook/useQuery";
 import { cmd } from "@utils/shell";
 import { useEffect, useRef, useState } from "react";
+import { TbCopy } from "react-icons/tb";
 
 
 const defaultModel: Model = {
@@ -141,6 +142,18 @@ export function ModelEdit() {
             </div>
 
             <div className="flex justify-end gap-2 px-4 py-3">
+
+                <Button
+                    variant="ghost"
+                    onClick={() => {
+                        ModelManager.copy(model.id);
+                        cmd.message("一个新的模型副本已添加", "成功");
+                    }}
+                >
+                    <TbCopy className="w-4 h-4" />
+                    添加副本
+                </Button>
+
                 <Button
                     variant="ghost"
                     onClick={handleClose}
