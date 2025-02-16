@@ -30,7 +30,7 @@ export function GeneralTab() {
         try {
             const hasUpdate = await checkForUpdates();
             if (!hasUpdate) {
-                // await message("已是最新版本", { title: "ghostie" });
+                await cmd.message(`已是最新版本${PACKAGE_VERSION}`, "确认");
             }
         } finally {
             setChecking(false);

@@ -7,11 +7,6 @@ import { TbDownload, TbUpload } from "react-icons/tb";
 
 export function KnowledgeTab() {
 
-
-
-    const handleOpenSpaceAdd = async () => {
-    };
-
     return (
         <div>
             <div className="flex items-center justify-between">
