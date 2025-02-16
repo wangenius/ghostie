@@ -2,11 +2,7 @@
  * 负责管理所有的消息历史记录
  */
 import { gen } from "@/utils/generator";
-import {
-  FunctionCallReply,
-  Message,
-  MessagePrototype,
-} from "@common/types/model";
+import { Message, MessagePrototype } from "@common/types/model";
 import { Echo } from "echo-state";
 
 /** 聊天历史记录 */
@@ -135,7 +131,7 @@ export class HistoryMessage implements ChatHistoryItem {
 
   /** 添加消息, 返回所有消息
    * @param message 要添加的消息
-   * @returns 所有消息, 包括系统消息
+   * @returns 所有消息, 包括系统消息，但不包括 type 为 assistant:warning 的消息
    */
   push(message: Message[]): MessagePrototype[] {
     this.list = [...this.list, ...message];
@@ -144,15 +140,18 @@ export class HistoryMessage implements ChatHistoryItem {
       newState[this.id].list = this.list;
       return newState;
     });
-    return [this.system, ...this.list].map((msg) => {
-      const result: Record<string, any> = {
-        role: msg.role,
-        content: msg.content,
-      };
-      if (msg.name) result.name = msg.name;
-      if (msg.function_call) result.function_call = msg.function_call;
-      return result as MessagePrototype;
-    });
+
+    return [this.system, ...this.list]
+      .filter((msg) => msg.type !== "assistant:warning")
+      .map((msg) => {
+        const result: Record<string, any> = {
+          role: msg.role,
+          content: msg.content,
+        };
+        if (msg.name) result.name = msg.name;
+        if (msg.function_call) result.function_call = msg.function_call;
+        return result as MessagePrototype;
+      });
   }
 
   /** 更新最后一条消息
@@ -256,14 +255,5 @@ export class HistoryMessage implements ChatHistoryItem {
       delete newState[id];
       return newState;
     }, true);
-  }
-  /** 更新助手消息的函数调用
-   * @param functionCall 函数调用数据
-   */
-  updateAssistantFunctionCall(functionCall: FunctionCallReply): void {
-    this.updateLastMessage({
-      function_call: functionCall,
-      type: "assistant:tool",
-    });
   }
 }

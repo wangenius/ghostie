@@ -42,7 +42,7 @@ export class Bot {
     /* 机器人模型 */
     const model = ModelManager.get(config.model);
 
-    // 解析工具字符串，格式为 "[plugin_name]tool_name"
+    // 解析工具字符串，格式为 "tool_name@plugin_name"
     const tools: ToolProps[] = Object.values(PluginsStore.current)
       .flatMap((plugin) =>
         plugin.tools.map((tool) => ({

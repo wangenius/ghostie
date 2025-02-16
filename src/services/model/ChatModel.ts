@@ -167,19 +167,21 @@ export class ChatModel {
       /* 获取请求控制器 */
       const abortController = this.getAbortController(requestId);
 
+      const messages = this.historyMessage.push([
+        {
+          role: "user",
+          content: prompt,
+          type: config.user,
+          created_at: Date.now(),
+        },
+      ]);
+
       /* 创建请求体
        * 添加用户消息
        */
       const requestBody: ChatModelRequestBody = {
         model: this.model,
-        messages: this.historyMessage.push([
-          {
-            role: "user",
-            content: prompt,
-            type: config.user,
-            created_at: Date.now(),
-          },
-        ]),
+        messages,
         functions: ChatModel.tool_to_function(this.tools),
       };
       this.loading.set({ loading: true });
@@ -224,23 +226,42 @@ export class ChatModel {
         };
         /* 添加消息到历史 */
         this.historyMessage.push([
-          { ...assistantMessage, type: config.assistant },
+          {
+            ...assistantMessage,
+            type: "assistant:tool",
+            created_at: Date.now(),
+          },
           functionResultMessage,
         ]);
-        /* 创建工具调用结果 */
-        result.tool = {
-          name: assistantMessage.function_call.name,
-          arguments: result.tool.arguments,
-          result: result.tool.result,
-        };
       } else {
         // 如果没有工具调用，只添加用户消息和助手回复到历史
         this.historyMessage.push([
-          { ...assistantMessage, type: config.assistant },
+          {
+            ...assistantMessage,
+            type: config.assistant,
+            created_at: Date.now(),
+          },
         ]);
       }
       this.loading.set({ loading: false });
       return result;
+    } catch (error) {
+      this.loading.set({ loading: false });
+      this.removeAbortController(requestId);
+      // 如果没有工具调用，只添加用户消息和助手回复到历史
+      this.historyMessage.push([
+        {
+          role: "assistant",
+          content: String(error),
+          type: "assistant:warning",
+          created_at: Date.now(),
+        },
+      ]);
+      return {
+        body: String(error),
+        stop: () => this.stop(requestId),
+        tool: undefined,
+      };
     } finally {
       this.removeAbortController(requestId);
     }
@@ -395,17 +416,32 @@ export class ChatModel {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${this.api_key}`,
-          "X-DashScope-SSE": "enable",
         },
         body: JSON.stringify(requestBody),
         signal: this.getAbortController(requestId).signal,
       });
 
-      console.log(JSON.stringify(requestBody));
-
       if (!response.ok || !response.body) {
-        console.log(response);
-        throw new Error(`API请求失败: ${response.status}`);
+        const errorResponse = await fetch(this.api_url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${this.api_key}`,
+          },
+          body: JSON.stringify(requestBody),
+          signal: this.getAbortController(requestId).signal,
+        });
+
+        const errorText = await errorResponse.text();
+        this.historyMessage.updateLastMessage({
+          content: `API请求失败: API request failed: ${errorResponse.status} - ${errorText}`,
+          type: "assistant:warning",
+        });
+        return {
+          body: "API请求失败",
+          stop: () => this.stop(requestId),
+          tool: undefined,
+        };
       }
 
       const reader = response.body.getReader();
@@ -430,19 +466,19 @@ export class ChatModel {
               // 只在有实际内容时更新type
               this.historyMessage.updateLastMessage({
                 content,
-                type:
-                  content.length > 0 ? config.assistant : "assistant:loading",
+                type: config.assistant,
               });
             }
-
-            console.log(delta.function_call);
 
             if (delta?.function_call) {
               functionCallData = {
                 name: delta.function_call.name,
                 arguments: delta.function_call.arguments,
               };
-              this.historyMessage.updateAssistantFunctionCall(functionCallData);
+              this.historyMessage.updateLastMessage({
+                function_call: functionCallData,
+                type: "assistant:tool",
+              });
             }
           }
         }
