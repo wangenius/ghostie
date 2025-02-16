@@ -4,6 +4,7 @@ interface SettingsProps {
 	theme: { name: string, label: string };
 	language: string;
 	reActMaxIterations: number;
+	sortType: 'default' | 'mostUsed' | 'recentUsed';
 }
 
 export class SettingsManager {
@@ -11,6 +12,7 @@ export class SettingsManager {
 		theme: { name: "light", label: "浅色" },
 		language: "zh-CN",
 		reActMaxIterations: 10,
+		sortType: 'default'
 	}, {
 		name: "settings",
 		sync: true
@@ -34,6 +36,13 @@ export class SettingsManager {
 		this.store.set((prev) => ({ ...prev, theme }), true);
 	}
 
+	public static getSortType() {
+		return this.store.current.sortType;
+	}
+
+	public static setSortType(sortType: 'default' | 'mostUsed' | 'recentUsed') {
+		this.store.set((prev) => ({ ...prev, sortType }), true);
+	}
 
 }
 

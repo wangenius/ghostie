@@ -1,16 +1,17 @@
 import { BotProps } from "@/common/types/bot";
 import { LogoIcon } from "@/components/custom/LogoIcon";
 import { Button } from "@/components/ui/button";
-import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Bot } from "@/services/bot/Bot";
 import { BotManager } from "@/services/bot/BotManger";
 import { ChatManager } from "@/services/model/ChatManager";
 import { ChatHistory } from "@/services/model/HistoryMessage";
+import { SettingsManager } from "@/services/settings/SettingsManager";
 import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
 import { cmd } from "@utils/shell";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { TbArrowBigLeft, TbDots, TbHistory, TbLoader2, TbSettings, TbSortAscending } from "react-icons/tb";
+import { TbArrowBigLeft, TbClockDown, TbDots, TbHeartDown, TbHistory, TbLoader2, TbSettings, TbSortDescending2 } from "react-icons/tb";
 import { HistoryPage } from "../history/HistoryPage";
 import { BotItem } from "./components/BotItem";
 import { MessageItem } from "./components/MessageItem";
@@ -33,7 +34,7 @@ export function MainView() {
     const bots = BotManager.use();
     const botList = Object.values(bots);
     const [selectedBotId, setSelectedBotId] = useState<string>(() => botList[0]?.id || '');
-    const [sortType, setSortType] = useState<SortType>('default');
+    const sortType = SettingsManager.use(state => state.sortType);
     const inputRef = useRef<HTMLInputElement>(null);
 
     // 计算综合得分
@@ -130,6 +131,7 @@ export function MainView() {
         }
     }, [currentInput, isActive, selectedBotId, sortedBots, currentBot]);
 
+
     useEffect(() => {
         const handleGlobalKeyDown = (e: KeyboardEvent) => {
             // 聚焦输入框
@@ -179,38 +181,13 @@ export function MainView() {
             <main className="flex-1 overflow-hidden">
                 <div className="h-full overflow-y-auto pb-4">
                     {!isActive && (
-                        <>
-                            <div className="container mx-auto px-4 max-w-2xl mt-2">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="sm" className="text-xs">
-                                            <TbSortAscending className="w-4 h-4 mr-1" />
-                                            {sortType === 'default' && '默认排序'}
-                                            {sortType === 'mostUsed' && '使用次数'}
-                                            {sortType === 'recentUsed' && '最近使用'}
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        <DropdownMenuItem onClick={() => setSortType('default')}>
-                                            默认排序
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => setSortType('mostUsed')}>
-                                            按使用次数
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => setSortType('recentUsed')}>
-                                            按最近使用
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                            <MemoizedBotList
-                                botList={sortedBots}
-                                selectedBotId={selectedBotId}
-                                currentInput={currentInput}
-                                onSelectBot={setSelectedBotId}
-                                onStartChat={startChat}
-                            />
-                        </>
+                        <MemoizedBotList
+                            botList={sortedBots}
+                            selectedBotId={selectedBotId}
+                            currentInput={currentInput}
+                            onSelectBot={setSelectedBotId}
+                            onStartChat={startChat}
+                        />
                     )}
                     {
                         isActive && currentBot && (
@@ -248,7 +225,9 @@ const Header = memo(function Header({
     onInputChange,
     onKeyDown,
     onEndChat,
+
 }: HeaderProps) {
+    const sortType = SettingsManager.use(state => state.sortType);
     const handleSettingsClick = useCallback(() => {
         cmd.open("settings", {}, { width: 800, height: 600 });
     }, []);
@@ -288,12 +267,12 @@ const Header = memo(function Header({
 
 
     return (
-        <div className="px-4 draggable">
-            <div className="mx-auto flex items-center h-14">
-                <Button variant="ghost" className="p-1.5 bg-muted">
+        <div className="px-3 draggable">
+            <div className="mx-auto flex items-center h-12">
+                <div className="p-1.5 bg-muted rounded-md flex items-center gap-2 text-xs hover:bg-muted-foreground/15 transition-colors">
                     <LogoIcon className="w-4 h-4" />
                     {botList.find(bot => bot.id === selectedBotId)?.name || botList[0]?.name}
-                </Button>
+                </div>
                 <div className="flex-1 pl-2">
                     <Input
                         ref={inputRef}
@@ -301,10 +280,36 @@ const Header = memo(function Header({
                         variant="ghost"
                         onChange={handleInputChange}
                         onKeyDown={onKeyDown}
-                        className="text-sm"
+                        className="text-[13px]"
                         placeholder={"点击此处输入内容"}
                     />
                 </div>
+                {
+                    !isActive && <div className="">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="text-xs">
+                                    {sortType === 'default' && <TbSortDescending2 className="w-4 h-4 mr-0.5" />}
+                                    {sortType === 'mostUsed' && <TbHeartDown className="w-4 h-4 mr-0.5" />}
+                                    {sortType === 'recentUsed' && <TbClockDown className="w-4 h-4 mr-0.5" />}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuRadioGroup value={sortType} onValueChange={(value) => SettingsManager.setSortType(value as SortType)}>
+                                    <DropdownMenuRadioItem value="default">
+                                        默认排序
+                                    </DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="mostUsed">
+                                        使用次数
+                                    </DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="recentUsed">
+                                        最近使用
+                                    </DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                }
                 {
                     isActive && (
                         <Button onClick={handleActionClick} size="icon">

@@ -22,7 +22,7 @@ export function ModelsTab() {
 
     /* 删除模型 */
     const handleDeleteModel = async (id: string) => {
-        const answer = await cmd.confirm(`确定要删除模型 "${id}" 吗？`);
+        const answer = await cmd.confirm(`确定要删除模型 "${models[id].name}" 吗？`);
         if (answer) {
             try {
                 ModelManager.remove(id);

@@ -5,7 +5,7 @@ import { cmd } from "@utils/shell";
 import { TbBuildingWarehouse, TbDownload, TbPlus, TbUpload } from "react-icons/tb";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { PiDotsThreeBold } from "react-icons/pi";
+import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 
 export function BotsTab() {
     const bots = BotManager.use();
@@ -85,8 +85,8 @@ export function BotsTab() {
                 <div className="flex items-center gap-2">
                     <Button onClick={() => {
                         window.open("https://ccn0kkxjz1z2.feishu.cn/wiki/CNUbwM7xSizLoWk95Cuc3XgKnsf?from=from_copylink", "_blank");
-                    }} variant="primary" >
-                        <TbBuildingWarehouse className="w-4 h-4" />
+                    }} variant="outline" >
+                        <PiStorefrontDuotone className="w-4 h-4" />
                         助手仓库
                     </Button>
                     <DropdownMenu>

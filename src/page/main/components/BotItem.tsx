@@ -32,7 +32,7 @@ export function BotItem({ bot, isSelected, onClick }: BotItemProps) {
 				<LogoIcon />
 			</Button>
 			<div className={`
-                        text-xs font-bold truncate space-x-4 rounded-md flex-1
+                        text-xs font-bold truncate space-x-4 rounded-md
                         ${isSelected ? 'text-primary' : 'text-foreground'}
                     `}>
 				<span className="flex items-center gap-1">
@@ -40,13 +40,17 @@ export function BotItem({ bot, isSelected, onClick }: BotItemProps) {
 					{bot.name}
 				</span>
 			</div>
+			<div className="flex items-center gap-2 text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+				{model?.model}
+			</div>
+			<div className="flex-1"></div>
 			<div className="flex items-center gap-2 text-xs text-muted-foreground">
 				{bot.usageCount !== undefined && (
 					<span className="px-1.5 py-0.5 bg-muted rounded">
 						使用 {bot.usageCount} 次
 					</span>
 				)}
-				{model?.model}
+
 			</div>
 			<DropdownMenu open={open} onOpenChange={setOpen}>
 				<DropdownMenuTrigger asChild>

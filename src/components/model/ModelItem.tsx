@@ -1,5 +1,6 @@
 import { Model } from "@common/types/model";
 import { TbBox, TbPencil, TbTrash } from "react-icons/tb";
+import { Button } from "../ui/button";
 
 interface ModelItemProps {
 	id: string;
@@ -10,12 +11,12 @@ interface ModelItemProps {
 
 export function ModelItem({ id, model, onEdit, onDelete }: ModelItemProps) {
 	return (
-		<div className="group relative hover:bg-accent/5 rounded-lg transition-all duration-200">
+		<div className="group relative rounded-lg transition-all duration-200 select-none">
 			{/* 主内容区 */}
 			<div className="flex items-center p-2 gap-3">
 				{/* 左侧图标 */}
 				<div className="shrink-0">
-					<div className="w-12 h-12 flex items-center justify-center rounded-lg bg-muted">
+					<div className="w-9 h-9 flex items-center justify-center rounded-lg bg-muted p-2">
 						<TbBox className="w-6 h-6 text-primary" />
 					</div>
 				</div>
@@ -36,26 +37,26 @@ export function ModelItem({ id, model, onEdit, onDelete }: ModelItemProps) {
 
 				{/* 右侧操作区 */}
 				<div className="shrink-0 flex items-center gap-1">
-					<button
+					<Button
+						variant="ghost"
+						size="icon"
 						onClick={(e) => {
 							e.stopPropagation();
 							onEdit(id);
 						}}
-						className="p-2 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-						title="编辑模型"
 					>
 						<TbPencil className="w-4 h-4" />
-					</button>
-					<button
+					</Button>
+					<Button
+						variant="destructive"
+						size="icon"
 						onClick={(e) => {
 							e.stopPropagation();
 							onDelete(id);
 						}}
-						className="p-2 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-						title="删除模型"
 					>
 						<TbTrash className="w-4 h-4" />
-					</button>
+					</Button>
 				</div>
 			</div>
 		</div>
