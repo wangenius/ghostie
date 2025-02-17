@@ -102,6 +102,7 @@ static PLUGINS_DIR: Lazy<PathBuf> = Lazy::new(|| {
     config_dir
 });
 
+/// Deno 运行时
 static DENO_RUNTIME: Lazy<DenoRuntime> =
     Lazy::new(|| DenoRuntime::new().expect("无法初始化 Deno 运行时"));
 
@@ -219,6 +220,7 @@ async fn save_plugin_list(plugins: &HashMap<String, Plugin>) -> Result<()> {
     Ok(())
 }
 
+// 处理插件内容
 async fn process_plugin_content(id: String, content: String) -> Result<Plugin> {
     let plugin_file = PLUGINS_DIR.join(format!("{}.ts", id));
     fs::write(&plugin_file, &content)?;
@@ -333,7 +335,19 @@ pub async fn plugin_remove(id: String) -> Result<()> {
     Ok(())
 }
 
-/* 执行插件,首先插件文件一定存在 */
+/// 执行指定插件的工具函数
+///
+/// # 参数
+/// * `id` - 插件的唯一标识符
+/// * `tool` - 要执行的工具函数名称
+/// * `args` - 传递给工具函数的参数，使用JSON Value格式
+///
+/// # 返回值
+/// * `Result<Value>` - 成功时返回工具函数的执行结果，失败时返回错误信息
+///
+/// # 错误
+/// * 当插件文件不存在时返回 `PluginError::Plugin`
+/// * 当JSON解析失败时返回 `PluginError::Json`
 #[tauri::command]
 pub async fn plugin_execute(id: String, tool: String, args: Value) -> Result<Value> {
     /* 插件文件 */
@@ -349,7 +363,7 @@ pub async fn plugin_execute(id: String, tool: String, args: Value) -> Result<Val
         const plugin = await import('file://{plugin_path}');
         const targetFunction = plugin.default.tools['{tool}'];
         if (!targetFunction) {{
-            throw new Error('找不到指定的函数: {tool}');
+            throw new Error('未知函数: {tool}');
         }}
         const result = await targetFunction.handler({args});
         console.log(JSON.stringify(result));
@@ -362,7 +376,6 @@ pub async fn plugin_execute(id: String, tool: String, args: Value) -> Result<Val
     /* 环境变量加载 */
     let env_vars = load_env_vars().await?;
     let output = DENO_RUNTIME.execute(&script, &env_vars).await?;
-    println!("{}", output);
     serde_json::from_str(&output).map_err(|e| PluginError::Json(e.to_string()))
 }
 

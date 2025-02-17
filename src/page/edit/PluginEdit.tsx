@@ -199,16 +199,23 @@ export function PluginEdit() {
         try {
             if (!plugin) return;
             setIsSubmitting(true);
+            console.log({
+                id: plugin.id,
+                tool: tool,
+                args: testArgs,
+            });
+
             // 直接使用当前编辑的脚本和依赖进行测试
             const result = await cmd.invoke("plugin_execute", {
                 id: plugin.id,
                 tool: tool,
                 args: testArgs,
             });
-            cmd.message(JSON.stringify(result), "测试成功");
+            console.log(result);
+            cmd.message(JSON.stringify(result).slice(0, 200), "测试成功");
         } catch (error) {
             console.log(error);
-            cmd.message(String(error), "测试失败", 'warning');
+            cmd.message("请打开调试窗口查看错误信息", "测试失败", 'warning');
         } finally {
             setIsSubmitting(false);
         }
@@ -332,8 +339,8 @@ export function PluginEdit() {
                     {/* 底部按钮区域 */}
                     <div className="p-4">
                         <Button
-                            disabled={!plugin?.tools[0]?.name || !testTool}
-                            onClick={() => test(plugin?.tools[0]?.name || "")}
+                            disabled={!testTool}
+                            onClick={() => test(testTool)}
                             className="w-full h-12 text-lg"
                             variant="secondary"
                         >

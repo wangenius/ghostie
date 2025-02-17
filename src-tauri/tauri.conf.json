@@ -20,7 +20,6 @@
         "decorations": false,
         "skipTaskbar": true,
         "transparent": true,
-        "alwaysOnTop": true,
         "label": "main",
         "center": true,
         "url": "/",

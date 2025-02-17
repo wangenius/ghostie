@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use ghostie::plugins::deno;
+use ghostie::plugins::{deno, knowledge};
 use ghostie::utils;
 use tauri::{
     menu::{Menu, MenuItem},
@@ -119,6 +119,9 @@ async fn main() {
             deno::plugin_execute,
             deno::env_list,
             deno::env_save,
+            knowledge::upload_knowledge_file,
+            knowledge::get_knowledge_list,
+            knowledge::delete_knowledge,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

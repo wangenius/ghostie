@@ -1,216 +1,134 @@
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { PiDotsThreeBold } from "react-icons/pi";
-import { TbDownload, TbPlus, TbUpload, TbFile, TbSettings, TbTag, TbTrash, TbEdit, TbEye } from "react-icons/tb";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useEffect, useState } from "react";
+import { TbTrash, TbUpload } from "react-icons/tb";
+import { cmd } from "@/utils/shell";
+
+interface Knowledge {
+    id: string;
+    name: string;
+    content: string;
+    file_type: string;
+    created_at: number;
+    updated_at: number;
+}
 
 export function KnowledgeTab() {
+    const [documents, setDocuments] = useState<Knowledge[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        loadDocuments();
+    }, []);
+
+    const loadDocuments = async () => {
+        try {
+            const list = await cmd.invoke<Knowledge[]>("get_knowledge_list");
+            setDocuments(list);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleUpload = async () => {
+        try {
+            const result = await cmd.invoke("open_file", {
+                title: "选择文档",
+                filters: {
+                    "文本文件": ["txt", "md", "markdown"]
+                }
+            });
+
+            if (result) {
+                setLoading(true);
+                await cmd.invoke("upload_knowledge_file", {
+                    filePath: result.path,
+                    content: result.content
+                });
+                console.log("文件上传成功");
+                await loadDocuments();
+            }
+        } catch (error) {
+            console.error("文件上传失败", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        try {
+            await cmd.invoke("delete_knowledge", { id });
+            console.log("删除成功");
+            await loadDocuments();
+        } catch (error) {
+            console.error("删除失败", error);
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* 顶部操作栏 */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <Button variant="outline">
-                        <TbPlus className="w-4 h-4 mr-2" />
-                        <span>新建知识库</span>
+                    <Button variant="outline" onClick={handleUpload} disabled={loading}>
+                        <TbUpload className="w-4 h-4 mr-2" />
+                        <span>上传文档</span>
                     </Button>
                 </div>
                 <div className="flex items-center gap-2">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <PiDotsThreeBold className="w-4 h-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                                <TbUpload className="w-4 h-4 mr-2" />
-                                <span>导入</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <TbDownload className="w-4 h-4 mr-2" />
-                                <span>导出</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Input
+                        className="max-w-xs"
+                        placeholder="搜索文档..."
+                    />
                 </div>
             </div>
 
-            {/* 知识库列表 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                            <span>通用知识库</span>
-                            <Badge>活跃</Badge>
-                        </CardTitle>
-                        <CardDescription>包含常用文档和参考资料</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between text-sm">
-                                <span>文档数量: 42</span>
-                                <span>总大小: 128MB</span>
-                            </div>
-                            <Progress value={65} />
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* 知识库详情 */}
+            {/* 文档列表 */}
             <Card>
                 <CardHeader>
-                    <CardTitle>知识库详情</CardTitle>
+                    <CardTitle>知识库文档</CardTitle>
+                    <CardDescription>支持上传 TXT、Markdown 文件</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Tabs defaultValue="documents">
-                        <TabsList>
-                            <TabsTrigger value="documents">
-                                <TbFile className="w-4 h-4 mr-2" />
-                                文档管理
-                            </TabsTrigger>
-                            <TabsTrigger value="tags">
-                                <TbTag className="w-4 h-4 mr-2" />
-                                标签管理
-                            </TabsTrigger>
-                            <TabsTrigger value="settings">
-                                <TbSettings className="w-4 h-4 mr-2" />
-                                检索配置
-                            </TabsTrigger>
-                        </TabsList>
-
-                        {/* 文档管理标签页 */}
-                        <TabsContent value="documents" className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <Button variant="outline">
-                                    <TbUpload className="w-4 h-4 mr-2" />
-                                    上传文档
-                                </Button>
-                                <Input
-                                    className="max-w-xs"
-                                    placeholder="搜索文档..."
-                                />
-                            </div>
-
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>文档名称</TableHead>
-                                        <TableHead>类型</TableHead>
-                                        <TableHead>大小</TableHead>
-                                        <TableHead>状态</TableHead>
-                                        <TableHead>更新时间</TableHead>
-                                        <TableHead>操作</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow>
-                                        <TableCell>产品说明书.pdf</TableCell>
-                                        <TableCell>PDF</TableCell>
-                                        <TableCell>2.5MB</TableCell>
-                                        <TableCell>
-                                            <Badge variant="secondary">已索引</Badge>
-                                        </TableCell>
-                                        <TableCell>2024-03-15</TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Button variant="ghost" size="icon">
-                                                    <TbEye className="w-4 h-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon">
-                                                    <TbEdit className="w-4 h-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon">
-                                                    <TbTrash className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </TabsContent>
-
-                        {/* 标签管理标签页 */}
-                        <TabsContent value="tags" className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <Button variant="outline">
-                                    <TbPlus className="w-4 h-4 mr-2" />
-                                    新建标签
-                                </Button>
-                                <Input
-                                    className="max-w-xs"
-                                    placeholder="搜索标签..."
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-sm">产品文档</CardTitle>
-                                        <CardDescription>15个文档</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>文档名称</TableHead>
+                                <TableHead>类型</TableHead>
+                                <TableHead>更新时间</TableHead>
+                                <TableHead>操作</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {documents.map((doc) => (
+                                <TableRow key={doc.id}>
+                                    <TableCell>{doc.name}</TableCell>
+                                    <TableCell>
+                                        <Badge>
+                                            {doc.file_type.toUpperCase()}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        {new Date(doc.updated_at * 1000).toLocaleString()}
+                                    </TableCell>
+                                    <TableCell>
                                         <div className="flex items-center gap-2">
-                                            <Button variant="ghost" size="icon">
-                                                <TbEdit className="w-4 h-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleDelete(doc.id)}
+                                            >
                                                 <TbTrash className="w-4 h-4" />
                                             </Button>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </TabsContent>
-
-                        {/* 检索配置标签页 */}
-                        <TabsContent value="settings" className="space-y-6">
-                            <div className="grid gap-4">
-                                <div className="space-y-2">
-                                    <Label>Embedding 模型</Label>
-                                    <select className="w-full p-2 border rounded-md">
-                                        <option>text-embedding-3-small</option>
-                                        <option>text-embedding-3-large</option>
-                                        <option>text-embedding-ada-002</option>
-                                    </select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>相似度阈值</Label>
-                                    <div className="pt-2">
-                                        <Slider
-                                            defaultValue={[0.7]}
-                                            max={1}
-                                            min={0}
-                                            step={0.1}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>最大上下文长度</Label>
-                                    <Input type="number" defaultValue={2000} />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>检索结果数量</Label>
-                                    <Input type="number" defaultValue={5} />
-                                </div>
-
-                                <Button className="w-full">
-                                    保存配置
-                                </Button>
-                            </div>
-                        </TabsContent>
-                    </Tabs>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
         </div>
