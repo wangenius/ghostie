@@ -8,7 +8,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { useQuery } from "@hook/useQuery";
 import { githubLight } from '@uiw/codemirror-theme-github';
 import CodeMirror from '@uiw/react-codemirror';
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { TbBook } from "react-icons/tb";
 import { PluginsStore } from "../settings/PluginsTab";
 
@@ -112,21 +112,8 @@ export function PluginEdit() {
     /* 脚本内容 */
     const [content, setContent] = useState('');
 
-
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
-                handleClose();
-            }
-        };
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, []);
-
-
-    useEffect(() => {
-        setLoading(true);
-        const init = async () => {
+    const init = useCallback(
+        async () => {
             try {
                 if (query !== "new") {
                     setCreate(false);
@@ -152,7 +139,12 @@ export function PluginEdit() {
             } finally {
                 setLoading(false);
             }
-        };
+
+        }, [query]);
+
+
+    useEffect(() => {
+        setLoading(true);
 
         init();
     }, [query]);
@@ -173,20 +165,20 @@ export function PluginEdit() {
             setIsSubmitting(true);
             if (create) {
                 // 如果是创建新插件，使用 plugin_import
-                await cmd.invoke<PluginProps>("plugin_import", {
+                const result = await cmd.invoke<PluginProps>("plugin_import", {
                     content: content
                 });
-                cmd.message("创建成功", "success");
-                handleClose();
+                PluginsStore.set({
+                    [result.id]: result
+                });
+                PluginEdit.open(result.id);
+                init();
             } else if (plugin) {
                 // 如果是更新现有插件，使用 plugin_update
                 const result = await cmd.invoke<PluginProps>("plugin_update", {
                     id: plugin.id,
                     content: content
                 });
-                console.log(result);
-
-
                 if (result) {
                     PluginsStore.set({
                         [result.id]: result
@@ -197,7 +189,7 @@ export function PluginEdit() {
             }
         } catch (error) {
             console.error(error);
-            cmd.message(String(error), create ? "创建失败" : "更新失败", "error");
+            cmd.message(JSON.stringify(error || { "error": "未知错误" }), create ? "创建失败" : "更新失败", "error");
         } finally {
             setIsSubmitting(false);
         }
@@ -213,8 +205,6 @@ export function PluginEdit() {
                 tool: tool,
                 args: testArgs,
             });
-            console.log(result);
-
             cmd.message(JSON.stringify(result), "测试成功");
         } catch (error) {
             console.log(error);
@@ -323,7 +313,7 @@ export function PluginEdit() {
                                     <label className="block text-xs font-medium text-muted-foreground">测试参数</label>
                                     <div className="space-y-3">
                                         {parameters &&
-                                            Object.entries(parameters.properties).map(([key, property]) => (
+                                            Object.entries(parameters.properties || {}).map(([key, property]) => (
                                                 <ParamInput
                                                     key={key}
                                                     name={key}
@@ -342,8 +332,8 @@ export function PluginEdit() {
                     {/* 底部按钮区域 */}
                     <div className="p-4">
                         <Button
-                            disabled={!plugin?.tools[0].name || !testTool}
-                            onClick={() => test(plugin?.tools[0].name || "")}
+                            disabled={!plugin?.tools[0]?.name || !testTool}
+                            onClick={() => test(plugin?.tools[0]?.name || "")}
                             className="w-full h-12 text-lg"
                             variant="secondary"
                         >

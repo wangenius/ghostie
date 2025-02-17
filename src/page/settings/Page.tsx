@@ -2,7 +2,7 @@ import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
 import { cmd } from "@/utils/shell";
 import { Echo } from "echo-state";
-import { TbActivity, TbBox, TbDatabase, TbFileFunction, TbGhost3, TbSettings, TbShape3 } from "react-icons/tb";
+import { TbActivity, TbBox, TbDatabase, TbFileFunction, TbGhost3, TbKeyboard, TbSettings, TbShape3 } from "react-icons/tb";
 import ActivityTab from "./ActivityTab";
 import { BotsTab } from "./BotsTab";
 import { GeneralTab } from "./GeneralTab";
@@ -10,6 +10,7 @@ import { ModelsTab } from "./ModelsTab";
 import { PluginsTab } from "./PluginsTab";
 import { KnowledgeTab } from "./KnowledgeTab";
 import WorkflowsTab from "./WorkflowsTab";
+import ShortcutsTab from "./ShortcutsTab";
 
 const SETTINGS_NAV_ITEMS = [
     { id: "general", label: "通用", icon: TbSettings },
@@ -17,8 +18,9 @@ const SETTINGS_NAV_ITEMS = [
     { id: "bots", label: "助手", icon: TbGhost3 },
     { id: "workflows", label: "工作流", icon: TbShape3 },
     { id: "plugins", label: "插件", icon: TbFileFunction },
-    { id: "space", label: "空间", icon: TbDatabase },
-    { id: "activity", label: "活动", icon: TbActivity }
+    { id: "knowledge", label: "知识库", icon: TbDatabase },
+    { id: "activity", label: "活动", icon: TbActivity },
+    { id: "shortcuts", label: "快捷键", icon: TbKeyboard }
 ] as const;
 
 type SettingsTab = (typeof SETTINGS_NAV_ITEMS)[number]["id"];
@@ -42,12 +44,14 @@ export function SettingsPage() {
                 return <BotsTab />;
             case "plugins":
                 return <PluginsTab />;
-            case "space":
+            case "knowledge":
                 return <KnowledgeTab />;
             case "workflows":
                 return <WorkflowsTab />;
             case "activity":
                 return <ActivityTab />;
+            case "shortcuts":
+                return <ShortcutsTab />;
             default:
                 return <GeneralTab />;
         }

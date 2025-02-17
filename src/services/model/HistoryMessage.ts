@@ -4,6 +4,7 @@
 import { gen } from "@/utils/generator";
 import { Message, MessagePrototype } from "@common/types/model";
 import { Echo } from "echo-state";
+import { SettingsManager } from "../settings/SettingsManager";
 
 /** 聊天历史记录 */
 export interface ChatHistoryItem {
@@ -129,6 +130,40 @@ export class HistoryMessage implements ChatHistoryItem {
     });
   }
 
+  /** 处理消息列表，应用最大历史限制并移除开头的 tool 消息
+   * @returns 处理后的消息原型数组
+   */
+  private processMessages(messages: Message[]): MessagePrototype[] {
+    const maxHistory = SettingsManager.getMaxHistory();
+    let processedMessages =
+      maxHistory > 0 ? messages.slice(-maxHistory) : messages;
+
+    // 找到第一个非 tool 相关的消息的索引
+    let firstNonToolIndex = 0;
+    while (
+      firstNonToolIndex < processedMessages.length &&
+      (processedMessages[firstNonToolIndex].tool_calls ||
+        processedMessages[firstNonToolIndex].tool_call_id)
+    ) {
+      firstNonToolIndex++;
+    }
+
+    // 删除开头所有的 tool 相关消息
+    processedMessages = processedMessages.slice(firstNonToolIndex);
+
+    return [this.system, ...processedMessages]
+      .filter((msg) => msg.type !== "assistant:error")
+      .map((msg) => {
+        const result: Record<string, any> = {
+          role: msg.role,
+          content: msg.content,
+        };
+        if (msg.tool_calls) result.tool_calls = msg.tool_calls;
+        if (msg.tool_call_id) result.tool_call_id = msg.tool_call_id;
+        return result as MessagePrototype;
+      });
+  }
+
   /** 添加消息, 返回所有消息
    * @param message 要添加的消息
    * @returns 所有消息, 包括系统消息，但不包括 type 为 assistant:warning 的消息
@@ -141,17 +176,14 @@ export class HistoryMessage implements ChatHistoryItem {
       return newState;
     });
 
-    return [this.system, ...this.list]
-      .filter((msg) => msg.type !== "assistant:error")
-      .map((msg) => {
-        const result: Record<string, any> = {
-          role: msg.role,
-          content: msg.content,
-        };
-        if (msg.tool_calls) result.tool_calls = msg.tool_calls;
-        if (msg.tool_call_id) result.tool_call_id = msg.tool_call_id;
-        return result as MessagePrototype;
-      });
+    return this.processMessages(this.list);
+  }
+
+  /** 获取所有消息（不包括系统消息）
+   * @returns 所有消息的数组
+   */
+  listWithOutType(): MessagePrototype[] {
+    return this.processMessages(this.list);
   }
 
   /** 更新最后一条消息
@@ -181,23 +213,6 @@ export class HistoryMessage implements ChatHistoryItem {
    */
   getLastMessage(): Message | undefined {
     return this.list.length > 0 ? this.list[this.list.length - 1] : undefined;
-  }
-
-  /** 获取所有消息（不包括系统消息）
-   * @returns 所有消息的数组
-   */
-  listWithOutType(): MessagePrototype[] {
-    return [this.system, ...this.list]
-      .filter((msg) => msg.type !== "assistant:error")
-      .map((msg) => {
-        const result: Record<string, any> = {
-          role: msg.role,
-          content: msg.content,
-        };
-        if (msg.tool_calls) result.tool_calls = msg.tool_calls;
-        if (msg.tool_call_id) result.tool_call_id = msg.tool_call_id;
-        return result as MessagePrototype;
-      });
   }
 
   /** 清空所有消息历史, 保留系统消息 */

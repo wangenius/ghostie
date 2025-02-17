@@ -264,8 +264,6 @@ export class ChatModel {
 
             if (delta?.content) {
               content += delta.content;
-              console.log(content);
-
               // 只在有实际内容时更新type
               this.historyMessage.updateLastMessage({
                 content,

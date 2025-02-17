@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PiDotsThreeBold } from "react-icons/pi";
-import { TbDownload, TbUpload } from "react-icons/tb";
+import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";
 
 
 
@@ -11,7 +11,10 @@ export function KnowledgeTab() {
         <div>
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-
+                    <Button variant="outline">
+                        <TbPlus className="w-4 h-4" />
+                        <span>新建知识库</span>
+                    </Button>
                 </div>
                 <div className="flex items-center gap-2">
 

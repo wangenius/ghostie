@@ -7,7 +7,7 @@ import { ChatHistory, HistoryMessage } from "@/services/model/HistoryMessage";
 import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
 import { TbClock, TbMessageCircle, TbTrash } from "react-icons/tb";
-import ReactMarkdown from "react-markdown";
+import { MessageItem } from "../main/components/MessageItem";
 
 export const HistoryPage = () => {
 	const history = ChatHistory.use();
@@ -37,7 +37,7 @@ export const HistoryPage = () => {
 					<TbTrash className="h-4 w-4" />
 					删除所有
 				</Button>
-				{Object.entries(history).map(([key, value]) => (
+				{Object.entries(history).sort((a, b) => new Date(b[1].system.created_at).getTime() - new Date(a[1].system.created_at).getTime()).map(([key, value]) => (
 					<div
 						key={key}
 						onClick={() => {
@@ -99,21 +99,7 @@ export const HistoryPage = () => {
 								{selectedHistory.system.content}
 							</div>
 							{selectedHistory.list.map((message, index) => (
-								<div
-									key={index}
-									className={cn(
-										"p-4 rounded-lg",
-										message.role === "user" ? "bg-background border" : "bg-muted/50"
-									)}
-								>
-									<div className="text-xs text-muted-foreground mb-2">
-										{message.role === "user" ? "用户" : "助手"}
-									</div>
-									<ReactMarkdown className={"text-xs overflow-hidden"}>{message.content}</ReactMarkdown>
-									<div className="text-sm">
-										{JSON.stringify(message.tool_calls?.[0]?.function.name)}
-									</div>
-								</div>
+								<MessageItem key={index} message={message} />
 							))}
 						</div>
 					</div>

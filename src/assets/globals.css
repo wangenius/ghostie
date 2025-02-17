@@ -97,37 +97,33 @@ body {
 
 /* 自定义滚动条样式 */
 ::-webkit-scrollbar {
-  @apply w-1.5;
+  background: transparent;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background-color: rgb(var(--background));
+  background: transparent;
+  width: 6px;
+  height: 6px;
+  margin: auto;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgb(var(--muted-foreground) / 0.3);
+  background-color: #b7b7b735;
   border-radius: 9999px;
-  border: 2px solid rgb(var(--background));
+  width: 6px;
+  margin: auto;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgb(var(--muted-foreground) / 0.5);
+  background-color: #7f7f7f73;
 }
 
-/* 当鼠标悬停在可滚动区域时才显示滚动条 */
-* {
-  scrollbar-width: thin;
-}
-
-.overflow-y-auto,
-.overflow-x-auto {
-  &::-webkit-scrollbar-thumb {
-    opacity: 0;
-  }
-
-  &:hover::-webkit-scrollbar-thumb {
-    opacity: 1;
-  }
+/* 确保可滚动容器有正确的overflow设置 */
+.scrollable {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 button,

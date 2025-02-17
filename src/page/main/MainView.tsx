@@ -92,12 +92,7 @@ export function MainView() {
     const sortedBots = sortedBotList();
 
     const handleKeyDown = useCallback(async (e: React.KeyboardEvent<HTMLInputElement>) => {
-        // 打开设置
-        if (e.ctrlKey && e.key === ",") {
-            e.preventDefault();
-            cmd.open("settings", {}, { width: 800, height: 600 });
-            return;
-        }
+
 
         // 发送消息
         if (e.key === "Enter" && !e.shiftKey) {
@@ -147,7 +142,12 @@ export function MainView() {
                 e.preventDefault();
                 endChat();
             }
-
+            // 打开设置
+            if (e.ctrlKey && e.key === ",") {
+                e.preventDefault();
+                cmd.open("settings", {}, { width: 800, height: 600 });
+                return;
+            }
             // 选择助手
             if (!isActive && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
                 e.preventDefault();

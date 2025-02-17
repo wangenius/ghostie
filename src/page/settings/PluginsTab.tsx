@@ -42,7 +42,6 @@ export function PluginsTab() {
             if (!confirm) return;
             await cmd.invoke("plugin_remove", { id });
             PluginsStore.delete(id);
-            cmd.message("删除插件成功", "success");
         } catch (error) {
             console.error("删除插件失败:", error);
             cmd.message("删除插件失败", "error");

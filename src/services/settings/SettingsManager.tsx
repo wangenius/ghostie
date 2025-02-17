@@ -6,6 +6,7 @@ interface SettingsProps {
 	language: string;
 	reActMaxIterations: number;
 	sortType: 'default' | 'mostUsed' | 'recentUsed';
+	maxHistory: number;
 }
 
 export class SettingsManager {
@@ -14,7 +15,8 @@ export class SettingsManager {
 		font: { name: "siyuan", label: "思源" },
 		language: "zh-CN",
 		reActMaxIterations: 10,
-		sortType: 'default'
+		sortType: 'default',
+		maxHistory: 30
 	}, {
 		name: "settings",
 		sync: true,
@@ -53,5 +55,14 @@ export class SettingsManager {
 	public static setFont(font: { name: string, label: string }) {
 		this.store.set((prev) => ({ ...prev, font }), true);
 	}
+
+	public static getMaxHistory() {
+		return this.store.current.maxHistory;
+	}
+
+	public static setMaxHistory(maxHistory: number) {
+		this.store.set((prev) => ({ ...prev, maxHistory }), true);
+	}
+
 }
 
