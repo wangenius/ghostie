@@ -1,7 +1,6 @@
 // 常量定义
 const MAX_FILE_SIZE: usize = 10 * 1024 * 1024; // 10MB
 const CHUNK_SIZE: usize = 300;
-const CHUNK_OVERLAP: usize = 50;
 const EMBEDDING_DIMENSION: usize = 1024;
 const KNOWLEDGE_VERSION: &str = "1.0.0";
 
@@ -14,8 +13,6 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::State;
-
-const API_KEY_FILE: &str = "aliyun_api_key.txt";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TextChunkMetadata {
@@ -144,7 +141,7 @@ fn get_api_key_path() -> Option<PathBuf> {
     Some(path)
 }
 
-fn split_text_into_chunks(text: &str, chunk_size: usize, overlap: usize) -> Vec<String> {
+fn split_text_into_chunks(text: &str, chunk_size: usize) -> Vec<String> {
     let mut chunks = Vec::new();
     let sentences: Vec<&str> = text
         .split(|c| c == '.' || c == '。' || c == '!' || c == '?' || c == '\n')
@@ -366,7 +363,7 @@ pub async fn upload_knowledge_file(
             .map_err(|e| format!("读取文件 {} 失败: {}", file_path, e))?;
 
         // 文本分块
-        let text_chunks = split_text_into_chunks(&content, CHUNK_SIZE, CHUNK_OVERLAP);
+        let text_chunks = split_text_into_chunks(&content, CHUNK_SIZE);
 
         println!("text_chunks: {:?}", text_chunks);
 

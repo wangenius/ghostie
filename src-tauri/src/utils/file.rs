@@ -126,3 +126,8 @@ pub async fn save_file(
         Ok(false)
     }
 }
+
+#[tauri::command]
+pub async fn read_file_text(path: String) -> Result<String, String> {
+    fs::read_to_string(&path).map_err(|e| format!("读取文件失败: {}", e))
+}

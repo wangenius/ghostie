@@ -7,49 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Slider } from "@/components/ui/slider";
+import { KnowledgeStore, type Knowledge as KnowledgeType, type SearchResult } from "@/services/knowledge/KnowledgeStore";
 import { cmd } from "@/utils/shell";
-import { useEffect, useState } from "react";
-import { TbBrain, TbKey, TbRefresh, TbSearch, TbTrash, TbUpload, TbSettings, TbFile, TbEye } from "react-icons/tb";
+import { useState } from "react";
+import { TbBrain, TbEye, TbFile, TbKey, TbSearch, TbSettings, TbTrash, TbUpload } from "react-icons/tb";
 
-interface TextChunkMetadata {
-    source_page: number | null;
-    paragraph_number: number | null;
-    created_at: number;
-    updated_at: number;
-}
 
-interface TextChunk {
-    content: string;
-    embedding: number[];
-    metadata: TextChunkMetadata;
-}
 
-interface KnowledgeFile {
-    name: string;
-    content: string;
-    file_type: string;
-    chunks: TextChunk[];
-    created_at: number;
-    updated_at: number;
-}
-
-interface Knowledge {
-    id: string;
-    name: string;
-    version: string;
-    tags: string[];
-    category: string | null;
-    files: KnowledgeFile[];
-    created_at: number;
-    updated_at: number;
-}
-
-interface SearchResult {
-    content: string;
-    similarity: number;
-    document_name: string;
-    document_id: string;
-}
 
 interface SearchOptions {
     threshold: number;
@@ -57,10 +21,10 @@ interface SearchOptions {
 }
 
 export function KnowledgeTab() {
-    const [documents, setDocuments] = useState<Knowledge[]>([]);
+    const documents = KnowledgeStore.use((state) => state.items);
+    const apiKey = KnowledgeStore.use((state) => state.apiKey);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const [apiKey, setApiKey] = useState("");
     const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [searchLoading, setSearchLoading] = useState(false);
@@ -70,44 +34,19 @@ export function KnowledgeTab() {
     });
     const [showSearchOptions, setShowSearchOptions] = useState(false);
     const [showPreviewDialog, setShowPreviewDialog] = useState(false);
-    const [previewDocument, setPreviewDocument] = useState<Knowledge | null>(null);
-    const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+    const [previewDocument, setPreviewDocument] = useState<KnowledgeType | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<{ path: string; content: string }[]>([]);
     const [showUploadDialog, setShowUploadDialog] = useState(false);
     const [knowledgeName, setKnowledgeName] = useState("");
     const [category, setCategory] = useState("");
     const [tags, setTags] = useState("");
+    const [tempApiKey, setTempApiKey] = useState(apiKey);
 
-    useEffect(() => {
-        loadDocuments();
-        loadApiKey();
-    }, []);
-
-    const loadApiKey = async () => {
-        try {
-            const key = await cmd.invoke<string>("get_aliyun_api_key");
-            setApiKey(key);
-        } catch (error) {
-            console.error("加载 API Key 失败", error);
-        }
+    const handleSaveApiKey = () => {
+        KnowledgeStore.setApiKey(tempApiKey);
+        setShowApiKeyDialog(false);
     };
 
-    const saveApiKey = async () => {
-        try {
-            await cmd.invoke("save_aliyun_api_key", { key: apiKey });
-            setShowApiKeyDialog(false);
-        } catch (error) {
-            console.error("保存 API Key 失败", error);
-        }
-    };
-
-    const loadDocuments = async () => {
-        try {
-            const list = await cmd.invoke<Knowledge[]>("get_knowledge_list");
-            setDocuments(list);
-        } catch (error) {
-            console.error(error);
-        }
-    };
 
     const handleUpload = async () => {
         if (!apiKey) {
@@ -124,7 +63,13 @@ export function KnowledgeTab() {
             });
 
             if (filePaths && filePaths.length > 0) {
-                setSelectedFiles(prev => [...new Set([...prev, ...filePaths])]);
+                const newFiles = await Promise.all(
+                    filePaths.map(async (path) => {
+                        const content = await cmd.invoke<string>("read_file_text", { path });
+                        return { path, content };
+                    })
+                );
+                setSelectedFiles(prev => [...prev, ...newFiles]);
                 setShowUploadDialog(true);
             }
         } catch (error) {
@@ -135,19 +80,16 @@ export function KnowledgeTab() {
     const handleConfirmUpload = async () => {
         try {
             setLoading(true);
-            await cmd.invoke("upload_knowledge_file", {
-                filePaths: selectedFiles,
-                knowledge_name: knowledgeName || undefined,
+            await KnowledgeStore.addKnowledge(selectedFiles, {
+                name: knowledgeName || undefined,
                 category: category || undefined,
                 tags: tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : undefined
             });
-            console.log("文件上传成功");
             setSelectedFiles([]);
             setKnowledgeName('');
             setCategory('');
             setTags('');
             setShowUploadDialog(false);
-            await loadDocuments();
         } catch (error) {
             console.error("文件上传失败", error);
         } finally {
@@ -161,9 +103,7 @@ export function KnowledgeTab() {
 
     const handleDelete = async (id: string) => {
         try {
-            await cmd.invoke("delete_knowledge", { id });
-            console.log("删除成功");
-            await loadDocuments();
+            KnowledgeStore.deleteKnowledge(id);
         } catch (error) {
             console.error("删除失败", error);
         }
@@ -171,14 +111,14 @@ export function KnowledgeTab() {
 
     const handleSemanticSearch = async () => {
         if (!searchQuery.trim()) return;
+        if (!apiKey) {
+            setShowApiKeyDialog(true);
+            return;
+        }
 
         setSearchLoading(true);
         try {
-            const results = await cmd.invoke<SearchResult[]>("search_knowledge", {
-                query: searchQuery,
-                threshold: searchOptions.threshold,
-                limit: searchOptions.limit
-            });
+            const results = await KnowledgeStore.searchKnowledge(searchQuery, searchOptions);
             setSearchResults(results);
         } catch (error) {
             console.error("搜索失败", error);
@@ -187,7 +127,7 @@ export function KnowledgeTab() {
         }
     };
 
-    const handlePreview = (doc: Knowledge) => {
+    const handlePreview = (doc: KnowledgeType) => {
         setPreviewDocument(doc);
         setShowPreviewDialog(true);
     };
@@ -226,25 +166,15 @@ export function KnowledgeTab() {
                     <TbKey className="w-4 h-4 mr-2" />
                     配置 API Key
                 </Button>
-                <Button variant="outline" onClick={loadDocuments} disabled={loading}>
-                    <TbRefresh className="w-4 h-4 mr-2" />
-                    刷新列表
+                <Button variant="outline" onClick={() => setShowSearchOptions(!showSearchOptions)}>
+                    <TbSettings className="w-4 h-4 mr-2" />
+                    搜索设置
                 </Button>
             </div>
 
             <Card>
                 <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <CardTitle>知识库搜索</CardTitle>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowSearchOptions(!showSearchOptions)}
-                        >
-                            <TbSettings className="w-4 h-4 mr-2" />
-                            搜索设置
-                        </Button>
-                    </div>
+                    <CardTitle>知识库搜索</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex gap-2">
@@ -322,7 +252,7 @@ export function KnowledgeTab() {
                                                 <div className="text-sm text-muted-foreground">
                                                     版本: {doc.version} · {doc.files.length} 个文件 ·
                                                     {doc.files.reduce((sum, file) => sum + file.chunks.length, 0)} 个知识块 ·
-                                                    {new Date(doc.updated_at * 1000).toLocaleDateString()}
+                                                    {new Date(doc.created_at).toLocaleDateString()}
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2">
@@ -364,7 +294,7 @@ export function KnowledgeTab() {
                                                                 <div className="font-medium">{file.name}</div>
                                                                 <div className="text-sm text-muted-foreground">
                                                                     {file.chunks.length} 个知识块 · {file.file_type} ·
-                                                                    {new Date(file.updated_at * 1000).toLocaleDateString()}
+                                                                    {new Date(file.created_at).toLocaleDateString()}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -432,8 +362,8 @@ export function KnowledgeTab() {
                             <Label htmlFor="api-key">API Key</Label>
                             <Input
                                 id="api-key"
-                                value={apiKey}
-                                onChange={(e) => setApiKey(e.target.value)}
+                                value={tempApiKey}
+                                onChange={(e) => setTempApiKey(e.target.value)}
                                 placeholder="sk-..."
                             />
                         </div>
@@ -442,7 +372,7 @@ export function KnowledgeTab() {
                         <Button variant="outline" onClick={() => setShowApiKeyDialog(false)}>
                             取消
                         </Button>
-                        <Button onClick={saveApiKey} disabled={!apiKey}>
+                        <Button onClick={handleSaveApiKey} disabled={!tempApiKey}>
                             保存
                         </Button>
                     </DialogFooter>
@@ -463,9 +393,9 @@ export function KnowledgeTab() {
                                     {previewDocument.tags.map((tag, index) => (
                                         <Badge key={index} variant="outline">{tag}</Badge>
                                     ))}
-                                    <span>创建于 {new Date(previewDocument.created_at * 1000).toLocaleString()}</span>
+                                    <span>创建于 {new Date(previewDocument.created_at).toLocaleString()}</span>
                                     <span>·</span>
-                                    <span>更新于 {new Date(previewDocument.updated_at * 1000).toLocaleString()}</span>
+                                    <span>更新于 {new Date(previewDocument.updated_at).toLocaleString()}</span>
                                 </div>
                             )}
                         </DialogDescription>
@@ -558,7 +488,7 @@ export function KnowledgeTab() {
                             {selectedFiles.map((file, index) => (
                                 <Card key={index}>
                                     <CardContent className="p-3 flex justify-between items-center">
-                                        <span className="text-sm truncate flex-1">{file}</span>
+                                        <span className="text-sm truncate flex-1">{file.path}</span>
                                         <Button
                                             variant="ghost"
                                             size="icon"
