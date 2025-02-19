@@ -39,6 +39,7 @@ async fn main() {
                 })
                 .build(),
         )
+        .manage(knowledge::KnowledgeState::new())
         .setup(|app| {
             // 仅在桌面平台启用自动更新功能
             #[cfg(desktop)]
@@ -122,6 +123,9 @@ async fn main() {
             knowledge::upload_knowledge_file,
             knowledge::get_knowledge_list,
             knowledge::delete_knowledge,
+            knowledge::get_aliyun_api_key,
+            knowledge::save_aliyun_api_key,
+            knowledge::search_knowledge,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
