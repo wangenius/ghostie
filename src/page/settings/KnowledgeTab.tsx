@@ -9,19 +9,37 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Slider } from "@/components/ui/slider";
 import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
-import { TbBrain, TbKey, TbRefresh, TbSearch, TbTrash, TbUpload, TbSettings, TbFile } from "react-icons/tb";
+import { TbBrain, TbKey, TbRefresh, TbSearch, TbTrash, TbUpload, TbSettings, TbFile, TbEye } from "react-icons/tb";
+
+interface TextChunkMetadata {
+    source_page: number | null;
+    paragraph_number: number | null;
+    created_at: number;
+    updated_at: number;
+}
 
 interface TextChunk {
     content: string;
     embedding: number[];
+    metadata: TextChunkMetadata;
+}
+
+interface KnowledgeFile {
+    name: string;
+    content: string;
+    file_type: string;
+    chunks: TextChunk[];
+    created_at: number;
+    updated_at: number;
 }
 
 interface Knowledge {
     id: string;
     name: string;
-    content: string;
-    file_type: string;
-    chunks: TextChunk[];
+    version: string;
+    tags: string[];
+    category: string | null;
+    files: KnowledgeFile[];
     created_at: number;
     updated_at: number;
 }
@@ -46,12 +64,18 @@ export function KnowledgeTab() {
     const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [searchLoading, setSearchLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState("documents");
     const [searchOptions, setSearchOptions] = useState<SearchOptions>({
         threshold: 0.7,
         limit: 10
     });
     const [showSearchOptions, setShowSearchOptions] = useState(false);
+    const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+    const [previewDocument, setPreviewDocument] = useState<Knowledge | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+    const [showUploadDialog, setShowUploadDialog] = useState(false);
+    const [knowledgeName, setKnowledgeName] = useState("");
+    const [category, setCategory] = useState("");
+    const [tags, setTags] = useState("");
 
     useEffect(() => {
         loadDocuments();
@@ -92,27 +116,47 @@ export function KnowledgeTab() {
         }
 
         try {
-            const result = await cmd.invoke("open_file", {
+            const filePaths = await cmd.invoke<string[]>("open_files_path", {
                 title: "选择文档",
                 filters: {
                     "文本文件": ["txt", "md", "markdown"]
                 }
             });
 
-            if (result) {
-                setLoading(true);
-                await cmd.invoke("upload_knowledge_file", {
-                    filePath: result.path,
-                    content: result.content
-                });
-                console.log("文件上传成功");
-                await loadDocuments();
+            if (filePaths && filePaths.length > 0) {
+                setSelectedFiles(prev => [...new Set([...prev, ...filePaths])]);
+                setShowUploadDialog(true);
             }
+        } catch (error) {
+            console.error("选择文件失败", error);
+        }
+    };
+
+    const handleConfirmUpload = async () => {
+        try {
+            setLoading(true);
+            await cmd.invoke("upload_knowledge_file", {
+                filePaths: selectedFiles,
+                knowledge_name: knowledgeName || undefined,
+                category: category || undefined,
+                tags: tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : undefined
+            });
+            console.log("文件上传成功");
+            setSelectedFiles([]);
+            setKnowledgeName('');
+            setCategory('');
+            setTags('');
+            setShowUploadDialog(false);
+            await loadDocuments();
         } catch (error) {
             console.error("文件上传失败", error);
         } finally {
             setLoading(false);
         }
+    };
+
+    const removeSelectedFile = (index: number) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleDelete = async (id: string) => {
@@ -136,7 +180,6 @@ export function KnowledgeTab() {
                 limit: searchOptions.limit
             });
             setSearchResults(results);
-            setActiveTab("search");
         } catch (error) {
             console.error("搜索失败", error);
         } finally {
@@ -144,9 +187,14 @@ export function KnowledgeTab() {
         }
     };
 
+    const handlePreview = (doc: Knowledge) => {
+        setPreviewDocument(doc);
+        setShowPreviewDialog(true);
+    };
+
     const filteredDocuments = documents.filter(doc =>
         doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.content.toLowerCase().includes(searchQuery.toLowerCase())
+        doc.files.some(file => file.name.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     return (
@@ -255,39 +303,76 @@ export function KnowledgeTab() {
                     )}
                 </CardContent>
             </Card>
-
-            <Card>
+            {<Card>
                 <CardHeader>
                     <CardTitle>知识库文档</CardTitle>
                     <CardDescription>
-                        共有 {documents.length} 个文档，{documents.reduce((acc, doc) => acc + doc.chunks.length, 0)} 个知识块
+                        共有 {documents?.length} 个知识库，{documents?.reduce((acc, doc) => acc + doc.files.reduce((sum, file) => sum + file.chunks.length, 0), 0)} 个知识块
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ScrollArea className="h-[400px]">
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                             {filteredDocuments.map((doc) => (
-                                <Card key={doc.id}>
-                                    <CardContent className="p-4">
+                                <Card key={doc.id} className="p-4">
+                                    <div className="space-y-2">
                                         <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <TbFile className="w-4 h-4" />
-                                                <div>
-                                                    <div className="font-medium">{doc.name}</div>
-                                                    <div className="text-sm text-muted-foreground">
-                                                        {doc.chunks.length} 个知识块 · {new Date(doc.updated_at * 1000).toLocaleDateString()}
-                                                    </div>
+                                            <div>
+                                                <h3 className="font-medium">{doc.name}</h3>
+                                                <div className="text-sm text-muted-foreground">
+                                                    版本: {doc.version} · {doc.files.length} 个文件 ·
+                                                    {doc.files.reduce((sum, file) => sum + file.chunks.length, 0)} 个知识块 ·
+                                                    {new Date(doc.updated_at * 1000).toLocaleDateString()}
                                                 </div>
                                             </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleDelete(doc.id)}
-                                            >
-                                                <TbTrash className="w-4 h-4" />
-                                            </Button>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handlePreview(doc)}
+                                                >
+                                                    <TbEye className="w-4 h-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleDelete(doc.id)}
+                                                >
+                                                    <TbTrash className="w-4 h-4" />
+                                                </Button>
+                                            </div>
                                         </div>
-                                    </CardContent>
+                                        {doc.category && (
+                                            <Badge variant="secondary">
+                                                {doc.category}
+                                            </Badge>
+                                        )}
+                                        <div className="flex flex-wrap gap-1">
+                                            {doc.tags.map((tag, index) => (
+                                                <Badge key={index} variant="outline">
+                                                    {tag}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                        <div className="space-y-2 mt-2">
+                                            {doc.files.map((file, index) => (
+                                                <Card key={index} className="p-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <TbFile className="w-4 h-4" />
+                                                            <div>
+                                                                <div className="font-medium">{file.name}</div>
+                                                                <div className="text-sm text-muted-foreground">
+                                                                    {file.chunks.length} 个知识块 · {file.file_type} ·
+                                                                    {new Date(file.updated_at * 1000).toLocaleDateString()}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </Card>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </Card>
                             ))}
                             {filteredDocuments.length === 0 && (
@@ -298,7 +383,7 @@ export function KnowledgeTab() {
                         </div>
                     </ScrollArea>
                 </CardContent>
-            </Card>
+            </Card>}
 
             {searchResults.length > 0 && (
                 <Card>
@@ -359,6 +444,151 @@ export function KnowledgeTab() {
                         </Button>
                         <Button onClick={saveApiKey} disabled={!apiKey}>
                             保存
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>{previewDocument?.name}</DialogTitle>
+                        <DialogDescription>
+                            {previewDocument && (
+                                <div className="flex flex-wrap items-center gap-2 text-sm">
+                                    <Badge>{previewDocument.version}</Badge>
+                                    {previewDocument.category && (
+                                        <Badge variant="secondary">{previewDocument.category}</Badge>
+                                    )}
+                                    {previewDocument.tags.map((tag, index) => (
+                                        <Badge key={index} variant="outline">{tag}</Badge>
+                                    ))}
+                                    <span>创建于 {new Date(previewDocument.created_at * 1000).toLocaleString()}</span>
+                                    <span>·</span>
+                                    <span>更新于 {new Date(previewDocument.updated_at * 1000).toLocaleString()}</span>
+                                </div>
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <ScrollArea className="h-[60vh] mt-4">
+                        {previewDocument && (
+                            <div className="space-y-6">
+                                {previewDocument.files.map((file, fileIndex) => (
+                                    <div key={fileIndex} className="space-y-4">
+                                        <div className="flex items-center gap-2">
+                                            <TbFile className="w-4 h-4" />
+                                            <h3 className="font-medium">{file.name}</h3>
+                                            <Badge variant="outline">{file.file_type}</Badge>
+                                        </div>
+                                        <div className="prose dark:prose-invert max-w-none">
+                                            <pre className="whitespace-pre-wrap font-mono text-sm">
+                                                {file.content}
+                                            </pre>
+                                        </div>
+                                        <div className="mt-4">
+                                            <h4 className="text-sm font-medium mb-2">知识块列表</h4>
+                                            <div className="space-y-2">
+                                                {file.chunks.map((chunk, index) => (
+                                                    <Card key={index}>
+                                                        <CardContent className="p-3">
+                                                            <div className="flex justify-between items-start gap-4">
+                                                                <p className="text-sm flex-1">{chunk.content}</p>
+                                                                <div className="text-xs text-muted-foreground">
+                                                                    {chunk.metadata.paragraph_number && `#${chunk.metadata.paragraph_number}`}
+                                                                    {chunk.metadata.source_page && ` · 页 ${chunk.metadata.source_page}`}
+                                                                </div>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </ScrollArea>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowPreviewDialog(false)}>
+                            关闭
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>上传文档</DialogTitle>
+                        <DialogDescription>
+                            已选择 {selectedFiles.length} 个文件，您可以继续添加更多文件或开始上传
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="knowledge-name">知识库名称</Label>
+                            <Input
+                                id="knowledge-name"
+                                placeholder="请输入知识库名称（可选）"
+                                value={knowledgeName}
+                                onChange={(e) => setKnowledgeName(e.target.value)}
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="category">分类</Label>
+                            <Input
+                                id="category"
+                                placeholder="请输入分类（可选）"
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="tags">标签</Label>
+                            <Input
+                                id="tags"
+                                placeholder="请输入标签，用逗号分隔（可选）"
+                                value={tags}
+                                onChange={(e) => setTags(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <ScrollArea className="h-[200px] mt-4">
+                        <div className="space-y-2">
+                            {selectedFiles.map((file, index) => (
+                                <Card key={index}>
+                                    <CardContent className="p-3 flex justify-between items-center">
+                                        <span className="text-sm truncate flex-1">{file}</span>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => removeSelectedFile(index)}
+                                        >
+                                            <TbTrash className="w-4 h-4" />
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                    <DialogFooter className="flex justify-between">
+                        <div className="flex gap-2">
+                            <Button variant="outline" onClick={handleUpload}>
+                                <TbUpload className="w-4 h-4 mr-2" />
+                                继续添加
+                            </Button>
+                            <Button variant="outline" onClick={() => {
+                                setSelectedFiles([]);
+                                setKnowledgeName('');
+                                setCategory('');
+                                setTags('');
+                                setShowUploadDialog(false);
+                            }}>
+                                清空列表
+                            </Button>
+                        </div>
+                        <Button onClick={handleConfirmUpload} disabled={selectedFiles.length === 0 || loading}>
+                            {loading ? "上传中..." : "确认上传"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -9,8 +9,8 @@ use thiserror::Error;
 use tokio::sync::Mutex;
 use toml;
 
+use crate::utils::file::get_config_dir;
 use crate::utils::gen::generate_id;
-use crate::utils::utils::get_config_dir;
 
 // 定义错误类型
 #[derive(Error, Debug, Serialize)]

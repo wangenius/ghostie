@@ -1,48 +1,56 @@
 use anyhow::Result;
-use rand::Rng;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
 use tauri_plugin_dialog::DialogExt;
-/// 获取配置目录
-pub fn get_config_dir() -> Option<PathBuf> {
-    let home = env::var("HOME").or_else(|_| env::var("USERPROFILE")).ok()?;
-    let mut path = PathBuf::from(home);
-    path.push(".ghostie");
-    Some(path)
-}
-
-pub fn gen_id() -> String {
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_millis();
-
-    let chars: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let mut rng = rand::thread_rng();
-
-    let mut id = String::with_capacity(16);
-
-    // 使用时间戳生成前8位
-    for i in 0..8 {
-        let index = ((timestamp >> (i * 4)) ^ (timestamp >> (i * 3))) as usize & 0x3f;
-        id.push(chars[index] as char);
-    }
-
-    // 使用随机数生成后8位
-    for _ in 0..8 {
-        let index = rng.gen_range(0..chars.len());
-        id.push(chars[index] as char);
-    }
-
-    id
-}
 
 #[derive(serde::Serialize)]
 pub struct FileContent {
     pub path: String,
     pub content: String,
+}
+
+/// 获取配置目录，如果目录不存在则创建
+pub fn get_config_dir() -> Option<PathBuf> {
+    let home = env::var("HOME").or_else(|_| env::var("USERPROFILE")).ok()?;
+    let mut path = PathBuf::from(home);
+    path.push(".ghostie");
+
+    // 如果目录不存在，尝试创建
+    if !path.exists() {
+        if let Err(_) = fs::create_dir_all(&path) {
+            return None;
+        }
+    }
+
+    Some(path)
+}
+
+#[tauri::command]
+pub async fn open_files_path(
+    window: tauri::Window,
+    title: String,
+    filters: std::collections::HashMap<String, Vec<String>>,
+) -> Result<Vec<String>, String> {
+    let mut file_dialog = window.dialog().file().set_title(&title).set_parent(&window);
+
+    for (name, extensions) in filters.iter() {
+        file_dialog = file_dialog.add_filter(
+            name,
+            extensions
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<&str>>()
+                .as_slice(),
+        );
+    }
+
+    let file_paths = file_dialog.blocking_pick_files();
+
+    match file_paths {
+        Some(paths) => Ok(paths.iter().map(|p| p.to_string()).collect()),
+        None => Ok(Vec::new()),
+    }
 }
 
 #[tauri::command]

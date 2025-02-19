@@ -1,4 +1,4 @@
-use super::utils::get_config_dir;
+use super::file::get_config_dir;
 use open;
 use std::collections::HashMap;
 use tauri::{LogicalSize, Manager, Size, WindowEvent};
