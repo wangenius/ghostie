@@ -1,8 +1,24 @@
 import { FunctionCallProps } from "./plugin";
+
+/** 模型类型 */
+export enum ModelType {
+  TEXT = "text",
+  EMBEDDING = "embedding",
+  IMAGE = "image",
+  AUDIO = "audio",
+}
+export const ModelTypeList = {
+  [ModelType.TEXT]: "文本",
+  [ModelType.EMBEDDING]: "嵌入",
+  [ModelType.IMAGE]: "图片",
+  [ModelType.AUDIO]: "音频",
+};
 /** 模型 */
 export interface Model {
   /* 唯一标识,用于存储和识别 */
   id: string;
+  /* 类型 */
+  type: ModelType;
   /* 名称 */
   name: string;
   /* API密钥 */

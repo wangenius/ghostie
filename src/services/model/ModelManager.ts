@@ -44,6 +44,7 @@ export class ModelManager {
       model: model.model,
       api_key: model.api_key,
       api_url: model.api_url,
+      type: model.type,
     });
   }
   static remove(id: string) {

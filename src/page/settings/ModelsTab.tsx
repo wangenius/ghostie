@@ -1,24 +1,27 @@
-import { ModelEdit } from "@/page/edit/ModelEdit";
 import { Button } from "@/components/ui/button";
-import { ModelItem } from "@components/model/ModelItem";
+import { ModelEdit } from "@/page/edit/ModelEdit";
 import { ModelManager } from "@/services/model/ModelManager";
+import { ModelItem } from "@components/model/ModelItem";
 import { cmd } from "@utils/shell";
 import { PiDotsThreeBold } from "react-icons/pi";
-import { TbDownload, TbPlus, TbUpload } from "react-icons/tb";
+import { TbCards, TbDownload, TbPlus, TbUpload } from "react-icons/tb";
 
+import { ModelType, ModelTypeList } from "@/common/types/model";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { useEffect } from "react";
+import { cn } from "@/utils/utils";
+import { useState } from "react";
 
 /* 模型管理 */
 
 export function ModelsTab() {
     /* 获取模型 */
     const models = ModelManager.use();
+    const [modelType, setModelType] = useState<ModelType>(ModelType.TEXT);
 
     /* 删除模型 */
     const handleDeleteModel = async (id: string) => {
@@ -31,10 +34,6 @@ export function ModelsTab() {
             }
         }
     };
-
-    useEffect(() => {
-        console.log(models);
-    }, [models]);
 
     /* 导入模型 */
     const handleImport = async () => {
@@ -90,14 +89,27 @@ export function ModelsTab() {
         <div className="h-full flex flex-col gap-4">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
+
+                    {
+                        Object.values(ModelType).map((type) => (
+                            <Button key={type} variant="ghost" className={cn(modelType === type && "bg-primary text-primary-foreground")} onClick={() => {
+                                setModelType(type);
+                            }}>
+                                <TbCards className="w-4 h-4" />
+                                <span>{ModelTypeList[type]}</span>
+                            </Button>
+                        ))
+                    }
+
+
+                </div>
+                <div className="flex items-center gap-2">
                     <Button
+                        size="icon"
                         onClick={() => ModelEdit.open()}
                     >
                         <TbPlus className="w-4 h-4" />
-                        <span>新建</span>
                     </Button>
-                </div>
-                <div className="flex items-center gap-2">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
@@ -126,12 +138,13 @@ export function ModelsTab() {
                     <div className="text-xs text-gray-500 bg-muted p-2 rounded-md">
                         模型支持: 阿里千问, deepseek, ChatGPT等gpt接口的模型。智谱或Claude等模型请等待更新。
                     </div>
-                    {Object.entries(models).map(([id, model]) => (
+
+                    {Object.values(models).filter((model) => model.type === modelType).map((model) => (
                         <ModelItem
-                            key={id}
-                            id={id}
+                            key={model.id}
+                            id={model.id}
                             model={model}
-                            onEdit={() => ModelEdit.open(id)}
+                            onEdit={() => ModelEdit.open(model.id)}
                             onDelete={handleDeleteModel}
                         />
                     ))}

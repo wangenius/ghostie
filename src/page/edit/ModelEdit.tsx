@@ -1,8 +1,9 @@
 import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ModelManager } from "@/services/model/ModelManager";
-import { Model } from "@common/types/model";
+import { Model, ModelType, ModelTypeList } from "@common/types/model";
 import { useQuery } from "@hook/useQuery";
 import { cmd } from "@utils/shell";
 import { useEffect, useRef, useState } from "react";
@@ -14,7 +15,8 @@ const defaultModel: Model = {
     name: "",
     api_key: "",
     api_url: "",
-    model: ""
+    model: "",
+    type: ModelType.TEXT
 };
 
 /* 模型编辑 */
@@ -99,6 +101,20 @@ export function ModelEdit() {
 
                             placeholder="请输入配置名称"
                         />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="block text-xs text-muted-foreground">类型</label>
+                        <Select value={model.type} onValueChange={(value) => setModel({ ...model, type: value as ModelType })}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="请选择类型" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.values(ModelType).map((type) => (
+                                    <SelectItem key={type} value={type}>{ModelTypeList[type]}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="space-y-1.5">

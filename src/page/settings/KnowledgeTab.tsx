@@ -1,56 +1,43 @@
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ModelType } from "@/common/types/model";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { KnowledgeStore, type Knowledge as KnowledgeType, type SearchResult } from "@/services/knowledge/KnowledgeStore";
+import { ModelManager } from "@/services/model/ModelManager";
 import { cmd } from "@/utils/shell";
 import { useState } from "react";
-import { TbBrain, TbEye, TbFile, TbKey, TbSearch, TbSettings, TbTrash, TbUpload } from "react-icons/tb";
+import { TbEye, TbFile, TbSearch, TbSettings, TbTrash, TbUpload } from "react-icons/tb";
 
 
-
-
-interface SearchOptions {
-    threshold: number;
-    limit: number;
-}
 
 export function KnowledgeTab() {
-    const documents = KnowledgeStore.use((state) => state.items);
-    const apiKey = KnowledgeStore.use((state) => state.apiKey);
+    const { model, items: documents, threshold, limit } = KnowledgeStore.use();
+    const models = ModelManager.use();
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [searchLoading, setSearchLoading] = useState(false);
-    const [searchOptions, setSearchOptions] = useState<SearchOptions>({
-        threshold: 0.7,
-        limit: 10
-    });
+
     const [showSearchOptions, setShowSearchOptions] = useState(false);
     const [showPreviewDialog, setShowPreviewDialog] = useState(false);
     const [previewDocument, setPreviewDocument] = useState<KnowledgeType | null>(null);
-    const [selectedFiles, setSelectedFiles] = useState<{ path: string; content: string }[]>([]);
+    const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [showUploadDialog, setShowUploadDialog] = useState(false);
     const [knowledgeName, setKnowledgeName] = useState("");
-    const [category, setCategory] = useState("");
-    const [tags, setTags] = useState("");
-    const [tempApiKey, setTempApiKey] = useState(apiKey);
 
-    const handleSaveApiKey = () => {
-        KnowledgeStore.setApiKey(tempApiKey);
-        setShowApiKeyDialog(false);
-    };
+
 
 
     const handleUpload = async () => {
-        if (!apiKey) {
-            setShowApiKeyDialog(true);
+        if (!model) {
+            cmd.message("未配置模型");
             return;
         }
 
@@ -63,13 +50,7 @@ export function KnowledgeTab() {
             });
 
             if (filePaths && filePaths.length > 0) {
-                const newFiles = await Promise.all(
-                    filePaths.map(async (path) => {
-                        const content = await cmd.invoke<string>("read_file_text", { path });
-                        return { path, content };
-                    })
-                );
-                setSelectedFiles(prev => [...prev, ...newFiles]);
+                setSelectedFiles(prev => [...prev, ...filePaths]);
                 setShowUploadDialog(true);
             }
         } catch (error) {
@@ -81,14 +62,10 @@ export function KnowledgeTab() {
         try {
             setLoading(true);
             await KnowledgeStore.addKnowledge(selectedFiles, {
-                name: knowledgeName || undefined,
-                category: category || undefined,
-                tags: tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : undefined
+                name: knowledgeName
             });
             setSelectedFiles([]);
             setKnowledgeName('');
-            setCategory('');
-            setTags('');
             setShowUploadDialog(false);
         } catch (error) {
             console.error("文件上传失败", error);
@@ -111,14 +88,14 @@ export function KnowledgeTab() {
 
     const handleSemanticSearch = async () => {
         if (!searchQuery.trim()) return;
-        if (!apiKey) {
-            setShowApiKeyDialog(true);
+        if (!model) {
+            cmd.message("未配置模型");
             return;
         }
 
         setSearchLoading(true);
         try {
-            const results = await KnowledgeStore.searchKnowledge(searchQuery, searchOptions);
+            const results = await KnowledgeStore.searchKnowledge(searchQuery);
             setSearchResults(results);
         } catch (error) {
             console.error("搜索失败", error);
@@ -139,106 +116,99 @@ export function KnowledgeTab() {
 
     return (
         <div className="space-y-4 max-w-5xl mx-auto">
-            {!apiKey && (
-                <Alert variant="destructive">
-                    <TbKey className="h-4 w-4" />
-                    <AlertTitle>需要配置阿里云 API Key</AlertTitle>
-                    <AlertDescription>
-                        请先配置阿里云 API Key 以启用知识库功能
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="ml-2"
-                            onClick={() => setShowApiKeyDialog(true)}
-                        >
-                            立即配置
+            <div className="flex items-center justify-between gap-4 mb-4">
+                <div className="relative flex-1">
+                    <TbSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        className="pl-8"
+                        placeholder="输入关键词进行语义搜索..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && searchQuery.trim() && !searchLoading) {
+                                handleSemanticSearch();
+                            }
+                        }}
+                    />
+                </div>
+
+
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" size="icon" onClick={() => setShowSearchOptions(!showSearchOptions)}>
+                            <TbSettings className="w-4 h-4" />
                         </Button>
-                    </AlertDescription>
-                </Alert>
-            )}
-
-            <div className="flex items-center gap-4 mb-4">
-                <Button variant="outline" onClick={handleUpload} disabled={loading}>
-                    <TbUpload className="w-4 h-4 mr-2" />
-                    上传文档
-                </Button>
-                <Button variant="outline" onClick={() => setShowApiKeyDialog(true)}>
-                    <TbKey className="w-4 h-4 mr-2" />
-                    配置 API Key
-                </Button>
-                <Button variant="outline" onClick={() => setShowSearchOptions(!showSearchOptions)}>
-                    <TbSettings className="w-4 h-4 mr-2" />
-                    搜索设置
-                </Button>
-            </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>知识库搜索</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex gap-2">
-                        <div className="relative flex-1">
-                            <TbSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                className="pl-8"
-                                placeholder="输入关键词进行语义搜索..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSemanticSearch()}
-                            />
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-4" align="end">
+                        <Label>模型</Label>
+                        <Select value={model?.id} onValueChange={(value) => {
+                            const model = models[value];
+                            if (model) {
+                                KnowledgeStore.setModel(model);
+                            }
+                        }}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="选择模型" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.values(models).filter((model) => model.type === ModelType.EMBEDDING).map((model) => (
+                                    <SelectItem key={model.id} value={model.id}>
+                                        {model.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <div className="space-y-2">
+                            <Label>相似度阈值</Label>
+                            <div className="flex items-center gap-4">
+                                <Slider
+                                    value={[threshold]}
+                                    min={0}
+                                    max={1}
+                                    step={0.1}
+                                    onValueChange={([value]) => KnowledgeStore.setThreshold(value)}
+                                />
+                                <span className="text-sm w-12 text-right">
+                                    {(threshold * 100).toFixed(0)}%
+                                </span>
+                            </div>
                         </div>
-                        <Button onClick={handleSemanticSearch} disabled={!searchQuery.trim() || searchLoading}>
-                            <TbBrain className="w-4 h-4 mr-2" />
-                            搜索
-                        </Button>
-                    </div>
+                        <div className="space-y-2">
+                            <Label>结果数量</Label>
 
-                    {showSearchOptions && (
-                        <Card>
-                            <CardContent className="grid grid-cols-2 gap-4 pt-4">
-                                <div className="space-y-2">
-                                    <Label>相似度阈值</Label>
-                                    <div className="flex items-center gap-4">
-                                        <Slider
-                                            value={[searchOptions.threshold]}
-                                            min={0}
-                                            max={1}
-                                            step={0.1}
-                                            onValueChange={([value]) => setSearchOptions({
-                                                ...searchOptions,
-                                                threshold: value
-                                            })}
-                                        />
-                                        <span className="text-sm w-12 text-right">
-                                            {(searchOptions.threshold * 100).toFixed(0)}%
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>结果数量</Label>
-                                    <Input
-                                        type="number"
-                                        min={1}
-                                        max={50}
-                                        value={searchOptions.limit}
-                                        onChange={(e) => setSearchOptions({
-                                            ...searchOptions,
-                                            limit: parseInt(e.target.value)
-                                        })}
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-                </CardContent>
-            </Card>
+                            <div className="flex items-center gap-4">
+                                <Slider
+                                    value={[limit]}
+                                    min={1}
+                                    max={50}
+                                    step={1}
+                                    onValueChange={([value]) => KnowledgeStore.setLimit(value)}
+                                />
+                                <span className="text-sm w-12 text-right">
+                                    {limit}
+                                </span>
+                            </div>
+                        </div>
+
+                    </PopoverContent>
+                </Popover>
+            </div >
+
             {<Card>
                 <CardHeader>
-                    <CardTitle>知识库文档</CardTitle>
-                    <CardDescription>
-                        共有 {documents?.length} 个知识库，{documents?.reduce((acc, doc) => acc + doc.files.reduce((sum, file) => sum + file.chunks.length, 0), 0)} 个知识块
-                    </CardDescription>
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <CardTitle>知识库文档
+                            </CardTitle>
+                            <CardDescription>
+                                共有 {documents?.length} 个知识库，{documents?.reduce((acc, doc) => acc + doc.files.reduce((sum, file) => sum + file.chunks.length, 0), 0)} 个知识块
+                            </CardDescription>
+                        </div>
+                        <Button variant="outline" onClick={handleUpload} disabled={loading}>
+                            <TbUpload className="w-4 h-4 mr-2" />
+                            上传文档
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <ScrollArea className="h-[400px]">
@@ -272,18 +242,6 @@ export function KnowledgeTab() {
                                                 </Button>
                                             </div>
                                         </div>
-                                        {doc.category && (
-                                            <Badge variant="secondary">
-                                                {doc.category}
-                                            </Badge>
-                                        )}
-                                        <div className="flex flex-wrap gap-1">
-                                            {doc.tags.map((tag, index) => (
-                                                <Badge key={index} variant="outline">
-                                                    {tag}
-                                                </Badge>
-                                            ))}
-                                        </div>
                                         <div className="space-y-2 mt-2">
                                             {doc.files.map((file, index) => (
                                                 <Card key={index} className="p-2">
@@ -313,71 +271,45 @@ export function KnowledgeTab() {
                         </div>
                     </ScrollArea>
                 </CardContent>
-            </Card>}
+            </Card >}
 
-            {searchResults.length > 0 && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>搜索结果</CardTitle>
-                        <CardDescription>
-                            找到 {searchResults.length} 条相关内容
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ScrollArea className="h-[400px]">
-                            <div className="space-y-2">
-                                {searchResults.map((result, index) => (
-                                    <Card key={index}>
-                                        <CardContent className="p-4">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <Badge variant="outline">
-                                                    {result.document_name}
-                                                </Badge>
-                                                <Badge>
-                                                    相似度: {(result.similarity * 100).toFixed(1)}%
-                                                </Badge>
-                                            </div>
-                                            <p className="text-sm">
-                                                {result.content}
-                                            </p>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
-                        </ScrollArea>
-                    </CardContent>
-                </Card>
-            )}
+            {
+                searchResults.length > 0 && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>搜索结果</CardTitle>
+                            <CardDescription>
+                                找到 {searchResults.length} 条相关内容
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ScrollArea className="h-[400px]">
+                                <div className="space-y-2">
+                                    {searchResults.map((result, index) => (
+                                        <Card key={index}>
+                                            <CardContent className="p-4">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <Badge variant="outline">
+                                                        {result.document_name}
+                                                    </Badge>
+                                                    <Badge>
+                                                        相似度: {(result.similarity * 100).toFixed(1)}%
+                                                    </Badge>
+                                                </div>
+                                                <p className="text-sm">
+                                                    {result.content}
+                                                </p>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
+                )
+            }
 
-            <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>配置阿里云 API Key</DialogTitle>
-                        <DialogDescription>
-                            请输入您的阿里云 API Key，用于文本向量化服务
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="api-key">API Key</Label>
-                            <Input
-                                id="api-key"
-                                value={tempApiKey}
-                                onChange={(e) => setTempApiKey(e.target.value)}
-                                placeholder="sk-..."
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowApiKeyDialog(false)}>
-                            取消
-                        </Button>
-                        <Button onClick={handleSaveApiKey} disabled={!tempApiKey}>
-                            保存
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+
 
             <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
                 <DialogContent className="max-w-3xl">
@@ -387,12 +319,6 @@ export function KnowledgeTab() {
                             {previewDocument && (
                                 <div className="flex flex-wrap items-center gap-2 text-sm">
                                     <Badge>{previewDocument.version}</Badge>
-                                    {previewDocument.category && (
-                                        <Badge variant="secondary">{previewDocument.category}</Badge>
-                                    )}
-                                    {previewDocument.tags.map((tag, index) => (
-                                        <Badge key={index} variant="outline">{tag}</Badge>
-                                    ))}
                                     <span>创建于 {new Date(previewDocument.created_at).toLocaleString()}</span>
                                     <span>·</span>
                                     <span>更新于 {new Date(previewDocument.updated_at).toLocaleString()}</span>
@@ -459,27 +385,9 @@ export function KnowledgeTab() {
                             <Label htmlFor="knowledge-name">知识库名称</Label>
                             <Input
                                 id="knowledge-name"
-                                placeholder="请输入知识库名称（可选）"
+                                placeholder="请输入知识库名称"
                                 value={knowledgeName}
                                 onChange={(e) => setKnowledgeName(e.target.value)}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="category">分类</Label>
-                            <Input
-                                id="category"
-                                placeholder="请输入分类（可选）"
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="tags">标签</Label>
-                            <Input
-                                id="tags"
-                                placeholder="请输入标签，用逗号分隔（可选）"
-                                value={tags}
-                                onChange={(e) => setTags(e.target.value)}
                             />
                         </div>
                     </div>
@@ -488,7 +396,7 @@ export function KnowledgeTab() {
                             {selectedFiles.map((file, index) => (
                                 <Card key={index}>
                                     <CardContent className="p-3 flex justify-between items-center">
-                                        <span className="text-sm truncate flex-1">{file.path}</span>
+                                        <span className="text-sm truncate flex-1">{file}</span>
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -510,9 +418,6 @@ export function KnowledgeTab() {
                             <Button variant="outline" onClick={() => {
                                 setSelectedFiles([]);
                                 setKnowledgeName('');
-                                setCategory('');
-                                setTags('');
-                                setShowUploadDialog(false);
                             }}>
                                 清空列表
                             </Button>
@@ -523,6 +428,6 @@ export function KnowledgeTab() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </div >
     );
 }

@@ -2,6 +2,7 @@ import { BotProps } from "@/common/types/bot";
 import { Bot } from "@/services/bot/Bot";
 import { Echo } from "echo-state";
 
+/* 聊天状态 */
 interface ChatState {
   /* 是否正在聊天 */
   isActive: boolean;
@@ -15,6 +16,7 @@ interface ChatState {
 
 /* 聊天管理器 */
 export class ChatManager {
+  /* 状态 */
   private static state = new Echo<ChatState>({
     isActive: false,
     currentInput: "",

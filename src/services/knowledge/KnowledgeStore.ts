@@ -1,48 +1,79 @@
+import { Model } from "@/common/types/model";
 import { Echo } from "@/utils/echo";
+import { cmd } from "@/utils/shell";
 import { nanoid } from "nanoid";
 
+/* 文本块元数据 */
 export interface TextChunkMetadata {
+  /* 来源页面 */
   source_page: number | null;
+  /* 段落编号 */
   paragraph_number: number | null;
+  /* 创建时间 */
   created_at: number;
+  /* 更新时间 */
   updated_at: number;
 }
 
+/* 文本块 */
 export interface TextChunk {
+  /* 文本内容 */
   content: string;
+  /* 文本向量 */
   embedding: number[];
+  /* 文本元数据 */
   metadata: TextChunkMetadata;
 }
 
+/* 知识库文件 */
 export interface KnowledgeFile {
+  /* 文件名称 */
   name: string;
+  /* 文件内容 */
   content: string;
+  /* 文件类型 */
   file_type: string;
+  /* 文本块 */
   chunks: TextChunk[];
+  /* 创建时间 */
   created_at: number;
+  /* 更新时间 */
   updated_at: number;
 }
 
+/* 知识库 */
 export interface Knowledge {
+  /* 知识库ID */
   id: string;
+  /* 知识库名称 */
   name: string;
+  /* 知识库版本 */
   version: string;
-  tags: string[];
-  category: string | null;
+  /* 知识库文件 */
   files: KnowledgeFile[];
+  /* 创建时间 */
   created_at: number;
+  /* 更新时间 */
   updated_at: number;
 }
 
+/* 搜索结果 */
 export interface SearchResult {
+  /* 文本内容 */
   content: string;
+  /* 相似度 */
   similarity: number;
+  /* 文档名称 */
   document_name: string;
+  /* 文档ID */
   document_id: string;
 }
 
+/* 搜索选项 */
 export interface SearchOptions {
+  /* 相似度阈值 */
   threshold: number;
+  /* 结果数量 */
   limit: number;
 }
 
@@ -52,11 +83,15 @@ const KNOWLEDGE_VERSION = "1.0.0";
 export class KnowledgeStore {
   private static store = new Echo<{
     items: Knowledge[];
-    apiKey: string;
+    model: Model | undefined;
+    threshold: number;
+    limit: number;
   }>(
     {
       items: [],
-      apiKey: "",
+      model: undefined,
+      threshold: 0.5,
+      limit: 10,
     },
     {
       name: "knowledge",
@@ -67,16 +102,25 @@ export class KnowledgeStore {
   static use = this.store.use.bind(this.store);
 
   // 设置 API Key
-  static setApiKey(key: string) {
+  static setModel(model: Model) {
     this.store.set((prev) => ({
       ...prev,
-      apiKey: key,
+      model,
     }));
   }
 
-  // 获取 API Key
-  static getApiKey(): string {
-    return this.store.current.apiKey;
+  static setThreshold(threshold: number) {
+    this.store.set((prev) => ({
+      ...prev,
+      threshold,
+    }));
+  }
+
+  static setLimit(limit: number) {
+    this.store.set((prev) => ({
+      ...prev,
+      limit,
+    }));
   }
 
   // 文本分块
@@ -84,43 +128,45 @@ export class KnowledgeStore {
     const chunks: string[] = [];
     const sentences = text
       .split(/[.。!?！？\n]/)
-      .filter((s) => s.trim().length > 0);
+      .filter((s) => s.trim().length > 0)
+      .map((s) => s.trim());
 
     let currentChunk = "";
-    let currentChars = 0;
+    let currentLength = 0;
 
     for (const sentence of sentences) {
-      const sentenceChars = sentence.length;
-
-      if (currentChars + sentenceChars > CHUNK_SIZE) {
+      // 如果单个句子就超过了chunk大小，则需要强制切分
+      if (sentence.length >= CHUNK_SIZE) {
         if (currentChunk) {
           chunks.push(currentChunk);
-
-          // 保留最后一个完整句子作为重叠部分
-          const lastSentence = currentChunk
-            .split(/[.。!?！？\n]/)
-            .filter((s) => s.trim())
-            .pop();
-          if (lastSentence) {
-            currentChunk = lastSentence.trim();
-            currentChars = currentChunk.length;
-          } else {
-            currentChunk = "";
-            currentChars = 0;
-          }
         }
+        // 按字符数直接切分长句子
+        for (let i = 0; i < sentence.length; i += CHUNK_SIZE) {
+          chunks.push(sentence.slice(i, i + CHUNK_SIZE));
+        }
+        currentChunk = "";
+        currentLength = 0;
+        continue;
       }
 
-      if (sentence.trim()) {
+      // 判断添加当前句子是否会超过块大小
+      if (currentLength + sentence.length + 1 > CHUNK_SIZE) {
+        if (currentChunk) {
+          chunks.push(currentChunk);
+        }
+        currentChunk = sentence;
+        currentLength = sentence.length;
+      } else {
         if (currentChunk) {
           currentChunk += " ";
-          currentChars += 1;
+          currentLength += 1;
         }
-        currentChunk += sentence.trim();
-        currentChars += sentenceChars;
+        currentChunk += sentence;
+        currentLength += sentence.length;
       }
     }
 
+    // 处理最后一个块
     if (currentChunk) {
       chunks.push(currentChunk);
     }
@@ -143,27 +189,24 @@ export class KnowledgeStore {
 
   // 生成文本向量
   private static async textToEmbedding(text: string): Promise<number[]> {
-    const apiKey = this.getApiKey();
-    if (!apiKey) {
-      throw new Error("未配置 API Key");
+    const model = this.store.current.model;
+    if (!model) {
+      throw new Error("未配置模型");
     }
 
-    const response = await fetch(
-      "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "text-embedding-v3",
-          input: [text],
-          dimension: "1024",
-          encoding_format: "float",
-        }),
-      }
-    );
+    const response = await fetch(model.api_url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${model.api_key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: model.model,
+        input: [text],
+        dimension: "1024",
+        encoding_format: "float",
+      }),
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -176,19 +219,25 @@ export class KnowledgeStore {
 
   // 添加知识库
   static async addKnowledge(
-    files: { path: string; content: string }[],
+    filePaths: string[],
     options?: {
       name?: string;
-      category?: string;
-      tags?: string[];
     }
   ): Promise<Knowledge> {
-    if (!this.getApiKey()) {
-      throw new Error("请先配置阿里云 API Key");
+    const model = this.store.current.model;
+    if (!model) {
+      throw new Error("模型配置出错");
     }
 
     const processedFiles: KnowledgeFile[] = [];
     const now = Date.now();
+
+    const files = await Promise.all(
+      filePaths.map(async (path) => {
+        const content = await cmd.invoke<string>("read_file_text", { path });
+        return { path, content };
+      })
+    );
 
     for (const file of files) {
       const chunks = this.splitTextIntoChunks(file.content);
@@ -210,7 +259,7 @@ export class KnowledgeStore {
 
       const fileType = file.path.split(".").pop()?.toLowerCase() || "txt";
       processedFiles.push({
-        name: file.path.split("/").pop() || "未知文件",
+        name: file.path.split("\\").pop() || "未知文件",
         content: file.content,
         file_type: fileType,
         chunks: processedChunks,
@@ -226,8 +275,6 @@ export class KnowledgeStore {
         processedFiles[0]?.name ||
         `知识库_${new Date().toISOString().split("T")[0]}`,
       version: KNOWLEDGE_VERSION,
-      tags: options?.tags || [],
-      category: options?.category || null,
       files: processedFiles,
       created_at: now,
       updated_at: now,
@@ -250,14 +297,11 @@ export class KnowledgeStore {
   }
 
   // 搜索知识库
-  static async searchKnowledge(
-    query: string,
-    options: SearchOptions
-  ): Promise<SearchResult[]> {
-    if (!this.getApiKey()) {
-      throw new Error("请先配置阿里云 API Key");
+  static async searchKnowledge(query: string): Promise<SearchResult[]> {
+    const model = this.store.current.model;
+    if (!model) {
+      throw new Error("模型配置出错");
     }
-
     const queryEmbedding = await this.textToEmbedding(query);
     const results: SearchResult[] = [];
 
@@ -268,7 +312,7 @@ export class KnowledgeStore {
             queryEmbedding,
             chunk.embedding
           );
-          if (similarity > options.threshold) {
+          if (similarity > this.store.current.threshold) {
             results.push({
               content: chunk.content,
               similarity,
@@ -281,7 +325,7 @@ export class KnowledgeStore {
     }
 
     results.sort((a, b) => b.similarity - a.similarity);
-    return results.slice(0, options.limit);
+    return results.slice(0, this.store.current.limit);
   }
 
   // 获取所有知识库

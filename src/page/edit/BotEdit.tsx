@@ -1,3 +1,4 @@
+import { ModelType } from "@/common/types/model";
 import { PluginProps, ToolProps } from "@/common/types/plugin";
 import { Header } from "@/components/custom/Header";
 import { Input } from "@/components/ui/input";
@@ -126,7 +127,7 @@ export function BotEdit() {
                                 <SelectValue placeholder="请选择模型" />
                             </SelectTrigger>
                             <SelectContent>
-                                {Object.values(models).map((model) => (
+                                {Object.values(models).filter((model) => model.type === ModelType.TEXT).map((model) => (
                                     <SelectItem key={model.id} value={model.id}>
                                         {model.name + ":" + model.model}
                                     </SelectItem>
