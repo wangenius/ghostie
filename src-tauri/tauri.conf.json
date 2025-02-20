@@ -63,6 +63,23 @@
         "minimizable": true
       },
       {
+        "title": "知识库创建",
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": true,
+        "label": "knowledge-creator",
+        "parent": "settings",
+        "center": true,
+        "url": "/knowledge-creator",
+        "visible": false,
+        "focus": true,
+        "maximizable": true,
+        "minimizable": true
+      },
+      {
         "title": "模型编辑",
         "resizable": false,
         "fullscreen": false,

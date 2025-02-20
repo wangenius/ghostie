@@ -8,6 +8,7 @@ import { SettingsManager } from "./services/settings/SettingsManager";
 import { useEffect } from "react";
 import { EnvEdit } from "./page/edit/EnvEdit";
 import { HistoryPage } from "./page/history/HistoryPage";
+import { KnowledgeCreator } from "./page/history/KnowledgeCreator";
 
 /* 主应用,提供路由 */
 function App() {
@@ -38,6 +39,7 @@ function App() {
                     <Route path="/plugin-edit" element={<PluginEdit />} />
                     <Route path="/env-edit" element={<EnvEdit />} />
                     <Route path="/history" element={<HistoryPage />} />
+                    <Route path="/knowledge-creator" element={<KnowledgeCreator />} />
                 </Routes>
             </BrowserRouter>
         </div>

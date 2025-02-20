@@ -1,7 +1,8 @@
 import { Model } from "@/common/types/model";
-import { Echo } from "@/utils/echo";
+import { FileMetadata } from "@/page/history/KnowledgeCreator";
 import { cmd } from "@/utils/shell";
-import { nanoid } from "nanoid";
+import { Echo } from "@/utils/echo";
+import { gen } from "@/utils/generator";
 
 /* 文本块元数据 */
 export interface TextChunkMetadata {
@@ -81,43 +82,52 @@ const CHUNK_SIZE = 300;
 const KNOWLEDGE_VERSION = "1.0.0";
 
 export class KnowledgeStore {
-  private static store = new Echo<{
-    items: Knowledge[];
+  private static store = new Echo<Record<string, Knowledge>>(
+    {},
+    {
+      name: "knowledge",
+      storageType: "indexedDB",
+      sync: true,
+    }
+  );
+
+  static configStore = new Echo<{
     model: Model | undefined;
     threshold: number;
     limit: number;
   }>(
     {
-      items: [],
       model: undefined,
       threshold: 0.5,
       limit: 10,
     },
     {
-      name: "knowledge",
-      storageType: "indexedDB",
+      name: "knowledge_config",
+      sync: true,
     }
   );
 
   static use = this.store.use.bind(this.store);
 
+  static useConfig = this.configStore.use.bind(this.configStore);
+
   // 设置 API Key
   static setModel(model: Model) {
-    this.store.set((prev) => ({
+    this.configStore.set((prev) => ({
       ...prev,
       model,
     }));
   }
 
   static setThreshold(threshold: number) {
-    this.store.set((prev) => ({
+    this.configStore.set((prev) => ({
       ...prev,
       threshold,
     }));
   }
 
   static setLimit(limit: number) {
-    this.store.set((prev) => ({
+    this.configStore.set((prev) => ({
       ...prev,
       limit,
     }));
@@ -189,7 +199,9 @@ export class KnowledgeStore {
 
   // 生成文本向量
   private static async textToEmbedding(text: string): Promise<number[]> {
-    const model = this.store.current.model;
+    console.log(this.configStore.current);
+
+    const model = this.configStore.current.model;
     if (!model) {
       throw new Error("未配置模型");
     }
@@ -219,12 +231,12 @@ export class KnowledgeStore {
 
   // 添加知识库
   static async addKnowledge(
-    filePaths: string[],
+    filePaths: FileMetadata[],
     options?: {
       name?: string;
     }
   ): Promise<Knowledge> {
-    const model = this.store.current.model;
+    const model = this.configStore.current.model;
     if (!model) {
       throw new Error("模型配置出错");
     }
@@ -233,9 +245,11 @@ export class KnowledgeStore {
     const now = Date.now();
 
     const files = await Promise.all(
-      filePaths.map(async (path) => {
-        const content = await cmd.invoke<string>("read_file_text", { path });
-        return { path, content };
+      filePaths.map(async (file) => {
+        const content = await cmd.invoke<string>("read_file_text", {
+          path: file.path,
+        });
+        return { path: file.path, content };
       })
     );
 
@@ -269,7 +283,7 @@ export class KnowledgeStore {
     }
 
     const knowledge: Knowledge = {
-      id: nanoid(),
+      id: gen.id(),
       name:
         options?.name ||
         processedFiles[0]?.name ||
@@ -282,7 +296,7 @@ export class KnowledgeStore {
 
     this.store.set((prev) => ({
       ...prev,
-      items: [...prev.items, knowledge],
+      [knowledge.id]: knowledge,
     }));
 
     return knowledge;
@@ -290,29 +304,42 @@ export class KnowledgeStore {
 
   // 删除知识库
   static deleteKnowledge(id: string): void {
-    this.store.set((prev) => ({
-      ...prev,
-      items: prev.items.filter((item) => item.id !== id),
-    }));
+    this.store.set((prev) => {
+      const newState = { ...prev };
+      delete newState[id];
+      return newState;
+    });
   }
 
-  // 搜索知识库
-  static async searchKnowledge(query: string): Promise<SearchResult[]> {
-    const model = this.store.current.model;
+  /** 搜索知识库
+   * @param query 查询内容
+   * @param knowledgeId 知识库ID, 如果为空则搜索所有知识库
+   * @returns 搜索结果
+   */
+  static async searchKnowledge(
+    query: string,
+    knowledgeId?: string
+  ): Promise<SearchResult[]> {
+    /* 获取模型 */
+    const model = this.configStore.current.model;
     if (!model) {
       throw new Error("模型配置出错");
     }
+    /* 获取查询向量 */
     const queryEmbedding = await this.textToEmbedding(query);
     const results: SearchResult[] = [];
 
-    for (const doc of this.store.current.items) {
+    /* 搜索指定知识库 */
+    if (knowledgeId) {
+      const doc = this.store.current[knowledgeId];
+
       for (const file of doc.files) {
         for (const chunk of file.chunks) {
           const similarity = this.cosineSimilarity(
             queryEmbedding,
             chunk.embedding
           );
-          if (similarity > this.store.current.threshold) {
+          if (similarity > this.configStore.current.threshold) {
             results.push({
               content: chunk.content,
               similarity,
@@ -322,14 +349,29 @@ export class KnowledgeStore {
           }
         }
       }
+    } else {
+      /* 搜索所有知识库 */
+      for (const doc of Object.values(this.store.current)) {
+        for (const file of doc.files) {
+          for (const chunk of file.chunks) {
+            const similarity = this.cosineSimilarity(
+              queryEmbedding,
+              chunk.embedding
+            );
+            if (similarity > this.configStore.current.threshold) {
+              results.push({
+                content: chunk.content,
+                similarity,
+                document_name: `${doc.name}/${file.name}`,
+                document_id: doc.id,
+              });
+            }
+          }
+        }
+      }
     }
 
     results.sort((a, b) => b.similarity - a.similarity);
-    return results.slice(0, this.store.current.limit);
-  }
-
-  // 获取所有知识库
-  static getKnowledgeList(): Knowledge[] {
-    return this.store.current.items;
+    return results.slice(0, this.configStore.current.limit);
   }
 }

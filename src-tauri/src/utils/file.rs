@@ -12,6 +12,16 @@ pub struct FileContent {
     pub content: String,
 }
 
+#[derive(serde::Serialize)]
+pub struct FileMetadata {
+    pub path: String,
+    pub name: String,
+    pub size: u64,
+    pub modified: u64,
+    pub created: u64,
+    pub is_dir: bool,
+}
+
 /// 获取配置目录，如果目录不存在则创建
 pub fn get_config_dir() -> Option<PathBuf> {
     let home = env::var("HOME").or_else(|_| env::var("USERPROFILE")).ok()?;
@@ -33,7 +43,7 @@ pub async fn open_files_path(
     window: tauri::Window,
     title: String,
     filters: std::collections::HashMap<String, Vec<String>>,
-) -> Result<Vec<String>, String> {
+) -> Result<Vec<FileMetadata>, String> {
     let mut file_dialog = window.dialog().file().set_title(&title).set_parent(&window);
 
     for (name, extensions) in filters.iter() {
@@ -50,7 +60,40 @@ pub async fn open_files_path(
     let file_paths = file_dialog.blocking_pick_files();
 
     match file_paths {
-        Some(paths) => Ok(paths.iter().map(|p| p.to_string()).collect()),
+        Some(paths) => {
+            let mut metadata_list = Vec::new();
+            for path in paths {
+                let path_ref = path.as_path().unwrap();
+                if let Ok(metadata) = fs::metadata(path_ref) {
+                    metadata_list.push(FileMetadata {
+                        path: path_ref.to_string_lossy().to_string(),
+                        name: path_ref
+                            .file_name()
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_default(),
+                        size: metadata.len(),
+                        modified: metadata
+                            .modified()
+                            .map(|time| {
+                                time.duration_since(std::time::UNIX_EPOCH)
+                                    .unwrap_or_default()
+                                    .as_secs()
+                            })
+                            .unwrap_or_default(),
+                        created: metadata
+                            .created()
+                            .map(|time| {
+                                time.duration_since(std::time::UNIX_EPOCH)
+                                    .unwrap_or_default()
+                                    .as_secs()
+                            })
+                            .unwrap_or_default(),
+                        is_dir: metadata.is_dir(),
+                    });
+                }
+            }
+            Ok(metadata_list)
+        }
         None => Ok(Vec::new()),
     }
 }

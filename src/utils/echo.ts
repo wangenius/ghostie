@@ -218,6 +218,7 @@ class Echo<T = Record<string, any>> {
   private channel: BroadcastChannel | null = null;
   /* 最后一次同步的状态哈希值 */
   private lastSyncHash: string | null = null;
+  private isStorageLoaded: boolean = false;
 
   /* 存储重试次数 */
   private static readonly MAX_RETRY_COUNT = 3;
@@ -249,8 +250,20 @@ class Echo<T = Record<string, any>> {
   ) {
     this.store = this.initialize();
     if (this.options.sync) {
-      this.initializeSync();
+      // 等待存储加载完成后再初始化同步
+      if (this.options.storageType === "indexedDB") {
+        this.waitForStorageAndSync();
+      } else {
+        this.initializeSync();
+      }
     }
+  }
+
+  private async waitForStorageAndSync() {
+    // 等待一个短暂的时间，确保存储初始化完成
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    this.isStorageLoaded = true;
+    this.initializeSync();
   }
 
   /**
@@ -530,10 +543,16 @@ class Echo<T = Record<string, any>> {
       this.channel.onmessage = (event) => {
         try {
           if (this.validateStateUpdate(event.data)) {
-            const hash = this.getStateHash(event.data.state);
-            if (hash !== this.lastSyncHash) {
-              this.lastSyncHash = hash;
-              this.store.setState(event.data.state, true);
+            // 只有在存储加载完成后才处理同步消息
+            if (
+              this.isStorageLoaded ||
+              this.options.storageType !== "indexedDB"
+            ) {
+              const hash = this.getStateHash(event.data.state);
+              if (hash !== this.lastSyncHash) {
+                this.lastSyncHash = hash;
+                this.store.setState(event.data.state, true);
+              }
             }
           }
         } catch (error) {
@@ -542,7 +561,9 @@ class Echo<T = Record<string, any>> {
       };
 
       // 发送初始状态
-      this.broadcastState(this.current);
+      if (this.isStorageLoaded || this.options.storageType !== "indexedDB") {
+        this.broadcastState(this.current);
+      }
     } catch (error) {
       console.error("Echo: 初始化同步失败", error);
       this.channel = null;
