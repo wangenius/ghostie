@@ -17,7 +17,7 @@ import { KnowledgeCreator } from "../history/KnowledgeCreator";
 
 export function KnowledgeTab() {
     const documents = KnowledgeStore.use();
-    const { model, threshold, limit } = KnowledgeStore.useConfig();
+    const { ContentModel: model, SearchModel: searchModel, threshold, limit } = KnowledgeStore.useConfig();
     const models = ModelManager.use();
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -96,11 +96,33 @@ export function KnowledgeTab() {
                         <PopoverContent className="w-80" align="end">
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>模型</Label>
+                                    <Label>知识库模型：用来解析文本的模型，推荐异步批处理模型</Label>
                                     <Select value={model?.id} onValueChange={(value) => {
                                         const model = models[value];
                                         if (model) {
-                                            KnowledgeStore.setModel(model);
+                                            KnowledgeStore.setContentModel(model);
+                                        }
+                                    }}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="选择模型" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Object.values(models)
+                                                .filter((model) => model.type === ModelType.EMBEDDING)
+                                                .map((model) => (
+                                                    <SelectItem key={model.id} value={model.id}>
+                                                        {model.name}
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>搜索模型：用来向量化搜索词条的模型，推荐同步模型</Label>
+                                    <Select value={searchModel?.id} onValueChange={(value) => {
+                                        const model = models[value];
+                                        if (model) {
+                                            KnowledgeStore.setSearchModel(model);
                                         }
                                     }}>
                                         <SelectTrigger>

@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import { KnowledgeStore } from "@/services/knowledge/KnowledgeStore";
 import { cmd } from "@/utils/shell";
 import { useState } from "react";
@@ -22,6 +23,9 @@ export const KnowledgeCreator = () => {
 	const [selectedFiles, setSelectedFiles] = useState<Array<FileMetadata>>([]);
 	const [knowledgeName, setKnowledgeName] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [uploadProgress, setUploadProgress] = useState(0);
+	const [uploadStatus, setUploadStatus] = useState("");
+	const [currentFile, setCurrentFile] = useState<string>();
 
 	const handleFileSelect = async () => {
 		try {
@@ -43,8 +47,16 @@ export const KnowledgeCreator = () => {
 	const handleConfirmUpload = async () => {
 		try {
 			setLoading(true);
+			setUploadProgress(0);
+			setUploadStatus("准备上传...");
+
 			await KnowledgeStore.addKnowledge(selectedFiles, {
-				name: knowledgeName
+				name: knowledgeName,
+				onProgress: (progress) => {
+					setUploadProgress(progress.progress);
+					setUploadStatus(progress.status);
+					setCurrentFile(progress.currentFile);
+				}
 			});
 			setSelectedFiles([]);
 			setKnowledgeName('');
@@ -52,6 +64,9 @@ export const KnowledgeCreator = () => {
 			console.error("文件上传失败", error);
 		} finally {
 			setLoading(false);
+			setUploadProgress(0);
+			setUploadStatus("");
+			setCurrentFile(undefined);
 		}
 	};
 
@@ -87,6 +102,21 @@ export const KnowledgeCreator = () => {
 
 			<div className="rounded-lg m-0 p-6 flex-1">
 				<div className="space-y-6">
+					{loading && (
+						<div className="space-y-2">
+							<Progress value={uploadProgress} className="w-full h-2" />
+							<div className="flex justify-between items-center text-sm text-muted-foreground">
+								<span>{uploadStatus}</span>
+								<span>{uploadProgress.toFixed(1)}%</span>
+							</div>
+							{currentFile && (
+								<p className="text-sm text-muted-foreground">
+									当前文件: {currentFile}
+								</p>
+							)}
+						</div>
+					)}
+
 					<div className="space-y-2">
 						<Label htmlFor="knowledge-name" className="text-lg font-medium">
 							知识库名称

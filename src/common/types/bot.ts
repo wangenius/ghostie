@@ -21,4 +21,6 @@ export interface BotProps {
   usageCount?: number;
   /* 最后使用时间 */
   lastUsed?: number;
+  /* 知识库 */
+  knowledges?: string[];
 }

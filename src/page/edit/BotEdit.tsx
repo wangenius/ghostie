@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { TOOL_NAME_SPLIT } from "@/services/bot/Bot";
 import { BotManager } from "@/services/bot/BotManger";
+import { Knowledge, KnowledgeStore } from "@/services/knowledge/KnowledgeStore";
 import { ModelManager } from "@/services/model/ModelManager";
 import { cmd } from "@/utils/shell";
 import { BotProps } from "@common/types/bot";
@@ -27,7 +28,7 @@ export function BotEdit() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(true);
-
+    const knowledge = KnowledgeStore.use();
     const query = useQuery("id");
     const models = ModelManager.use();
 
@@ -149,6 +150,20 @@ export function BotEdit() {
                             onChange={(value) => setBot({ ...bot, tools: value })}
                             className="bg-secondary"
                             placeholder="选择插件..."
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="block text-xs text-muted-foreground">选择知识库</label>
+                        <MultiSelect
+                            options={Object.values(knowledge).map((knowledge: Knowledge) => ({
+                                label: knowledge.name + "(" + knowledge.version + ")",
+                                value: knowledge.id
+                            }))}
+                            value={bot.knowledges || []}
+                            onChange={(value) => setBot({ ...bot, knowledges: value })}
+                            className="bg-secondary"
+                            placeholder="选择知识库..."
                         />
                     </div>
 

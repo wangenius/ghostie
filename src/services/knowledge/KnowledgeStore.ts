@@ -78,6 +78,16 @@ export interface SearchOptions {
   limit: number;
 }
 
+/* 进度回调接口 */
+export interface ProgressCallback {
+  /* 当前进度（0-100） */
+  progress: number;
+  /* 当前状态描述 */
+  status: string;
+  /* 当前处理的文件名 */
+  currentFile?: string;
+}
+
 const CHUNK_SIZE = 300;
 const KNOWLEDGE_VERSION = "1.0.0";
 
@@ -92,12 +102,14 @@ export class KnowledgeStore {
   );
 
   static configStore = new Echo<{
-    model: Model | undefined;
+    ContentModel: Model | undefined;
+    SearchModel: Model | undefined;
     threshold: number;
     limit: number;
   }>(
     {
-      model: undefined,
+      ContentModel: undefined,
+      SearchModel: undefined,
       threshold: 0.5,
       limit: 10,
     },
@@ -112,10 +124,17 @@ export class KnowledgeStore {
   static useConfig = this.configStore.use.bind(this.configStore);
 
   // 设置 API Key
-  static setModel(model: Model) {
+  static setContentModel(model: Model) {
     this.configStore.set((prev) => ({
       ...prev,
-      model,
+      ContentModel: model,
+    }));
+  }
+
+  static setSearchModel(model: Model) {
+    this.configStore.set((prev) => ({
+      ...prev,
+      SearchModel: model,
     }));
   }
 
@@ -198,14 +217,14 @@ export class KnowledgeStore {
   }
 
   // 生成文本向量
-  private static async textToEmbedding(text: string): Promise<number[]> {
+  private static async textToEmbedding(
+    text: string,
+    model: Model
+  ): Promise<number[]> {
     console.log(this.configStore.current);
-
-    const model = this.configStore.current.model;
     if (!model) {
       throw new Error("未配置模型");
     }
-
     const response = await fetch(model.api_url, {
       method: "POST",
       headers: {
@@ -234,31 +253,60 @@ export class KnowledgeStore {
     filePaths: FileMetadata[],
     options?: {
       name?: string;
+      onProgress?: (progress: ProgressCallback) => void;
     }
   ): Promise<Knowledge> {
-    const model = this.configStore.current.model;
+    const model = this.configStore.current.ContentModel;
     if (!model) {
       throw new Error("模型配置出错");
     }
 
     const processedFiles: KnowledgeFile[] = [];
     const now = Date.now();
+    const { onProgress } = options || {};
+
+    // 计算总的处理步骤数（读取文件 + 处理每个文件的块）
+    const totalSteps = filePaths.length * 2; // 文件读取和处理两个步骤
+    let currentStep = 0;
+
+    // 读取所有文件
+    onProgress?.({
+      progress: 0,
+      status: "正在读取文件...",
+    });
 
     const files = await Promise.all(
       filePaths.map(async (file) => {
         const content = await cmd.invoke<string>("read_file_text", {
           path: file.path,
         });
+        currentStep++;
+        onProgress?.({
+          progress: (currentStep / totalSteps) * 100,
+          status: "正在读取文件...",
+          currentFile: file.path.split("\\").pop(),
+        });
         return { path: file.path, content };
       })
     );
 
-    for (const file of files) {
+    // 处理每个文件
+    for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
+      const file = files[fileIndex];
+      const fileName = file.path.split("\\").pop() || "未知文件";
+
+      onProgress?.({
+        progress: ((currentStep + fileIndex) / totalSteps) * 100,
+        status: "正在处理文件内容...",
+        currentFile: fileName,
+      });
+
       const chunks = this.splitTextIntoChunks(file.content);
       const processedChunks: TextChunk[] = [];
+      const totalChunks = chunks.length;
 
       for (let i = 0; i < chunks.length; i++) {
-        const embedding = await this.textToEmbedding(chunks[i]);
+        const embedding = await this.textToEmbedding(chunks[i], model);
         processedChunks.push({
           content: chunks[i],
           embedding,
@@ -269,11 +317,20 @@ export class KnowledgeStore {
             updated_at: now,
           },
         });
+
+        // 更新块处理进度
+        onProgress?.({
+          progress:
+            ((currentStep + fileIndex + (i + 1) / totalChunks) / totalSteps) *
+            100,
+          status: "正在生成文本向量...",
+          currentFile: fileName,
+        });
       }
 
       const fileType = file.path.split(".").pop()?.toLowerCase() || "txt";
       processedFiles.push({
-        name: file.path.split("\\").pop() || "未知文件",
+        name: fileName,
         content: file.content,
         file_type: fileType,
         chunks: processedChunks,
@@ -299,6 +356,11 @@ export class KnowledgeStore {
       [knowledge.id]: knowledge,
     }));
 
+    onProgress?.({
+      progress: 100,
+      status: "处理完成",
+    });
+
     return knowledge;
   }
 
@@ -313,26 +375,28 @@ export class KnowledgeStore {
 
   /** 搜索知识库
    * @param query 查询内容
-   * @param knowledgeId 知识库ID, 如果为空则搜索所有知识库
+   * @param knowledgeIds 知识库ID, 如果为空则搜索所有知识库
    * @returns 搜索结果
    */
   static async searchKnowledge(
     query: string,
-    knowledgeId?: string
+    knowledgeIds: string[] = []
   ): Promise<SearchResult[]> {
     /* 获取模型 */
-    const model = this.configStore.current.model;
+    const model = this.configStore.current.SearchModel;
     if (!model) {
       throw new Error("模型配置出错");
     }
     /* 获取查询向量 */
-    const queryEmbedding = await this.textToEmbedding(query);
+    const queryEmbedding = await this.textToEmbedding(query, model);
     const results: SearchResult[] = [];
 
-    /* 搜索指定知识库 */
-    if (knowledgeId) {
-      const doc = this.store.current[knowledgeId];
-
+    /* 搜索所有知识库 */
+    for (const doc of Object.values(this.store.current)) {
+      /* 如果指定了知识库ID，则只搜索指定知识库, 否则搜索所有知识库 */
+      if (knowledgeIds.length > 0 && !knowledgeIds.includes(doc.id)) {
+        continue;
+      }
       for (const file of doc.files) {
         for (const chunk of file.chunks) {
           const similarity = this.cosineSimilarity(
@@ -346,26 +410,6 @@ export class KnowledgeStore {
               document_name: `${doc.name}/${file.name}`,
               document_id: doc.id,
             });
-          }
-        }
-      }
-    } else {
-      /* 搜索所有知识库 */
-      for (const doc of Object.values(this.store.current)) {
-        for (const file of doc.files) {
-          for (const chunk of file.chunks) {
-            const similarity = this.cosineSimilarity(
-              queryEmbedding,
-              chunk.embedding
-            );
-            if (similarity > this.configStore.current.threshold) {
-              results.push({
-                content: chunk.content,
-                similarity,
-                document_name: `${doc.name}/${file.name}`,
-                document_id: doc.id,
-              });
-            }
           }
         }
       }

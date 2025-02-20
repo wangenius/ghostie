@@ -112,8 +112,6 @@ export function BotsTab() {
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto">
-
-
                 <div className="grid grid-cols-1">
                     {Object.entries(bots).map(([id, bot]) => (
                         <BotItem

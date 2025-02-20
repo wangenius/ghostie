@@ -75,25 +75,38 @@ class IndexedDBStorage {
     return `echo-${this.storageKey}`;
   }
 
+  /**
+   * 初始化数据库
+   * @returns 初始化数据库的 Promise
+   */
   private async initDB(): Promise<void> {
+    /* 初始化数据库 */
     return new Promise((resolve, reject) => {
+      /* 初始化数据库 */
       const request = indexedDB.open(this.dbName, this.version);
-
+      /* 数据库初始化失败 */
       request.onerror = () => reject(request.error);
+      /* 数据库初始化成功 */
       request.onsuccess = () => {
         this.db = request.result;
         resolve();
       };
-
+      /* 数据库升级 */
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
+        /* 数据库不存在 */
         if (!db.objectStoreNames.contains(this.storeName)) {
+          /* 创建数据库 */
           db.createObjectStore(this.storeName, { keyPath: "id" });
         }
       };
     });
   }
 
+  /**
+   * 等待数据库初始化
+   * @returns 数据库初始化完成的 Promise
+   */
   async waitForDB(): Promise<void> {
     if (!this.db) {
       await this.initDB();
@@ -176,28 +189,67 @@ const createIndexedDBMiddleware =
     api: StoreApi<S>
   ) => {
     const initialState = next(set, get, api);
+    let isInitialized = false;
+    let isHydrating = false;
 
     // 初始化时加载数据
-    (async () => {
+    const initializeState = async () => {
+      if (isInitialized) return;
+
       try {
+        await storage.waitForDB(); // 确保数据库已经初始化
         const savedState = await storage.getItem<S>(config.name);
+
         if (savedState !== null) {
+          isHydrating = true;
           set(savedState as S, true);
+          isHydrating = false;
           config.onRehydrateStorage?.(savedState);
+          isInitialized = true;
+          return true;
         } else {
+          // 如果没有保存的状态，保存初始状态
+          await storage.setItem(config.name, get());
           config.onRehydrateStorage?.(null);
+          isInitialized = true;
+          return false;
         }
       } catch (error) {
         console.error(`Echo: 加载状态失败:`, error);
         config.onRehydrateStorage?.(null);
+        return false;
       }
-    })();
+    };
+
+    // 立即开始初始化
+    initializeState();
 
     // 订阅状态变化
-    api.subscribe((state: S) => {
-      storage.setItem(config.name, state).catch((error) => {
+    let lastSavedState: string | null = null;
+    let saveTimeout: NodeJS.Timeout | null = null;
+
+    const saveState = async (state: S) => {
+      const stateHash = JSON.stringify(state);
+      if (stateHash === lastSavedState || isHydrating) return;
+
+      lastSavedState = stateHash;
+      try {
+        await storage.setItem(config.name, state);
+      } catch (error) {
         console.error(`Echo: 保存状态失败:`, error);
-      });
+        lastSavedState = null; // 重置状态哈希以便重试
+      }
+    };
+
+    api.subscribe((state: S) => {
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+      }
+
+      // 使用防抖来避免频繁保存
+      saveTimeout = setTimeout(() => {
+        saveState(state);
+      }, 100);
     });
 
     return initialState;
@@ -218,13 +270,18 @@ class Echo<T = Record<string, any>> {
   private channel: BroadcastChannel | null = null;
   /* 最后一次同步的状态哈希值 */
   private lastSyncHash: string | null = null;
-  private isStorageLoaded: boolean = false;
+  private storage: IndexedDBStorage | null = null;
+  private storageInitPromise: Promise<void> | null = null;
+  private syncTimeout: NodeJS.Timeout | null = null;
 
   /* 存储重试次数 */
   private static readonly MAX_RETRY_COUNT = 3;
-
   /* 重试延迟 (ms) */
   private static readonly RETRY_DELAY = 500;
+  /* 同步延迟 (ms) */
+  private static readonly SYNC_DELAY = 50;
+  /* 保存延迟 (ms) */
+  private static readonly SAVE_DELAY = 100;
 
   /**
    * 构造函数
@@ -248,22 +305,39 @@ class Echo<T = Record<string, any>> {
     private readonly defaultValue: T,
     private options: EchoOptions<T> = {}
   ) {
+    if (options.storageType === "indexedDB" && options.name) {
+      this.storage = new IndexedDBStorage(options.name);
+      this.storageInitPromise = this.storage.waitForDB().catch((error) => {
+        console.error(`Echo: 初始化数据库失败:`, error);
+      });
+    }
+
     this.store = this.initialize();
+
     if (this.options.sync) {
-      // 等待存储加载完成后再初始化同步
-      if (this.options.storageType === "indexedDB") {
-        this.waitForStorageAndSync();
+      // 使用 requestIdleCallback 延迟初始化同步，确保存储已经准备好
+      if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+        window.requestIdleCallback(() => this.initializeSync());
       } else {
-        this.initializeSync();
+        setTimeout(() => this.initializeSync(), Echo.SYNC_DELAY);
       }
+    }
+
+    // 添加页面卸载时的状态保存
+    if (typeof window !== "undefined") {
+      window.addEventListener("beforeunload", () => {
+        if (this.storage && this.options.name) {
+          // 同步保存状态
+          this.storage.setItem(this.options.name, this.current);
+        }
+      });
     }
   }
 
-  private async waitForStorageAndSync() {
-    // 等待一个短暂的时间，确保存储初始化完成
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    this.isStorageLoaded = true;
-    this.initializeSync();
+  private async waitForStorage(): Promise<void> {
+    if (this.storageInitPromise) {
+      await this.storageInitPromise;
+    }
   }
 
   /**
@@ -298,12 +372,19 @@ class Echo<T = Record<string, any>> {
     }
 
     try {
-      this.channel.postMessage({
-        type: "state-update",
-        state: newState,
-        timestamp: Date.now(),
-      });
-      this.lastSyncHash = hash;
+      if (this.syncTimeout) {
+        clearTimeout(this.syncTimeout);
+      }
+
+      // 使用防抖来避免频繁广播
+      this.syncTimeout = setTimeout(() => {
+        this.channel?.postMessage({
+          type: "state-update",
+          state: newState,
+          timestamp: Date.now(),
+        });
+        this.lastSyncHash = hash;
+      }, Echo.SAVE_DELAY);
     } catch (error) {
       console.error("Echo: 发送同步消息失败", error);
     }
@@ -525,7 +606,7 @@ class Echo<T = Record<string, any>> {
   }
 
   /** 初始化跨窗口同步 */
-  private initializeSync() {
+  private async initializeSync() {
     if (!this.options.name) {
       console.warn("Echo: 无法初始化同步 - 需要提供 name 选项");
       return;
@@ -536,22 +617,34 @@ class Echo<T = Record<string, any>> {
       return;
     }
 
+    // 等待存储初始化完成
+    if (this.options.storageType === "indexedDB") {
+      await this.waitForStorage();
+    }
+
     try {
       const channelName = `echo-${this.options.name}`;
       this.channel = new BroadcastChannel(channelName);
 
-      this.channel.onmessage = (event) => {
+      this.channel.onmessage = async (event) => {
         try {
           if (this.validateStateUpdate(event.data)) {
-            // 只有在存储加载完成后才处理同步消息
-            if (
-              this.isStorageLoaded ||
-              this.options.storageType !== "indexedDB"
-            ) {
-              const hash = this.getStateHash(event.data.state);
-              if (hash !== this.lastSyncHash) {
-                this.lastSyncHash = hash;
-                this.store.setState(event.data.state, true);
+            const hash = this.getStateHash(event.data.state);
+            if (hash !== this.lastSyncHash) {
+              // 添加延迟以确保存储已经完成初始化
+              if (this.options.storageType === "indexedDB") {
+                await new Promise((resolve) =>
+                  setTimeout(resolve, Echo.SYNC_DELAY)
+                );
+              }
+
+              this.lastSyncHash = hash;
+              this.store.setState(event.data.state, true);
+
+              // 触发 onChange 回调
+              if (this.options.onChange) {
+                const oldState = this.current;
+                this.options.onChange(event.data.state, oldState);
               }
             }
           }
@@ -561,9 +654,7 @@ class Echo<T = Record<string, any>> {
       };
 
       // 发送初始状态
-      if (this.isStorageLoaded || this.options.storageType !== "indexedDB") {
-        this.broadcastState(this.current);
-      }
+      this.broadcastState(this.current);
     } catch (error) {
       console.error("Echo: 初始化同步失败", error);
       this.channel = null;
