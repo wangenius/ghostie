@@ -4,7 +4,7 @@ import { Button } from "../ui/button"
 
 export const Header = ({ title, close = () => cmd.close() }: { title: string, close?: () => void }) => {
 	return (
-		<div className="flex draggable justify-between items-center p-3" >
+		<div className="flex select-none draggable justify-between items-center p-3" >
 			<div className="text-sm pl-3 font-medium text-foreground">
 
 				{title}

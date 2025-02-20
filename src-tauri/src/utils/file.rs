@@ -1,6 +1,8 @@
+use crate::utils::document::{read_docx, read_pdf};
 use anyhow::Result;
 use std::env;
 use std::fs;
+use std::path::Path;
 use std::path::PathBuf;
 use tauri_plugin_dialog::DialogExt;
 
@@ -129,5 +131,14 @@ pub async fn save_file(
 
 #[tauri::command]
 pub async fn read_file_text(path: String) -> Result<String, String> {
-    fs::read_to_string(&path).map_err(|e| format!("读取文件失败: {}", e))
+    let path = Path::new(&path);
+    let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
+
+    match extension.to_lowercase().as_str() {
+        "docx" => {
+            read_docx(&path.to_string_lossy()).map_err(|e| format!("读取 DOCX 文件失败: {}", e))
+        }
+        "pdf" => read_pdf(&path.to_string_lossy()).map_err(|e| format!("读取 PDF 文件失败: {}", e)),
+        _ => fs::read_to_string(&path).map_err(|e| format!("读取文件失败: {}", e)),
+    }
 }

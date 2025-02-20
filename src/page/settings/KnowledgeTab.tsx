@@ -1,7 +1,8 @@
 import { ModelType } from "@/common/types/model";
+import { Code } from "@/components/custom/code";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,8 +15,7 @@ import { ModelManager } from "@/services/model/ModelManager";
 import { cmd } from "@/utils/shell";
 import { useState } from "react";
 import { TbEye, TbFile, TbSearch, TbSettings, TbTrash, TbUpload } from "react-icons/tb";
-
-
+import ReactMarkdown from "react-markdown";
 
 export function KnowledgeTab() {
     const { model, items: documents, threshold, limit } = KnowledgeStore.use();
@@ -24,16 +24,11 @@ export function KnowledgeTab() {
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [searchLoading, setSearchLoading] = useState(false);
-
-    const [showSearchOptions, setShowSearchOptions] = useState(false);
     const [showPreviewDialog, setShowPreviewDialog] = useState(false);
     const [previewDocument, setPreviewDocument] = useState<KnowledgeType | null>(null);
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [showUploadDialog, setShowUploadDialog] = useState(false);
     const [knowledgeName, setKnowledgeName] = useState("");
-
-
-
 
     const handleUpload = async () => {
         if (!model) {
@@ -45,7 +40,7 @@ export function KnowledgeTab() {
             const filePaths = await cmd.invoke<string[]>("open_files_path", {
                 title: "选择文档",
                 filters: {
-                    "文本文件": ["txt", "md", "markdown"]
+                    "文本文件": ["txt", "md", "markdown", "docx", "doc", "pdf"]
                 }
             });
 
@@ -109,207 +104,190 @@ export function KnowledgeTab() {
         setShowPreviewDialog(true);
     };
 
-    const filteredDocuments = documents.filter(doc =>
-        doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.files.some(file => file.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-
     return (
-        <div className="space-y-4 max-w-5xl mx-auto">
-            <div className="flex items-center justify-between gap-4 mb-4">
-                <div className="relative flex-1">
-                    <TbSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        className="pl-8"
-                        placeholder="输入关键词进行语义搜索..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && searchQuery.trim() && !searchLoading) {
-                                handleSemanticSearch();
-                            }
-                        }}
-                    />
+        <div className="mx-auto space-y-3">
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 flex items-center gap-4">
+                    <div className="relative flex-1">
+                        <TbSearch className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            className="pl-9"
+                            placeholder="输入关键词进行语义搜索..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && searchQuery.trim() && !searchLoading) {
+                                    handleSemanticSearch();
+                                }
+                            }}
+                        />
+                    </div>
+                    <Button
+                        onClick={handleSemanticSearch}
+                        disabled={!searchQuery.trim() || searchLoading}
+                    >
+                        {searchLoading ? "搜索中..." : "搜索"}
+                    </Button>
                 </div>
 
-
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" size="icon" onClick={() => setShowSearchOptions(!showSearchOptions)}>
-                            <TbSettings className="w-4 h-4" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 p-4" align="end">
-                        <Label>模型</Label>
-                        <Select value={model?.id} onValueChange={(value) => {
-                            const model = models[value];
-                            if (model) {
-                                KnowledgeStore.setModel(model);
-                            }
-                        }}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="选择模型" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {Object.values(models).filter((model) => model.type === ModelType.EMBEDDING).map((model) => (
-                                    <SelectItem key={model.id} value={model.id}>
-                                        {model.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <div className="space-y-2">
-                            <Label>相似度阈值</Label>
-                            <div className="flex items-center gap-4">
-                                <Slider
-                                    value={[threshold]}
-                                    min={0}
-                                    max={1}
-                                    step={0.1}
-                                    onValueChange={([value]) => KnowledgeStore.setThreshold(value)}
-                                />
-                                <span className="text-sm w-12 text-right">
-                                    {(threshold * 100).toFixed(0)}%
-                                </span>
+                <div className="flex items-center gap-2">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" size="icon">
+                                <TbSettings className="w-4 h-4" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80" align="end">
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>模型</Label>
+                                    <Select value={model?.id} onValueChange={(value) => {
+                                        const model = models[value];
+                                        if (model) {
+                                            KnowledgeStore.setModel(model);
+                                        }
+                                    }}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="选择模型" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Object.values(models)
+                                                .filter((model) => model.type === ModelType.EMBEDDING)
+                                                .map((model) => (
+                                                    <SelectItem key={model.id} value={model.id}>
+                                                        {model.name}
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>相似度阈值</Label>
+                                    <div className="flex items-center gap-4">
+                                        <Slider
+                                            value={[threshold]}
+                                            min={0}
+                                            max={1}
+                                            step={0.1}
+                                            onValueChange={([value]) => KnowledgeStore.setThreshold(value)}
+                                        />
+                                        <span className="text-sm w-12 text-right">
+                                            {(threshold * 100).toFixed(0)}%
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>结果数量</Label>
+                                    <div className="flex items-center gap-4">
+                                        <Slider
+                                            value={[limit]}
+                                            min={1}
+                                            max={50}
+                                            step={1}
+                                            onValueChange={([value]) => KnowledgeStore.setLimit(value)}
+                                        />
+                                        <span className="text-sm w-12 text-right">
+                                            {limit}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>结果数量</Label>
+                        </PopoverContent>
+                    </Popover>
+                    <Button onClick={handleUpload} disabled={loading}>
+                        <TbUpload className="w-4 h-4 mr-2" />
+                        上传文档
+                    </Button>
+                </div>
+            </div>
+            <div className="text-xs text-gray-500 bg-muted p-2 rounded-md">
 
-                            <div className="flex items-center gap-4">
-                                <Slider
-                                    value={[limit]}
-                                    min={1}
-                                    max={50}
-                                    step={1}
-                                    onValueChange={([value]) => KnowledgeStore.setLimit(value)}
-                                />
-                                <span className="text-sm w-12 text-right">
-                                    {limit}
-                                </span>
-                            </div>
-                        </div>
+                知识库文档当前仅支持<Code>txt</Code>, <Code>markdown</Code>, <Code>word</Code>, <Code>pdf</Code>格式, 其他格式正在适配更新。
 
-                    </PopoverContent>
-                </Popover>
-            </div >
-
-            {<Card>
-                <CardHeader>
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <CardTitle>知识库文档
-                            </CardTitle>
-                            <CardDescription>
-                                共有 {documents?.length} 个知识库，{documents?.reduce((acc, doc) => acc + doc.files.reduce((sum, file) => sum + file.chunks.length, 0), 0)} 个知识块
-                            </CardDescription>
-                        </div>
-                        <Button variant="outline" onClick={handleUpload} disabled={loading}>
-                            <TbUpload className="w-4 h-4 mr-2" />
-                            上传文档
+            </div>
+            {searchResults.length > 0 ? (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold">搜索结果</h2>
+                        <Button variant="ghost" size="sm" onClick={() => setSearchResults([])}>
+                            返回文档列表
                         </Button>
                     </div>
-                </CardHeader>
-                <CardContent>
-                    <ScrollArea className="h-[400px]">
-                        <div className="space-y-4">
-                            {filteredDocuments.map((doc) => (
-                                <Card key={doc.id} className="p-4">
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <h3 className="font-medium">{doc.name}</h3>
-                                                <div className="text-sm text-muted-foreground">
-                                                    版本: {doc.version} · {doc.files.length} 个文件 ·
-                                                    {doc.files.reduce((sum, file) => sum + file.chunks.length, 0)} 个知识块 ·
-                                                    {new Date(doc.created_at).toLocaleDateString()}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handlePreview(doc)}
-                                                >
-                                                    <TbEye className="w-4 h-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleDelete(doc.id)}
-                                                >
-                                                    <TbTrash className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2 mt-2">
-                                            {doc.files.map((file, index) => (
-                                                <Card key={index} className="p-2">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                            <TbFile className="w-4 h-4" />
-                                                            <div>
-                                                                <div className="font-medium">{file.name}</div>
-                                                                <div className="text-sm text-muted-foreground">
-                                                                    {file.chunks.length} 个知识块 · {file.file_type} ·
-                                                                    {new Date(file.created_at).toLocaleDateString()}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </Card>
-                                            ))}
+                    <div className="grid gap-4">
+                        {searchResults.map((result, index) => (
+                            <div key={index} className="bg-card p-4 rounded-lg border overflow-hidden">
+                                <div className="flex items-center justify-between mb-3">
+                                    <Badge variant="outline" className="text-sm">
+                                        {result.document_name}
+                                    </Badge>
+                                    <Badge className="bg-primary/10 text-primary">
+                                        相似度: {(result.similarity * 100).toFixed(1)}%
+                                    </Badge>
+                                </div>
+                                <p className="text-sm leading-relaxed">
+                                    {result.content}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                <div className="space-y-4">
+
+
+                    <div className="grid gap-4">
+                        {documents.map((doc) => (
+                            <div key={doc.id} className="bg-card p-4 rounded-lg border transition-shadow">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div>
+                                        <h3 className="text-base font-medium mb-1">{doc.name}</h3>
+                                        <div className="text-sm text-muted-foreground">
+                                            版本: {doc.version} · {doc.files.length} 个文件 ·
+                                            {doc.files.reduce((sum, file) => sum + file.chunks.length, 0)} 个知识块 ·
+                                            {new Date(doc.created_at).toLocaleDateString()}
                                         </div>
                                     </div>
-                                </Card>
-                            ))}
-                            {filteredDocuments.length === 0 && (
-                                <div className="text-center py-4 text-muted-foreground">
-                                    暂无文档
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handlePreview(doc)}
+                                        >
+                                            <TbEye className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleDelete(doc.id)}
+                                        >
+                                            <TbTrash className="w-4 h-4" />
+                                        </Button>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
-                    </ScrollArea>
-                </CardContent>
-            </Card >}
 
-            {
-                searchResults.length > 0 && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>搜索结果</CardTitle>
-                            <CardDescription>
-                                找到 {searchResults.length} 条相关内容
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <ScrollArea className="h-[400px]">
-                                <div className="space-y-2">
-                                    {searchResults.map((result, index) => (
-                                        <Card key={index}>
-                                            <CardContent className="p-4">
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <Badge variant="outline">
-                                                        {result.document_name}
-                                                    </Badge>
-                                                    <Badge>
-                                                        相似度: {(result.similarity * 100).toFixed(1)}%
-                                                    </Badge>
+                                <div className="grid gap-2">
+                                    {doc.files.map((file, index) => (
+                                        <div key={index} className="flex items-center gap-3 p-2 rounded-md bg-muted/30">
+                                            <TbFile className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                            <div className="min-w-0 flex-1">
+                                                <div className="font-medium truncate">{file.name}</div>
+                                                <div className="text-sm text-muted-foreground">
+                                                    {file.chunks.length} 个知识块 · {file.file_type}
                                                 </div>
-                                                <p className="text-sm">
-                                                    {result.content}
-                                                </p>
-                                            </CardContent>
-                                        </Card>
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
-                            </ScrollArea>
-                        </CardContent>
-                    </Card>
-                )
-            }
-
-
+                            </div>
+                        ))}
+                        {documents.length === 0 && (
+                            <div className="text-center py-12 text-muted-foreground bg-muted/10 rounded-lg border border-dashed">
+                                暂无文档，点击右上角"上传文档"添加
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
                 <DialogContent className="max-w-3xl">
@@ -428,6 +406,6 @@ export function KnowledgeTab() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div >
+        </div>
     );
 }
