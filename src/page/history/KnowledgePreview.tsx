@@ -1,24 +1,39 @@
 import { Header } from "@/components/custom/Header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hook/useQuery";
 import { cn } from "@/lib/utils";
-import { KnowledgeStore } from "@/services/knowledge/KnowledgeStore";
+import { KnowledgeStore, type SearchResult } from "@/services/knowledge/KnowledgeStore";
 import { cmd } from "@/utils/shell";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { TbChevronRight, TbFileText, TbFolder } from "react-icons/tb";
+import { TbChevronRight, TbFileText, TbFolder, TbSearch } from "react-icons/tb";
 
 export const KnowledgePreview = () => {
 	const id = useQuery("id");
 	const docs = KnowledgeStore.use();
 	const [selectedFile, setSelectedFile] = useState<number | null>(null);
-
-
+	const [searchQuery, setSearchQuery] = useState("");
+	const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+	const [searchLoading, setSearchLoading] = useState(false);
 
 	const previewDocument = docs[id || ""];
+
+	const handleSemanticSearch = async () => {
+		if (!searchQuery.trim()) return;
+		setSearchLoading(true);
+		try {
+			const results = await KnowledgeStore.search(searchQuery);
+			setSearchResults(results);
+		} catch (error) {
+			console.error("搜索失败", error);
+		} finally {
+			setSearchLoading(false);
+		}
+	};
 
 	if (!previewDocument) {
 		return (
@@ -48,25 +63,33 @@ export const KnowledgePreview = () => {
 
 				<Card className="h-full w-[360px] overflow-hidden backdrop-blur-sm bg-card/95 flex flex-col">
 					<CardContent className="p-6 flex-1 overflow-hidden flex flex-col">
-						<div className="space-y-6">
-							<div className="space-y-2">
-								<Input className="text-2xl font-bold pl-0" variant="title" value={previewDocument?.name} onChange={(e) => {
-									KnowledgeStore.setName(previewDocument?.id, e.target.value);
-								}} />
-								<div className="flex items-center gap-2">
-									<Badge variant="default" className="bg-primary/20 text-primary hover:bg-primary/30">
-										v{previewDocument?.version}
-									</Badge>
-								</div>
-							</div>
+						<div className="space-y-4">
+							<Input className="text-2xl font-bold pl-0" variant="title" value={previewDocument?.name} onChange={(e) => {
+								KnowledgeStore.setName(previewDocument?.id, e.target.value);
+							}} />
 
-							<div className="space-y-3">
+							<div >
 								<Textarea
 									className="min-h-[80px] resize-none"
 									placeholder="添加知识库描述..."
 									value={previewDocument?.description}
 									onChange={(e) => {
 										KnowledgeStore.setDescription(previewDocument?.id, e);
+									}}
+								/>
+							</div>
+
+							<div className="relative">
+								<TbSearch className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+								<Input
+									className="pl-9"
+									placeholder="输入关键词进行语义搜索..."
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === 'Enter' && searchQuery.trim() && !searchLoading) {
+											handleSemanticSearch();
+										}
 									}}
 								/>
 							</div>
@@ -114,7 +137,37 @@ export const KnowledgePreview = () => {
 
 				<Card className="h-full flex-1 backdrop-blur-sm bg-card/95 flex flex-col">
 					<CardContent className="p-6 flex-1 overflow-hidden flex flex-col">
-						{selectedFile !== null ? (
+						{searchResults.length > 0 ? (
+							<div className="h-full flex flex-col">
+								<div className="flex items-center justify-between mb-4">
+									<h2 className="text-lg font-semibold">搜索结果</h2>
+									<Button variant="ghost" size="sm" onClick={() => setSearchResults([])}>
+										返回文档内容
+									</Button>
+								</div>
+								<div className="flex-1 overflow-y-auto">
+									<div className="space-y-4">
+										{searchResults.map((result, index) => (
+											<Card key={index} className="overflow-hidden">
+												<CardContent className="p-4">
+													<div className="flex items-center justify-between mb-3">
+														<Badge variant="outline" className="text-sm">
+															{result.document_name}
+														</Badge>
+														<Badge className="bg-primary/10 text-primary">
+															相似度: {(result.similarity * 100).toFixed(1)}%
+														</Badge>
+													</div>
+													<p className="text-sm leading-relaxed">
+														{result.content}
+													</p>
+												</CardContent>
+											</Card>
+										))}
+									</div>
+								</div>
+							</div>
+						) : selectedFile !== null ? (
 							<div className="h-full flex flex-col">
 								<div className="space-y-2">
 									<div className="flex items-center justify-between">

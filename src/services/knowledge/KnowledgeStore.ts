@@ -4,6 +4,8 @@ import { cmd } from "@/utils/shell";
 import { Echo } from "echo-state";
 import { gen } from "@/utils/generator";
 import { splitTextIntoChunks } from "@/utils/text";
+import { SettingsManager } from "../settings/SettingsManager";
+import { ModelManager } from "../model/ModelManager";
 
 /* 文本块元数据 */
 export interface TextChunkMetadata {
@@ -104,59 +106,10 @@ export class KnowledgeStore {
     }
   );
 
-  static configStore = new Echo<{
-    ContentModel: Model | undefined;
-    SearchModel: Model | undefined;
-    threshold: number;
-    limit: number;
-  }>(
-    {
-      ContentModel: undefined,
-      SearchModel: undefined,
-      threshold: 0.5,
-      limit: 10,
-    },
-    {
-      name: "knowledge_config",
-      sync: true,
-    }
-  );
-
   static use = this.store.use.bind(this.store);
 
   static docs() {
     return this.store.current;
-  }
-
-  static useConfig = this.configStore.use.bind(this.configStore);
-
-  // 设置 API Key
-  static setContentModel(model: Model) {
-    this.configStore.set((prev) => ({
-      ...prev,
-      ContentModel: model,
-    }));
-  }
-
-  static setSearchModel(model: Model) {
-    this.configStore.set((prev) => ({
-      ...prev,
-      SearchModel: model,
-    }));
-  }
-
-  static setThreshold(threshold: number) {
-    this.configStore.set((prev) => ({
-      ...prev,
-      threshold,
-    }));
-  }
-
-  static setLimit(limit: number) {
-    this.configStore.set((prev) => ({
-      ...prev,
-      limit,
-    }));
   }
 
   // 计算余弦相似度
@@ -177,7 +130,6 @@ export class KnowledgeStore {
     text: string,
     model: Model
   ): Promise<number[]> {
-    console.log(this.configStore.current);
     if (!model) {
       throw new Error("未配置模型");
     }
@@ -227,7 +179,7 @@ export class KnowledgeStore {
       onProgress?: (progress: ProgressCallback) => void;
     }
   ): Promise<Knowledge> {
-    const model = this.configStore.current.ContentModel;
+    const model = SettingsManager.current.knowledge.contentModel;
     if (!model) {
       throw new Error("模型配置出错");
     }
@@ -276,8 +228,13 @@ export class KnowledgeStore {
       const processedChunks: TextChunk[] = [];
       const totalChunks = chunks.length;
 
+      const model_ = ModelManager.get(model);
+      if (!model_) {
+        throw new Error("模型配置出错");
+      }
+
       for (let i = 0; i < chunks.length; i++) {
-        const embedding = await this.textToEmbedding(chunks[i], model);
+        const embedding = await this.textToEmbedding(chunks[i], model_);
         processedChunks.push({
           content: chunks[i],
           embedding,
@@ -337,7 +294,7 @@ export class KnowledgeStore {
   }
 
   // 删除知识库
-  static deleteKnowledge(id: string): void {
+  static delete(id: string): void {
     this.store.delete(id);
   }
 
@@ -351,12 +308,16 @@ export class KnowledgeStore {
     knowledgeIds: string[] = []
   ): Promise<SearchResult[]> {
     /* 获取模型 */
-    const model = this.configStore.current.SearchModel;
+    const model = SettingsManager.current.knowledge.searchModel;
     if (!model) {
       throw new Error("模型配置出错");
     }
+    const model_ = ModelManager.get(model);
+    if (!model_) {
+      throw new Error("模型配置出错");
+    }
     /* 获取查询向量 */
-    const queryEmbedding = await this.textToEmbedding(query, model);
+    const queryEmbedding = await this.textToEmbedding(query, model_);
     const results: SearchResult[] = [];
 
     /* 搜索所有知识库 */
@@ -371,7 +332,7 @@ export class KnowledgeStore {
             queryEmbedding,
             chunk.embedding
           );
-          if (similarity > this.configStore.current.threshold) {
+          if (similarity > SettingsManager.current.knowledge.threshold) {
             results.push({
               content: chunk.content,
               similarity,
@@ -384,6 +345,6 @@ export class KnowledgeStore {
     }
 
     results.sort((a, b) => b.similarity - a.similarity);
-    return results.slice(0, this.configStore.current.limit);
+    return results.slice(0, SettingsManager.current.knowledge.limit);
   }
 }

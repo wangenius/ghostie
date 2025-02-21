@@ -7,6 +7,12 @@ interface SettingsProps {
 	reActMaxIterations: number;
 	sortType: 'default' | 'mostUsed' | 'recentUsed';
 	maxHistory: number;
+	knowledge: {
+		threshold: number;
+		limit: number;
+		contentModel: string;
+		searchModel: string;
+	};
 }
 
 export class SettingsManager {
@@ -16,7 +22,13 @@ export class SettingsManager {
 		language: "zh-CN",
 		reActMaxIterations: 10,
 		sortType: 'default',
-		maxHistory: 30
+		maxHistory: 30,
+		knowledge: {
+			threshold: 0.6,
+			limit: 10,
+			contentModel: "",
+			searchModel: "",
+		},
 	}, {
 		name: "settings",
 		sync: true,
@@ -24,8 +36,16 @@ export class SettingsManager {
 
 	static use = this.store.use.bind(this.store)
 
+	static get current() {
+		return this.store.current;
+	}
+
 	public static getTheme() {
 		return this.store.current.theme;
+	}
+
+	public static setKnowledge(knowledge: Partial<SettingsProps["knowledge"]>) {
+		this.store.set((prev) => ({ ...prev, knowledge: { ...prev.knowledge, ...knowledge } }));
 	}
 
 	public static getReactMaxIterations() {
@@ -37,7 +57,7 @@ export class SettingsManager {
 	}
 
 	public static setTheme(theme: { name: string, label: string }) {
-		this.store.set((prev) => ({ ...prev, theme }), true);
+		this.store.set((prev) => ({ ...prev, theme }));
 	}
 
 	public static getSortType() {
@@ -45,7 +65,7 @@ export class SettingsManager {
 	}
 
 	public static setSortType(sortType: 'default' | 'mostUsed' | 'recentUsed') {
-		this.store.set((prev) => ({ ...prev, sortType }), true);
+		this.store.set((prev) => ({ ...prev, sortType }));
 	}
 
 	public static getFont() {
@@ -53,7 +73,7 @@ export class SettingsManager {
 	}
 
 	public static setFont(font: { name: string, label: string }) {
-		this.store.set((prev) => ({ ...prev, font }), true);
+		this.store.set((prev) => ({ ...prev, font }));
 	}
 
 	public static getMaxHistory() {
@@ -61,7 +81,7 @@ export class SettingsManager {
 	}
 
 	public static setMaxHistory(maxHistory: number) {
-		this.store.set((prev) => ({ ...prev, maxHistory }), true);
+		this.store.set((prev) => ({ ...prev, maxHistory }));
 	}
 
 }

@@ -1,10 +1,13 @@
+import { ModelType } from "@/common/types/model";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
+import { ModelManager } from "@/services/model/ModelManager";
 import { SettingsManager } from "@/services/settings/SettingsManager";
 import { cmd } from "@/utils/shell";
-import { cn } from "@/lib/utils";
 import { ReactNode, useState } from "react";
-import { TbArrowIteration, TbFolder, TbHistory, TbPalette, TbRotate, TbTypography } from "react-icons/tb";
+import { TbArrowIteration, TbDatabase, TbFolder, TbHistory, TbPalette, TbRotate, TbTypography } from "react-icons/tb";
 
 interface SettingItemProps {
     icon: ReactNode;
@@ -210,16 +213,121 @@ function MaxHistorySettings() {
     );
 }
 
+function KnowledgeModelSettings() {
+    const { knowledge } = SettingsManager.use();
+    const models = ModelManager.use();
+
+    return (
+        <>
+            <SettingItem
+                icon={<TbDatabase className="w-[18px] h-[18px]" />}
+                title="知识库解析模型"
+                description="用来解析文本的模型，推荐异步批处理模型"
+                action={
+                    <Select value={knowledge.contentModel} onValueChange={(value) => {
+                        const model = models[value];
+                        if (model) {
+                            SettingsManager.setKnowledge({ contentModel: model.id });
+                        }
+                    }}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="选择模型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {Object.values(models)
+                                .filter((model) => model.type === ModelType.EMBEDDING)
+                                .map((model) => (
+                                    <SelectItem key={model.id} value={model.id}>
+                                        {model.name}
+                                    </SelectItem>
+                                ))}
+                        </SelectContent>
+                    </Select>
+                }
+            />
+            <SettingItem
+                icon={<TbDatabase className="w-[18px] h-[18px]" />}
+                title="知识库搜索模型"
+                description="用来向量化搜索词条的模型，推荐同步模型"
+                action={
+                    <Select value={knowledge.searchModel} onValueChange={(value) => {
+                        const model = models[value];
+                        if (model) {
+                            SettingsManager.setKnowledge({ searchModel: model.id });
+                        }
+                    }}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="选择模型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {Object.values(models)
+                                .filter((model) => model.type === ModelType.EMBEDDING)
+                                .map((model) => (
+                                    <SelectItem key={model.id} value={model.id}>
+                                        {model.name}
+                                    </SelectItem>
+                                ))}
+                        </SelectContent>
+                    </Select>
+                }
+            />
+        </>
+    );
+}
+
+function KnowledgeThresholdSettings() {
+    const { knowledge } = SettingsManager.use();
+
+    return (
+        <>
+            <SettingItem
+                icon={<TbDatabase className="w-[18px] h-[18px]" />}
+                title="相似度阈值"
+                description={`当前: ${(knowledge.threshold * 100).toFixed(0)}%`}
+                action={
+                    <Slider
+                        value={[knowledge.threshold]}
+                        min={0}
+                        max={1}
+                        step={0.1}
+                        onValueChange={([value]) => SettingsManager.setKnowledge({ threshold: value })}
+                        className="w-32"
+                    />
+                }
+            />
+            <SettingItem
+                icon={<TbDatabase className="w-[18px] h-[18px]" />}
+                title="结果数量"
+                description={`当前: ${knowledge.limit}`}
+                action={
+                    <Slider
+                        value={[knowledge.limit]}
+                        min={1}
+                        max={50}
+                        step={1}
+                        onValueChange={([value]) => SettingsManager.setKnowledge({ limit: value })}
+                        className="w-32"
+                    />
+                }
+            />
+        </>
+    );
+}
+
 export function GeneralTab() {
     return (
         <div className="space-y-2 p-4">
+            <h3 className="text-lg font-bold">系统</h3>
             <ThemeSettings />
             <FontSettings />
             <UpdateSettings />
+            <h3 className="text-lg font-bold pt-6">ChatAgent</h3>
             <ConfigDirSettings />
             <MaxHistorySettings />
             <ReactMaxIterationsSettings />
-
+            <h3 className="text-lg font-bold pt-6">知识库</h3>
+            <KnowledgeModelSettings />
+            <KnowledgeThresholdSettings />
         </div>
     );
 }

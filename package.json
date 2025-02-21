@@ -42,7 +42,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
     "date-fns": "^4.1.0",
-    "echo-state": "^1.2.13",
+    "echo-state": "^1.2.16",
     "framer-motion": "^11.15.0",
     "lucide-react": "^0.469.0",
     "openai": "^4.85.1",

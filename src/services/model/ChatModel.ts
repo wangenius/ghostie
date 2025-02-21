@@ -125,7 +125,7 @@ export class ChatModel {
 
     /* 知识库工具 */
     if (tool_call.function.name.startsWith("knowledge_")) {
-      const knowledge = tool_call.function.name.split(TOOL_NAME_SPLIT)[1];
+      const knowledge = tool_call.function.name.split("_")[1];
       const query = JSON.parse(tool_call.function.arguments || "{}").query;
       if (!query) {
         return {
@@ -333,7 +333,6 @@ export class ChatModel {
             }
 
             if (delta_tool_call) {
-              console.log(delta_tool_call);
               // 处理工具调用
               if (delta_tool_call.id) {
                 tool_calls[delta_tool_call.index] = delta_tool_call;

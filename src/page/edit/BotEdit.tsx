@@ -32,6 +32,9 @@ export function BotEdit() {
     const query = useQuery("id");
     const models = ModelManager.use();
 
+    console.log(knowledge);
+
+
     const [plugins, setPlugins] = useState<Record<string, PluginProps>>({});
 
     const loadPlugins = useCallback(async () => {
