@@ -1,7 +1,7 @@
 import { Model } from "@/common/types/model";
 import { FileMetadata } from "@/page/history/KnowledgeCreator";
 import { cmd } from "@/utils/shell";
-import { Echo } from "@/utils/echo";
+import { Echo } from "echo-state";
 import { gen } from "@/utils/generator";
 
 /* 文本块元数据 */
@@ -48,6 +48,8 @@ export interface Knowledge {
   id: string;
   /* 知识库名称 */
   name: string;
+  /* 知识库描述, 用于机器人function call */
+  description: string;
   /* 知识库版本 */
   version: string;
   /* 知识库文件 */
@@ -96,7 +98,7 @@ export class KnowledgeStore {
     {},
     {
       name: "knowledge",
-      storageType: "indexedDB",
+      storage: "indexedDB",
       sync: true,
     }
   );
@@ -253,6 +255,7 @@ export class KnowledgeStore {
     filePaths: FileMetadata[],
     options?: {
       name?: string;
+      description?: string;
       onProgress?: (progress: ProgressCallback) => void;
     }
   ): Promise<Knowledge> {
@@ -345,6 +348,7 @@ export class KnowledgeStore {
         options?.name ||
         processedFiles[0]?.name ||
         `知识库_${new Date().toISOString().split("T")[0]}`,
+      description: options?.description || "",
       version: KNOWLEDGE_VERSION,
       files: processedFiles,
       created_at: now,
@@ -366,11 +370,7 @@ export class KnowledgeStore {
 
   // 删除知识库
   static deleteKnowledge(id: string): void {
-    this.store.set((prev) => {
-      const newState = { ...prev };
-      delete newState[id];
-      return newState;
-    });
+    this.store.delete(id);
   }
 
   /** 搜索知识库

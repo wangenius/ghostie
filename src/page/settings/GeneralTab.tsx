@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { SettingsManager } from "@/services/settings/SettingsManager";
 import { cmd } from "@/utils/shell";
-import { cn } from "@/utils/utils";
+import { cn } from "@/lib/utils";
 import { ReactNode, useState } from "react";
 import { TbArrowIteration, TbFolder, TbHistory, TbPalette, TbRotate, TbTypography } from "react-icons/tb";
 

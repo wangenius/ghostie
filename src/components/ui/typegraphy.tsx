@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { cn } from "@/utils/utils"
+import { cn } from "@/lib/utils"
 
 interface TypographyProps {
   className?: string

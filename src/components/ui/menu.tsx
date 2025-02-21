@@ -4,7 +4,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cn } from '@/utils/utils';
+import { cn } from '@/lib/utils';
 import { ReactNode } from 'react';
 import { PiCaretRight } from 'react-icons/pi';
 import { Button } from './button';

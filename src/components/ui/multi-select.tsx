@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Check, X, Inbox } from "lucide-react"
-import { cn } from "@/utils/utils"
+import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "./popover"
 
 interface MultiSelectProps {

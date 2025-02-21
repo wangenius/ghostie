@@ -202,7 +202,10 @@ export class HistoryMessage implements ChatHistoryItem {
     this.list = [...list.slice(0, -1), updatedMessage];
     ChatHistory.set((prev) => {
       const newState = { ...prev };
-      newState[this.id].list = this.list;
+      newState[this.id] = {
+        ...newState[this.id],
+        list: this.list,
+      };
       return newState;
     });
     return updatedMessage;
@@ -227,7 +230,7 @@ export class HistoryMessage implements ChatHistoryItem {
 
   /** 清空所有消息历史, 包括系统消息 */
   static clearAll(): void {
-    ChatHistory.set({}, true);
+    ChatHistory.set({}, { replace: true });
   }
 
   /** 移除最后一条消息 */
@@ -267,10 +270,13 @@ export class HistoryMessage implements ChatHistoryItem {
    */
   static deleteHistory(id: string) {
     // 删除历史记录
-    ChatHistory.set((prev) => {
-      const newState = { ...prev };
-      delete newState[id];
-      return newState;
-    }, true);
+    ChatHistory.set(
+      (prev) => {
+        const newState = { ...prev };
+        delete newState[id];
+        return newState;
+      },
+      { replace: true }
+    );
   }
 }

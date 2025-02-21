@@ -32,10 +32,10 @@ export function BotItem({ bot, isSelected, onClick }: BotItemProps) {
 				<LogoIcon />
 			</Button>
 			<div className={`
-                        text-xs font-bold truncate space-x-4 rounded-md
+                        text-xs font-bold truncate space-x-4
                         ${isSelected ? 'text-primary' : 'text-foreground'}
                     `}>
-				<span className="flex items-center gap-1">
+				<span className="flex items-center gap-1 py-1">
 					{bot.pinned && <TbPin className="w-3 h-3 text-primary" />}
 					{bot.name}
 				</span>
@@ -46,8 +46,8 @@ export function BotItem({ bot, isSelected, onClick }: BotItemProps) {
 			<div className="flex-1"></div>
 			<div className="flex items-center gap-2 text-xs text-muted-foreground">
 				{bot.usageCount !== undefined && (
-					<span className="px-1.5 py-0.5 bg-muted rounded">
-						使用 {bot.usageCount} 次
+					<span className="px-1.5 py-0.5 bg-muted rounded !font-mono">
+						{bot.usageCount}
 					</span>
 				)}
 

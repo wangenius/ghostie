@@ -8,7 +8,7 @@ import {
   KeyboardEventHandler,
 } from 'react';
 import { CustomTextAreaRef, Textarea } from '@/components/ui/textarea';
-import { cn } from '@/utils/utils';
+import { cn } from '@/lib/utils';
 
 interface AutoResizeTextareaProps {
   defaultValue?: string;

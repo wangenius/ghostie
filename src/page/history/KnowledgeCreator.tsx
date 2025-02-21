@@ -8,8 +8,10 @@ import { Progress } from "@/components/ui/progress";
 import { KnowledgeStore } from "@/services/knowledge/KnowledgeStore";
 import { cmd } from "@/utils/shell";
 import { useState } from "react";
-import { TbFile, TbFileTypeDoc, TbFileTypePdf, TbMarkdown, TbTrash, TbUpload } from "react-icons/tb";
+import { TbFile, TbFileTypeDoc, TbFileTypePdf, TbLoader, TbMarkdown, TbTrash, TbUpload } from "react-icons/tb";
+import { Textarea } from "@/components/ui/textarea";
 
+/* 文件元数据 */
 export interface FileMetadata {
 	path: string;
 	name: string;
@@ -19,9 +21,11 @@ export interface FileMetadata {
 	is_dir: boolean;
 }
 
+/* 知识库创建 */
 export const KnowledgeCreator = () => {
 	const [selectedFiles, setSelectedFiles] = useState<Array<FileMetadata>>([]);
 	const [knowledgeName, setKnowledgeName] = useState("");
+	const [description, setDescription] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [uploadProgress, setUploadProgress] = useState(0);
 	const [uploadStatus, setUploadStatus] = useState("");
@@ -29,6 +33,7 @@ export const KnowledgeCreator = () => {
 
 	const handleFileSelect = async () => {
 		try {
+			/* 选择文件 */
 			const filePaths = await cmd.invoke<FileMetadata[]>("open_files_path", {
 				title: "选择文档",
 				filters: {
@@ -51,7 +56,11 @@ export const KnowledgeCreator = () => {
 			setUploadStatus("准备上传...");
 
 			await KnowledgeStore.addKnowledge(selectedFiles, {
+				/* 知识库名称 */
 				name: knowledgeName,
+				/* 描述 */
+				description,
+				/* 上传进度 */
 				onProgress: (progress) => {
 					setUploadProgress(progress.progress);
 					setUploadStatus(progress.status);
@@ -60,6 +69,7 @@ export const KnowledgeCreator = () => {
 			});
 			setSelectedFiles([]);
 			setKnowledgeName('');
+			cmd.close();
 		} catch (error) {
 			console.error("文件上传失败", error);
 		} finally {
@@ -97,27 +107,26 @@ export const KnowledgeCreator = () => {
 	};
 
 	return (
-		<div className="flex flex-col h-full mx-auto justify-between pb-4">
+		<div className="flex flex-col h-full mx-auto justify-between overflow-hidden">
 			<Header title="知识库创建" />
 
-			<div className="rounded-lg m-0 p-6 flex-1">
-				<div className="space-y-6">
-					{loading && (
-						<div className="space-y-2">
-							<Progress value={uploadProgress} className="w-full h-2" />
-							<div className="flex justify-between items-center text-sm text-muted-foreground">
-								<span>{uploadStatus}</span>
-								<span>{uploadProgress.toFixed(1)}%</span>
-							</div>
-							{currentFile && (
-								<p className="text-sm text-muted-foreground">
-									当前文件: {currentFile}
-								</p>
-							)}
-						</div>
-					)}
-
+			<div className="rounded-lg m-0 px-6 flex-1 overflow-hidden">
+				{loading && (
 					<div className="space-y-2">
+						<Progress value={uploadProgress} className="w-full h-2" />
+						<div className="flex justify-between items-center text-sm text-muted-foreground">
+							<span>{uploadStatus}</span>
+							<span>{uploadProgress.toFixed(1)}%</span>
+						</div>
+						{currentFile && (
+							<p className="text-sm text-muted-foreground">
+								当前文件: {currentFile}
+							</p>
+						)}
+					</div>
+				)}
+				<div className="flex gap-4 flex-1 overflow-hidden">
+					<div className="space-y-3 h-full overflow-hidden">
 						<Label htmlFor="knowledge-name" className="text-lg font-medium">
 							知识库名称
 						</Label>
@@ -128,9 +137,19 @@ export const KnowledgeCreator = () => {
 							onChange={(e) => setKnowledgeName(e.target.value)}
 							className="max-w-md"
 						/>
+
+						<Label htmlFor="knowledge-description" className="font-medium text-lg">
+							知识库描述
+						</Label>
+						<Textarea
+							id="knowledge-description"
+							placeholder="请输入知识库描述"
+							value={description}
+							onChange={(e) => setDescription(e)}
+						/>
 					</div>
 
-					<div className="space-y-3">
+					<div className="space-y-3 flex-1">
 						<div className="flex items-center justify-between">
 							<Label className="text-lg font-medium flex items-center gap-2">
 								文档列表
@@ -216,14 +235,15 @@ export const KnowledgeCreator = () => {
 				</div>
 			</div>
 
-			<div className="flex justify-end px-6">
+			<div className="flex justify-end px-6 py-3">
 				<Button
 					size="lg"
 					onClick={handleConfirmUpload}
 					disabled={selectedFiles.length === 0 || !knowledgeName || loading}
 					className="min-w-[120px]"
 				>
-					{loading ? "上传中..." : "确认上传"}
+					{loading ? <TbLoader className="w-4 h-4 mr-2 animate-spin" /> : <TbUpload className="w-4 h-4 mr-2" />}
+					{loading ? "上传中..." : "确认创建"}
 				</Button>
 			</div>
 		</div>

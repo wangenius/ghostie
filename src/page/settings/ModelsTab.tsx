@@ -13,7 +13,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/utils/utils";
+import { cn } from "@/lib/utils";
 import { useState } from "react";
 
 /* 模型管理 */

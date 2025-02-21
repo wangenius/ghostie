@@ -119,9 +119,57 @@ struct DenoRuntime {
 impl DenoRuntime {
     // 运行时初始化
     fn new() -> std::io::Result<Self> {
+        // 首先尝试直接运行 deno 命令
         let is_installed = Command::new("deno").arg("--version").output().is_ok();
+        println!("直接运行 deno 命令结果: {}", is_installed);
+
+        if is_installed {
+            return Ok(Self {
+                is_installed: true,
+                base_args: vec![
+                    "run".to_string(),
+                    "--no-check".to_string(),
+                    "--allow-read".to_string(),
+                    "--allow-write".to_string(),
+                    "--allow-net".to_string(),
+                    "--allow-env".to_string(),
+                    "--allow-run".to_string(),
+                ],
+            });
+        }
+
+        // 获取系统 PATH 环境变量中的所有路径
+        let path_var = std::env::var("PATH").unwrap_or_default();
+        println!("系统 PATH: {}", path_var);
+        let user_profile = std::env::var("USERPROFILE").unwrap_or_default();
+        println!("用户目录: {}", user_profile);
+
+        // 构建可能的 Deno 路径列表
+        let mut deno_paths = vec![
+            String::from("deno.exe"),
+            String::from(r"C:\Program Files\deno\deno.exe"),
+            String::from(r"C:\ProgramData\chocolatey\bin\deno.exe"),
+            format!("{}/.deno/bin/deno.exe", user_profile),
+        ];
+
+        // 将 PATH 中的每个目录都加入搜索列表
+        for path in path_var.split(';') {
+            let deno_path = format!("{}/deno.exe", path.trim());
+            println!("检查路径: {}", deno_path);
+            deno_paths.push(deno_path);
+        }
+
+        // 检查所有可能的路径
+        let is_found = deno_paths.iter().any(|path| {
+            let result = Command::new(path).arg("--version").output().is_ok();
+            println!("尝试路径 {}: {}", path, result);
+            result
+        });
+
+        println!("最终检测结果: {}", is_found);
+
         Ok(Self {
-            is_installed,
+            is_installed: is_found,
             base_args: vec![
                 "run".to_string(),
                 "--no-check".to_string(),

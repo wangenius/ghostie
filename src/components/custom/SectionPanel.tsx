@@ -1,4 +1,4 @@
-import { cn } from '@/utils/utils';
+import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
 interface SectionPanelProps {

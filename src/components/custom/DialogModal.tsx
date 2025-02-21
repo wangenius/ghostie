@@ -2,7 +2,7 @@ import React, { ReactNode, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/utils/utils';
+import { cn } from '@/lib/utils';
 import { TbCheck, TbX } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'framer-motion';
 

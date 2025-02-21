@@ -1,4 +1,4 @@
-import { cn } from "@/utils/utils";
+import { cn } from "@/lib/utils";
 
 export const Code = ({ children, className }: { children: React.ReactNode, className?: string, }) => {
 	return <code className={cn(

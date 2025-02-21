@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { TbCopy, TbError404Off, TbLoader, TbMathFunction } from "react-icons/tb";
+import { TbCopy, TbExclamationCircle, TbLoader, TbMathFunction } from "react-icons/tb";
 import ReactMarkdown, { Components } from "react-markdown";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -38,6 +38,8 @@ export function MessageItem({ message }: MessageItemProps) {
 				return "bg-purple-50 dark:bg-purple-950/30 text-sm";
 			case 'function:result':
 				return "bg-gray-50 dark:bg-gray-900/50 font-mono text-sm";
+			case 'assistant:error':
+				return "bg-red-50 dark:bg-red-900/50 font-mono text-sm";
 			default:
 				return isUser ? "bg-background" : "bg-muted";
 		}
@@ -151,7 +153,7 @@ export function MessageItem({ message }: MessageItemProps) {
 			"border-0 p-2 rounded-xl transition-colors group overflow-hidden",
 			getMessageStyle()
 		)}>
-			<div className="max-w-3xl mx-auto flex gap-5">
+			<div className="mx-auto flex gap-5">
 				<div className="flex-1 min-w-0">
 					<div className={cn(
 						"text-sm px-2 select-text max-w-none dark:prose-invert",
@@ -188,8 +190,8 @@ export function MessageItem({ message }: MessageItemProps) {
 						}
 						{
 							message.type === 'assistant:error' &&
-							<span className="text-red-500">
-								<TbError404Off className="h-3.5 w-3.5" />
+							<span className="flex items-center gap-1 p-2 rounded-md bg-red-500/10 text-red-500 text-xs my-1">
+								<TbExclamationCircle className="h-3.5 w-3.5" />
 								{message.content}
 							</span>
 						}

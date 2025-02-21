@@ -178,8 +178,8 @@ export function MainView() {
                 onEndChat={endChat}
                 onSelectBot={setSelectedBotId}
             />
-            <main className="flex-1 overflow-hidden">
-                <div className="h-full overflow-y-auto pb-4">
+            <main className="flex-1 overflow-hidden pb-4">
+                <div className="h-full overflow-y-auto">
                     {!isActive && (
                         <MemoizedBotList
                             botList={sortedBots}
@@ -369,15 +369,32 @@ const BotList = memo(function BotList({
         }
     }, [currentInput, onStartChat, onSelectBot]);
 
+    // 添加ref用于滚动
+    const selectedBotRef = useRef<HTMLDivElement>(null);
+
+    // 当选中的bot改变时，确保其可见
+    useEffect(() => {
+        if (selectedBotRef.current) {
+            selectedBotRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+            });
+        }
+    }, [selectedBotId]);
+
     return (
-        <div className="container mx-auto px-4 max-w-2xl space-y-1">
+        <div className="container mx-auto px-4 max-w-2xl space-y-1 overflow-y-auto">
             {botList.map((bot) => (
-                <BotItem
+                <div
                     key={bot.id}
-                    bot={bot}
-                    isSelected={bot.id === selectedBotId}
-                    onClick={() => handleBotClick(bot)}
-                />
+                    ref={bot.id === selectedBotId ? selectedBotRef : null}
+                >
+                    <BotItem
+                        bot={bot}
+                        isSelected={bot.id === selectedBotId}
+                        onClick={() => handleBotClick(bot)}
+                    />
+                </div>
             ))}
         </div>
     );

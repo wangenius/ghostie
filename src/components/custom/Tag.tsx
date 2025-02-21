@@ -1,4 +1,4 @@
-import { cn } from '@/utils/utils';
+import { cn } from '@/lib/utils';
 import { forwardRef } from 'react';
 import { TbBookmark } from 'react-icons/tb';
 import { Button, ButtonProps } from '../ui/button';
