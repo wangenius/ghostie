@@ -61,6 +61,7 @@ export class Bot {
     this.model = new ChatModel(model)
       .setBot(config.id)
       .setTools(tools)
+      .setKnowledge(config.knowledges || [])
       .system(config.system);
     this.tools = config.tools || [];
     this.context = new Context();

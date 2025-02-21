@@ -1,19 +1,17 @@
 import { ModelType } from "@/common/types/model";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { KnowledgeStore, type Knowledge as KnowledgeType, type SearchResult } from "@/services/knowledge/KnowledgeStore";
 import { ModelManager } from "@/services/model/ModelManager";
 import { useState } from "react";
 import { TbDatabasePlus, TbEye, TbFile, TbSearch, TbSettings, TbTrash } from "react-icons/tb";
-import { KnowledgeCreator } from "../history/KnowledgeCreator";
+import { getFileIcon, KnowledgeCreator } from "../history/KnowledgeCreator";
+import { KnowledgePreview } from "../history/KnowledgePreview";
 
 export function KnowledgeTab() {
     const documents = KnowledgeStore.use();
@@ -22,8 +20,7 @@ export function KnowledgeTab() {
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [searchLoading, setSearchLoading] = useState(false);
-    const [showPreviewDialog, setShowPreviewDialog] = useState(false);
-    const [previewDocument, setPreviewDocument] = useState<KnowledgeType | null>(null);
+
 
     const docs = Object.values(documents);
 
@@ -40,7 +37,7 @@ export function KnowledgeTab() {
         if (!searchQuery.trim()) return;
         setSearchLoading(true);
         try {
-            const results = await KnowledgeStore.searchKnowledge(searchQuery);
+            const results = await KnowledgeStore.search(searchQuery);
             setSearchResults(results);
         } catch (error) {
             console.error("搜索失败", error);
@@ -50,8 +47,7 @@ export function KnowledgeTab() {
     };
 
     const handlePreview = (doc: KnowledgeType) => {
-        setPreviewDocument(doc);
-        setShowPreviewDialog(true);
+        KnowledgePreview.open(doc.id);
     };
 
     return (
@@ -238,7 +234,7 @@ export function KnowledgeTab() {
                                 <div className="grid gap-2">
                                     {doc?.files?.map((file, index) => (
                                         <div key={index} className="flex items-center gap-3 p-2 rounded-md bg-muted/30">
-                                            <TbFile className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                            {getFileIcon(file.name)}
                                             <div className="min-w-0 flex-1">
                                                 <div className="font-medium truncate">{file.name}</div>
                                                 <div className="text-sm text-muted-foreground">
@@ -259,66 +255,7 @@ export function KnowledgeTab() {
                 </div>
             )}
 
-            <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
-                <DialogContent className="max-w-3xl">
-                    <DialogHeader>
-                        <DialogTitle>{previewDocument?.name}</DialogTitle>
-                        <DialogDescription>
-                            {previewDocument && (
-                                <div className="flex flex-wrap items-center gap-2 text-sm">
-                                    <Badge>{previewDocument.version}</Badge>
-                                    <span>创建于 {new Date(previewDocument.created_at).toLocaleString()}</span>
-                                    <span>·</span>
-                                    <span>更新于 {new Date(previewDocument.updated_at).toLocaleString()}</span>
-                                </div>
-                            )}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <ScrollArea className="h-[60vh] mt-4">
-                        {previewDocument && (
-                            <div className="space-y-6">
-                                {previewDocument.files.map((file, fileIndex) => (
-                                    <div key={fileIndex} className="space-y-4">
-                                        <div className="flex items-center gap-2">
-                                            <TbFile className="w-4 h-4" />
-                                            <h3 className="font-medium">{file.name}</h3>
-                                            <Badge variant="outline">{file.file_type}</Badge>
-                                        </div>
-                                        <div className="prose dark:prose-invert max-w-none">
-                                            <pre className="whitespace-pre-wrap font-mono text-sm">
-                                                {file.content}
-                                            </pre>
-                                        </div>
-                                        <div className="mt-4">
-                                            <h4 className="text-sm font-medium mb-2">知识块列表</h4>
-                                            <div className="space-y-2">
-                                                {file.chunks.map((chunk, index) => (
-                                                    <Card key={index}>
-                                                        <CardContent className="p-3">
-                                                            <div className="flex justify-between items-start gap-4">
-                                                                <p className="text-sm flex-1">{chunk.content}</p>
-                                                                <div className="text-xs text-muted-foreground">
-                                                                    {chunk.metadata.paragraph_number && `#${chunk.metadata.paragraph_number}`}
-                                                                    {chunk.metadata.source_page && ` · 页 ${chunk.metadata.source_page}`}
-                                                                </div>
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </ScrollArea>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowPreviewDialog(false)}>
-                            关闭
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+
         </div>
     );
 }

@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import { EnvEdit } from "./page/edit/EnvEdit";
 import { HistoryPage } from "./page/history/HistoryPage";
 import { KnowledgeCreator } from "./page/history/KnowledgeCreator";
+import { KnowledgePreview } from "./page/history/KnowledgePreview";
 
 /* 主应用,提供路由 */
 function App() {
@@ -40,6 +41,7 @@ function App() {
                     <Route path="/env-edit" element={<EnvEdit />} />
                     <Route path="/history" element={<HistoryPage />} />
                     <Route path="/knowledge-creator" element={<KnowledgeCreator />} />
+                    <Route path="/knowledge-preview" element={<KnowledgePreview />} />
                 </Routes>
             </BrowserRouter>
         </div>

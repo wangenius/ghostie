@@ -90,7 +90,7 @@ export interface ProgressCallback {
   currentFile?: string;
 }
 
-const CHUNK_SIZE = 300;
+const CHUNK_SIZE = 500;
 const KNOWLEDGE_VERSION = "1.0.0";
 
 export class KnowledgeStore {
@@ -122,6 +122,10 @@ export class KnowledgeStore {
   );
 
   static use = this.store.use.bind(this.store);
+
+  static docs() {
+    return this.store.current;
+  }
 
   static useConfig = this.configStore.use.bind(this.configStore);
 
@@ -157,52 +161,90 @@ export class KnowledgeStore {
   // 文本分块
   private static splitTextIntoChunks(text: string): string[] {
     const chunks: string[] = [];
-    const sentences = text
-      .split(/[.。!?！？\n]/)
-      .filter((s) => s.trim().length > 0)
-      .map((s) => s.trim());
 
-    let currentChunk = "";
-    let currentLength = 0;
+    // 首先按段落分割（连续的换行符）
+    const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim().length > 0);
 
-    for (const sentence of sentences) {
-      // 如果单个句子就超过了chunk大小，则需要强制切分
-      if (sentence.length >= CHUNK_SIZE) {
-        if (currentChunk) {
-          chunks.push(currentChunk);
-        }
-        // 按字符数直接切分长句子
-        for (let i = 0; i < sentence.length; i += CHUNK_SIZE) {
-          chunks.push(sentence.slice(i, i + CHUNK_SIZE));
-        }
-        currentChunk = "";
-        currentLength = 0;
+    for (const paragraph of paragraphs) {
+      // 如果段落本身小于块大小，直接作为一个块
+      if (paragraph.trim().length <= CHUNK_SIZE) {
+        chunks.push(paragraph.trim());
         continue;
       }
 
-      // 判断添加当前句子是否会超过块大小
-      if (currentLength + sentence.length + 1 > CHUNK_SIZE) {
-        if (currentChunk) {
-          chunks.push(currentChunk);
+      // 对于大段落，先尝试按句子分割
+      // 英文句子：确保句点后面跟着空格和大写字母，或者是行末
+      // 中文句子：以句号、问号、感叹号结尾
+      const sentences = paragraph
+        .split(/(?<=[.。!?！？])\s+(?=[A-Z])|(?<=[。！？])|(?<=[.!?])\s*$/)
+        .filter((s) => s.trim().length > 0)
+        .map((s) => s.trim());
+
+      let currentChunk = "";
+      let currentLength = 0;
+
+      for (const sentence of sentences) {
+        // 如果单个句子超过块大小
+        if (sentence.length >= CHUNK_SIZE) {
+          // 先保存当前块
+          if (currentChunk) {
+            chunks.push(currentChunk);
+            currentChunk = "";
+            currentLength = 0;
+          }
+
+          // 尝试在词语边界处分割长句子
+          let start = 0;
+          while (start < sentence.length) {
+            let end = start + CHUNK_SIZE;
+
+            // 如果不是句子末尾，尝试在最后一个空格或标点处截断
+            if (end < sentence.length) {
+              const lastSpace = sentence.slice(start, end).lastIndexOf(" ");
+              const lastPunct = Math.max(
+                sentence.slice(start, end).lastIndexOf("，"),
+                sentence.slice(start, end).lastIndexOf(","),
+                sentence.slice(start, end).lastIndexOf("、")
+              );
+
+              // 选择最近的分割点
+              if (lastSpace > 0 || lastPunct > 0) {
+                end = start + Math.max(lastSpace, lastPunct);
+              }
+            }
+
+            chunks.push(sentence.slice(start, end).trim());
+            start = end;
+          }
+          continue;
         }
-        currentChunk = sentence;
-        currentLength = sentence.length;
-      } else {
-        if (currentChunk) {
-          currentChunk += " ";
-          currentLength += 1;
+
+        // 处理正常长度的句子
+        if (currentLength + sentence.length + 1 > CHUNK_SIZE) {
+          if (currentChunk) {
+            chunks.push(currentChunk);
+          }
+          currentChunk = sentence;
+          currentLength = sentence.length;
+        } else {
+          if (currentChunk) {
+            currentChunk += " ";
+            currentLength += 1;
+          }
+          currentChunk += sentence;
+          currentLength += sentence.length;
         }
-        currentChunk += sentence;
-        currentLength += sentence.length;
+      }
+
+      // 处理段落的最后一个块
+      if (currentChunk) {
+        chunks.push(currentChunk);
       }
     }
 
-    // 处理最后一个块
-    if (currentChunk) {
-      chunks.push(currentChunk);
-    }
-
-    return chunks;
+    return chunks
+      .map((chunk) => chunk.trim())
+      .filter((chunk) => chunk.length > 0);
   }
 
   // 计算余弦相似度
@@ -248,6 +290,20 @@ export class KnowledgeStore {
 
     const data = await response.json();
     return data.data[0].embedding;
+  }
+
+  static setDescription(id: string, description: string) {
+    this.store.set((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], description },
+    }));
+  }
+
+  static setName(id: string, name: string) {
+    this.store.set((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], name },
+    }));
   }
 
   // 添加知识库
@@ -378,7 +434,7 @@ export class KnowledgeStore {
    * @param knowledgeIds 知识库ID, 如果为空则搜索所有知识库
    * @returns 搜索结果
    */
-  static async searchKnowledge(
+  static async search(
     query: string,
     knowledgeIds: string[] = []
   ): Promise<SearchResult[]> {

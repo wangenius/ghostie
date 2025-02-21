@@ -10,7 +10,21 @@ import { cmd } from "@/utils/shell";
 import { useState } from "react";
 import { TbFile, TbFileTypeDoc, TbFileTypePdf, TbLoader, TbMarkdown, TbTrash, TbUpload } from "react-icons/tb";
 import { Textarea } from "@/components/ui/textarea";
-
+export const getFileIcon = (fileName: string) => {
+	const extension = fileName.split('.').pop()?.toLowerCase() || '';
+	switch (extension) {
+		case 'pdf':
+			return <TbFileTypePdf className="w-5 h-5" />;
+		case 'doc':
+		case 'docx':
+			return <TbFileTypeDoc className="w-5 h-5" />;
+		case 'md':
+		case 'markdown':
+			return <TbMarkdown className="w-5 h-5" />;
+		default:
+			return <TbFile className="w-5 h-5" />;
+	}
+};
 /* 文件元数据 */
 export interface FileMetadata {
 	path: string;
@@ -90,21 +104,7 @@ export const KnowledgeCreator = () => {
 		return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 	};
 
-	const getFileIcon = (fileName: string) => {
-		const extension = fileName.split('.').pop()?.toLowerCase() || '';
-		switch (extension) {
-			case 'pdf':
-				return <TbFileTypePdf className="w-5 h-5" />;
-			case 'doc':
-			case 'docx':
-				return <TbFileTypeDoc className="w-5 h-5" />;
-			case 'md':
-			case 'markdown':
-				return <TbMarkdown className="w-5 h-5" />;
-			default:
-				return <TbFile className="w-5 h-5" />;
-		}
-	};
+
 
 	return (
 		<div className="flex flex-col h-full mx-auto justify-between overflow-hidden">

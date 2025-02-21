@@ -16,6 +16,7 @@ import {
 } from "@common/types/model";
 import { TOOL_NAME_SPLIT } from "../bot/Bot";
 import { HistoryMessage } from "./HistoryMessage";
+import { KnowledgeStore } from "../knowledge/KnowledgeStore";
 
 /** 请求配置 */
 interface RequestConfig {
@@ -38,6 +39,8 @@ export class ChatModel {
   public historyMessage: HistoryMessage = HistoryMessage.create();
   /** 工具 */
   private tools: ToolRequestBody | undefined;
+  /** 知识 */
+  private knowledges: string[] = [];
 
   /** 构造函数
    * @param config 模型配置
@@ -67,6 +70,11 @@ export class ChatModel {
         parameters: tool.parameters,
       },
     }));
+    return this;
+  }
+
+  public setKnowledge(knowledges: string[]): this {
+    this.knowledges = knowledges;
     return this;
   }
 
@@ -114,9 +122,30 @@ export class ChatModel {
     tool_call: ToolCallReply
   ): Promise<FunctionCallResult | undefined> {
     if (!tool_call) return;
-    console.log(tool_call.function.arguments);
 
+    /* 知识库工具 */
+    if (tool_call.function.name.startsWith("knowledge_")) {
+      const knowledge = tool_call.function.name.split(TOOL_NAME_SPLIT)[1];
+      const query = JSON.parse(tool_call.function.arguments || "{}").query;
+      if (!query) {
+        return {
+          name: tool_call.function.name,
+          arguments: tool_call.function.arguments,
+          result: "查询内容query不能为空",
+        };
+      }
+      /* 搜索知识库 */
+      const knowledgeDoc = await KnowledgeStore.search(query, [knowledge]);
+      return {
+        name: tool_call.function.name,
+        arguments: tool_call.function.arguments,
+        result: knowledgeDoc,
+      };
+    }
+
+    /* 解析工具参数 */
     const toolArgs = JSON.parse(tool_call.function.arguments || "{}");
+
     try {
       /** 执行工具 */
       const toolResultPromise = cmd.invoke("plugin_execute", {
@@ -196,8 +225,38 @@ export class ChatModel {
         requestBody.tools = this.tools;
       }
 
-      console.log(requestBody);
+      /* 添加知识库工具 */
+      if (this.knowledges?.length) {
+        /* 获取知识库 */
+        const knowledges = KnowledgeStore.docs();
 
+        if (!requestBody.tools) {
+          requestBody.tools = [];
+        }
+
+        /* 将知识库变成工具 */
+        this.knowledges.forEach((knowledge) => {
+          requestBody.tools?.push({
+            type: "function",
+            function: {
+              name: `knowledge_${knowledge}`,
+              description: `${knowledges[knowledge].description}`,
+              parameters: {
+                type: "object",
+                properties: {
+                  query: {
+                    type: "string",
+                    description: "查询内容",
+                  },
+                },
+                required: ["query"],
+              },
+            },
+          });
+        });
+      }
+      /* 添加知识库工具 */
+      console.log(requestBody);
       /* 发送请求 */
       const response = await fetch(this.api_url, {
         method: "POST",
