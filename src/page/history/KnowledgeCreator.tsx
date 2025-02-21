@@ -69,7 +69,7 @@ export const KnowledgeCreator = () => {
 			setUploadProgress(0);
 			setUploadStatus("准备上传...");
 
-			await KnowledgeStore.addKnowledge(selectedFiles, {
+			await KnowledgeStore.add(selectedFiles, {
 				/* 知识库名称 */
 				name: knowledgeName,
 				/* 描述 */

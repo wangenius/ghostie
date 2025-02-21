@@ -236,11 +236,13 @@ export class ChatModel {
 
         /* 将知识库变成工具 */
         this.knowledges.forEach((knowledge) => {
+          const knowledgeDoc = knowledges[knowledge];
+          if (!knowledgeDoc) return;
           requestBody.tools?.push({
             type: "function",
             function: {
               name: `knowledge_${knowledge}`,
-              description: `${knowledges[knowledge].description}`,
+              description: `${knowledgeDoc.description}`,
               parameters: {
                 type: "object",
                 properties: {

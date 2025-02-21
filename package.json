@@ -8,7 +8,9 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "build:tauri": "npm run build && tauri build"
+    "build:tauri": "npm run build && tauri build",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.3",
@@ -56,13 +58,16 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0",
+    "@types/jest": "^29.5.14",
     "@types/node": "^22.13.1",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.20",
+    "jest": "^29.7.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
+    "ts-jest": "^29.2.5",
     "typescript": "^5.2.2",
     "vite": "^5.3.1"
   }

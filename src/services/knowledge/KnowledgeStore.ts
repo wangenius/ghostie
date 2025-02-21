@@ -3,6 +3,7 @@ import { FileMetadata } from "@/page/history/KnowledgeCreator";
 import { cmd } from "@/utils/shell";
 import { Echo } from "echo-state";
 import { gen } from "@/utils/generator";
+import { splitTextIntoChunks } from "@/utils/text";
 
 /* 文本块元数据 */
 export interface TextChunkMetadata {
@@ -90,7 +91,7 @@ export interface ProgressCallback {
   currentFile?: string;
 }
 
-const CHUNK_SIZE = 500;
+const CHUNK_SIZE = 425;
 const KNOWLEDGE_VERSION = "1.0.0";
 
 export class KnowledgeStore {
@@ -158,95 +159,6 @@ export class KnowledgeStore {
     }));
   }
 
-  // 文本分块
-  private static splitTextIntoChunks(text: string): string[] {
-    const chunks: string[] = [];
-
-    // 首先按段落分割（连续的换行符）
-    const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim().length > 0);
-
-    for (const paragraph of paragraphs) {
-      // 如果段落本身小于块大小，直接作为一个块
-      if (paragraph.trim().length <= CHUNK_SIZE) {
-        chunks.push(paragraph.trim());
-        continue;
-      }
-
-      // 对于大段落，先尝试按句子分割
-      // 英文句子：确保句点后面跟着空格和大写字母，或者是行末
-      // 中文句子：以句号、问号、感叹号结尾
-      const sentences = paragraph
-        .split(/(?<=[.。!?！？])\s+(?=[A-Z])|(?<=[。！？])|(?<=[.!?])\s*$/)
-        .filter((s) => s.trim().length > 0)
-        .map((s) => s.trim());
-
-      let currentChunk = "";
-      let currentLength = 0;
-
-      for (const sentence of sentences) {
-        // 如果单个句子超过块大小
-        if (sentence.length >= CHUNK_SIZE) {
-          // 先保存当前块
-          if (currentChunk) {
-            chunks.push(currentChunk);
-            currentChunk = "";
-            currentLength = 0;
-          }
-
-          // 尝试在词语边界处分割长句子
-          let start = 0;
-          while (start < sentence.length) {
-            let end = start + CHUNK_SIZE;
-
-            // 如果不是句子末尾，尝试在最后一个空格或标点处截断
-            if (end < sentence.length) {
-              const lastSpace = sentence.slice(start, end).lastIndexOf(" ");
-              const lastPunct = Math.max(
-                sentence.slice(start, end).lastIndexOf("，"),
-                sentence.slice(start, end).lastIndexOf(","),
-                sentence.slice(start, end).lastIndexOf("、")
-              );
-
-              // 选择最近的分割点
-              if (lastSpace > 0 || lastPunct > 0) {
-                end = start + Math.max(lastSpace, lastPunct);
-              }
-            }
-
-            chunks.push(sentence.slice(start, end).trim());
-            start = end;
-          }
-          continue;
-        }
-
-        // 处理正常长度的句子
-        if (currentLength + sentence.length + 1 > CHUNK_SIZE) {
-          if (currentChunk) {
-            chunks.push(currentChunk);
-          }
-          currentChunk = sentence;
-          currentLength = sentence.length;
-        } else {
-          if (currentChunk) {
-            currentChunk += " ";
-            currentLength += 1;
-          }
-          currentChunk += sentence;
-          currentLength += sentence.length;
-        }
-      }
-
-      // 处理段落的最后一个块
-      if (currentChunk) {
-        chunks.push(currentChunk);
-      }
-    }
-
-    return chunks
-      .map((chunk) => chunk.trim())
-      .filter((chunk) => chunk.length > 0);
-  }
-
   // 计算余弦相似度
   private static cosineSimilarity(a: number[], b: number[]): number {
     const dotProduct = a.reduce((sum, val, i) => sum + val * b[i], 0);
@@ -307,7 +219,7 @@ export class KnowledgeStore {
   }
 
   // 添加知识库
-  static async addKnowledge(
+  static async add(
     filePaths: FileMetadata[],
     options?: {
       name?: string;
@@ -360,7 +272,7 @@ export class KnowledgeStore {
         currentFile: fileName,
       });
 
-      const chunks = this.splitTextIntoChunks(file.content);
+      const chunks = splitTextIntoChunks(file.content, CHUNK_SIZE);
       const processedChunks: TextChunk[] = [];
       const totalChunks = chunks.length;
 
