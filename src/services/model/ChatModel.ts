@@ -40,7 +40,7 @@ export class ChatModel {
   /** 工具 */
   private tools: ToolRequestBody | undefined;
   /** 知识 */
-  private knowledges: string[] = [];
+  private knowledges: ToolRequestBody | undefined;
 
   /** 构造函数
    * @param config 模型配置
@@ -73,8 +73,37 @@ export class ChatModel {
     return this;
   }
 
-  public setKnowledge(knowledges: string[]): this {
-    this.knowledges = knowledges;
+  public setKnowledge(docs: string[]): this {
+    if (docs.length) {
+      /* 获取知识库 */
+      const knowledges = KnowledgeStore.docs();
+
+      /* 将知识库变成工具 */
+      docs.forEach((knowledge) => {
+        const knowledgeDoc = knowledges[knowledge];
+        if (!knowledgeDoc) return;
+        if (!this.knowledges) {
+          this.knowledges = [];
+        }
+        this.knowledges?.push({
+          type: "function",
+          function: {
+            name: `knowledge_${knowledge}`,
+            description: `${knowledgeDoc.description}`,
+            parameters: {
+              type: "object",
+              properties: {
+                query: {
+                  type: "string",
+                  description: "查询字段或内容",
+                },
+              },
+              required: ["query"],
+            },
+          },
+        });
+      });
+    }
     return this;
   }
 
@@ -225,37 +254,8 @@ export class ChatModel {
         requestBody.tools = this.tools;
       }
 
-      /* 添加知识库工具 */
       if (this.knowledges?.length) {
-        /* 获取知识库 */
-        const knowledges = KnowledgeStore.docs();
-
-        if (!requestBody.tools) {
-          requestBody.tools = [];
-        }
-
-        /* 将知识库变成工具 */
-        this.knowledges.forEach((knowledge) => {
-          const knowledgeDoc = knowledges[knowledge];
-          if (!knowledgeDoc) return;
-          requestBody.tools?.push({
-            type: "function",
-            function: {
-              name: `knowledge_${knowledge}`,
-              description: `${knowledgeDoc.description}`,
-              parameters: {
-                type: "object",
-                properties: {
-                  query: {
-                    type: "string",
-                    description: "查询内容",
-                  },
-                },
-                required: ["query"],
-              },
-            },
-          });
-        });
+        requestBody.tools = [...(requestBody.tools || []), ...this.knowledges];
       }
       /* 添加知识库工具 */
       console.log(requestBody);

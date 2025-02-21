@@ -70,68 +70,8 @@ const presetTypes = [
 
 export function AgentEdit() {
     const [agent, setAgent] = useState<Agent>(defaultAgent);
-    const [originalName, setOriginalName] = useState<string>("");
-    const [create, setCreate] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeTab, setActiveTab] = useState<"basic" | "tools" | "knowledge">("basic");
     const inputRef = useRef<HTMLInputElement>(null);
-
-    // useEffect(() => {
-    //     const unlisten = listen<{ name: string }>("query-params", async (event) => {
-    //         if (!event.payload) {
-    //             setAgent(defaultAgent);
-    //             setCreate(true);
-    //             return;
-    //         }
-    //         const { name } = event.payload;
-    //         if (name) {
-    //             setOriginalName(name);
-    //             try {
-    //                 const agentData = await AgentManager.getAgent(name);
-    //                 if (agentData) {
-    //                     setAgent(agentData);
-    //                     setCreate(false);
-    //                 }
-    //             } catch (error) {
-    //                 console.error("加载代理数据失败:", error);
-    //             }
-    //         }
-    //     });
-
-    //     inputRef.current?.focus();
-
-    //     return () => {
-    //         unlisten.then((fn) => fn());
-    //     };
-    // }, []);
-
-    // const handleClose = async () => {
-    //     const window = await getCurrentWindow();
-    //     setAgent(defaultAgent);
-    //     window.hide();
-    // };
-
-    // const handleSubmit = async () => {
-    //     if (isSubmitting) return;
-
-    //     try {
-    //         setIsSubmitting(true);
-    //         if (create) {
-    //             await invoke("add_agent", { agent });
-    //         } else {
-    //             await invoke("update_agent", {
-    //                 oldName: originalName,
-    //                 agent
-    //             });
-    //         }
-    //         await emit("agent-updated");
-    //         await handleClose();
-    //     } catch (error) {
-    //         console.error(create ? "添加代理失败:" : "更新代理失败:", error);
-    //     } finally {
-    //         setIsSubmitting(false);
-    //     }
-    // };
 
     const addSkill = () => {
         setAgent({
@@ -168,9 +108,6 @@ export function AgentEdit() {
                 className="flex items-center justify-between h-12 px-4 border-b border-border"
                 data-tauri-drag-region
             >
-                <div className="text-sm font-medium text-foreground">
-                    {create ? "添加代理" : "编辑代理"}
-                </div>
                 <button
                     // onClick={handleClose}
                     className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
@@ -530,13 +467,6 @@ export function AgentEdit() {
                     className="px-3 h-8 text-xs text-muted-foreground hover:bg-secondary rounded transition-colors"
                 >
                     取消
-                </button>
-                <button
-                    // onClick={handleSubmit}
-                    disabled={!agent.name || isSubmitting}
-                    className="px-3 h-8 text-xs text-primary-foreground bg-primary rounded hover:opacity-90 disabled:opacity-50 transition-colors"
-                >
-                    {isSubmitting ? (create ? "添加中..." : "更新中...") : create ? "添加" : "更新"}
                 </button>
             </div>
         </div>
