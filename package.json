@@ -44,6 +44,7 @@
     "date-fns": "^4.1.0",
     "echo-state": "^1.2.16",
     "framer-motion": "^11.15.0",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.469.0",
     "openai": "^4.85.1",
     "react": "^18.2.0",
@@ -54,11 +55,13 @@
     "react-markdown": "^9.0.3",
     "react-router-dom": "^7.1.1",
     "react-syntax-highlighter": "^15.6.1",
+    "reactflow": "^11.11.4",
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0",
     "@types/jest": "^29.5.14",
+    "@types/lodash": "^4.17.15",
     "@types/node": "^22.13.1",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",

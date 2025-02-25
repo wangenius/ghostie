@@ -147,3 +147,7 @@ option {
 .draggable a {
   -webkit-app-region: no-drag;
 }
+
+.react-flow__attribution {
+  display: none !important;
+}

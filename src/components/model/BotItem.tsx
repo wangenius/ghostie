@@ -1,6 +1,6 @@
 import { BotProps } from "@/common/types/bot";
 import { Button } from "@/components/ui/button";
-import { BotManager } from "@/services/bot/BotManger";
+import { BotManager } from "@/bot/BotManger";
 import { TbPencil, TbPin, TbPinFilled, TbTrash } from "react-icons/tb";
 import { LogoIcon } from "../custom/LogoIcon";
 

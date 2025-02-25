@@ -1,15 +1,16 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { BotEdit } from "./page/edit/BotEdit";
-import { ModelEdit } from "./page/edit/ModelEdit";
-import { PluginEdit } from "./page/edit/PluginEdit";
+import { BotEditor } from "./bot/BotEditor";
+import { ModelEditor } from "./model/ModelEditor";
+import { PluginEditor } from "./plugin/PluginEditor";
 import { MainView } from "./page/main/MainView";
-import { SettingsPage } from "./page/settings/Page";
-import { SettingsManager } from "./services/settings/SettingsManager";
+import { SettingsPage } from "./settings/SettingsPage";
+import { SettingsManager } from "./settings/SettingsManager";
 import { useEffect } from "react";
-import { EnvEdit } from "./page/edit/EnvEdit";
+import { EnvEditor } from "./plugin/EnvEditor";
 import { HistoryPage } from "./page/history/HistoryPage";
-import { KnowledgeCreator } from "./page/history/KnowledgeCreator";
-import { KnowledgePreview } from "./page/history/KnowledgePreview";
+import { KnowledgeCreator } from "./knowledge/KnowledgeCreator";
+import { KnowledgePreview } from "./knowledge/KnowledgePreview";
+import { WorkflowEditor } from "./workflow/WorkflowEditor";
 
 /* 主应用,提供路由 */
 function App() {
@@ -35,13 +36,14 @@ function App() {
                 <Routes>
                     <Route path="/" element={<MainView />} />
                     <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/model-edit" element={<ModelEdit />} />
-                    <Route path="/bot-edit" element={<BotEdit />} />
-                    <Route path="/plugin-edit" element={<PluginEdit />} />
-                    <Route path="/env-edit" element={<EnvEdit />} />
+                    <Route path="/model-edit" element={<ModelEditor />} />
+                    <Route path="/bot-edit" element={<BotEditor />} />
+                    <Route path="/plugin-edit" element={<PluginEditor />} />
+                    <Route path="/env-edit" element={<EnvEditor />} />
                     <Route path="/history" element={<HistoryPage />} />
                     <Route path="/knowledge-creator" element={<KnowledgeCreator />} />
                     <Route path="/knowledge-preview" element={<KnowledgePreview />} />
+                    <Route path="/workflow-edit" element={<WorkflowEditor />} />
                 </Routes>
             </BrowserRouter>
         </div>

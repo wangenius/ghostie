@@ -27,7 +27,8 @@
         "focus": true,
         "maximizable": false,
         "minimizable": false,
-        "acceptFirstMouse": true
+        "acceptFirstMouse": true,
+        "devtools": true
       },
       {
         "title": "设置",
@@ -57,6 +58,23 @@
         "parent": "main",
         "center": true,
         "url": "/history",
+        "visible": false,
+        "focus": true,
+        "maximizable": true,
+        "minimizable": true
+      },
+      {
+        "title": "工作流编辑",
+        "minWidth": 1000,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": true,
+        "label": "workflow-edit",
+        "parent": "main",
+        "center": true,
+        "url": "/workflow-edit",
         "visible": false,
         "focus": true,
         "maximizable": true,

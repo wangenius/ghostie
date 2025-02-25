@@ -1,8 +1,8 @@
 import { BotProps } from "@/common/types/bot";
 import { Button } from "@/components/ui/button";
-import { BotEdit } from "@/page/edit/BotEdit";
-import { BotManager } from "@/services/bot/BotManger";
-import { ModelManager } from "@/services/model/ModelManager";
+import { BotEditor } from "@/bot/BotEditor";
+import { BotManager } from "@/bot/BotManger";
+import { ModelManager } from "@/model/ModelManager";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TbDots, TbPencil, TbPin, TbPinnedOff } from "react-icons/tb";
 import { useState } from "react";
@@ -86,7 +86,7 @@ export function BotItem({ bot, isSelected, onClick }: BotItemProps) {
 						className="flex items-center gap-2"
 						onClick={(e) => {
 							e.stopPropagation();
-							BotEdit.open(bot.id);
+							BotEditor.open(bot.id);
 						}}
 					>
 						<TbPencil className="w-4 h-4" />
