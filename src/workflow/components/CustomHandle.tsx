@@ -21,9 +21,9 @@ const CustomHandle = memo((props: any) => {
     // 检查当前 handle 的连接
     const handleEdges = connectedEdges.filter((edge) => {
       if (props.type === 'source') {
-        return edge.sourceHandle === props.id;
+        return edge.sourceHandle === props.id && edge.source === nodeId;
       } else {
-        return edge.targetHandle === props.id;
+        return edge.targetHandle === props.id && edge.target === nodeId;
       }
     });
 
@@ -43,6 +43,9 @@ const CustomHandle = memo((props: any) => {
       {...props}
       onDoubleClick={(e) => e.stopPropagation()}
       isConnectable={isHandleConnectable}
+      className={`!absolute !w-3 !h-3 !border-2 !rounded-full !cursor-pointer z-10 
+							transition-all duration-300 hover:!bg-primary/50
+							translate-x-0.5 !bg-muted-foreground !border-primary`}
     />
   );
 });

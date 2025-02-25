@@ -3,6 +3,7 @@ import React, { useEffect } from "react"
 import { NodeProps, Position } from "reactflow"
 import CustomHandle from "../components/CustomHandle"
 import { useUpdateNodeInternals } from "reactflow"
+import { max } from "lodash";
 const co = 40;
 
 export const BaseNode = ({ children, selected, isConnectable, left, right, id, data }: NodeProps & {
@@ -11,30 +12,35 @@ export const BaseNode = ({ children, selected, isConnectable, left, right, id, d
 	right: number;
 }) => {
 	const updateNodeInternals = useUpdateNodeInternals();
-
-
+	const handles = Array.from(
+		{
+			length: (max([left, right]) || 0) + 1,
+		},
+		(_, i) => i,
+	);
 	useEffect(() => {
 		updateNodeInternals(id);
-	}, [id, data, updateNodeInternals]);
+	}, [id, data, left, right, updateNodeInternals]);
 
 	return (
 		<div
+			style={{
+				height: handles.length * 14 + 80,
+				minHeight: 120,
+			}}
 			className={cn(
 				'px-4 py-2 rounded-lg bg-muted min-w-[200px]',
-				selected && 'shadow-md'
+				selected && `ring-2 ring-primary/40`
 			)}>
 			{Array.from({ length: left || 0 }).map((_, index) => {
 				return (
 					<CustomHandle
-						key={`${index}`}
+						key={index}
 						type="target"
 						id={`${index}`}
 						position={Position.Left}
 						isConnectable={isConnectable}
 						style={{ top: index * co + co }}
-						className={`!absolute !w-3 !h-3 !border-2 !rounded-full !cursor-pointer z-10 
-							transition-all duration-300 hover:!bg-primary/50
-							translate-x-0.5 !bg-muted-foreground !border-primary`}
 					/>
 				) as React.ReactNode;
 			})}
@@ -42,15 +48,12 @@ export const BaseNode = ({ children, selected, isConnectable, left, right, id, d
 			{Array.from({ length: right || 0 }).map((_, index) => {
 				return (
 					<CustomHandle
-						key={`${index}`}
+						key={index}
 						type="source"
 						id={`${index}`}
 						position={Position.Right}
 						isConnectable={isConnectable}
 						style={{ top: index * co + co }}
-						className={`!absolute !w-3 !h-3 !border-2 !rounded-full !cursor-pointer z-10 
-							transition-all duration-300 hover:!bg-primary/50
-							translate-x-0.5 !bg-muted-foreground !border-primary`}
 					/>
 				) as React.ReactNode;
 			})}
