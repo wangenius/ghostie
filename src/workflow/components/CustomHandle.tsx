@@ -6,6 +6,7 @@ const selector = (s: any) => ({
   edges: s.edges,
 });
 
+/* 自定义连接点组件，用于正确处理多个连接点的情况*/
 const CustomHandle = memo((props: any) => {
   const { nodeInternals, edges } = useStore(selector);
   const nodeId = useNodeId();

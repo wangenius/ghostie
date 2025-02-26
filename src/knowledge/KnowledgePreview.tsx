@@ -74,7 +74,7 @@ export const KnowledgePreview = () => {
 									placeholder="添加知识库描述..."
 									value={previewDocument?.description}
 									onChange={(e) => {
-										KnowledgeStore.setDescription(previewDocument?.id, e);
+										KnowledgeStore.setDescription(previewDocument?.id, e.target.value);
 									}}
 								/>
 							</div>

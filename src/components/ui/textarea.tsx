@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   ReactNode,
+  ChangeEventHandler,
 } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +20,7 @@ export type TextAreaProps = Omit<
   TextareaHTMLAttributes<HTMLTextAreaElement>,
   'onChange' | 'onValueChange'
 > & {
-  onChange?: (value: string) => void;
+  onChange?: ChangeEventHandler<HTMLTextAreaElement> | undefined;
   variant?: 'secondary' | 'ghost';
   footer?: ReactNode;
 };
@@ -93,7 +94,7 @@ export const Textarea = forwardRef<CustomTextAreaRef, TextAreaProps>(
             if (!isControlled) {
               setInternalValue(e.target.value);
             }
-            onChange?.(e.target.value);
+            onChange?.(e);
           }}
           className={cn(
             'flex w-full rounded-md px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none bg-muted disabled:cursor-not-allowed disabled:opacity-50',

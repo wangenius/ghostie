@@ -1,10 +1,6 @@
-import { BaseNode } from './BaseNode';
 import { NodeProps } from 'reactflow';
-
-interface EndNodeConfig {
-	name: string;
-}
-
+import { EndNodeConfig } from '../types/nodes';
+import { BaseNode } from './BaseNode';
 
 export const EndNode = (props: NodeProps<EndNodeConfig>) => {
 	return (
@@ -13,7 +9,14 @@ export const EndNode = (props: NodeProps<EndNodeConfig>) => {
 			left={1}
 			right={0}
 		>
-			<div className="text-sm font-medium">{props.data.name}</div>
+			<div className="flex flex-col gap-2">
+				<div className="text-sm font-medium">{props.data.name}</div>
+				{props.data.result && (
+					<div className="text-sm text-muted-foreground">
+						结果: {props.data.result}
+					</div>
+				)}
+			</div>
 		</BaseNode>
 	);
-}; 
+};

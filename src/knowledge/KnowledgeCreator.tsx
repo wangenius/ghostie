@@ -145,7 +145,7 @@ export const KnowledgeCreator = () => {
 							id="knowledge-description"
 							placeholder="请输入知识库描述"
 							value={description}
-							onChange={(e) => setDescription(e)}
+							onChange={(e) => setDescription(e.target.value)}
 						/>
 					</div>
 

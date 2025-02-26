@@ -3,27 +3,19 @@ import { Input } from '@/components/ui/input';
 import { Minus, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { TbPlus } from 'react-icons/tb';
-import { BaseNode } from './BaseNode';
 import { NodeProps } from 'reactflow';
-
-interface StartNodeConfig {
-	name: string;
-	type: string;
-	onRun?: () => void;
-}
+import { StartNodeConfig } from '../types/nodes';
+import { BaseNode } from './BaseNode';
 
 export const StartNode = (props: NodeProps<StartNodeConfig>) => {
 	const [outputCount, setOutputCount] = useState(1);
-
+	const [inputs, setInputs] = useState<string>('');
 	const addOutput = () => {
-		setOutputCount(prev => Math.min(prev + 1, 5)); // 最多5个输出
+		setOutputCount(prev => Math.min(prev + 1, 5));
 	};
-
 	const removeOutput = () => {
-		setOutputCount(prev => Math.max(prev - 1, 1)); // 最少1个输出
+		setOutputCount(prev => Math.max(prev - 1, 1));
 	};
-
-
 	return (
 		<BaseNode
 			{...props}
@@ -49,13 +41,16 @@ export const StartNode = (props: NodeProps<StartNodeConfig>) => {
 							size="icon"
 							className="h-6 w-6"
 							onClick={addOutput}
-
 						>
 							<Plus className="h-4 w-4" />
 						</Button>
 					</div>
 				</div>
-				<Input placeholder="输入名称" />
+				<Input
+					placeholder="输入名称"
+					value={inputs}
+					onChange={(e) => setInputs(e.target.value)}
+				/>
 				<Button
 					variant="outline"
 					size="sm"

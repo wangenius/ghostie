@@ -6,6 +6,8 @@ import {
   forwardRef,
   useImperativeHandle,
   KeyboardEventHandler,
+  ChangeEventHandler,
+  ChangeEvent,
 } from 'react';
 import { CustomTextAreaRef, Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -13,7 +15,7 @@ import { cn } from '@/lib/utils';
 interface AutoResizeTextareaProps {
   defaultValue?: string;
   value?: string;
-  onValueChange?: (value: string) => void;
+  onValueChange?: ChangeEventHandler<HTMLTextAreaElement>;
   onKeyDown?: KeyboardEventHandler<HTMLTextAreaElement>;
   variant?: 'ghost' | 'secondary';
   className?: string;
@@ -107,7 +109,7 @@ const AutoResizeTextarea = forwardRef<
       return () => window.removeEventListener('resize', handleResize);
     }, [value]);
 
-    const handleChange = (e: string) => {
+    const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
       adjustHeight();
       onChange?.(e);
     };

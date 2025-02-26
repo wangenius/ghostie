@@ -6,11 +6,13 @@ import { useUpdateNodeInternals } from "reactflow"
 import { max } from "lodash";
 const co = 40;
 
-export const BaseNode = ({ children, selected, isConnectable, left, right, id, data }: NodeProps & {
+/* 基础节点组件*/
+export const BaseNode = (props: NodeProps & {
 	children: React.ReactNode;
 	left: number;
 	right: number;
 }) => {
+	const { children, selected, isConnectable, left, right, id, data } = props;
 	const updateNodeInternals = useUpdateNodeInternals();
 	const handles = Array.from(
 		{

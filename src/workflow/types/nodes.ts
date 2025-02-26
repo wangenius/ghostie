@@ -1,5 +1,24 @@
 import { Node } from "reactflow";
 
+/* 节点执行结果 */
+export interface NodeExecuteResult {
+  success: boolean;
+  data: any;
+  error?: string;
+}
+
+/* 工作流动作 */
+export interface NodeAction {
+  /* 节点ID */
+  id: string;
+  /* 节点类型 */
+  type: NodeType;
+  /* 输入数据 */
+  inputs: Record<string, any>;
+  /* 输出数据 */
+  outputs: Record<string, any>;
+}
+
 /* 节点类型 */
 export type NodeType =
   | "start"
@@ -10,44 +29,51 @@ export type NodeType =
   | "condition"
   | "branch";
 
-export interface ChatNodeConfig {
-  /* 系统提示词 */
+/* 基础节点配置 */
+export interface BaseNodeConfig {
+  /* 基础节点类型 */
+  type: NodeType;
+  /* 基础节点名称 */
+  name: string;
+}
+
+export interface StartNodeConfig extends BaseNodeConfig {
+  type: "start";
+}
+
+export interface EndNodeConfig extends BaseNodeConfig {
+  type: "end";
+  result?: string;
+}
+
+export interface ChatNodeConfig extends BaseNodeConfig {
+  type: "chat";
   system: string;
-  /* 用户输入 */
   user: string;
-  /* 温度 */
   temperature: number;
-  /* 模型id */
   model: string;
 }
 
-/* 机器人节点配置 */
-export interface BotNodeConfig {
-  /* 机器人id */
+export interface BotNodeConfig extends BaseNodeConfig {
+  type: "bot";
   bot: string;
-  /* 用户输入 */
   input?: string;
 }
 
-/* 插件节点配置 */
-export interface PluginNodeConfig {
-  /* 插件id */
+export interface PluginNodeConfig extends BaseNodeConfig {
+  type: "plugin";
   plugin: string;
-  /* 工具名称 */
   tool: string;
-  /* 工具参数 */
   args?: Record<string, any>;
 }
 
-/* 条件节点配置 */
-export interface ConditionNodeConfig {
-  /* 条件表达式 */
+export interface ConditionNodeConfig extends BaseNodeConfig {
+  type: "condition";
   expression: string;
 }
 
-/* 分支节点配置 */
-export interface BranchNodeConfig {
-  /* 条件表达式 */
+export interface BranchNodeConfig extends BaseNodeConfig {
+  type: "branch";
   conditions: Array<{
     expression: string;
     label: string;
@@ -55,6 +81,8 @@ export interface BranchNodeConfig {
 }
 
 export type NodeConfig =
+  | StartNodeConfig
+  | EndNodeConfig
   | ChatNodeConfig
   | BotNodeConfig
   | PluginNodeConfig
@@ -62,19 +90,7 @@ export type NodeConfig =
   | BranchNodeConfig;
 
 /* 工作流节点 */
-export type WorkflowNode<T = any, U extends NodeType = NodeType> = Node<
-  T,
-  U
-> & {
-  /* 节点标签 */
+export type WorkflowNode<T extends NodeConfig = NodeConfig> = Node<T> & {
+  /* 节点名称 */
   name: string;
 };
-
-export interface NodeTypeDefinition {
-  type: NodeType;
-  label: string;
-  component: React.ComponentType<any>;
-  defaultConfig?: Record<string, any>;
-  validate?: (config: any) => boolean;
-  createExecutor?: (config: any) => (input: any) => Promise<any>;
-}

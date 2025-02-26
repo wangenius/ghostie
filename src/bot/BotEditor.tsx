@@ -174,7 +174,7 @@ export function BotEditor() {
                         <label className="block text-xs text-muted-foreground">助手提示词</label>
                         <Textarea
                             value={bot.system}
-                            onChange={(e) => setBot({ ...bot, system: e })}
+                            onChange={(e) => setBot({ ...bot, system: e.target.value })}
                             className="w-full h-56 px-3 py-2 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground resize-none"
                             placeholder="请输入助手提示词"
                         />
