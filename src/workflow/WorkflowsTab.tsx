@@ -6,9 +6,12 @@ import { WorkflowEditor } from "./WorkflowEditor";
 import { WorkflowManager } from "./WorkflowManager";
 import { cmd } from "@/utils/shell";
 
+/* 工作流列表 */
 export default function WorkflowsTab() {
+	/* 工作流列表 */
 	const workflows = WorkflowManager.use();
 
+	/* 导入工作流 */
 	const handleImport = () => {
 		console.log("导入");
 	};

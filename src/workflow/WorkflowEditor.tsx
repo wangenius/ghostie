@@ -28,8 +28,12 @@ import { EndNode } from "./nodes/EndNode";
 import { PluginNode } from "./nodes/PluginNode";
 import { StartNode } from "./nodes/StartNode";
 import { WorkflowEdge } from "./types/edges";
-import { NodeConfig, NodeExecuteResult, NodeType, WorkflowNode } from "./types/nodes";
-import { WorkflowExecuteContext, WorkflowManager } from "./WorkflowManager";
+import {
+	NodeConfig,
+	NodeType,
+	WorkflowNode
+} from "./types/nodes";
+import { currentAction, WorkflowManager } from "./WorkflowManager";
 
 const nodeTypes = {
 	start: StartNode,
@@ -63,7 +67,7 @@ const initialNodes: WorkflowNode[] = [
 			type: 'start',
 			name: "开始",
 		},
-		position: { x: 250, y: 25 },
+		position: { x: 0, y: 0 },
 	},
 	{
 		id: 'end',
@@ -74,26 +78,35 @@ const initialNodes: WorkflowNode[] = [
 			name: "结束",
 			result: ''
 		},
-		position: { x: 250, y: 400 },
+		position: { x: 850, y: 0 },
 	},
 ];
 
 const initialEdges: WorkflowEdge[] = [];
 
 const INITIAL_WORKFLOW = {
+	id: "",
 	name: "",
 	description: ""
 };
 
 
-const useWorkflowState = (queryId?: string) => {
+/* 工作流状态管理 */
+const useWorkflowState = (queryId?: string | null) => {
+	/* 工作流节点 */
 	const [nodes, setNodes] = useState<WorkflowNode[]>(initialNodes);
+	/* 工作流边 */
 	const [edges, setEdges] = useState<WorkflowEdge[]>(initialEdges);
+	/* 工作流信息 */
 	const [workflow, setWorkflow] = useState(INITIAL_WORKFLOW);
+	/* 是否正在执行 */
 	const [isExecuting, setIsExecuting] = useState(false);
+	/* 是否创建 */
 	const [create, setCreate] = useState(true);
+	/* 是否加载中 */
 	const [loading, setLoading] = useState(true);
 
+	/* 重置工作流 */
 	const resetWorkflow = useCallback(() => {
 		setWorkflow(INITIAL_WORKFLOW);
 		setNodes(initialNodes);
@@ -101,18 +114,33 @@ const useWorkflowState = (queryId?: string) => {
 		setCreate(true);
 	}, []);
 
+	const workflows = WorkflowManager.use();
+
 	useEffect(() => {
 		setLoading(true);
 		if (queryId) {
-			const existingWorkflow = WorkflowManager.get(queryId);
+			const existingWorkflow = workflows[queryId];
 			if (existingWorkflow) {
 				setCreate(false);
 				setNodes(existingWorkflow.nodes);
 				setEdges(existingWorkflow.edges);
 				setWorkflow({
+					id: existingWorkflow.id,
 					name: existingWorkflow.name,
 					description: existingWorkflow.description
 				});
+
+				// 确保 currentAction 的状态正确
+				const existingAction = currentAction.current;
+				if (!existingAction || existingAction.workflowId !== existingWorkflow.id) {
+					currentAction.set({
+						...existingAction,
+						id: existingAction?.id || gen.id(),
+						workflowId: existingWorkflow.id,
+						actions: existingAction?.actions || {},
+						result: { success: false, data: null },
+					});
+				}
 			} else {
 				resetWorkflow();
 			}
@@ -120,7 +148,7 @@ const useWorkflowState = (queryId?: string) => {
 			resetWorkflow();
 		}
 		setLoading(false);
-	}, [queryId, resetWorkflow]);
+	}, [queryId, resetWorkflow, workflows]);
 
 	return {
 		nodes,
@@ -137,16 +165,16 @@ const useWorkflowState = (queryId?: string) => {
 	};
 };
 
-// 提取工作流表单组件
-const WorkflowForm = memo(({
+/* 工作流表单组件 */
+const WorkflowInfo = memo(({
 	workflow,
 	setWorkflow,
 	onSave,
 	onExecute,
 	isExecuting,
 }: {
-	workflow: { name: string; description: string };
-	setWorkflow: (workflow: { name: string; description: string }) => void;
+	workflow: { id: string; name: string; description: string };
+	setWorkflow: (workflow: { id: string; name: string; description: string }) => void;
 	onSave: () => void;
 	onExecute: () => void;
 	isExecuting: boolean;
@@ -216,7 +244,7 @@ const WorkflowForm = memo(({
 	);
 });
 
-// 提取工作流图组件
+/* 工作流图组件 */
 const WorkflowGraph = memo(({
 	nodes,
 	edges,
@@ -360,11 +388,12 @@ const ReactFlowWrapper = memo(({
 	);
 });
 
-// 主组件
-export const WorkflowEditor = () => {
-	const queryId = useQuery('id');
-	const id = queryId || undefined;
 
+
+/* 工作流编辑器 */
+export const WorkflowEditor = () => {
+	/* 查询ID，用于获取工作流ID */
+	const queryId = useQuery('id');
 	const {
 		nodes,
 		setNodes,
@@ -377,14 +406,12 @@ export const WorkflowEditor = () => {
 		create,
 		loading,
 		resetWorkflow
-	} = useWorkflowState(id);
+	} = useWorkflowState(queryId);
 
 	const handleClose = useCallback(() => {
 		cmd.close();
 		resetWorkflow();
 	}, [resetWorkflow]);
-
-
 
 	const onNodesChange = useCallback((changes: NodeChange[]) => {
 		setNodes((nds) => applyNodeChanges(changes, nds) as WorkflowNode[]);
@@ -492,63 +519,75 @@ export const WorkflowEditor = () => {
 		[]
 	);
 
+	/* 执行工作流 */
 	const executeWorkflow = useCallback(async () => {
-		setIsExecuting(true);
 		try {
-			if (!id) {
+			if (!workflow.id) {
 				cmd.message("执行失败", "工作流ID不能为空", "error");
 				return;
 			}
-			const context: WorkflowExecuteContext = {
-				id: gen.id(),
-				workflowId: id,
-				actions: {},
-				result: null
-			};
 
-			const result: NodeExecuteResult = await WorkflowManager.executeWorkflow(context);
+			currentAction.set({
+				...currentAction.current,
+				workflowId: workflow.id,
+				actions: {
+					...currentAction.current.actions,
+					end: {
+						id: gen.id(),
+						type: 'end',
+						inputs: {},
+						outputs: {},
+						startTime: new Date().toISOString(),
+						status: 'pending',
+						result: { success: false, data: null },
+					}
+				},
+				result: { success: false, data: null },
+			});
 
-			// 更新 End 节点显示结果
-			setNodes(nodes => nodes.map(node => {
-				if (node.type === 'end') {
-					return {
-						...node,
-						data: {
-							...node.data,
-							result: result.success ? String(result.data) : result.error || '执行失败'
-						}
-					};
-				}
-				return node;
-			}));
 
-			console.log('工作流执行结果:', result);
-			cmd.message("工作流执行成功", "查看控制台获取详细结果", "info");
+			// 设置执行状态
+			setIsExecuting(true);
+
+			// 确保 currentAction 的状态正确
+			const existingAction = currentAction.current;
+			if (!existingAction || existingAction.workflowId !== workflow.id) {
+				currentAction.set({
+					...existingAction,
+					id: existingAction?.id || gen.id(),
+					workflowId: workflow.id,
+					actions: existingAction?.actions || {},
+					result: { success: false, data: null },
+				});
+			}
+
+			await WorkflowManager.exe();
 		} catch (error) {
 			console.error('工作流执行失败:', error);
-			cmd.message("工作流执行失败", String(error), "error");
 		} finally {
 			setIsExecuting(false);
 		}
-	}, [nodes, edges, workflow.name, workflow.description, id]);
+	}, [workflow, setIsExecuting]);
 
 	const saveWorkflow = useCallback(async () => {
 		if (!workflow.name) {
 			cmd.message("保存失败", "工作流名称不能为空", "error");
 			return;
 		}
-
+		const _id = workflow.id || gen.id();
 		const savedWorkflow = WorkflowManager.save({
-			id,
+			id: _id,
 			nodes,
 			edges,
 			name: workflow.name,
-			description: workflow.description
+			description: workflow.description,
+			createdAt: create ? new Date().toISOString() : WorkflowManager.state.current[_id].createdAt,
+			updatedAt: new Date().toISOString(),
 		});
 
 		cmd.message("保存成功", `工作流 ${savedWorkflow.name} 已${create ? '创建' : '更新'}`, "info");
-		await handleClose();
-	}, [nodes, edges, id, workflow.name, workflow.description, create, handleClose]);
+		handleClose();
+	}, [nodes, edges, workflow.id, workflow.name, workflow.description, create, handleClose]);
 
 	if (loading) {
 		return (
@@ -565,7 +604,7 @@ export const WorkflowEditor = () => {
 		<div className="flex flex-col h-screen">
 			<Header title={create ? "新建工作流" : "编辑工作流"} close={handleClose} />
 			<div className="flex-1 flex flex-col">
-				<WorkflowForm
+				<WorkflowInfo
 					workflow={workflow}
 					setWorkflow={setWorkflow}
 					onSave={saveWorkflow}
@@ -590,4 +629,4 @@ export const WorkflowEditor = () => {
 
 WorkflowEditor.open = (id?: string) => {
 	cmd.open("workflow-edit", { id }, { width: 1000, height: 600 });
-}; 
+};
