@@ -1,29 +1,15 @@
 import { Node } from "reactflow";
 import { WorkflowEdge } from "./edges";
 
-/* 节点动作，用于记录节点执行历史 */
-export interface NodeAction {
-  /* 节点ID */
-  id: string;
-  /* 节点类型 */
-  type: NodeType;
-  /* 每个节点都可能有若干输入数据 */
-  inputs: Record<string, any>;
-  /* 每个节点都可能有若干输出数据 */
-  outputs: Record<string, any>;
-  /* 开始时间 */
-  startTime: string;
-  /* 结束时间 */
-  endTime?: string;
-  /* 状态 */
-  status: "pending" | "running" | "completed" | "failed";
-  /* 结果 */
-  result: {
-    success: boolean;
-    data: any;
-    error?: string;
-  };
-}
+/* 工作流节点 */
+export type WorkflowNode<
+  T extends NodeConfig = NodeConfig,
+  U extends NodeType = NodeType
+> = Node<T, U> & {
+  /* 节点名称 */
+  name: string;
+};
+
 /* 工作流 */
 export interface Workflow {
   /* 工作流ID */
@@ -41,6 +27,25 @@ export interface Workflow {
   /* 工作流边 */
   edges: WorkflowEdge[];
 }
+/* 节点动作，用于记录节点执行历史 */
+export interface NodeAction {
+  /* 节点ID */
+  id: string;
+  /* 节点类型 */
+  type: NodeType;
+  /* 每个节点都可能有若干输入数据 */
+  inputs: Record<string, any>;
+  /* 每个节点都可能有若干输出数据 */
+  outputs: Record<string, any>;
+  /* 开始时间 */
+  startTime: string;
+  /* 结束时间 */
+  endTime?: string;
+  /* 状态 */
+  status: "pending" | "running" | "completed" | "failed";
+  /* 结果 */
+  result: NodeResult;
+}
 
 /* 工作流动作历史 */
 export interface WorkflowAction {
@@ -53,10 +58,10 @@ export interface WorkflowAction {
   /* 当前节点 */
   currentNode?: WorkflowNode;
   /* 执行结果 */
-  result: NodeExecuteResult;
+  result: NodeResult;
 }
 /* 节点执行结果 */
-export interface NodeExecuteResult {
+export interface NodeResult {
   /* 是否成功 */
   success: boolean;
   /* 执行结果数据 */
@@ -135,12 +140,3 @@ export type NodeConfig =
   | PluginNodeConfig
   | ConditionNodeConfig
   | BranchNodeConfig;
-
-/* 工作流节点 */
-export type WorkflowNode<
-  T extends NodeConfig = NodeConfig,
-  U extends NodeType = NodeType
-> = Node<T, U> & {
-  /* 节点名称 */
-  name: string;
-};

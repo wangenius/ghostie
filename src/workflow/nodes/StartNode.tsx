@@ -5,9 +5,9 @@ import { Minus } from 'lucide-react';
 import { TbPlayerPlay, TbPlus } from 'react-icons/tb';
 import { NodeProps } from 'reactflow';
 import { StartNodeConfig } from '../types/nodes';
-import { CurrentActionState, WorkflowManager } from '../WorkflowManager';
+import { WorkflowManager } from '../WorkflowManager';
 import { NodePortal } from './NodePortal';
-
+import { CurrentActionState } from '../ActionManager';
 
 export const StartNode = (props: NodeProps<StartNodeConfig>) => {
 	const start = CurrentActionState.use(selector => selector.actions[props.id]);

@@ -1,38 +1,24 @@
-import { gen } from "@/utils/generator";
+import { ChatModel } from "@/model/ChatModel";
+import { ModelManager } from "@/model/ModelManager";
 import { Echo } from "echo-state";
+import { ActionManager, CurrentActionState } from "./ActionManager";
+import { ExpressionEvaluator } from "./ExpressionEvaluator";
 import {
+  ChatNodeConfig,
   NodeAction,
-  NodeExecuteResult,
+  NodeResult,
   NodeType,
   Workflow,
-  WorkflowAction,
   WorkflowNode,
 } from "./types/nodes";
-import { ExpressionEvaluator } from "./ExpressionEvaluator";
-/* 当前工作流动作 */
-export const CurrentActionState = new Echo<WorkflowAction>({
-  id: gen.id(),
-  workflowId: "",
-  actions: {},
-  result: { success: false, data: null },
-});
+
 /* 工作流管理器*/
 export class WorkflowManager {
-  /* 工作流状态 */
+  /* 工作流内容的使用 */
   static state = new Echo<Record<string, Workflow>>(
     {},
     {
       name: "workflows",
-      storage: "indexedDB",
-      sync: true,
-    }
-  );
-
-  /* 工作流动作历史 */
-  static actions = new Echo<Record<string, WorkflowAction>>(
-    {},
-    {
-      name: "workflows-actions",
       storage: "indexedDB",
       sync: true,
     }
@@ -77,40 +63,23 @@ export class WorkflowManager {
   static async executeNode(
     workflow: Workflow,
     node: WorkflowNode
-  ): Promise<NodeExecuteResult> {
+  ): Promise<NodeResult> {
     try {
       // 更新当前执行节点
-      CurrentActionState.set({
-        ...CurrentActionState.current,
-        currentNode: node,
-      });
+      ActionManager.updateCurrentAction({ currentNode: node });
 
       // 获取或创建节点动作记录
       let action = CurrentActionState.current.actions[node.id] as NodeAction;
       if (!action) {
-        action = {
-          id: node.id,
-          type: node.type as NodeType,
-          inputs: {},
-          outputs: {},
-          startTime: new Date().toISOString(),
-          status: "running",
-          result: { success: false, data: null },
-        };
-        CurrentActionState.set({
-          ...CurrentActionState.current,
-          actions: {
-            ...CurrentActionState.current.actions,
-            [node.id]: action,
-          },
-        });
+        action = ActionManager.createNodeAction(node.id, node.type as NodeType);
+        ActionManager.updateNodeAction(node.id, action);
       }
 
       // 获取节点输入数据
       action.inputs = this.getNodeInputs(workflow, node);
 
       // 根据节点类型执行不同逻辑
-      let result: NodeExecuteResult;
+      let result: NodeResult;
       switch (node.type) {
         case "start":
           const startInputs = action.inputs || {};
@@ -124,8 +93,7 @@ export class WorkflowManager {
         case "end":
           // 结束节点返回指定的结果
           const resultData = action.inputs;
-          CurrentActionState.set({
-            ...CurrentActionState.current,
+          ActionManager.updateCurrentAction({
             result: { success: true, data: resultData },
           });
           result = { success: true, data: resultData };
@@ -133,17 +101,17 @@ export class WorkflowManager {
 
         case "chat":
           // TODO: 实现对话节点逻辑
-          const chatConfig = node.data as {
-            system: string;
-            user: string;
-            temperature: number;
-            model: string;
-          };
+          const chatConfig = node.data as ChatNodeConfig;
+          const inputs = action.inputs;
 
-          // TODO: 调用 AI API
+          const res = await new ChatModel(ModelManager.get(chatConfig.model))
+            .system(chatConfig.system)
+            .stream(JSON.stringify(inputs));
           result = {
             success: true,
-            data: `模拟对话响应\n系统提示:${chatConfig.system}\n用户提示:${chatConfig.user}`,
+            data: {
+              result: res.body,
+            },
           };
           break;
 
@@ -206,34 +174,26 @@ export class WorkflowManager {
       }
 
       // 更新动作状态和输出
-      action.endTime = new Date().toISOString();
-      action.status = result.success ? "completed" : "failed";
-      action.result = result;
-      action.outputs = result.data;
-
-      // 更新上下文结果
-      CurrentActionState.set({
-        ...CurrentActionState.current,
-        actions: {
-          ...CurrentActionState.current.actions,
-          [node.id]: action,
-        },
+      ActionManager.updateNodeAction(node.id, {
+        endTime: new Date().toISOString(),
+        status: result.success ? "completed" : "failed",
+        result: result,
+        outputs: result.data,
       });
 
       return result;
     } catch (error) {
       // 更新动作状态为失败
       if (CurrentActionState.current.actions[node.id]) {
-        const failedAction = CurrentActionState.current.actions[
-          node.id
-        ] as NodeAction;
-        failedAction.status = "failed";
-        failedAction.endTime = new Date().toISOString();
-        failedAction.result = {
-          success: false,
-          data: null,
-          error: error instanceof Error ? error.message : String(error),
-        };
+        ActionManager.updateNodeAction(node.id, {
+          status: "failed",
+          endTime: new Date().toISOString(),
+          result: {
+            success: false,
+            data: null,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
       }
 
       return {
@@ -247,7 +207,7 @@ export class WorkflowManager {
   /**
    * 执行工作流
    */
-  static async exe(): Promise<NodeExecuteResult> {
+  static async exe(): Promise<NodeResult> {
     try {
       // 获取工作流定义
       const workflow = this.get(CurrentActionState.current.workflowId);
@@ -309,9 +269,7 @@ export class WorkflowManager {
         }
       }
       /* 工作流持久化存储 */
-      this.actions.set({
-        [CurrentActionState.current.id]: CurrentActionState.current,
-      });
+      ActionManager.saveAction(CurrentActionState.current);
       return {
         success: true,
         data: CurrentActionState.current.result,

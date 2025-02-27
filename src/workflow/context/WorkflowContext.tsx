@@ -5,7 +5,7 @@ import { NodeType, WorkflowNode } from '../types/nodes';
 import { gen } from '@/utils/generator';
 import { cmd } from '@/utils/shell';
 import { WorkflowManager } from '../WorkflowManager';
-import { CurrentActionState } from '../WorkflowManager';
+import { CurrentActionState } from '../ActionManager';
 
 const initialNodes: WorkflowNode[] = [
 	{

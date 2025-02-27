@@ -1,7 +1,7 @@
 import { NodeProps } from 'reactflow';
 import { EndNodeConfig } from '../types/nodes';
 import { NodePortal } from './NodePortal';
-import { CurrentActionState } from '../WorkflowManager';
+import { CurrentActionState } from '../ActionManager';
 
 export const EndNode = (props: NodeProps<EndNodeConfig>) => {
 	const end = CurrentActionState.use(selector => selector.actions[props.id]);
