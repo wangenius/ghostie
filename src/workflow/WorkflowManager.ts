@@ -9,7 +9,8 @@ import {
   WorkflowNode,
 } from "./types/nodes";
 import { ExpressionEvaluator } from "./ExpressionEvaluator";
-export const currentAction = new Echo<WorkflowAction>({
+/* 当前工作流动作 */
+export const CurrentActionState = new Echo<WorkflowAction>({
   id: gen.id(),
   workflowId: "",
   actions: {},
@@ -37,6 +38,7 @@ export class WorkflowManager {
     }
   );
 
+  /* 工作流状态使用 */
   static use = WorkflowManager.state.use.bind(WorkflowManager.state);
 
   /**
@@ -47,7 +49,7 @@ export class WorkflowManager {
     node: WorkflowNode
   ): Record<string, any> {
     if (node.type === "start") {
-      return currentAction.current.actions[node.id]?.inputs || {};
+      return CurrentActionState.current.actions[node.id]?.inputs || {};
     }
 
     // 获取所有指向当前节点的边
@@ -60,14 +62,12 @@ export class WorkflowManager {
 
     for (const edge of incomingEdges) {
       // 获取源节点的执行记录
-      const sourceAction = currentAction.current.actions[edge.source];
-      console.log("sourceAction", sourceAction);
+      const sourceAction = CurrentActionState.current.actions[edge.source];
       /* 如果源节点执行成功，则获取源节点的输出数据 */
       if (sourceAction && sourceAction.outputs) {
         Object.assign(inputs, sourceAction.outputs);
       }
     }
-    console.log("inputs", inputs);
     return inputs;
   }
 
@@ -79,15 +79,14 @@ export class WorkflowManager {
     node: WorkflowNode
   ): Promise<NodeExecuteResult> {
     try {
-      console.log("executeNode", currentAction.current);
       // 更新当前执行节点
-      currentAction.set({
-        ...currentAction.current,
+      CurrentActionState.set({
+        ...CurrentActionState.current,
         currentNode: node,
       });
 
       // 获取或创建节点动作记录
-      let action = currentAction.current.actions[node.id] as NodeAction;
+      let action = CurrentActionState.current.actions[node.id] as NodeAction;
       if (!action) {
         action = {
           id: node.id,
@@ -98,20 +97,17 @@ export class WorkflowManager {
           status: "running",
           result: { success: false, data: null },
         };
-        currentAction.set({
-          ...currentAction.current,
+        CurrentActionState.set({
+          ...CurrentActionState.current,
           actions: {
-            ...currentAction.current.actions,
+            ...CurrentActionState.current.actions,
             [node.id]: action,
           },
         });
       }
 
-      console.log("currentAction", currentAction.current);
-
       // 获取节点输入数据
       action.inputs = this.getNodeInputs(workflow, node);
-      console.log("action.inputs", action.inputs);
 
       // 根据节点类型执行不同逻辑
       let result: NodeExecuteResult;
@@ -128,9 +124,8 @@ export class WorkflowManager {
         case "end":
           // 结束节点返回指定的结果
           const resultData = action.inputs;
-          console.log("resultData", resultData);
-          currentAction.set({
-            ...currentAction.current,
+          CurrentActionState.set({
+            ...CurrentActionState.current,
             result: { success: true, data: resultData },
           });
           result = { success: true, data: resultData };
@@ -217,10 +212,10 @@ export class WorkflowManager {
       action.outputs = result.data;
 
       // 更新上下文结果
-      currentAction.set({
-        ...currentAction.current,
+      CurrentActionState.set({
+        ...CurrentActionState.current,
         actions: {
-          ...currentAction.current.actions,
+          ...CurrentActionState.current.actions,
           [node.id]: action,
         },
       });
@@ -228,8 +223,8 @@ export class WorkflowManager {
       return result;
     } catch (error) {
       // 更新动作状态为失败
-      if (currentAction.current.actions[node.id]) {
-        const failedAction = currentAction.current.actions[
+      if (CurrentActionState.current.actions[node.id]) {
+        const failedAction = CurrentActionState.current.actions[
           node.id
         ] as NodeAction;
         failedAction.status = "failed";
@@ -255,9 +250,11 @@ export class WorkflowManager {
   static async exe(): Promise<NodeExecuteResult> {
     try {
       // 获取工作流定义
-      const workflow = this.get(currentAction.current.workflowId);
+      const workflow = this.get(CurrentActionState.current.workflowId);
       if (!workflow) {
-        throw new Error(`工作流不存在: ${currentAction.current.workflowId}`);
+        throw new Error(
+          `工作流不存在: ${CurrentActionState.current.workflowId}`
+        );
       }
 
       // 查找开始节点
@@ -313,11 +310,11 @@ export class WorkflowManager {
       }
       /* 工作流持久化存储 */
       this.actions.set({
-        [currentAction.current.id]: currentAction.current,
+        [CurrentActionState.current.id]: CurrentActionState.current,
       });
       return {
         success: true,
-        data: currentAction.current.result,
+        data: CurrentActionState.current.result,
         error: undefined,
       };
     } catch (error) {

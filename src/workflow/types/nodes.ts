@@ -137,7 +137,10 @@ export type NodeConfig =
   | BranchNodeConfig;
 
 /* 工作流节点 */
-export type WorkflowNode<T extends NodeConfig = NodeConfig> = Node<T> & {
+export type WorkflowNode<
+  T extends NodeConfig = NodeConfig,
+  U extends NodeType = NodeType
+> = Node<T, U> & {
   /* 节点名称 */
   name: string;
 };

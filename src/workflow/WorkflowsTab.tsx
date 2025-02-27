@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PiDotsThreeBold } from "react-icons/pi";
-import { TbDownload, TbEdit, TbPlus, TbTrash, TbUpload } from "react-icons/tb";
+import { TbDownload, TbEdit, TbPlus, TbTrash, TbUpload, TbListDetails } from "react-icons/tb";
 import { WorkflowEditor } from "./WorkflowEditor";
 import { WorkflowManager } from "./WorkflowManager";
 import { cmd } from "@/utils/shell";
@@ -61,7 +61,7 @@ export default function WorkflowsTab() {
 				</div>
 			</div>
 
-			<div className="grid gap-4">
+			<div className="grid gap-2">
 				{Object.entries(workflows).length === 0 ? (
 					<div className="text-center text-muted-foreground py-8">
 						暂无工作流，点击"新建"创建一个工作流
@@ -70,32 +70,47 @@ export default function WorkflowsTab() {
 					Object.entries(workflows).map(([id, workflow]) => (
 						<div
 							key={id}
-							className="flex items-center justify-between p-4 rounded-lg border bg-card"
+							className="group relative hover:bg-accent/5 rounded-lg transition-all duration-200"
 						>
-							<div className="space-y-1">
-								<h3 className="font-medium">{workflow.name}</h3>
-								<p className="text-sm text-muted-foreground">
-									{workflow.description || "暂无描述"}
-								</p>
-								<p className="text-xs text-muted-foreground">
-									更新于: {new Date(workflow.updatedAt).toLocaleString()}
-								</p>
-							</div>
-							<div className="flex items-center gap-2">
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={() => WorkflowEditor.open(id)}
-								>
-									<TbEdit className="w-4 h-4" />
-								</Button>
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={() => handleDelete(id)}
-								>
-									<TbTrash className="w-4 h-4" />
-								</Button>
+							<div className="flex items-center p-2 gap-3">
+								{/* 左侧图标 */}
+								<div className="shrink-0">
+									<div className="w-9 h-9 flex items-center justify-center rounded-lg bg-muted p-2">
+										<TbListDetails className="w-6 h-6" />
+									</div>
+								</div>
+
+								{/* 中间信息区 */}
+								<div className="flex-1 min-w-0">
+									<div className="flex items-center gap-2">
+										<h3 className="text-sm font-medium text-foreground truncate">
+											{workflow.name}
+										</h3>
+									</div>
+									<div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+										<span className="truncate">
+											{workflow.description || "暂无描述"}
+										</span>
+									</div>
+								</div>
+
+								{/* 右侧操作区 */}
+								<div className="shrink-0 flex items-center gap-1">
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={() => WorkflowEditor.open(id)}
+									>
+										<TbEdit className="w-4 h-4" />
+									</Button>
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={() => handleDelete(id)}
+									>
+										<TbTrash className="w-4 h-4" />
+									</Button>
+								</div>
 							</div>
 						</div>
 					))

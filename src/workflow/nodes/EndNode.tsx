@@ -1,15 +1,14 @@
 import { NodeProps } from 'reactflow';
 import { EndNodeConfig } from '../types/nodes';
-import { BaseNode } from './BaseNode';
-import { currentAction } from '../WorkflowManager';
-import { cn } from '@/lib/utils';
+import { NodePortal } from './NodePortal';
+import { CurrentActionState } from '../WorkflowManager';
 
 export const EndNode = (props: NodeProps<EndNodeConfig>) => {
-	const end = currentAction.use(selector => selector.actions[props.id]);
+	const end = CurrentActionState.use(selector => selector.actions[props.id]);
 	if (!end) {
-		currentAction.set({
+		CurrentActionState.set({
 			actions: {
-				...currentAction.current.actions,
+				...CurrentActionState.current.actions,
 				[props.id]: {
 					id: props.id,
 					type: 'end',
@@ -24,34 +23,18 @@ export const EndNode = (props: NodeProps<EndNodeConfig>) => {
 	}
 
 	return (
-		<BaseNode
+		<NodePortal
 			{...props}
 			left={1}
 			right={0}
-			shape="end"
-			size="md"
-			variant="primary"
+			variant="default"
+			title="结束"
 			state={end?.status === 'completed' ? 'completed' :
 				end?.status === 'failed' ? 'failed' :
 					end?.status === 'running' ? 'running' :
 						'pending'}
 		>
 			<div className="flex flex-col items-center text-center">
-				{/* 标题区域 */}
-				<div className="w-full">
-					<div className={cn(
-						"text-base font-bold mb-1",
-						end?.status === 'completed' ? "text-green-700" :
-							end?.status === 'failed' ? "text-red-700" :
-								"text-gray-700"
-					)}>
-						{props.data.name || '结束'}
-					</div>
-
-				</div>
-
-
-
 				{/* 结果数据展示 */}
 				{end?.result.success && end.result.data && (
 					<div className="w-full">
@@ -74,6 +57,6 @@ export const EndNode = (props: NodeProps<EndNodeConfig>) => {
 					</div>
 				)}
 			</div>
-		</BaseNode>
+		</NodePortal>
 	);
 };

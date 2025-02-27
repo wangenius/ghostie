@@ -2,7 +2,7 @@ import { Bot } from '@/bot/Bot';
 import { useMemo } from 'react';
 import { NodeProps } from 'reactflow';
 import { BotNodeConfig } from '../types/nodes';
-import { BaseNode } from './BaseNode';
+import { NodePortal } from './NodePortal';
 
 
 
@@ -18,7 +18,7 @@ export const BotNode = (props: NodeProps<BotNodeConfig>) => {
 
 
 	return (
-		<BaseNode
+		<NodePortal
 			{...props}
 			left={1}
 			right={1}
@@ -33,6 +33,6 @@ export const BotNode = (props: NodeProps<BotNodeConfig>) => {
 					{props.data.input && <div>输入: {props.data.input}</div>}
 				</div>
 			)}
-		</BaseNode>
+		</NodePortal>
 	);
 }; 
