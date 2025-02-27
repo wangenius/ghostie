@@ -121,6 +121,10 @@ export class Bot {
           }
         );
       }
+
+      return this.model.historyMessage.list[
+        this.model.historyMessage.list.length - 1
+      ];
     } catch (error) {
       console.error("Chat error:", error);
       throw error;

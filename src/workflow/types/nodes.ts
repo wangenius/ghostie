@@ -4,14 +4,14 @@ import { WorkflowEdge } from "./edges";
 /* 工作流节点 */
 export type WorkflowNode<
   T extends NodeConfig = NodeConfig,
-  U extends NodeType = NodeType
+  U extends NodeType = NodeType,
 > = Node<T, U> & {
   /* 节点名称 */
   name: string;
 };
 
 /* 工作流 */
-export interface Workflow {
+export interface WorkflowProps {
   /* 工作流ID */
   id: string;
   /* 工作流名称 */
@@ -23,9 +23,9 @@ export interface Workflow {
   /* 更新时间 */
   updatedAt: string;
   /* 工作流节点 */
-  nodes: WorkflowNode[];
+  nodes: Record<string, WorkflowNode>;
   /* 工作流边 */
-  edges: WorkflowEdge[];
+  edges: Record<string, WorkflowEdge>;
 }
 /* 节点动作，用于记录节点执行历史 */
 export interface NodeAction {
@@ -43,12 +43,10 @@ export interface NodeAction {
   endTime?: string;
   /* 状态 */
   status: "pending" | "running" | "completed" | "failed";
-  /* 结果 */
-  result: NodeResult;
 }
 
 /* 工作流动作历史 */
-export interface WorkflowAction {
+export interface WorkflowActionProps {
   /* 动作ID */
   id: string;
   /* 工作流ID */
@@ -70,14 +68,7 @@ export interface NodeResult {
   error?: string;
 }
 /* 节点类型 */
-export type NodeType =
-  | "start"
-  | "end"
-  | "chat"
-  | "bot"
-  | "plugin"
-  | "condition"
-  | "branch";
+export type NodeType = "start" | "end" | "chat" | "bot" | "plugin" | "branch";
 
 /* 基础节点配置 */
 export interface BaseNodeConfig {
@@ -85,12 +76,14 @@ export interface BaseNodeConfig {
   type: NodeType;
   /* 基础节点名称 */
   name: string;
+  /* 基础节点输入 */
+  inputs: Record<string, any>;
+  /* 基础节点输出 */
+  outputs: Record<string, any>;
 }
 
 export interface StartNodeConfig extends BaseNodeConfig {
   type: "start";
-  /* 开始节点可能需要输入参数 */
-  inputs?: string[];
 }
 
 export interface EndNodeConfig extends BaseNodeConfig {
@@ -119,11 +112,6 @@ export interface PluginNodeConfig extends BaseNodeConfig {
   args?: Record<string, any>;
 }
 
-export interface ConditionNodeConfig extends BaseNodeConfig {
-  type: "condition";
-  expression: string;
-}
-
 export interface BranchNodeConfig extends BaseNodeConfig {
   type: "branch";
   conditions: Array<{
@@ -138,5 +126,4 @@ export type NodeConfig =
   | ChatNodeConfig
   | BotNodeConfig
   | PluginNodeConfig
-  | ConditionNodeConfig
   | BranchNodeConfig;

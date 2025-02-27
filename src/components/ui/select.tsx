@@ -14,7 +14,7 @@ const SelectValue = SelectPrimitive.Value
 
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & { variant?: "default" | "background" | "ghost" }
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & { variant?: "default" | "background" | "ghost" | "dust" }
 >(({ className, children, variant = "default", ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
@@ -24,6 +24,8 @@ const SelectTrigger = React.forwardRef<
       "h-8 px-2 bg-background rounded-md text-xs focus:bg-background/80 transition-colors outline-none",
       variant === "ghost" &&
       "h-8 px-2 bg-transparent rounded-md text-xs focus:bg-transparent transition-colors outline-none",
+      variant === "dust" &&
+      "h-8 px-2 bg-foreground/5 hover:bg-foreground/10 active:bg-foreground/10 rounded-md text-xs focus:bg-foreground/10 transition-colors outline-none",
       className
     )}
     {...props}

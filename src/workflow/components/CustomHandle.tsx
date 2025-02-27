@@ -44,7 +44,7 @@ const CustomHandle = memo((props: any) => {
       {...props}
       onDoubleClick={(e) => e.stopPropagation()}
       isConnectable={isHandleConnectable}
-      className={`!absolute !w-3 !h-3 !border-2 !rounded-full !cursor-pointer z-10 
+      className={`!absolute !w-2 !h-5 !border-2 !rounded-full !cursor-pointer z-10 
 							transition-all duration-300 hover:!bg-primary/50
 							translate-x-0.5 !bg-muted-foreground !border-primary`}
     />

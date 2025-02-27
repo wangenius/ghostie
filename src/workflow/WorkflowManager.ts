@@ -1,312 +1,44 @@
-import { ChatModel } from "@/model/ChatModel";
-import { ModelManager } from "@/model/ModelManager";
 import { Echo } from "echo-state";
-import { ActionManager, CurrentActionState } from "./ActionManager";
-import { ExpressionEvaluator } from "./ExpressionEvaluator";
-import {
-  ChatNodeConfig,
-  NodeAction,
-  NodeResult,
-  NodeType,
-  Workflow,
-  WorkflowNode,
-} from "./types/nodes";
+import { WorkflowProps } from "./types/nodes";
 
-/* 工作流管理器*/
+/* 工作流管理器 */
 export class WorkflowManager {
-  /* 工作流内容的使用 */
-  static state = new Echo<Record<string, Workflow>>(
+  /* 工作流内容 */
+  static store = new Echo<Record<string, WorkflowProps>>(
     {},
     {
       name: "workflows",
       storage: "indexedDB",
       sync: true,
-    }
+    },
   );
 
   /* 工作流状态使用 */
-  static use = WorkflowManager.state.use.bind(WorkflowManager.state);
-
-  /**
-   * 获取节点的输入数据
-   */
-  private static getNodeInputs(
-    workflow: Workflow,
-    node: WorkflowNode
-  ): Record<string, any> {
-    if (node.type === "start") {
-      return CurrentActionState.current.actions[node.id]?.inputs || {};
-    }
-
-    // 获取所有指向当前节点的边
-    const incomingEdges = workflow.edges.filter(
-      (edge) => edge.target === node.id
-    );
-
-    // 收集输入数据
-    const inputs: Record<string, any> = {};
-
-    for (const edge of incomingEdges) {
-      // 获取源节点的执行记录
-      const sourceAction = CurrentActionState.current.actions[edge.source];
-      /* 如果源节点执行成功，则获取源节点的输出数据 */
-      if (sourceAction && sourceAction.outputs) {
-        Object.assign(inputs, sourceAction.outputs);
-      }
-    }
-    return inputs;
-  }
-
-  /**
-   * 执行单个节点
-   */
-  static async executeNode(
-    workflow: Workflow,
-    node: WorkflowNode
-  ): Promise<NodeResult> {
-    try {
-      // 更新当前执行节点
-      ActionManager.updateCurrentAction({ currentNode: node });
-
-      // 获取或创建节点动作记录
-      let action = CurrentActionState.current.actions[node.id] as NodeAction;
-      if (!action) {
-        action = ActionManager.createNodeAction(node.id, node.type as NodeType);
-        ActionManager.updateNodeAction(node.id, action);
-      }
-
-      // 获取节点输入数据
-      action.inputs = this.getNodeInputs(workflow, node);
-
-      // 根据节点类型执行不同逻辑
-      let result: NodeResult;
-      switch (node.type) {
-        case "start":
-          const startInputs = action.inputs || {};
-
-          result = {
-            success: true,
-            data: startInputs,
-          };
-          break;
-
-        case "end":
-          // 结束节点返回指定的结果
-          const resultData = action.inputs;
-          ActionManager.updateCurrentAction({
-            result: { success: true, data: resultData },
-          });
-          result = { success: true, data: resultData };
-          break;
-
-        case "chat":
-          // TODO: 实现对话节点逻辑
-          const chatConfig = node.data as ChatNodeConfig;
-          const inputs = action.inputs;
-
-          const res = await new ChatModel(ModelManager.get(chatConfig.model))
-            .system(chatConfig.system)
-            .stream(JSON.stringify(inputs));
-          result = {
-            success: true,
-            data: {
-              result: res.body,
-            },
-          };
-          break;
-
-        case "bot":
-          // TODO: 实现机器人节点逻辑
-          const botConfig = node.data as {
-            bot: string;
-            input?: string;
-          };
-
-          const botInput = action.inputs;
-
-          result = {
-            success: true,
-            data: `机器人 ${botConfig.bot} 响应: ${JSON.stringify(botInput)}`,
-          };
-          break;
-
-        case "plugin":
-          // TODO: 实现插件节点逻辑
-          const pluginConfig = node.data as {
-            plugin: string;
-            tool: string;
-            args?: Record<string, any>;
-          };
-
-          // 处理插件参数
-          const pluginArgs = { ...pluginConfig.args };
-
-          result = {
-            success: true,
-            data: `插件 ${pluginConfig.plugin}.${
-              pluginConfig.tool
-            } 执行结果: ${JSON.stringify(pluginArgs)}`,
-          };
-          break;
-
-        case "branch":
-          // 分支节点逻辑
-          const branchConfig = node.data as {
-            conditions: Array<{ expression: string; label: string }>;
-          };
-
-          // 创建表达式计算器
-          const evaluator = new ExpressionEvaluator();
-
-          // 查找第一个满足条件的分支
-          const matchedCondition = branchConfig.conditions.find((condition) =>
-            evaluator.evaluate(condition.expression, action.inputs)
-          );
-
-          result = {
-            success: true,
-            data: matchedCondition || branchConfig.conditions[0],
-          };
-          break;
-
-        default:
-          throw new Error(`不支持的节点类型: ${node.type}`);
-      }
-
-      // 更新动作状态和输出
-      ActionManager.updateNodeAction(node.id, {
-        endTime: new Date().toISOString(),
-        status: result.success ? "completed" : "failed",
-        result: result,
-        outputs: result.data,
-      });
-
-      return result;
-    } catch (error) {
-      // 更新动作状态为失败
-      if (CurrentActionState.current.actions[node.id]) {
-        ActionManager.updateNodeAction(node.id, {
-          status: "failed",
-          endTime: new Date().toISOString(),
-          result: {
-            success: false,
-            data: null,
-            error: error instanceof Error ? error.message : String(error),
-          },
-        });
-      }
-
-      return {
-        success: false,
-        data: null,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
-
-  /**
-   * 执行工作流
-   */
-  static async exe(): Promise<NodeResult> {
-    try {
-      // 获取工作流定义
-      const workflow = this.get(CurrentActionState.current.workflowId);
-      if (!workflow) {
-        throw new Error(
-          `工作流不存在: ${CurrentActionState.current.workflowId}`
-        );
-      }
-
-      // 查找开始节点
-      const startNode = workflow.nodes.find((node) => node.type === "start");
-      if (!startNode) {
-        throw new Error("工作流缺少开始节点");
-      }
-
-      // 执行节点队列
-      const executedNodes = new Set<string>();
-      let currentNode: WorkflowNode | undefined = startNode;
-
-      /* 执行节点队列 */
-      while (currentNode) {
-        // 执行当前节点
-        const result = await this.executeNode(workflow, currentNode);
-        /* 如果执行失败，则抛出错误 */
-        if (!result.success) {
-          throw new Error(`节点 ${currentNode.id} 执行失败: ${result.error}`);
-        }
-        /* 添加已执行节点 */
-        executedNodes.add(currentNode.id);
-        /* 获取当前节点的出边 */
-        const outgoingEdges = workflow.edges.filter(
-          (edge) => edge.source === currentNode!.id
-        );
-
-        /* 分支节点特殊处理 */
-        if (currentNode.type === "branch") {
-          // 分支节点特殊处理
-          const branchResult = result.data;
-
-          const matchedEdge = outgoingEdges.find(
-            (edge) => edge.data?.sourceHandle === branchResult?.expression
-          );
-          const nextNode = matchedEdge
-            ? workflow.nodes.find((node) => node.id === matchedEdge.target)
-            : undefined;
-          currentNode = nextNode;
-        } else {
-          // 普通节点，取第一个出边
-          const nextEdge = outgoingEdges[0];
-          const nextNode = nextEdge
-            ? workflow.nodes.find((node) => node.id === nextEdge.target)
-            : undefined;
-          currentNode = nextNode;
-        }
-
-        // 检查是否存在循环
-        if (currentNode && executedNodes.has(currentNode.id)) {
-          throw new Error(`检测到循环执行: ${currentNode.id}`);
-        }
-      }
-      /* 工作流持久化存储 */
-      ActionManager.saveAction(CurrentActionState.current);
-      return {
-        success: true,
-        data: CurrentActionState.current.result,
-        error: undefined,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
+  static use = WorkflowManager.store.use.bind(WorkflowManager.store);
 
   /**
    * 保存工作流
    * @param workflow 工作流数据
    */
-  static save(workflow: Workflow) {
+  static save(workflow: WorkflowProps) {
     const now = new Date().toISOString();
-    const existingWorkflow = this.state.current[workflow.id];
-
-    this.state.set({
+    const existingWorkflow = this.store.current[workflow.id];
+    this.store.set({
+      ...this.store.current,
       [workflow.id]: {
         ...existingWorkflow,
         ...workflow,
         updatedAt: now,
       },
     });
-    return this.state.current[workflow.id];
+    return this.store.current[workflow.id];
   }
 
   /**
    * 获取工作流
    * @param id 工作流ID
    */
-  static get(id: string): Workflow | undefined {
-    return this.state.current[id];
+  static get(id: string): WorkflowProps | undefined {
+    return this.store.current[id];
   }
 }

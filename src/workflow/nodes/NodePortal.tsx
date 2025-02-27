@@ -1,9 +1,8 @@
-import { cn } from "@/lib/utils"
-import React, { useEffect } from "react"
-import { NodeProps, Position, useUpdateNodeInternals } from "reactflow"
-import CustomHandle from "../components/CustomHandle"
+import { cn } from "@/lib/utils";
+import React, { useEffect } from "react";
+import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
+import CustomHandle from "../components/CustomHandle";
 
-const co = 40;
 
 type NodeVariant = "default" | 'chat' | 'bot' | "plugin" | 'condition' | 'branch';
 
@@ -57,16 +56,13 @@ export const NodePortal = ({
 				e.stopPropagation();
 				e.preventDefault();
 			}}
-			style={{
-				minHeight: 120,
-			}}
 			className={cn(
 				// 基础样式
-				'transition-all duration-200 border p-2 rounded-lg w-[240px] h-auto',
+				'transition-all duration-200 border p-2 rounded-xl w-[260px] h-auto relative',
 				// 变体样式
 				variants[variant],
 				// 选中样式
-				selected && 'ring-2 ring-primary/40',
+				selected && `ring-2 ring-primary/40`,
 				// 禁用样式
 				!isConnectable && 'opacity-60 cursor-not-allowed'
 			)}>
@@ -99,8 +95,7 @@ export const NodePortal = ({
 					position={Position.Left}
 					isConnectable={isConnectable}
 					style={{
-						top: index * co + co,
-						opacity: state === 'failed' ? 0.5 : 1
+						top: "50%"
 					}}
 					className={cn(
 						state === 'completed' && 'bg-green-500',
@@ -119,8 +114,7 @@ export const NodePortal = ({
 					position={Position.Right}
 					isConnectable={isConnectable}
 					style={{
-						top: index * co + co,
-						opacity: state === 'failed' ? 0.5 : 1
+						top: "50%",
 					}}
 					className={cn(
 						state === 'completed' && 'bg-green-500',

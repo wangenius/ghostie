@@ -21,7 +21,7 @@ export type TextAreaProps = Omit<
   'onChange' | 'onValueChange'
 > & {
   onChange?: ChangeEventHandler<HTMLTextAreaElement> | undefined;
-  variant?: 'secondary' | 'ghost';
+  variant?: 'secondary' | 'ghost' | 'dust';
   footer?: ReactNode;
 };
 
@@ -102,6 +102,8 @@ export const Textarea = forwardRef<CustomTextAreaRef, TextAreaProps>(
             'bg-muted outline-none focus-visible:outline-none border-none focus-visible:ring-0',
             rest.variant === 'ghost' &&
             'p-1 m-0 text-base border-none outline-none focus:outline-none h-auto block focus:border-none bg-transparent hover:bg-transparent active:bg-transparent focus-visible:ring-offset-0 focus:bg-transparent focus-visible:outline-none focus-visible:ring-0',
+            rest.variant === 'dust' &&
+            'p-1 m-0 text-base border-none outline-none focus:outline-none h-auto block focus:border-none bg-foreground/5 hover:bg-foreground/10 active:bg-foreground/10 focus-visible:ring-offset-0 focus:bg-foreground/10 focus-visible:outline-none focus-visible:ring-0',
             className
           )}
           style={{
