@@ -7,7 +7,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import { ModelManager } from "@/model/ModelManager";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -19,8 +18,9 @@ import { NodePortal } from "./NodePortal";
 export const ChatNode = (props: NodeProps<ChatNodeConfig>) => {
   const models = ModelManager.use();
   const [system, setSystem] = useState(props.data.system);
-
-  const st = EditorWorkflow.use((s) => s.nodeStates[props.id]);
+  const [user, setUser] = useState(props.data.user);
+  const workflow = EditorWorkflow.use();
+  const st = workflow.nodeStates[props.id];
 
   return (
     <NodePortal
@@ -30,6 +30,7 @@ export const ChatNode = (props: NodeProps<ChatNodeConfig>) => {
       variant="chat"
       title="对话"
       state={st.status}
+      outputs={st.outputs}
     >
       <motion.div
         className="flex flex-col gap-3 p-1"
@@ -81,6 +82,7 @@ export const ChatNode = (props: NodeProps<ChatNodeConfig>) => {
             variant="dust"
             className="text-xs min-h-[80px] transition-colors resize-none p-2"
             value={system}
+            data-id={`${props.id}-system`}
             onChange={(e) => {
               setSystem(e.target.value);
               EditorWorkflow.set((s) => ({
@@ -100,29 +102,38 @@ export const ChatNode = (props: NodeProps<ChatNodeConfig>) => {
                 },
               }));
             }}
-            placeholder="输入系统提示词..."
+            placeholder="输入系统提示词，可以从其他节点复制输入参数..."
+          />
+
+          <Label className="text-xs font-medium text-gray-600 mt-3">
+            用户提示词
+          </Label>
+          <Textarea
+            variant="dust"
+            className="text-xs min-h-[80px] transition-colors resize-none p-2"
+            value={user}
+            onChange={(e) => {
+              setUser(e.target.value);
+              EditorWorkflow.set((s) => ({
+                ...s,
+                data: {
+                  ...s.data,
+                  nodes: {
+                    ...s.data.nodes,
+                    [props.id]: {
+                      ...s.data.nodes[props.id],
+                      data: {
+                        ...s.data.nodes[props.id].data,
+                        user: e.target.value,
+                      },
+                    },
+                  },
+                },
+              }));
+            }}
+            placeholder="输入用户提示词，可以从其他节点复制输入参数..."
           />
         </div>
-
-        {/* 执行结果 */}
-        {(st.status === "completed" || st.status === "failed") && (
-          <div
-            className={cn(
-              "text-xs p-2 rounded border",
-              st.status === "completed"
-                ? "bg-green-50 border-green-200"
-                : "bg-red-50 border-red-200",
-            )}
-          >
-            {st.status === "completed" ? (
-              <div className="font-medium text-green-700">
-                {st.outputs.result}
-              </div>
-            ) : (
-              <div className="font-medium text-red-700">{st.error}</div>
-            )}
-          </div>
-        )}
       </motion.div>
     </NodePortal>
   );

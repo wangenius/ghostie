@@ -1,5 +1,5 @@
 import { BotProps } from "@/common/types/bot";
-import { PluginsStore } from "@/plugin/PluginsTab";
+import { PluginManager } from "@/plugin/PluginManager";
 import { Echo } from "echo-state";
 import { Context } from "./Context";
 import { ChatModel } from "../model/ChatModel";
@@ -46,7 +46,7 @@ export class Bot {
     const model = ModelManager.get(config.model);
 
     // 解析工具字符串，格式为 "tool_name@plugin_name"
-    const tools: ToolProps[] = Object.values(PluginsStore.current)
+    const tools: ToolProps[] = Object.values(PluginManager.current)
       .flatMap((plugin) =>
         plugin.tools.map((tool) => ({
           ...tool,
@@ -54,7 +54,7 @@ export class Bot {
           // 添加完整名称，用于匹配
           name: `${tool.name}${TOOL_NAME_SPLIT}${plugin.id}`,
           pluginName: plugin.name,
-        }))
+        })),
       )
       .filter((tool) => {
         return config.tools.includes(tool.name);
@@ -118,7 +118,7 @@ export class Bot {
             user: "user:hidden",
             assistant: "assistant:reply",
             function: "function:result",
-          }
+          },
         );
       }
 

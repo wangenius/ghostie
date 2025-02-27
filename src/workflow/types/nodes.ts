@@ -80,6 +80,8 @@ export interface BaseNodeConfig {
   inputs: Record<string, any>;
   /* 基础节点输出 */
   outputs: Record<string, any>;
+  /* 基础节点参数 */
+  args?: Record<string, any>;
 }
 
 export interface StartNodeConfig extends BaseNodeConfig {
@@ -102,7 +104,7 @@ export interface ChatNodeConfig extends BaseNodeConfig {
 export interface BotNodeConfig extends BaseNodeConfig {
   type: "bot";
   bot: string;
-  input?: string;
+  prompt: string;
 }
 
 export interface PluginNodeConfig extends BaseNodeConfig {

@@ -10,11 +10,14 @@ import {
   NodeResult,
   WorkflowNode,
   WorkflowProps,
+  PluginNodeConfig,
 } from "./types/nodes";
 import { WorkflowManager } from "./WorkflowManager";
 import { Echo } from "echo-state";
 import { WorkflowEdge } from "./types/edges";
 import { gen } from "@/utils/generator";
+import { PluginManager } from "@/plugin/PluginManager";
+import { cmd } from "@/utils/shell";
 
 interface NodeState {
   inputs: Record<string, any>;
@@ -250,13 +253,41 @@ export class Workflow {
 
   private initNodeStates() {
     Object.values(this.state.current.data!.nodes).forEach((node) => {
+      let initialOutputs = {};
+
+      // 根据节点类型初始化默认输出结构
+      switch (node.type) {
+        case "start":
+          // start节点的输出就是它的inputs
+          initialOutputs = node.data.inputs || {};
+          break;
+        case "chat":
+          // chat节点的输出包含result字段
+          initialOutputs = { result: null };
+          break;
+        case "bot":
+          // bot节点的输出结构
+          initialOutputs = { result: null };
+          break;
+        case "branch":
+          // branch节点的输出是选中的条件
+          initialOutputs = { selectedCondition: null };
+          break;
+        case "end":
+          // end节点的输出是所有输入的汇总
+          initialOutputs = {};
+          break;
+        default:
+          initialOutputs = {};
+      }
+
       this.state.set((state) => ({
         ...state,
         nodeStates: {
           ...state.nodeStates,
           [node.id]: {
             inputs: {},
-            outputs: {},
+            outputs: initialOutputs,
             status: "pending",
           },
         },
@@ -278,7 +309,15 @@ export class Workflow {
       ...state,
       nodeStates: {
         ...state.nodeStates,
-        [nodeId]: { ...currentState, ...update },
+        [nodeId]: {
+          ...currentState,
+          ...update,
+          // 保持现有的outputs结构，只更新提供的字段
+          outputs: {
+            ...currentState.outputs,
+            ...(update.outputs || {}),
+          },
+        },
       },
     }));
   }
@@ -357,6 +396,22 @@ export class Workflow {
 
       let result: NodeResult;
 
+      // 解析包含输入参数引用的文本
+      const parseInputReferences = (
+        text: string,
+        inputs: Record<string, any>,
+      ) => {
+        return text.replace(
+          /\{\{inputs\.([^.]+)\.([^}]+)\}\}/g,
+          (match, nodeId, key) => {
+            const nodeInputs = inputs[nodeId];
+            if (!nodeInputs) return match;
+            const value = nodeInputs[key];
+            return value !== undefined ? String(value) : match;
+          },
+        );
+      };
+
       switch (node.type) {
         case "start":
           result = {
@@ -374,9 +429,12 @@ export class Workflow {
 
         case "chat":
           const chatConfig = node.data as ChatNodeConfig;
+          // 解析系统提示词中的输入参数引用
+          const parsedSystem = parseInputReferences(chatConfig.system, inputs);
+          const parsedUser = parseInputReferences(chatConfig.user, inputs);
           const res = await new ChatModel(ModelManager.get(chatConfig.model))
-            .system(chatConfig.system)
-            .stream(JSON.stringify(inputs));
+            .system(parsedSystem)
+            .stream(parsedUser);
           result = {
             success: true,
             data: {
@@ -388,10 +446,42 @@ export class Workflow {
         case "bot":
           const botConfig = node.data as BotNodeConfig;
           const bot = new Bot(BotManager.get(botConfig.bot));
-          const botResult = await bot.chat(JSON.stringify(inputs));
+          // 解析提示词中的输入参数引用
+          const parsedPrompt = parseInputReferences(
+            botConfig.prompt || "",
+            inputs,
+          );
+          const botResult = await bot.chat(parsedPrompt);
           result = {
             success: true,
-            data: botResult,
+            data: {
+              result: botResult.content,
+            },
+          };
+          break;
+
+        case "plugin":
+          const pluginConfig = node.data as PluginNodeConfig;
+          const plugin = PluginManager.get(pluginConfig.plugin);
+          if (!plugin) {
+            throw new Error(`插件不存在: ${pluginConfig.plugin}`);
+          }
+          const tool = plugin.tools.find((t) => t.name === pluginConfig.tool);
+          if (!tool) {
+            throw new Error(`工具不存在: ${pluginConfig.tool}`);
+          }
+
+          // 直接使用当前编辑的脚本和依赖进行测试
+          const pluginResult = await cmd.invoke("plugin_execute", {
+            id: plugin.id,
+            tool: pluginConfig.tool,
+            args: pluginConfig.args,
+          });
+          result = {
+            success: true,
+            data: {
+              result: JSON.stringify(pluginResult),
+            },
           };
           break;
 

@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
 import { Minus } from "lucide-react";
 import { useState } from "react";
@@ -11,17 +12,19 @@ import { NodePortal } from "./NodePortal";
 
 export const StartNode = (props: NodeProps<StartNodeConfig>) => {
   const workflow = EditorWorkflow.use();
+
   const [composingValues, setComposingValues] = useState<
-    Record<string, string>
+    Record<string, { key: string; value: string }>
   >({});
 
   // 确保 inputs 存在
   const inputs = props.data.inputs || {};
 
   const addInput = () => {
+    const newKey = `input${Object.keys(inputs).length + 1}`;
     const newInputs = {
       ...inputs,
-      [`input${Object.keys(inputs).length + 1}`]: "",
+      [newKey]: "",
     };
     EditorWorkflow.set((s) => ({
       ...s,
@@ -62,9 +65,12 @@ export const StartNode = (props: NodeProps<StartNodeConfig>) => {
     }));
   };
 
-  const updateInput = (key: string, value: string) => {
+  const updateInput = (oldKey: string, newKey: string, value: string) => {
     const newInputs = { ...inputs };
-    newInputs[key] = value;
+    if (oldKey !== newKey) {
+      delete newInputs[oldKey];
+    }
+    newInputs[newKey] = value;
     EditorWorkflow.set((s) => ({
       ...s,
       data: {
@@ -83,20 +89,36 @@ export const StartNode = (props: NodeProps<StartNodeConfig>) => {
     }));
   };
 
-  const handleCompositionStart = (key: string, value: string) => {
+  const handleCompositionStart = (
+    key: string,
+    type: "key" | "value",
+    content: string,
+  ) => {
     setComposingValues((prev) => ({
       ...prev,
-      [key]: value,
+      [key]: {
+        ...prev[key],
+        [type]: content,
+      },
     }));
   };
 
-  const handleCompositionEnd = (key: string, value: string) => {
+  const handleCompositionEnd = (
+    oldKey: string,
+    type: "key" | "value",
+    content: string,
+  ) => {
     setComposingValues((prev) => {
       const newValues = { ...prev };
-      delete newValues[key];
+      delete newValues[oldKey];
       return newValues;
     });
-    updateInput(key, value);
+
+    if (type === "key") {
+      updateInput(oldKey, content, inputs[oldKey]);
+    } else {
+      updateInput(oldKey, oldKey, content);
+    }
   };
 
   return (
@@ -114,32 +136,61 @@ export const StartNode = (props: NodeProps<StartNodeConfig>) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <div className="flex flex-col gap-2">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-gray-600">输入参数</Label>
           <div className="flex flex-col gap-2">
             {Object.entries(inputs).map(([key, value]) => (
               <div key={key} className="flex items-center gap-2">
                 <Input
                   placeholder="参数名称"
-                  value={composingValues[key] ?? value}
+                  value={(composingValues[key]?.key ?? key) || ""}
+                  onChange={(e) => {
+                    const newKey = e.target.value;
+                    setComposingValues((prev) => ({
+                      ...prev,
+                      [key]: { ...prev[key], key: newKey },
+                    }));
+                  }}
+                  onCompositionStart={(e) =>
+                    handleCompositionStart(key, "key", e.currentTarget.value)
+                  }
+                  onCompositionEnd={(e) =>
+                    handleCompositionEnd(key, "key", e.currentTarget.value)
+                  }
+                  onBlur={(e) => {
+                    const newKey = e.target.value;
+                    if (newKey && newKey !== key) {
+                      updateInput(key, newKey, inputs[key]);
+                    }
+                  }}
+                  className="flex-1 h-8 text-xs transition-colors"
+                />
+                <Input
+                  placeholder="参数值"
+                  value={(composingValues[key]?.value ?? value) || ""}
                   onChange={(e) => {
                     const newValue = e.target.value;
                     setComposingValues((prev) => ({
                       ...prev,
-                      [key]: newValue,
+                      [key]: { ...prev[key], value: newValue },
                     }));
                   }}
                   onCompositionStart={(e) =>
-                    handleCompositionStart(key, e.currentTarget.value)
+                    handleCompositionStart(key, "value", e.currentTarget.value)
                   }
                   onCompositionEnd={(e) =>
-                    handleCompositionEnd(key, e.currentTarget.value)
+                    handleCompositionEnd(key, "value", e.currentTarget.value)
                   }
-                  className="flex-1"
+                  onBlur={(e) => {
+                    const newValue = e.target.value;
+                    updateInput(key, key, newValue);
+                  }}
+                  className="flex-1 h-8 text-xs transition-colors"
                 />
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9"
+                  className="h-8 w-8"
                   onClick={() => removeInput(key)}
                 >
                   <Minus className="h-4 w-4" />
@@ -148,7 +199,12 @@ export const StartNode = (props: NodeProps<StartNodeConfig>) => {
             ))}
           </div>
 
-          <Button variant="outline" size="sm" onClick={addInput}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={addInput}
+            className="w-full"
+          >
             <TbPlus className="h-4 w-4 mr-1" />
             添加输入参数
           </Button>
