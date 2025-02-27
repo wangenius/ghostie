@@ -11,6 +11,7 @@ import {
   WorkflowNode,
   WorkflowProps,
   PluginNodeConfig,
+  FilterNodeConfig,
 } from "./types/nodes";
 import { WorkflowManager } from "./WorkflowManager";
 import { Echo } from "echo-state";
@@ -278,7 +279,7 @@ export class Workflow {
           initialOutputs = {};
           break;
         default:
-          initialOutputs = {};
+          initialOutputs = { result: null };
       }
 
       this.state.set((state) => ({
@@ -499,6 +500,43 @@ export class Workflow {
           result = {
             success: true,
             data: matchedCondition || branchConfig.conditions[0],
+          };
+          break;
+
+        case "filter":
+          const filterConfig = node.data as FilterNodeConfig;
+          console.log(inputs);
+          const inputData = Object.values(inputs)[0]?.result;
+
+          if (!inputData || !Array.isArray(inputData)) {
+            throw new Error("过滤节点的输入数据必须是数组");
+          }
+
+          const filteredData = inputData.map((item) => {
+            const filtered: Record<string, any> = {};
+            filterConfig.filter.fields.forEach((field) => {
+              if (field.includes(".")) {
+                // 处理嵌套字段
+                const parts = field.split(".");
+                let value = item;
+                for (const part of parts) {
+                  value = value?.[part];
+                }
+                if (value !== undefined) {
+                  filtered[field] = value;
+                }
+              } else if (item[field] !== undefined) {
+                filtered[field] = item[field];
+              }
+            });
+            return filtered;
+          });
+
+          result = {
+            success: true,
+            data: {
+              result: filteredData,
+            },
           };
           break;
 

@@ -68,7 +68,14 @@ export interface NodeResult {
   error?: string;
 }
 /* 节点类型 */
-export type NodeType = "start" | "end" | "chat" | "bot" | "plugin" | "branch";
+export type NodeType =
+  | "start"
+  | "end"
+  | "chat"
+  | "bot"
+  | "plugin"
+  | "branch"
+  | "filter";
 
 /* 基础节点配置 */
 export interface BaseNodeConfig {
@@ -122,10 +129,24 @@ export interface BranchNodeConfig extends BaseNodeConfig {
   }>;
 }
 
+export interface FilterNodeConfig extends BaseNodeConfig {
+  type: "filter";
+  filter: {
+    fields: string[]; // 要选择的字段
+    conditions?: {
+      // 可选的过滤条件
+      field: string;
+      operator: "equals" | "contains" | "greater" | "less";
+      value: string;
+    }[];
+  };
+}
+
 export type NodeConfig =
   | StartNodeConfig
   | EndNodeConfig
   | ChatNodeConfig
   | BotNodeConfig
   | PluginNodeConfig
-  | BranchNodeConfig;
+  | BranchNodeConfig
+  | FilterNodeConfig;

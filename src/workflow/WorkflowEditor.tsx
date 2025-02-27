@@ -8,6 +8,7 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {
   TbArrowsSplit,
   TbCheck,
+  TbFilter,
   TbFlag,
   TbMessage,
   TbPlug,
@@ -30,9 +31,15 @@ import { BotNode } from "./nodes/BotNode";
 import { BranchNode } from "./nodes/BranchNode";
 import { ChatNode } from "./nodes/ChatNode";
 import { EndNode } from "./nodes/EndNode";
+import { FilterNode } from "./nodes/FilterNode";
 import { PluginNode } from "./nodes/PluginNode";
 import { StartNode } from "./nodes/StartNode";
-import { NodeConfig, NodeType, WorkflowNode } from "./types/nodes";
+import {
+  FilterNodeConfig,
+  NodeConfig,
+  NodeType,
+  WorkflowNode,
+} from "./types/nodes";
 import { Workflow } from "./Workflow";
 import { gen } from "@/utils/generator";
 import { Menu } from "@/components/ui/menu";
@@ -45,7 +52,8 @@ const nodeTypes = {
   bot: BotNode,
   plugin: PluginNode,
   branch: BranchNode,
-};
+  filter: FilterNode,
+} as const;
 /* 边类型 */
 const edgeTypes = {
   default: CustomEdge,
@@ -58,6 +66,7 @@ const NODE_TYPES = {
   bot: { label: "机器人", icon: TbRobot },
   plugin: { label: "插件", icon: TbPlug },
   branch: { label: "分支", icon: TbArrowsSplit },
+  filter: { label: "过滤", icon: TbFilter },
 };
 
 export const EditorWorkflow = new Workflow();
@@ -345,6 +354,15 @@ const WorkflowGraph = memo(() => {
             ...baseData,
             conditions: [],
           };
+          break;
+        case "filter":
+          nodeData = {
+            ...baseData,
+            filter: {
+              fields: [],
+              conditions: [],
+            },
+          } as FilterNodeConfig;
           break;
         default:
           nodeData = baseData;
