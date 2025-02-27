@@ -22,7 +22,7 @@ export const EndNode = (props: NodeProps<EndNodeConfig>) => {
               <div key={key} className="space-y-1">
                 <div className="text-xs text-gray-500">{key}</div>
                 {typeof value === "object" ? (
-                  <div className="font-mono text-xs bg-gray-50 p-2 rounded">
+                  <div className="font-mono text-xs bg-gray-50 p-2 rounded overflow-hidden line-clamp-6">
                     {value.result || JSON.stringify(value, null, 2)}
                   </div>
                 ) : (

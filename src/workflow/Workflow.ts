@@ -22,7 +22,7 @@ import { cmd } from "@/utils/shell";
 interface NodeState {
   inputs: Record<string, any>;
   outputs: Record<string, any>;
-  status: "pending" | "running" | "completed" | "failed";
+  status: "pending" | "running" | "completed" | "failed" | "skipped";
   error?: string;
   startTime?: string;
   endTime?: string;
@@ -341,6 +341,11 @@ export class Workflow {
       const prevState = this.getNodeState(prevId);
       const prevNode = this.current.data!.nodes[prevId];
 
+      // 跳过skipped状态的节点
+      if (prevState.status === "skipped") {
+        return;
+      }
+
       if (prevState.status === "completed") {
         // 对于分支节点的特殊处理
         if (prevNode.type === "branch") {
@@ -538,21 +543,16 @@ export class Workflow {
     try {
       console.log("开始执行工作流", this.current.data);
 
+      // 构建图结构
+      const graph = this.buildExecutionGraph();
+
       // 重置执行状态
       this.state.set((state) => ({
         ...state,
         executedNodes: new Set(),
-        nodeStates: Object.fromEntries(
-          Object.keys(state.data!.nodes).map((nodeId) => [
-            nodeId,
-            { inputs: {}, outputs: {}, status: "pending" },
-          ]),
-        ),
+        nodeStates: this.initializeNodeStates(graph),
         isExecuting: true,
       }));
-
-      // 构建图结构
-      const graph = this.buildExecutionGraph();
 
       // 从start节点开始执行
       const startNode = this.current.data!.nodes["start"];
@@ -645,6 +645,27 @@ export class Workflow {
             throw new Error(`节点不存在: ${nodeId}`);
           }
 
+          // 如果节点状态是skipped，直接处理后继节点
+          const nodeState = this.getNodeState(nodeId);
+          if (nodeState.status === "skipped") {
+            // 更新已执行节点集合
+            this.state.set((state) => ({
+              ...state,
+              executedNodes: state.executedNodes.add(nodeId),
+            }));
+
+            // 直接处理后继节点
+            adjacencyList.get(nodeId)?.forEach((nextId) => {
+              const newDegree = inDegree.get(nextId)! - 1;
+              inDegree.set(nextId, newDegree);
+
+              if (newDegree === 0) {
+                queue.push(nextId);
+              }
+            });
+            return;
+          }
+
           // 收集前置节点的输出作为当前节点的输入
           this.collectNodeInputs(nodeId, predecessors);
 
@@ -673,15 +694,24 @@ export class Workflow {
             const newDegree = inDegree.get(nextId)! - 1;
             inDegree.set(nextId, newDegree);
 
-            // 检查所有前置节点是否都已执行完成
+            // 对于 end 节点的特殊处理：只要有一个前置节点完成就更新显示
+            if (nextId === "end") {
+              const endNode = this.current.data!.nodes[nextId];
+              if (endNode) {
+                this.executeNode(endNode);
+              }
+              return;
+            }
+
+            // 检查所有前置节点是否都已执行完成或被跳过
             const allPredecessorsCompleted = Array.from(
               predecessors.get(nextId) || [],
-            ).every(
-              (predId) =>
-                this.state.current.nodeStates[predId]?.status === "completed",
-            );
+            ).every((predId) => {
+              const status = this.state.current.nodeStates[predId]?.status;
+              return status === "completed" || status === "skipped";
+            });
 
-            // 只有当入度为0且所有前置节点都执行完成时，才加入队列
+            // 只有当入度为0且所有前置节点都执行完成或被跳过时，才加入队列
             if (newDegree === 0 && allPredecessorsCompleted) {
               queue.push(nextId);
             }
@@ -718,5 +748,48 @@ export class Workflow {
       nodeStates: this.state.current.nodeStates,
       executedNodes: Array.from(this.state.current.executedNodes),
     };
+  }
+
+  // 确定节点的初始状态
+  private initializeNodeStates(graph: {
+    graph: Map<string, Set<string>>;
+    inDegree: Map<string, number>;
+    predecessors: Map<string, Set<string>>;
+  }): Record<string, NodeState> {
+    const { predecessors } = graph;
+    const nodeStates: Record<string, NodeState> = {};
+
+    // 首先标记所有节点为pending
+    Object.keys(this.current.data!.nodes).forEach((nodeId) => {
+      nodeStates[nodeId] = {
+        inputs: {},
+        outputs: {},
+        status: "pending",
+      };
+    });
+
+    // 特殊处理start节点
+    nodeStates["start"].status = "pending";
+
+    // 遍历所有节点，检查是否应该被标记为skipped
+    Object.keys(this.current.data!.nodes).forEach((nodeId) => {
+      if (nodeId === "start") return;
+
+      const prevNodes = predecessors.get(nodeId) || new Set();
+
+      // 如果节点没有前置节点（除了start节点），或者所有前置节点都是skipped，则标记为skipped
+      if (
+        prevNodes.size === 0 ||
+        Array.from(prevNodes).every(
+          (prevId) =>
+            nodeId !== "end" && // end节点即使没有入边也不应该被skip
+            nodeStates[prevId]?.status === "skipped",
+        )
+      ) {
+        nodeStates[nodeId].status = "skipped";
+      }
+    });
+
+    return nodeStates;
   }
 }

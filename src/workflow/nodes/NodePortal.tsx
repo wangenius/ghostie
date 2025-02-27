@@ -35,7 +35,7 @@ interface BaseNodeProps extends NodeProps {
   left: number;
   right: number;
   variant?: NodeVariant;
-  state?: "idle" | "pending" | "running" | "completed" | "failed";
+  state?: "idle" | "pending" | "running" | "completed" | "failed" | "skipped";
   title?: string;
   outputs?: Record<string, any>;
 }
