@@ -1,16 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import { Minus } from "lucide-react";
+import { useState } from "react";
 import { TbPlus } from "react-icons/tb";
 import { NodeProps } from "reactflow";
 import { StartNodeConfig } from "../types/nodes";
-import { NodePortal } from "./NodePortal";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
 import { EditorWorkflow } from "../WorkflowEditor";
+import { NodePortal } from "./NodePortal";
 
 export const StartNode = (props: NodeProps<StartNodeConfig>) => {
   const workflow = EditorWorkflow.use();
+  const [composingValues, setComposingValues] = useState<
+    Record<string, string>
+  >({});
 
   // 确保 inputs 存在
   const inputs = props.data.inputs || {};
@@ -80,6 +84,22 @@ export const StartNode = (props: NodeProps<StartNodeConfig>) => {
     }));
   };
 
+  const handleCompositionStart = (key: string, value: string) => {
+    setComposingValues((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const handleCompositionEnd = (key: string, value: string) => {
+    setComposingValues((prev) => {
+      const newValues = { ...prev };
+      delete newValues[key];
+      return newValues;
+    });
+    updateInput(key, value);
+  };
+
   return (
     <NodePortal
       {...props}
@@ -95,6 +115,12 @@ export const StartNode = (props: NodeProps<StartNodeConfig>) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
+        {/* 执行状态 */}
+        {workflow.nodeStates[props.id].status === "running" && (
+          <div className="text-xs p-2 rounded border bg-blue-50 border-blue-200">
+            <div className="font-medium text-blue-700">正在执行...</div>
+          </div>
+        )}
         {/* 执行结果 */}
         {(workflow.nodeStates[props.id].status === "completed" ||
           workflow.nodeStates[props.id].status === "failed") && (
@@ -122,8 +148,20 @@ export const StartNode = (props: NodeProps<StartNodeConfig>) => {
               <div key={key} className="flex items-center gap-2">
                 <Input
                   placeholder="参数名称"
-                  value={value as string}
-                  onChange={(e) => updateInput(key, e.target.value)}
+                  value={composingValues[key] ?? value}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    setComposingValues((prev) => ({
+                      ...prev,
+                      [key]: newValue,
+                    }));
+                  }}
+                  onCompositionStart={(e) =>
+                    handleCompositionStart(key, e.currentTarget.value)
+                  }
+                  onCompositionEnd={(e) =>
+                    handleCompositionEnd(key, e.currentTarget.value)
+                  }
                   className="flex-1"
                 />
                 <Button

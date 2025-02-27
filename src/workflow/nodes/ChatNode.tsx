@@ -37,6 +37,13 @@ export const ChatNode = (props: NodeProps<ChatNodeConfig>) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
+        {/* 执行状态 */}
+        {st.status === "running" && (
+          <div className="text-xs p-2 rounded border bg-blue-50 border-blue-200">
+            <div className="font-medium text-blue-700">正在执行对话...</div>
+          </div>
+        )}
+
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-gray-600">选择模型</Label>
           <Select

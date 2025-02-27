@@ -35,6 +35,8 @@ import { StartNode } from "./nodes/StartNode";
 import { NodeConfig, NodeType, WorkflowNode } from "./types/nodes";
 import { Workflow } from "./Workflow";
 import { gen } from "@/utils/generator";
+import { Menu } from "@/components/ui/menu";
+import { AnimatePresence, motion } from "framer-motion";
 /* 节点类型 */
 const nodeTypes = {
   start: StartNode,
@@ -174,17 +176,16 @@ const WorkflowGraph = memo(() => {
   } | null>(null);
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { project } = useReactFlow();
+  const { screenToFlowPosition } = useReactFlow();
 
   const showMenu = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
 
       if (reactFlowWrapper.current) {
-        const rect = reactFlowWrapper.current.getBoundingClientRect();
-        const flowPosition = project({
-          x: event.clientX - rect.left,
-          y: event.clientY - rect.top,
+        const flowPosition = screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
         });
 
         setMenu({
@@ -194,7 +195,7 @@ const WorkflowGraph = memo(() => {
         });
       }
     },
-    [project],
+    [screenToFlowPosition],
   );
 
   const closeMenu = useCallback(() => {
@@ -362,15 +363,29 @@ const WorkflowGraph = memo(() => {
     [EditorWorkflow],
   );
   return (
-    <div ref={reactFlowWrapper} className="w-full h-full">
+    <div
+      ref={reactFlowWrapper}
+      className="w-full h-full"
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+    >
       <ReactFlow
         nodes={Object.values(workflowState.data.nodes || {})}
         edges={Object.values(workflowState.data.edges || {})}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onEdgeContextMenu={() => {}}
-        onPaneContextMenu={showMenu}
+        onEdgeContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onPaneContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          showMenu(e);
+        }}
         onDoubleClick={showMenu}
         onClick={closeMenu}
         nodeTypes={nodeTypes}
@@ -395,30 +410,40 @@ const WorkflowGraph = memo(() => {
       </ReactFlow>
 
       {menu && (
-        <div
-          className="fixed z-50 min-w-[160px] rounded-md border bg-popover p-1 shadow-md animate-in fade-in-0 zoom-in-95"
-          style={{
-            top: menu.y,
-            left: menu.x,
-          }}
-        >
-          {Object.entries(NODE_TYPES)
-            .filter(([type]) => type !== "start" && type !== "end")
-            .map(([type, content]) => (
-              <Button
-                key={type}
-                onClick={() => {
-                  if (menu.flowPosition) {
-                    addNode(type as NodeType, menu.flowPosition);
-                  }
-                  closeMenu();
-                }}
-              >
-                <content.icon className="mr-2" />
-                {content.label}
-              </Button>
-            ))}
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key="menu"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{
+              type: "spring",
+              stiffness: 500,
+              damping: 30,
+            }}
+            className="fixed z-50 min-w-[160px] flex flex-col gap-1"
+            style={{
+              top: menu.y,
+              left: menu.x,
+              transformOrigin: "top left",
+            }}
+          >
+            <Menu
+              items={Object.entries(NODE_TYPES)
+                .filter(([type]) => type !== "start" && type !== "end")
+                .map(([type, content]) => ({
+                  label: content.label,
+                  icon: content.icon,
+                  onClick: () => {
+                    if (menu.flowPosition) {
+                      addNode(type as NodeType, menu.flowPosition);
+                    }
+                    closeMenu();
+                  },
+                }))}
+            />
+          </motion.div>
+        </AnimatePresence>
       )}
     </div>
   );
@@ -428,11 +453,36 @@ const WorkflowGraph = memo(() => {
 export const WorkflowEditor = () => {
   /* 查询参数 */
   const queryId = useQuery("id");
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    if (queryId) {
-      EditorWorkflow.reset(queryId);
-    }
-  }, []);
+    const initWorkflow = async () => {
+      try {
+        setIsLoading(true);
+        // 等待一个短暂的时间，确保 WorkflowManager 已经初始化
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        if (queryId) {
+          EditorWorkflow.reset(queryId);
+        }
+      } catch (error) {
+        console.error("初始化工作流失败:", error);
+        // 如果加载失败，创建一个新的工作流
+        EditorWorkflow.reset("new");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initWorkflow();
+  }, [queryId]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">加载中...</div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-screen">
       <Header title={"编辑工作流"} />

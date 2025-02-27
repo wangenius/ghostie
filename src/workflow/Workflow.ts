@@ -66,13 +66,11 @@ const INITIAL_WORKFLOW: WorkflowProps = {
 export class Workflow {
   private state = new Echo<{
     data: WorkflowProps;
-    currentNode: WorkflowNode | undefined;
     nodeStates: Record<string, NodeState>;
     executedNodes: Set<string>;
     isExecuting: boolean;
   }>({
     data: INITIAL_WORKFLOW,
-    currentNode: undefined,
     nodeStates: {},
     executedNodes: new Set(),
     isExecuting: false,
@@ -159,7 +157,6 @@ export class Workflow {
   public addNode(node: WorkflowNode) {
     this.state.set((state) => {
       if (!state.data) return state;
-
       return {
         ...state,
         data: {
@@ -167,6 +164,14 @@ export class Workflow {
           nodes: {
             ...state.data.nodes,
             [node.id]: node,
+          },
+        },
+        nodeStates: {
+          ...state.nodeStates,
+          [node.id]: {
+            status: "pending",
+            inputs: {},
+            outputs: {},
           },
         },
       };
@@ -224,13 +229,18 @@ export class Workflow {
   }
 
   constructor(workflowId?: string) {
-    const workflow = WorkflowManager.get(workflowId || "") || {
+    const existingWorkflow = workflowId
+      ? WorkflowManager.get(workflowId)
+      : undefined;
+    const workflow = existingWorkflow || {
       ...INITIAL_WORKFLOW,
       id: gen.id(),
     };
-    if (!workflow) {
+
+    if (workflowId && !existingWorkflow) {
       throw new Error(`工作流不存在: ${workflowId}`);
     }
+
     this.state.set((state) => ({
       ...state,
       data: workflow,
@@ -273,29 +283,73 @@ export class Workflow {
     }));
   }
 
-  private getNodeInputs(node: WorkflowNode): Record<string, any> {
-    if (node.type === "start") {
-      return node.data.inputs || {};
+  private collectNodeInputs(
+    nodeId: string,
+    predecessors: Map<string, Set<string>>,
+  ): Record<string, any> {
+    const inputs: Record<string, Record<string, any>> = {};
+
+    if (nodeId === "start") {
+      return this.current.data!.nodes[nodeId].data.inputs;
     }
 
-    const inputs: Record<string, any> = {};
-    const incomingEdges = Object.values(this.state.current.data!.edges).filter(
-      (edge) => edge.target === node.id,
-    );
+    // 获取所有前置节点
+    const prevNodes = predecessors.get(nodeId) || new Set();
 
-    for (const edge of incomingEdges) {
-      const sourceState = this.getNodeState(edge.source);
-      if (sourceState.status === "completed") {
-        Object.assign(inputs, sourceState.outputs);
+    // 收集所有前置节点的输出
+    prevNodes.forEach((prevId) => {
+      // 每次都重新获取最新的节点状态
+      const prevState = this.getNodeState(prevId);
+      const prevNode = this.current.data!.nodes[prevId];
+
+      if (prevState.status === "completed") {
+        // 对于分支节点的特殊处理
+        if (prevNode.type === "branch") {
+          // 只收集满足条件的分支输出
+          const branchOutput = prevState.outputs;
+          if (
+            branchOutput &&
+            this.shouldFollowBranch(prevId, nodeId, branchOutput)
+          ) {
+            inputs[prevId] = branchOutput;
+          }
+        } else {
+          // 其他节点以节点ID为key存储输出
+          inputs[prevId] = prevState.outputs;
+        }
       }
-    }
+    });
 
     return inputs;
   }
 
+  private shouldFollowBranch(
+    branchId: string,
+    targetId: string,
+    branchOutput: any,
+  ): boolean {
+    // 每次都重新获取最新的节点数据
+    const node = this.current.data!.nodes[branchId];
+    if (!node || node.type !== "branch") return true;
+
+    const config = node.data as BranchNodeConfig;
+    const selectedCondition = branchOutput;
+
+    // 检查目标节点是否是选中的分支
+    const edge = Object.values(this.current.data!.edges).find(
+      (e) => e.source === branchId && e.target === targetId,
+    ) as WorkflowEdge & { condition?: string };
+
+    return edge?.condition === selectedCondition?.id;
+  }
+
   private async executeNode(node: WorkflowNode): Promise<NodeResult> {
     try {
-      const inputs = this.getNodeInputs(node);
+      console.log("执行节点", node);
+      // 构建图结构以获取前置节点
+      const { predecessors } = this.buildExecutionGraph();
+      const inputs = this.collectNodeInputs(node.id, predecessors);
+      console.log("节点输入", inputs);
       this.updateNodeState(node.id, {
         status: "running",
         startTime: new Date().toISOString(),
@@ -326,7 +380,9 @@ export class Workflow {
             .stream(JSON.stringify(inputs));
           result = {
             success: true,
-            data: { result: res.body },
+            data: {
+              result: res.body,
+            },
           };
           break;
 
@@ -378,78 +434,65 @@ export class Workflow {
     }
   }
 
+  deleteNode(nodeId: string) {
+    this.state.set((state) => {
+      if (!state.data) return state;
+      const { [nodeId]: __, ...remainingNodes } = state.data.nodes;
+      return {
+        ...state,
+        data: { ...state.data, nodes: remainingNodes },
+      };
+    });
+  }
   /* 执行工作流 */
   public async execute(): Promise<NodeResult> {
     try {
-      /* 获取开始节点 */
-      const startNode = this.state.current.data!.nodes["start"];
+      console.log("开始执行工作流", this.current.data);
 
+      // 重置执行状态
+      this.state.set((state) => ({
+        ...state,
+        executedNodes: new Set(),
+        nodeStates: Object.fromEntries(
+          Object.keys(state.data!.nodes).map((nodeId) => [
+            nodeId,
+            { inputs: {}, outputs: {}, status: "pending" },
+          ]),
+        ),
+        isExecuting: true,
+      }));
+
+      // 构建图结构
+      const graph = this.buildExecutionGraph();
+
+      // 从start节点开始执行
+      const startNode = this.current.data!.nodes["start"];
       if (!startNode) {
         throw new Error("工作流缺少开始节点");
       }
 
+      // 执行工作流
+      await this.executeGraph(graph);
+
+      // 获取end节点的结果
+      const endState = this.getNodeState("end");
+
       this.state.set((state) => ({
         ...state,
-        currentNode: startNode,
+        isExecuting: false,
       }));
-
-      while (this.state.current.currentNode) {
-        const result = await this.executeNode(this.state.current.currentNode);
-        if (!result.success) {
-          throw new Error(
-            `节点 ${this.state.current.currentNode.id} 执行失败: ${result.error}`,
-          );
-        }
-
-        this.state.set((state) => ({
-          ...state,
-          executedNodes: new Set(state.executedNodes).add(
-            this.state.current.currentNode!.id,
-          ),
-        }));
-
-        const outgoingEdges = Object.values(
-          this.state.current.data!.edges,
-        ).filter((edge) => edge.source === this.state.current.currentNode!.id);
-
-        if (this.state.current.currentNode!.type === "branch") {
-          const branchResult = result.data;
-          const matchedEdge = outgoingEdges.find(
-            (edge) => edge.data?.sourceHandle === branchResult?.expression,
-          );
-          this.state.set((state) => ({
-            ...state,
-            currentNode: matchedEdge
-              ? this.state.current.data!.nodes[matchedEdge.target]
-              : undefined,
-          }));
-        } else {
-          const nextEdge = outgoingEdges[0];
-          this.state.set((state) => ({
-            ...state,
-            currentNode: nextEdge
-              ? this.state.current.data!.nodes[nextEdge.target]
-              : undefined,
-          }));
-        }
-
-        if (
-          this.state.current.currentNode &&
-          this.state.current.executedNodes.has(
-            this.state.current.currentNode.id,
-          )
-        ) {
-          throw new Error(
-            `检测到循环执行: ${this.state.current.currentNode.id}`,
-          );
-        }
-      }
 
       return {
         success: true,
-        data: this.getNodeState("end").outputs,
+        data: endState.outputs,
       };
     } catch (error) {
+      this.state.set((state) => ({
+        ...state,
+        isExecuting: false,
+      }));
+
+      console.error("工作流执行错误:", error);
       return {
         success: false,
         data: null,
@@ -458,19 +501,121 @@ export class Workflow {
     }
   }
 
+  private buildExecutionGraph() {
+    const nodes = this.current.data!.nodes;
+    const edges = Object.values(this.current.data!.edges);
+
+    // 构建邻接表
+    const graph = new Map<string, Set<string>>();
+    // 构建入度表
+    const inDegree = new Map<string, number>();
+    // 构建前置节点表
+    const predecessors = new Map<string, Set<string>>();
+
+    // 初始化图结构
+    Object.keys(nodes).forEach((nodeId) => {
+      graph.set(nodeId, new Set());
+      inDegree.set(nodeId, 0);
+      predecessors.set(nodeId, new Set());
+    });
+
+    // 建立连接关系
+    edges.forEach((edge) => {
+      graph.get(edge.source)?.add(edge.target);
+      inDegree.set(edge.target, (inDegree.get(edge.target) || 0) + 1);
+      predecessors.get(edge.target)?.add(edge.source);
+    });
+
+    return {
+      graph,
+      inDegree,
+      predecessors,
+    };
+  }
+
+  private async executeGraph(graph: {
+    graph: Map<string, Set<string>>;
+    inDegree: Map<string, number>;
+    predecessors: Map<string, Set<string>>;
+  }) {
+    const { graph: adjacencyList, inDegree, predecessors } = graph;
+
+    // 获取入度为0的节点作为起始节点
+    const queue: string[] = [];
+    inDegree.forEach((degree, nodeId) => {
+      if (degree === 0) queue.push(nodeId);
+    });
+
+    while (queue.length > 0) {
+      const currentBatch = [...queue];
+      queue.length = 0;
+
+      // 并行执行当前批次的节点
+      await Promise.all(
+        currentBatch.map(async (nodeId) => {
+          // 每次都重新获取最新的节点数据
+          const node = this.current.data!.nodes[nodeId];
+          if (!node) {
+            throw new Error(`节点不存在: ${nodeId}`);
+          }
+
+          // 收集前置节点的输出作为当前节点的输入
+          const inputs = this.collectNodeInputs(nodeId, predecessors);
+
+          // 执行节点
+          const result = await this.executeNode(node);
+
+          if (!result.success) {
+            throw new Error(`节点 ${nodeId} 执行失败: ${result.error}`);
+          }
+
+          // 更新节点状态
+          this.updateNodeState(nodeId, {
+            status: "completed",
+            outputs: result.data,
+            endTime: new Date().toISOString(),
+          });
+
+          // 更新已执行节点集合
+          this.state.set((state) => ({
+            ...state,
+            executedNodes: state.executedNodes.add(nodeId),
+          }));
+
+          // 更新后继节点的入度
+          adjacencyList.get(nodeId)?.forEach((nextId) => {
+            const newDegree = inDegree.get(nextId)! - 1;
+            inDegree.set(nextId, newDegree);
+
+            // 如果后继节点的入度为0，加入队列
+            if (newDegree === 0) {
+              queue.push(nextId);
+            }
+          });
+        }),
+      );
+    }
+  }
+
   reset(id?: string) {
     console.log(id);
-    const workflow = WorkflowManager.get(id || "") || {
-      ...INITIAL_WORKFLOW,
-      id: gen.id(),
-    };
+    const workflow =
+      id === "new"
+        ? {
+            ...INITIAL_WORKFLOW,
+            id: gen.id(),
+          }
+        : WorkflowManager.get(id || "");
+
     if (!workflow) {
       throw new Error(`工作流不存在: ${id}`);
     }
+
     this.state.set((state) => ({
       ...state,
       data: workflow,
     }));
+
     this.initNodeStates();
   }
 
@@ -478,7 +623,6 @@ export class Workflow {
     return {
       nodeStates: this.state.current.nodeStates,
       executedNodes: Array.from(this.state.current.executedNodes),
-      currentNode: this.state.current.currentNode,
     };
   }
 }
