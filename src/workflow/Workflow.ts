@@ -483,10 +483,11 @@ export class Workflow {
             tool: pluginConfig.tool,
             args: pluginConfig.args,
           });
+          console.log(pluginResult);
           result = {
             success: true,
             data: {
-              result: JSON.stringify(pluginResult),
+              result: pluginResult,
             },
           };
           break;
@@ -512,24 +513,111 @@ export class Workflow {
             throw new Error("过滤节点的输入数据必须是数组");
           }
 
-          const filteredData = inputData.map((item) => {
-            const filtered: Record<string, any> = {};
-            filterConfig.filter.fields.forEach((field) => {
-              if (field.includes(".")) {
-                // 处理嵌套字段
-                const parts = field.split(".");
-                let value = item;
-                for (const part of parts) {
-                  value = value?.[part];
+          const evaluateCondition = (condition: any, item: any): boolean => {
+            const { field, operator, value, dataType } = condition;
+            let itemValue = item[field];
+
+            // 处理嵌套字段
+            if (field.includes(".")) {
+              const parts = field.split(".");
+              itemValue = parts.reduce(
+                (obj: Record<string, any>, part: string) => obj?.[part],
+                item,
+              );
+            }
+
+            // 如果字段不存在
+            if (itemValue === undefined) {
+              return operator === "notExists";
+            }
+
+            // 根据数据类型转换值
+            let typedValue: any;
+            let typedItemValue: any;
+
+            switch (dataType) {
+              case "number":
+                typedValue = Number(value);
+                typedItemValue = Number(itemValue);
+                break;
+              case "boolean":
+                typedValue = value.toLowerCase() === "true";
+                typedItemValue = Boolean(itemValue);
+                break;
+              case "date":
+                typedValue = new Date(value);
+                typedItemValue = new Date(itemValue);
+                break;
+              default:
+                typedValue = String(value);
+                typedItemValue = String(itemValue);
+            }
+
+            switch (operator) {
+              case "equals":
+                return typedItemValue === typedValue;
+              case "notEquals":
+                return typedItemValue !== typedValue;
+              case "contains":
+                return String(typedItemValue).includes(String(typedValue));
+              case "notContains":
+                return !String(typedItemValue).includes(String(typedValue));
+              case "startsWith":
+                return String(typedItemValue).startsWith(String(typedValue));
+              case "endsWith":
+                return String(typedItemValue).endsWith(String(typedValue));
+              case "greaterThan":
+                return typedItemValue > typedValue;
+              case "lessThan":
+                return typedItemValue < typedValue;
+              case "greaterThanOrEqual":
+                return typedItemValue >= typedValue;
+              case "lessThanOrEqual":
+                return typedItemValue <= typedValue;
+              case "matches":
+                try {
+                  const regex = new RegExp(value);
+                  return regex.test(String(typedItemValue));
+                } catch {
+                  return false;
                 }
-                if (value !== undefined) {
-                  filtered[field] = value;
-                }
-              } else if (item[field] !== undefined) {
-                filtered[field] = item[field];
+              case "in":
+                const valueList = value.split(",").map((v: string) => v.trim());
+                return valueList.includes(String(typedItemValue));
+              case "notIn":
+                const excludeList = value
+                  .split(",")
+                  .map((v: string) => v.trim());
+                return !excludeList.includes(String(typedItemValue));
+              case "exists":
+                return itemValue !== undefined;
+              case "notExists":
+                return itemValue === undefined;
+              default:
+                return false;
+            }
+          };
+
+          const evaluateGroup = (group: any, item: any): boolean => {
+            if (!group.conditions || group.conditions.length === 0) {
+              return true;
+            }
+
+            const results = group.conditions.map((condition: any) => {
+              if ("operator" in condition) {
+                return evaluateCondition(condition, item);
+              } else {
+                return evaluateGroup(condition, item);
               }
             });
-            return filtered;
+
+            return group.type === "AND"
+              ? results.every(Boolean)
+              : results.some(Boolean);
+          };
+
+          const filteredData = inputData.filter((item) => {
+            return evaluateGroup(filterConfig.filter.group, item);
           });
 
           result = {

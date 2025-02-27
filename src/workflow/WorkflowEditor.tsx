@@ -359,8 +359,12 @@ const WorkflowGraph = memo(() => {
           nodeData = {
             ...baseData,
             filter: {
-              fields: [],
-              conditions: [],
+              group: {
+                conditions: [],
+                id: gen.id(),
+                type: "AND",
+                isEnabled: true,
+              },
             },
           } as FilterNodeConfig;
           break;

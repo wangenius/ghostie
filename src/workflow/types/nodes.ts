@@ -132,13 +132,48 @@ export interface BranchNodeConfig extends BaseNodeConfig {
 export interface FilterNodeConfig extends BaseNodeConfig {
   type: "filter";
   filter: {
-    fields: string[]; // 要选择的字段
-    conditions?: {
-      // 可选的过滤条件
-      field: string;
-      operator: "equals" | "contains" | "greater" | "less";
-      value: string;
-    }[];
+    group: {
+      id: string;
+      type: "AND" | "OR";
+      conditions: Array<
+        | {
+            id: string;
+            field: string;
+            operator:
+              | "equals"
+              | "notEquals"
+              | "contains"
+              | "notContains"
+              | "startsWith"
+              | "endsWith"
+              | "greaterThan"
+              | "lessThan"
+              | "greaterThanOrEqual"
+              | "lessThanOrEqual"
+              | "matches"
+              | "in"
+              | "notIn"
+              | "exists"
+              | "notExists";
+            value: string;
+            dataType:
+              | "string"
+              | "number"
+              | "boolean"
+              | "date"
+              | "array"
+              | "object";
+            isEnabled: boolean;
+          }
+        | {
+            id: string;
+            type: "AND" | "OR";
+            conditions: any[];
+            isEnabled: boolean;
+          }
+      >;
+      isEnabled: boolean;
+    };
   };
 }
 

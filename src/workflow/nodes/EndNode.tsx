@@ -4,6 +4,7 @@ import { NodeProps } from "reactflow";
 import { EndNodeConfig } from "../types/nodes";
 import { EditorWorkflow } from "../WorkflowEditor";
 import { NodePortal } from "./NodePortal";
+import JsonViewer from "@/components/custom/JsonViewer";
 
 export const EndNode = (props: NodeProps<EndNodeConfig>) => {
   const st = EditorWorkflow.use((s) => s.nodeStates[props.id]);
@@ -19,14 +20,12 @@ export const EndNode = (props: NodeProps<EndNodeConfig>) => {
         {st.status === "completed" && (
           <div className="space-y-2">
             {Object.entries(st.outputs).map(([key, value]) => (
-              <div key={key} className="space-y-1">
-                <div className="text-xs text-gray-500">{key}</div>
+              <div key={key} className="space-y-1 overflow-auto">
+                <div className="text-xs font-medium text-gray-400">{key}</div>
                 {typeof value === "object" ? (
-                  <div className="font-mono text-xs bg-gray-50 p-2 rounded overflow-hidden line-clamp-6">
-                    {value.result || JSON.stringify(value, null, 2)}
-                  </div>
+                  <JsonViewer data={value.result} />
                 ) : (
-                  <div className="text-sm">{value}</div>
+                  <div className="text-sm text-gray-300">{value}</div>
                 )}
               </div>
             ))}
