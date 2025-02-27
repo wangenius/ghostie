@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Minus } from "lucide-react";
 import { useState } from "react";
@@ -115,33 +114,6 @@ export const StartNode = (props: NodeProps<StartNodeConfig>) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        {/* 执行状态 */}
-        {workflow.nodeStates[props.id].status === "running" && (
-          <div className="text-xs p-2 rounded border bg-blue-50 border-blue-200">
-            <div className="font-medium text-blue-700">正在执行...</div>
-          </div>
-        )}
-        {/* 执行结果 */}
-        {(workflow.nodeStates[props.id].status === "completed" ||
-          workflow.nodeStates[props.id].status === "failed") && (
-          <div
-            className={cn(
-              "text-xs p-2 rounded border",
-              workflow.nodeStates[props.id].status === "completed"
-                ? "bg-green-50 border-green-200"
-                : "bg-red-50 border-red-200",
-            )}
-          >
-            {workflow.nodeStates[props.id].status === "completed" ? (
-              <div className="font-medium text-green-700">开始执行</div>
-            ) : (
-              <div className="font-medium text-red-700">
-                {workflow.nodeStates[props.id].error}
-              </div>
-            )}
-          </div>
-        )}
-
         <div className="flex flex-col gap-2">
           <div className="flex flex-col gap-2">
             {Object.entries(inputs).map(([key, value]) => (

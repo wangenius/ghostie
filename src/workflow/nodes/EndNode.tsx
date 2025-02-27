@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { NodeProps } from "reactflow";
 import { EndNodeConfig } from "../types/nodes";
-import { NodePortal } from "./NodePortal";
 import { EditorWorkflow } from "../WorkflowEditor";
+import { NodePortal } from "./NodePortal";
 
 export const EndNode = (props: NodeProps<EndNodeConfig>) => {
   const st = EditorWorkflow.use((s) => s.nodeStates[props.id]);
@@ -17,16 +17,9 @@ export const EndNode = (props: NodeProps<EndNodeConfig>) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        {/* 执行状态 */}
-        {st.status === "running" && (
-          <div className="text-xs p-2 rounded border bg-blue-50 border-blue-200">
-            <div className="font-medium text-blue-700">正在完成工作流...</div>
-          </div>
-        )}
         {/* 执行结果 */}
         {st.status === "completed" && (
           <div className="font-medium text-green-700">
-            执行完成
             <pre className="mt-2 p-2 bg-gray-50 rounded text-xs overflow-auto">
               {JSON.stringify(st.outputs, null, 2)}
             </pre>

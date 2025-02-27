@@ -539,11 +539,8 @@ export class Workflow {
   }) {
     const { graph: adjacencyList, inDegree, predecessors } = graph;
 
-    // 获取入度为0的节点作为起始节点
-    const queue: string[] = [];
-    inDegree.forEach((degree, nodeId) => {
-      if (degree === 0) queue.push(nodeId);
-    });
+    // 只从start节点开始执行
+    const queue: string[] = ["start"];
 
     while (queue.length > 0) {
       const currentBatch = [...queue];
@@ -581,13 +578,21 @@ export class Workflow {
             executedNodes: state.executedNodes.add(nodeId),
           }));
 
-          // 更新后继节点的入度
+          // 更新后继节点的入度，并检查是否可以执行
           adjacencyList.get(nodeId)?.forEach((nextId) => {
             const newDegree = inDegree.get(nextId)! - 1;
             inDegree.set(nextId, newDegree);
 
-            // 如果后继节点的入度为0，加入队列
-            if (newDegree === 0) {
+            // 检查所有前置节点是否都已执行完成
+            const allPredecessorsCompleted = Array.from(
+              predecessors.get(nextId) || [],
+            ).every(
+              (predId) =>
+                this.state.current.nodeStates[predId]?.status === "completed",
+            );
+
+            // 只有当入度为0且所有前置节点都执行完成时，才加入队列
+            if (newDegree === 0 && allPredecessorsCompleted) {
               queue.push(nextId);
             }
           });

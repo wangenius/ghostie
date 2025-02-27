@@ -1,9 +1,10 @@
-import { cn } from "@/lib/utils";
-import React, { useEffect } from "react";
-import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
-import CustomHandle from "../components/CustomHandle";
 import { context } from "@/components/custom/ContextMenu";
 import { Menu } from "@/components/ui/menu";
+import { cn } from "@/lib/utils";
+import React, { useEffect } from "react";
+import { TbCheck, TbLoader2 } from "react-icons/tb";
+import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
+import CustomHandle from "../components/CustomHandle";
 import { EditorWorkflow } from "../WorkflowEditor";
 
 type NodeVariant =
@@ -98,8 +99,12 @@ export const NodePortal = ({
         {header && <div className="text-sm font-medium">{header}</div>}
         {state === "running" && (
           <div className="flex items-center gap-1">
-            <div className="animate-pulse w-2 h-2 rounded-full bg-blue-500" />
-            <span className="text-xs text-blue-500">运行中</span>
+            <TbLoader2 className="animate-spin rounded-full text-blue-500" />
+          </div>
+        )}
+        {state === "completed" && (
+          <div className="flex items-center gap-1">
+            <TbCheck className="rounded-full text-green-500" />
           </div>
         )}
       </div>
