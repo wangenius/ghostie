@@ -332,7 +332,6 @@ export class Workflow {
     const node = this.current.data!.nodes[branchId];
     if (!node || node.type !== "branch") return true;
 
-    const config = node.data as BranchNodeConfig;
     const selectedCondition = branchOutput;
 
     // 检查目标节点是否是选中的分支
@@ -560,7 +559,7 @@ export class Workflow {
           }
 
           // 收集前置节点的输出作为当前节点的输入
-          const inputs = this.collectNodeInputs(nodeId, predecessors);
+          this.collectNodeInputs(nodeId, predecessors);
 
           // 执行节点
           const result = await this.executeNode(node);
