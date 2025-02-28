@@ -1,25 +1,23 @@
-import { context } from "@/components/custom/ContextMenu";
-import { Menu } from "@/components/ui/menu";
-import { cn } from "@/lib/utils";
-import React, { useEffect } from "react";
-import { TbCheck, TbLoader2, TbX, TbCopy } from "react-icons/tb";
-import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
-import CustomHandle from "../components/CustomHandle";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
+import React, { useEffect } from "react";
+import { TbCheck, TbCopy, TbDots, TbLoader2, TbX } from "react-icons/tb";
+import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
 import { toast } from "sonner";
+import CustomHandle from "../components/CustomHandle";
 import { useEditorWorkflow } from "../context/EditorContext";
 
 type NodeVariant =
@@ -96,29 +94,9 @@ export const NodePortal = ({
         e.stopPropagation();
         e.preventDefault();
       }}
-      onContextMenu={(e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        context({
-          event: e,
-          content: (close) => (
-            <Menu
-              items={[
-                {
-                  label: "删除",
-                  onClick: () => {
-                    workflow.deleteNode(id);
-                    close();
-                  },
-                },
-              ]}
-            />
-          ),
-        });
-      }}
       className={cn(
         // 基础样式
-        "transition-all duration-200 border p-2 rounded-xl w-[260px] h-auto relative z-10",
+        "transition-all duration-200 border p-2 rounded-xl w-[260px] h-auto relative",
         // 变体样式
         variants[variant],
         // 选中样式
@@ -168,41 +146,54 @@ export const NodePortal = ({
               <TbLoader2 className="animate-spin rounded-full text-blue-500" />
             </div>
           )}
+          {state === "completed" && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <div className="flex items-center gap-1 cursor-pointer hover:opacity-80">
+                  <TbCheck className="rounded-full text-green-500" />
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" align="end">
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">执行结果</div>
+                  <div className="text-sm bg-green-50 border border-green-200 rounded p-2">
+                    {outputs?.result}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+          {state === "failed" && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <div className="flex items-center gap-1 cursor-pointer hover:opacity-80">
+                  <TbX className="rounded-full text-red-500" />
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" align="end">
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">错误信息</div>
+                  <div className="text-sm bg-red-50 border border-red-200 rounded p-2 text-red-600">
+                    {outputs?.error}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <TbDots className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => workflow.deleteNode(id)}>
+                <TbX className="h-4 w-4" />
+                删除
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        {state === "completed" && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <div className="flex items-center gap-1 cursor-pointer hover:opacity-80">
-                <TbCheck className="rounded-full text-green-500" />
-              </div>
-            </PopoverTrigger>
-            <PopoverContent className="w-80" align="end">
-              <div className="space-y-2">
-                <div className="text-sm font-medium">执行结果</div>
-                <div className="text-sm bg-green-50 border border-green-200 rounded p-2">
-                  {outputs?.result}
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-        )}
-        {state === "failed" && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <div className="flex items-center gap-1 cursor-pointer hover:opacity-80">
-                <TbX className="rounded-full text-red-500" />
-              </div>
-            </PopoverTrigger>
-            <PopoverContent className="w-80" align="end">
-              <div className="space-y-2">
-                <div className="text-sm font-medium">错误信息</div>
-                <div className="text-sm bg-red-50 border border-red-200 rounded p-2 text-red-600">
-                  {outputs?.error}
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-        )}
       </div>
 
       {/* 内容区域 */}

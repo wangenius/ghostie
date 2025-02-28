@@ -325,34 +325,36 @@ export class Workflow {
     });
   }
 
+  /** 初始化工作流 */
   constructor(workflowId?: string) {
     this.init(workflowId);
   }
 
+  /** 初始化工作流 */
   public async init(workflowId?: string): Promise<Workflow> {
-    const existingWorkflow = workflowId
+    /* 初始化，将工作流数据设置到state中 */
+    const workflow = workflowId
       ? await WorkflowManager.get(workflowId)
-      : undefined;
-    const workflow = existingWorkflow || {
-      ...INITIAL_WORKFLOW,
-    };
+      : {
+          ...INITIAL_WORKFLOW,
+        };
 
-    if (workflowId && !existingWorkflow) {
-      throw new Error(`工作流不存在: ${workflowId}`);
-    }
-
+    /* 设置工作流数据到state中 */
     this.state.set((state) => ({
       ...state,
       data: workflow,
     }));
+
+    /* 初始化节点状态 */
     this.initNodeStates();
     return this;
   }
 
+  /** 初始化节点状态 */
   private initNodeStates() {
-    Object.values(this.state.current.data!.nodes).forEach((node) => {
+    /* 初始化节点状态 */
+    Object.values(this.state.current.data.nodes).forEach((node) => {
       let initialOutputs = {};
-
       // 根据节点类型初始化默认输出结构
       switch (node.type) {
         case "start":
@@ -378,7 +380,7 @@ export class Workflow {
         default:
           initialOutputs = { result: null };
       }
-
+      /* 设置节点状态 */
       this.state.set((state) => ({
         ...state,
         nodeStates: {
@@ -944,24 +946,30 @@ export class Workflow {
     }
   }
 
+  /** 重置工作流
+   * @param id 工作流id
+   * @description 重置工作流，如果id为new，则创建一个新的工作流，该工作流的id为空，需要通过workflow.register()方法注册
+   */
   async reset(id?: string) {
-    const workflow =
-      id === "new"
-        ? {
-            ...INITIAL_WORKFLOW,
-            id: gen.id(),
-          }
-        : await WorkflowManager.get(id || "");
-
-    if (!workflow) {
-      throw new Error(`工作流不存在: ${id}`);
+    /* 如果id为new，则创建一个新的工作流 */
+    if (!id) {
+      this.state.set((state) => ({
+        ...state,
+        data: {
+          ...INITIAL_WORKFLOW,
+        },
+      }));
+    } else {
+      /* 如果id不为new，则获取工作流 */
+      const workflow = await WorkflowManager.get(id || "");
+      if (!workflow) {
+        throw new Error(`工作流不存在: ${id}`);
+      }
+      this.state.set((state) => ({
+        ...state,
+        data: workflow,
+      }));
     }
-
-    this.state.set((state) => ({
-      ...state,
-      data: workflow,
-    }));
-
     this.initNodeStates();
   }
 

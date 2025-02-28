@@ -71,6 +71,7 @@
     "jest": "^29.7.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
+    "tailwindcss-animate": "^1.0.7",
     "ts-jest": "^29.2.5",
     "typescript": "^5.2.2",
     "vite": "^5.3.1"

@@ -77,54 +77,6 @@ export default {
         font: ["var(--font-font)"],
       },
       keyframes: {
-        "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
-        },
-        "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
-        },
-        "border-breathing": {
-          "0%, 100%": {
-            borderColor: "rgba(var(--ai), 0.2)",
-          },
-          "50%": {
-            borderColor: "rgba(var(--ai), 0.6)",
-          },
-        },
-        shimmer: {
-          "0%": {
-            transform: "translateX(-100%)",
-          },
-          "100%": {
-            transform: "translateX(100%)",
-          },
-        },
-        "overlay-show": {
-          from: {
-            opacity: "0",
-          },
-          to: {
-            opacity: "1",
-          },
-        },
-        "overlay-hide": {
-          from: {
-            opacity: "1",
-          },
-          to: {
-            opacity: "0",
-          },
-        },
         "dialog-show": {
           from: {
             opacity: "0",
@@ -149,6 +101,20 @@ export default {
           "0%, 100%": { backgroundPosition: "0% 50%" },
           "50%": { backgroundPosition: "100% 50%" },
         },
+        enter: {
+          from: {
+            opacity: "var(--tw-enter-opacity, 1)",
+            transform:
+              "translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1))",
+          },
+        },
+        exit: {
+          to: {
+            opacity: "var(--tw-exit-opacity, 1)",
+            transform:
+              "translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0) scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1))",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -160,6 +126,8 @@ export default {
         "dialog-show": "dialog-show 150ms cubic-bezier(0.16, 1, 0.3, 1)",
         "dialog-hide": "dialog-hide 150ms cubic-bezier(0.16, 1, 0.3, 1)",
         gradient: "gradient 3s linear infinite",
+        in: "enter 150ms ease-out",
+        out: "exit 150ms ease-in",
       },
       willChange: {
         scroll: "scroll-position",

@@ -32,6 +32,7 @@ import {
   EditorContextProvider,
   useEditorWorkflow,
 } from "./context/EditorContext";
+import { Workflow } from "./Workflow";
 
 /* 节点类型 */
 const nodeTypes = {
@@ -101,8 +102,7 @@ const WorkflowInfo = memo(() => {
 });
 
 /* 工作流图组件 */
-const WorkflowGraph = memo(() => {
-  const workflow = useEditorWorkflow();
+const WorkflowGraph = memo(({ workflow }: { workflow: Workflow }) => {
   const workflowState = workflow.use();
   const [menu, setMenu] = useState<{
     x: number;
@@ -113,10 +113,6 @@ const WorkflowGraph = memo(() => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
   const { onEdgesChange, onConnect } = useEdges();
-
-  if (!workflowState.data.id) {
-    throw Promise.resolve(null);
-  }
 
   const showMenu = useCallback(
     (event: React.MouseEvent) => {
@@ -194,7 +190,7 @@ const WorkflowGraph = memo(() => {
   return (
     <div
       ref={reactFlowWrapper}
-      className="w-full h-full"
+      className="w-full h-full relative"
       onContextMenu={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -213,13 +209,13 @@ const WorkflowGraph = memo(() => {
         }}
         onPaneContextMenu={showMenu}
         onDoubleClick={showMenu}
+        onClick={closeMenu}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultViewport={workflowState.data?.viewport}
         minZoom={0.1}
         maxZoom={10}
-        selectionOnDrag={true}
-        panOnDrag={[1, 2]}
+        panOnDrag={[0, 1, 2]}
         selectionMode={SelectionMode.Partial}
         onMoveEnd={(_, viewport: Viewport) => {
           workflow.set((state) => ({
@@ -254,23 +250,18 @@ const WorkflowGraph = memo(() => {
 
 /* 工作流编辑器内容 */
 const WorkflowEditorContent = () => {
+  /** 编辑器的工作流实例 */
   const workflow = useEditorWorkflow();
-  const { value: queryId, setValue } = useQuery("id");
-  const [isLoading, setIsLoading] = useState(true);
+  /** 查询参数 */
+  const { value, setValue } = useQuery("id");
 
   useEffect(() => {
-    const initWorkflow = async () => {
-      if (queryId) {
-        await workflow.reset(queryId);
-        setIsLoading(false);
-      }
-    };
+    if (value) {
+      workflow.reset(value);
+    }
+  }, [value, workflow]);
 
-    initWorkflow();
-  }, [queryId, workflow]);
-
-  // 如果没有 queryId，不渲染内容
-  if (!queryId) return null;
+  if (!value) return null;
 
   return (
     <div className="flex flex-col h-screen">
@@ -287,20 +278,16 @@ const WorkflowEditorContent = () => {
         minDelay={300}
         className="flex-col"
       >
-        {isLoading ? (
-          <LoadingSpin />
-        ) : (
-          <ReactFlowProvider>
-            <WorkflowInfo />
-            <WorkflowGraph />
-          </ReactFlowProvider>
-        )}
+        <ReactFlowProvider>
+          <WorkflowInfo />
+          <WorkflowGraph workflow={workflow} />
+        </ReactFlowProvider>
       </DelayedSuspense>
     </div>
   );
 };
 
-/* 工作流编辑器 */
+/** 工作流编辑器 */
 export const WorkflowEditor = () => {
   return (
     <EditorContextProvider>
