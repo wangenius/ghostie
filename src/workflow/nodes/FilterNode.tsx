@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { ChevronDown, ChevronRight, X } from "lucide-react";
-import { useState } from "react";
+import { memo, useState, useCallback, useMemo } from "react";
 import { NodeProps } from "reactflow";
 import { FilterNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
@@ -67,7 +67,7 @@ const operatorOptions = [
   { value: "notIn", label: "不在列表中" },
   { value: "exists", label: "存在" },
   { value: "notExists", label: "不存在" },
-];
+] as const;
 
 const dataTypeOptions = [
   { value: "string", label: "字符串" },
@@ -76,9 +76,9 @@ const dataTypeOptions = [
   { value: "date", label: "日期" },
   { value: "array", label: "数组" },
   { value: "object", label: "对象" },
-];
+] as const;
 
-const ConditionItem = ({
+const ConditionItemComponent = ({
   condition,
   onUpdate,
   onDelete,
@@ -87,53 +87,79 @@ const ConditionItem = ({
   onUpdate: (updated: FilterCondition) => void;
   onDelete: () => void;
 }) => {
+  const handleFieldChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onUpdate({ ...condition, field: e.target.value });
+    },
+    [condition, onUpdate],
+  );
+
+  const handleOperatorChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...condition, operator: value as Operator });
+    },
+    [condition, onUpdate],
+  );
+
+  const handleDataTypeChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...condition, dataType: value as DataType });
+    },
+    [condition, onUpdate],
+  );
+
+  const handleValueChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onUpdate({ ...condition, value: e.target.value });
+    },
+    [condition, onUpdate],
+  );
+
+  const operatorItems = useMemo(
+    () =>
+      operatorOptions.map((option) => (
+        <SelectItem key={option.value} value={option.value}>
+          {option.label}
+        </SelectItem>
+      )),
+    [],
+  );
+
+  const dataTypeItems = useMemo(
+    () =>
+      dataTypeOptions.map((option) => (
+        <SelectItem key={option.value} value={option.value}>
+          {option.label}
+        </SelectItem>
+      )),
+    [],
+  );
+
   return (
     <div className="flex items-center gap-2 p-2 border rounded-md">
       <Input
         className="w-32 text-xs"
         placeholder="字段名"
         value={condition.field}
-        onChange={(e) => onUpdate({ ...condition, field: e.target.value })}
+        onChange={handleFieldChange}
       />
-      <Select
-        value={condition.operator}
-        onValueChange={(value) =>
-          onUpdate({ ...condition, operator: value as Operator })
-        }
-      >
+      <Select value={condition.operator} onValueChange={handleOperatorChange}>
         <SelectTrigger variant="dust" className="w-24 text-xs">
           <SelectValue placeholder="选择操作符" />
         </SelectTrigger>
-        <SelectContent>
-          {operatorOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
+        <SelectContent>{operatorItems}</SelectContent>
       </Select>
-      <Select
-        value={condition.dataType}
-        onValueChange={(value) =>
-          onUpdate({ ...condition, dataType: value as DataType })
-        }
-      >
+      <Select value={condition.dataType} onValueChange={handleDataTypeChange}>
         <SelectTrigger variant="dust" className="w-20 text-xs">
           <SelectValue placeholder="选择类型" />
         </SelectTrigger>
-        <SelectContent>
-          {dataTypeOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
+        <SelectContent>{dataTypeItems}</SelectContent>
       </Select>
       <Input
         className="w-32 text-xs"
         placeholder="值"
         value={condition.value}
-        onChange={(e) => onUpdate({ ...condition, value: e.target.value })}
+        onChange={handleValueChange}
       />
       <Button
         variant="ghost"
@@ -147,7 +173,9 @@ const ConditionItem = ({
   );
 };
 
-const GroupItem = ({
+const ConditionItem = memo(ConditionItemComponent);
+
+const GroupItemComponent = ({
   group,
   onUpdate,
   onDelete,
@@ -160,7 +188,7 @@ const GroupItem = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
-  const addCondition = () => {
+  const addCondition = useCallback(() => {
     const newCondition: FilterCondition = {
       id: Math.random().toString(36).substr(2, 9),
       field: "",
@@ -173,9 +201,9 @@ const GroupItem = ({
       ...group,
       conditions: [...group.conditions, newCondition],
     });
-  };
+  }, [group, onUpdate]);
 
-  const addGroup = () => {
+  const addGroup = useCallback(() => {
     const newGroup: FilterGroup = {
       id: Math.random().toString(36).substr(2, 9),
       type: "AND",
@@ -186,43 +214,72 @@ const GroupItem = ({
       ...group,
       conditions: [...group.conditions, newGroup],
     });
-  };
+  }, [group, onUpdate]);
 
-  const updateCondition = (
-    index: number,
-    updated: FilterCondition | FilterGroup,
-  ) => {
-    const newConditions = [...group.conditions];
-    newConditions[index] = updated;
-    onUpdate({ ...group, conditions: newConditions });
-  };
+  const updateCondition = useCallback(
+    (index: number, updated: FilterCondition | FilterGroup) => {
+      const newConditions = [...group.conditions];
+      newConditions[index] = updated;
+      onUpdate({ ...group, conditions: newConditions });
+    },
+    [group, onUpdate],
+  );
 
-  const deleteCondition = (index: number) => {
-    onUpdate({
-      ...group,
-      conditions: group.conditions.filter((_, i) => i !== index),
-    });
-  };
+  const deleteCondition = useCallback(
+    (index: number) => {
+      onUpdate({
+        ...group,
+        conditions: group.conditions.filter((_, i) => i !== index),
+      });
+    },
+    [group, onUpdate],
+  );
+
+  const handleTypeChange = useCallback(
+    (value: string) => {
+      onUpdate({ ...group, type: value as "AND" | "OR" });
+    },
+    [group, onUpdate],
+  );
+
+  const toggleExpanded = useCallback(() => {
+    setIsExpanded((prev) => !prev);
+  }, []);
+
+  const renderConditions = useMemo(
+    () =>
+      group.conditions.map((condition, index) => (
+        <div key={condition.id}>
+          {"operator" in condition ? (
+            <ConditionItem
+              condition={condition}
+              onUpdate={(updated) => updateCondition(index, updated)}
+              onDelete={() => deleteCondition(index)}
+            />
+          ) : (
+            <GroupItem
+              group={condition}
+              onUpdate={(updated) => updateCondition(index, updated)}
+              onDelete={() => deleteCondition(index)}
+              level={level + 1}
+            />
+          )}
+        </div>
+      )),
+    [group.conditions, updateCondition, deleteCondition, level],
+  );
 
   return (
     <div className={`border-l-2 pl-4 ${level > 0 ? "mt-2" : ""}`}>
       <div className="flex items-center gap-2 mb-2">
-        <button
-          className="p-1 hover:bg-muted rounded"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
+        <button className="p-1 hover:bg-muted rounded" onClick={toggleExpanded}>
           {isExpanded ? (
             <ChevronDown className="h-4 w-4" />
           ) : (
             <ChevronRight className="h-4 w-4" />
           )}
         </button>
-        <Select
-          value={group.type}
-          onValueChange={(value) =>
-            onUpdate({ ...group, type: value as "AND" | "OR" })
-          }
-        >
+        <Select value={group.type} onValueChange={handleTypeChange}>
           <SelectTrigger variant="dust" className="w-20 text-xs">
             <SelectValue placeholder="选择逻辑" />
           </SelectTrigger>
@@ -245,40 +302,23 @@ const GroupItem = ({
 
       {isExpanded && (
         <div className="space-y-2">
-          {group.conditions.map((condition, index) => (
-            <div key={condition.id}>
-              {"operator" in condition ? (
-                <ConditionItem
-                  condition={condition}
-                  onUpdate={(updated) => updateCondition(index, updated)}
-                  onDelete={() => deleteCondition(index)}
-                />
-              ) : (
-                <GroupItem
-                  group={condition}
-                  onUpdate={(updated) => updateCondition(index, updated)}
-                  onDelete={() => deleteCondition(index)}
-                  level={level + 1}
-                />
-              )}
-            </div>
-          ))}
-          <div className="flex gap-2 mt-2">
+          {renderConditions}
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              className="text-xs"
               onClick={addCondition}
+              className="text-xs"
             >
               添加条件
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="text-xs"
               onClick={addGroup}
+              className="text-xs"
             >
-              添加条件组
+              添加分组
             </Button>
           </div>
         </div>
@@ -287,66 +327,61 @@ const GroupItem = ({
   );
 };
 
-export const FilterNode = (props: NodeProps<FilterNodeConfig>) => {
+const GroupItem = memo(GroupItemComponent);
+
+const FilterNodeComponent = (props: NodeProps<FilterNodeConfig>) => {
   const workflow = useEditorWorkflow();
   const workflowState = workflow.use();
-  const data = props.data as FilterNodeConfig;
-  const [rootGroup, setRootGroup] = useState<FilterGroup>(() => {
-    // 从现有配置转换或创建新的根组
-    return (
-      data.filter?.group || {
-        id: "root",
-        type: "AND",
-        conditions: [],
-        isEnabled: true,
-      }
-    );
-  });
+  const nodeData = props.data as FilterNodeConfig;
 
-  const updateNodeData = (group: FilterGroup) => {
-    setRootGroup(group);
-    workflow.set((state) => ({
-      ...state,
-      data: {
-        ...state.data,
-        nodes: {
-          ...state.data.nodes,
-          [props.id]: {
-            ...state.data.nodes[props.id],
-            data: {
-              ...state.data.nodes[props.id].data,
-              filter: {
-                group,
+  const updateNodeData = useCallback(
+    (group: FilterGroup) => {
+      workflow.set((s) => ({
+        ...s,
+        data: {
+          ...s.data,
+          nodes: {
+            ...s.data.nodes,
+            [props.id]: {
+              ...s.data.nodes[props.id],
+              data: {
+                ...s.data.nodes[props.id].data,
+                filter: {
+                  group,
+                },
               },
             },
           },
         },
-      },
-    }));
-  };
+      }));
+    },
+    [workflow, props.id],
+  );
 
   return (
     <NodePortal
       {...props}
       left={1}
       right={1}
-      variant="default"
-      title="高级数据过滤"
+      variant="condition"
+      title="过滤"
       state={workflowState.nodeStates[props.id].status}
-      outputs={workflowState.nodeStates[props.id].outputs}
     >
       <motion.div
-        className="flex flex-col gap-3 p-3"
+        className="flex flex-col gap-3 p-1"
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
         <GroupItem
-          group={rootGroup}
+          group={nodeData.filter.group}
           onUpdate={updateNodeData}
           onDelete={() => {}}
+          level={0}
         />
       </motion.div>
     </NodePortal>
   );
 };
+
+export const FilterNode = memo(FilterNodeComponent);

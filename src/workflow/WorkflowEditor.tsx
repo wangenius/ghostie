@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useQuery } from "@/hook/useQuery";
 import { cmd } from "@/utils/shell";
 import { Play } from "lucide-react";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState, useMemo } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -33,6 +33,7 @@ import {
   useEditorWorkflow,
 } from "./context/EditorContext";
 import { Workflow } from "./Workflow";
+import { debounce } from "lodash";
 
 /* 节点类型 */
 const nodeTypes = {
@@ -114,6 +115,80 @@ const WorkflowGraph = memo(({ workflow }: { workflow: Workflow }) => {
   const { screenToFlowPosition } = useReactFlow();
   const { onEdgesChange, onConnect } = useEdges();
 
+  if (!workflowState.data.id) {
+    throw Promise.resolve();
+  }
+
+  // 使用 useMemo 缓存节点和边的数据
+  const nodes = useMemo(
+    () => Object.values(workflowState.data.nodes || {}),
+    [workflowState.data.nodes],
+  );
+
+  const edges = useMemo(
+    () => Object.values(workflowState.data.edges || {}),
+    [workflowState.data.edges],
+  );
+
+  // 使用 useCallback 和 debounce 优化节点位置更新
+  const updateNodePosition = useCallback(
+    debounce((id: string, position: { x: number; y: number }) => {
+      workflow.updateNodePosition(id, position);
+    }, 2),
+    [workflow],
+  );
+
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      changes.forEach((change) => {
+        if (change.type === "position" && change.position) {
+          updateNodePosition(change.id, change.position);
+        } else if (change.type === "remove") {
+          workflow.removeNode(change.id);
+        } else if (change.type === "select") {
+          workflow.set((state) => ({
+            ...state,
+            data: {
+              ...state.data,
+              nodes: {
+                ...state.data.nodes,
+                [change.id]: {
+                  ...state.data.nodes[change.id],
+                  selected: change.selected,
+                },
+              },
+            },
+          }));
+        }
+      });
+    },
+    [workflow, updateNodePosition],
+  );
+
+  // 使用 debounce 优化视口更新
+  const onMoveEnd = useMemo(
+    () =>
+      debounce((_: any, viewport: Viewport) => {
+        workflow.set((state) => ({
+          ...state,
+          data: {
+            ...state.data,
+            viewport: {
+              x: viewport.x,
+              y: viewport.y,
+              zoom: viewport.zoom,
+            },
+          },
+        }));
+      }, 100),
+    [workflow],
+  );
+
+  const preventContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
   const showMenu = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
@@ -147,66 +222,20 @@ const WorkflowGraph = memo(({ workflow }: { workflow: Workflow }) => {
     [menu?.flowPosition, workflow],
   );
 
-  const onNodesChange = (changes: NodeChange[]) => {
-    changes.forEach((change) => {
-      if (change.type === "position" && change.position) {
-        workflow.updateNodePosition(change.id, change.position);
-      } else if (change.type === "remove") {
-        workflow.removeNode(change.id);
-      } else if (change.type === "select") {
-        workflow.set((state) => ({
-          ...state,
-          data: {
-            ...state.data,
-            nodes: {
-              ...state.data.nodes,
-              [change.id]: {
-                ...state.data.nodes[change.id],
-                selected: change.selected,
-              },
-            },
-          },
-        }));
-      } else if (change.type === "dimensions") {
-        const dimensions = (change as any).dimensions;
-        if (dimensions) {
-          workflow.set((state) => ({
-            ...state,
-            data: {
-              ...state.data,
-              nodes: {
-                ...state.data.nodes,
-                [change.id]: {
-                  ...state.data.nodes[change.id],
-                },
-              },
-            },
-          }));
-        }
-      }
-    });
-  };
-
   return (
     <div
       ref={reactFlowWrapper}
       className="w-full h-full relative"
-      onContextMenu={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
+      onContextMenu={preventContextMenu}
     >
       <ReactFlow
         key={workflowState.data.id}
-        nodes={Object.values(workflowState.data.nodes || {})}
-        edges={Object.values(workflowState.data.edges || {})}
+        nodes={nodes}
+        edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onEdgeContextMenu={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
+        onEdgeContextMenu={preventContextMenu}
         onPaneContextMenu={showMenu}
         onDoubleClick={showMenu}
         onClick={closeMenu}
@@ -215,22 +244,17 @@ const WorkflowGraph = memo(({ workflow }: { workflow: Workflow }) => {
         defaultViewport={workflowState.data?.viewport}
         minZoom={0.1}
         maxZoom={10}
-        panOnDrag={[0, 1, 2]}
+        panOnDrag={[0, 1]}
         selectionMode={SelectionMode.Partial}
-        onMoveEnd={(_, viewport: Viewport) => {
-          workflow.set((state) => ({
-            ...state,
-            data: {
-              ...state.data,
-              viewport: {
-                x: viewport.x,
-                y: viewport.y,
-                zoom: viewport.zoom,
-              },
-            },
-          }));
-        }}
+        onMoveEnd={onMoveEnd}
         className="w-full h-full bg-background"
+        fitView
+        elementsSelectable
+        nodesDraggable
+        nodesConnectable
+        deleteKeyCode={["Backspace", "Delete"]}
+        multiSelectionKeyCode={["Control", "Meta"]}
+        panActivationKeyCode="Space"
       >
         <Background />
         <Controls />
@@ -260,8 +284,6 @@ const WorkflowEditorContent = () => {
       workflow.reset(value);
     }
   }, [value, workflow]);
-
-  if (!value) return null;
 
   return (
     <div className="flex flex-col h-screen">

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback, useMemo, memo } from "react";
 import { TbCheck, TbCopy, TbDots, TbLoader2, TbX } from "react-icons/tb";
 import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
 import { toast } from "sonner";
@@ -47,8 +47,7 @@ const variants: Record<NodeVariant, string> = {
   branch: "bg-orange-50 border-orange-200",
 };
 
-/* 基础节点组件*/
-export const NodePortal = ({
+const NodePortalComponent = ({
   children,
   selected,
   isConnectable,
@@ -69,78 +68,115 @@ export const NodePortal = ({
     updateNodeInternals(id);
   }, [id, data, left, right, updateNodeInternals]);
 
-  // 获取所有入边节点的输出
-  const incomingNodes = Object.values(workflowState.data.edges)
-    .filter((edge) => edge.target === id)
-    .map((edge) => ({
-      nodeId: edge.source,
-      node: workflowState.data.nodes[edge.source],
-      outputs: workflowState.nodeStates[edge.source]?.outputs || {},
-    }))
-    .filter((node) => Object.keys(node.outputs).length > 0);
+  // 使用 useMemo 缓存入边节点的计算结果
+  const incomingNodes = useMemo(
+    () =>
+      Object.values(workflowState.data.edges)
+        .filter((edge) => edge.target === id)
+        .map((edge) => ({
+          nodeId: edge.source,
+          node: workflowState.data.nodes[edge.source],
+          outputs: workflowState.nodeStates[edge.source]?.outputs || {},
+        }))
+        .filter((node) => Object.keys(node.outputs).length > 0),
+    [
+      id,
+      workflowState.data.edges,
+      workflowState.data.nodes,
+      workflowState.nodeStates,
+    ],
+  );
 
-  const handleCopyParameter = (nodeId: string, key: string) => {
+  const handleCopyParameter = useCallback((nodeId: string, key: string) => {
     const paramText = `{{inputs.${nodeId}.${key}}}`;
     navigator.clipboard.writeText(paramText);
     toast.success("参数已复制到剪贴板");
-  };
+  }, []);
+
+  const handleNodeClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
+
+  const handleNodeDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+  }, []);
+
+  const handleDeleteNode = useCallback(() => {
+    workflow.deleteNode(id);
+  }, [workflow, id]);
+
+  // 使用 useMemo 缓存节点样式
+  const nodeClassName = useMemo(
+    () =>
+      cn(
+        "transition-all duration-200 border p-2 rounded-xl w-[260px] h-auto relative",
+        variants[variant],
+        selected && `ring-2 ring-primary/40`,
+        !isConnectable && "opacity-60 cursor-not-allowed",
+      ),
+    [variant, selected, isConnectable],
+  );
+
+  // 使用 useMemo 缓存连接点样式
+  const handleClassName = useMemo(
+    () =>
+      cn(
+        state === "completed" && "bg-green-500",
+        state === "failed" && "bg-red-500",
+        state === "running" && "bg-blue-500",
+      ),
+    [state],
+  );
+
+  const renderIncomingNodesMenu = useMemo(
+    () =>
+      incomingNodes.length > 0 && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {incomingNodes.map((node, index) => (
+              <React.Fragment key={node.nodeId}>
+                {index > 0 && <DropdownMenuSeparator />}
+                <DropdownMenuItem disabled className="opacity-50">
+                  来自 {node.node.data.name || node.node.type}
+                </DropdownMenuItem>
+                {Object.entries(node.outputs).map(([key, value]) => (
+                  <DropdownMenuItem
+                    key={`${node.nodeId}-${key}`}
+                    onClick={() => handleCopyParameter(node.nodeId, key)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <TbCopy className="h-4 w-4" />
+                      <span>{key}</span>
+                      <span className="text-xs text-gray-500">
+                        ({typeof value})
+                      </span>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </React.Fragment>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    [incomingNodes, handleCopyParameter],
+  );
 
   return (
     <div
-      onClick={(e) => {
-        e.stopPropagation();
-      }}
-      onDoubleClick={(e) => {
-        e.stopPropagation();
-        e.preventDefault();
-      }}
-      className={cn(
-        // 基础样式
-        "transition-all duration-200 border p-2 rounded-xl w-[260px] h-auto relative",
-        // 变体样式
-        variants[variant],
-        // 选中样式
-        selected && `ring-2 ring-primary/40`,
-        // 禁用样式
-        !isConnectable && "opacity-60 cursor-not-allowed",
-      )}
+      onClick={handleNodeClick}
+      onDoubleClick={handleNodeDoubleClick}
+      className={nodeClassName}
     >
       <div className="flex items-center justify-between h-8 px-1">
         <div className="text-sm font-bold flex-1">{title || variant}</div>
         <div className="flex items-center gap-2">
-          {incomingNodes.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {incomingNodes.map((node, index) => (
-                  <React.Fragment key={node.nodeId}>
-                    {index > 0 && <DropdownMenuSeparator />}
-                    <DropdownMenuItem disabled className="opacity-50">
-                      来自 {node.node.data.name || node.node.type}
-                    </DropdownMenuItem>
-                    {Object.entries(node.outputs).map(([key, value]) => (
-                      <DropdownMenuItem
-                        key={`${node.nodeId}-${key}`}
-                        onClick={() => handleCopyParameter(node.nodeId, key)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <TbCopy className="h-4 w-4" />
-                          <span>{key}</span>
-                          <span className="text-xs text-gray-500">
-                            ({typeof value})
-                          </span>
-                        </div>
-                      </DropdownMenuItem>
-                    ))}
-                  </React.Fragment>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          {renderIncomingNodesMenu}
           {state === "running" && (
             <div className="flex items-center gap-1">
               <TbLoader2 className="animate-spin rounded-full text-blue-500" />
@@ -187,7 +223,7 @@ export const NodePortal = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => workflow.deleteNode(id)}>
+              <DropdownMenuItem onClick={handleDeleteNode}>
                 <TbX className="h-4 w-4" />
                 删除
               </DropdownMenuItem>
@@ -197,9 +233,7 @@ export const NodePortal = ({
       </div>
 
       {/* 内容区域 */}
-      <div
-        className={cn("relative z-10 nowheel nopan nodrag cursor-default p-0")}
-      >
+      <div className={cn("relative z-10 nopan nodrag cursor-default p-0")}>
         {children}
       </div>
       {/* 左侧连接点 */}
@@ -213,11 +247,7 @@ export const NodePortal = ({
           style={{
             top: "50%",
           }}
-          className={cn(
-            state === "completed" && "bg-green-500",
-            state === "failed" && "bg-red-500",
-            state === "running" && "bg-blue-500",
-          )}
+          className={handleClassName}
         />
       ))}
 
@@ -232,13 +262,11 @@ export const NodePortal = ({
           style={{
             top: "50%",
           }}
-          className={cn(
-            state === "completed" && "bg-green-500",
-            state === "failed" && "bg-red-500",
-            state === "running" && "bg-blue-500",
-          )}
+          className={handleClassName}
         />
       ))}
     </div>
   );
 };
+
+export const NodePortal = memo(NodePortalComponent);

@@ -5,10 +5,47 @@ import { EndNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 import JsonViewer from "@/components/custom/JsonViewer";
 import { useEditorWorkflow } from "../context/EditorContext";
+import { memo, useMemo } from "react";
 
-export const EndNode = (props: NodeProps<EndNodeConfig>) => {
+const EndNodeComponent = (props: NodeProps<EndNodeConfig>) => {
   const workflow = useEditorWorkflow();
   const workflowState = workflow.use();
+  const nodeState = workflowState.nodeStates[props.id];
+
+  const renderOutputs = useMemo(() => {
+    if (nodeState.status === "completed") {
+      return (
+        <div className="space-y-2">
+          {Object.entries(nodeState.outputs).map(([key, value]) => (
+            <div key={key} className="space-y-1 overflow-auto">
+              <div className="text-xs font-medium text-gray-400">{key}</div>
+              {typeof value === "object" ? (
+                <JsonViewer data={value.result} />
+              ) : (
+                <div className="text-sm text-gray-300">{value}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  }, [nodeState.status, nodeState.outputs]);
+
+  const renderError = useMemo(() => {
+    if (nodeState.status === "failed") {
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-red-500">
+            <TbCircleX className="h-4 w-4" />
+            <span className="text-sm">执行失败</span>
+          </div>
+          <div className="pl-6 text-xs text-red-500">{nodeState.error}</div>
+        </div>
+      );
+    }
+    return null;
+  }, [nodeState.status, nodeState.error]);
 
   return (
     <NodePortal {...props} left={1} right={0} variant="default" title="结束">
@@ -18,34 +55,11 @@ export const EndNode = (props: NodeProps<EndNodeConfig>) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        {workflowState.nodeStates[props.id].status === "completed" && (
-          <div className="space-y-2">
-            {Object.entries(workflowState.nodeStates[props.id].outputs).map(
-              ([key, value]) => (
-                <div key={key} className="space-y-1 overflow-auto">
-                  <div className="text-xs font-medium text-gray-400">{key}</div>
-                  {typeof value === "object" ? (
-                    <JsonViewer data={value.result} />
-                  ) : (
-                    <div className="text-sm text-gray-300">{value}</div>
-                  )}
-                </div>
-              ),
-            )}
-          </div>
-        )}
-        {workflowState.nodeStates[props.id].status === "failed" && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-red-500">
-              <TbCircleX className="h-4 w-4" />
-              <span className="text-sm">执行失败</span>
-            </div>
-            <div className="pl-6 text-xs text-red-500">
-              {workflowState.nodeStates[props.id].error}
-            </div>
-          </div>
-        )}
+        {renderOutputs}
+        {renderError}
       </motion.div>
     </NodePortal>
   );
 };
+
+export const EndNode = memo(EndNodeComponent);

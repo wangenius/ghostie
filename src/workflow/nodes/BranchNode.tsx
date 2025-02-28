@@ -4,10 +4,38 @@ import { NodePortal } from "./NodePortal";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useEditorWorkflow } from "../context/EditorContext";
+import { memo, useMemo } from "react";
 
-export const BranchNode = (props: NodeProps<BranchNodeConfig>) => {
+const BranchNodeComponent = (props: NodeProps<BranchNodeConfig>) => {
   const workflow = useEditorWorkflow();
   const workflowState = workflow.use();
+  const nodeState = workflowState.nodeStates[props.id];
+
+  const renderExecutionResult = useMemo(() => {
+    if (nodeState.status !== "completed" && nodeState.status !== "failed") {
+      return null;
+    }
+
+    const isCompleted = nodeState.status === "completed";
+    return (
+      <div
+        className={cn(
+          "text-xs p-2 rounded border",
+          isCompleted
+            ? "bg-green-50 border-green-200"
+            : "bg-red-50 border-red-200",
+        )}
+      >
+        {isCompleted ? (
+          <div className="font-medium text-green-700">
+            选择分支: {nodeState.outputs.data?.label || "默认分支"}
+          </div>
+        ) : (
+          <div className="font-medium text-red-700">{nodeState.error}</div>
+        )}
+      </div>
+    );
+  }, [nodeState.status, nodeState.outputs.data?.label, nodeState.error]);
 
   return (
     <NodePortal
@@ -16,7 +44,7 @@ export const BranchNode = (props: NodeProps<BranchNodeConfig>) => {
       right={props.data.conditions?.length || 1}
       variant="branch"
       title="分支"
-      state={workflowState.nodeStates[props.id].status}
+      state={nodeState.status}
     >
       <motion.div
         className="flex flex-col gap-3 p-1"
@@ -24,31 +52,10 @@ export const BranchNode = (props: NodeProps<BranchNodeConfig>) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        {/* 执行结果 */}
-        {(workflowState.nodeStates[props.id].status === "completed" ||
-          workflowState.nodeStates[props.id].status === "failed") && (
-          <div
-            className={cn(
-              "text-xs p-2 rounded border",
-              workflowState.nodeStates[props.id].status === "completed"
-                ? "bg-green-50 border-green-200"
-                : "bg-red-50 border-red-200",
-            )}
-          >
-            {workflowState.nodeStates[props.id].status === "completed" ? (
-              <div className="font-medium text-green-700">
-                选择分支:{" "}
-                {workflowState.nodeStates[props.id].outputs.data?.label ||
-                  "默认分支"}
-              </div>
-            ) : (
-              <div className="font-medium text-red-700">
-                {workflowState.nodeStates[props.id].error}
-              </div>
-            )}
-          </div>
-        )}
+        {renderExecutionResult}
       </motion.div>
     </NodePortal>
   );
 };
+
+export const BranchNode = memo(BranchNodeComponent);
