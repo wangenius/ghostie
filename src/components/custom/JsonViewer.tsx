@@ -24,7 +24,7 @@ const JsonViewer: React.FC<JsonViewerProps> = ({
     }));
   };
 
-  const renderValue = (value: any, path: string, isRoot = false) => {
+  const renderValue = (value: any, path: string) => {
     if (value === null)
       return (
         <span
@@ -189,27 +189,22 @@ const JsonViewer: React.FC<JsonViewerProps> = ({
   return (
     <div
       className={cn(
-        "font-mono text-sm leading-relaxed overflow-hidden",
+        "font-mono text-sm leading-relaxed",
         dark ? "bg-slate-900/95" : "bg-white",
         "rounded-2xl",
         "shadow-xl shadow-slate-200/20 dark:shadow-slate-900/30",
-        "h-[300px] w-full max-w-2xl relative",
+        "w-full max-w-2xl max-h-[500px]",
         "backdrop-blur-sm",
+        "overflow-auto",
+        "scrollbar-thin scrollbar-track-transparent",
+        dark
+          ? "scrollbar-thumb-slate-700/60 hover:scrollbar-thumb-slate-600/80"
+          : "scrollbar-thumb-slate-200/80 hover:scrollbar-thumb-slate-300/80",
         className,
       )}
     >
-      <div
-        className={cn(
-          "absolute inset-0 p-2 overflow-auto",
-          "scrollbar-thin scrollbar-track-transparent",
-          dark
-            ? "scrollbar-thumb-slate-700/60 hover:scrollbar-thumb-slate-600/80"
-            : "scrollbar-thumb-slate-200/80 hover:scrollbar-thumb-slate-300/80",
-        )}
-      >
-        <div className="inline-block min-w-0">
-          {renderValue(data, "root", true)}
-        </div>
+      <div className="p-2">
+        <div className="inline-block min-w-0">{renderValue(data, "root")}</div>
       </div>
     </div>
   );
