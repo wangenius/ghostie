@@ -176,7 +176,7 @@ export class Workflow {
           nodes: {
             ...state.data.nodes,
             [nodeId]: {
-              ...node,
+              ...state.data.nodes[nodeId],
               position,
             },
           },

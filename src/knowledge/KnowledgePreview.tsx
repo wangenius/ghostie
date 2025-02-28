@@ -10,33 +10,35 @@ import { useQuery } from "@/hook/useQuery";
 import { KnowledgeStore, type SearchResult } from "@/knowledge/KnowledgeStore";
 import { cn } from "@/lib/utils";
 import { cmd } from "@/utils/shell";
-import { motion } from "framer-motion";
 import { useState } from "react";
-import { TbChevronRight, TbFileText, TbFolder, TbSearch } from "react-icons/tb";
+import { TbChevronRight, TbFileText, TbSearch } from "react-icons/tb";
 
 export const KnowledgePreview = () => {
+  const { value: id, setValue } = useQuery("id");
+
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-background to-muted/30">
-      <Header title="知识库预览" />
-      <DelayedSuspense fallback={<LoadingSpin />} minDelay={800}>
-        <KnowledgeContent />
+      <Header
+        title="知识库预览"
+        close={() => {
+          setValue("");
+          cmd.close();
+        }}
+      />
+      <DelayedSuspense fallback={<LoadingSpin />} minDelay={300}>
+        <KnowledgeContent id={id} />
       </DelayedSuspense>
     </div>
   );
 };
 
-const KnowledgeContent = () => {
-  const id = useQuery("id");
-
-  const docs = KnowledgeStore.use();
-
+const KnowledgeContent = ({ id }: { id: string }) => {
   const [selectedFile, setSelectedFile] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
-
+  const docs = KnowledgeStore.use();
   const previewDocument = docs[id || ""];
-
   const handleSemanticSearch = async () => {
     if (!searchQuery.trim()) return;
     setSearchLoading(true);
@@ -51,26 +53,7 @@ const KnowledgeContent = () => {
   };
 
   if (!previewDocument) {
-    return (
-      <div className="h-full flex flex-col bg-gradient-to-br from-background to-muted/30">
-        <Header title="知识库预览" />
-        <div className="flex-1 flex items-center justify-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center space-y-3 max-w-md mx-auto p-8"
-          >
-            <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center">
-              <TbFolder className="w-8 h-8 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold">请选择知识库</h3>
-            <p className="text-sm text-muted-foreground">
-              从左侧列表中选择一个知识库以查看详细内容
-            </p>
-          </motion.div>
-        </div>
-      </div>
-    );
+    throw Promise.resolve(null);
   }
   return (
     <div className="flex-1 overflow-hidden flex gap-6 px-4 pb-4">

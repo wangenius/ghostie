@@ -38,8 +38,6 @@ export function BotEditor() {
   const { value: query } = useQuery("id");
   const models = ModelManager.use();
 
-  console.log(knowledge);
-
   const [plugins, setPlugins] = useState<Record<string, PluginProps>>({});
 
   const loadPlugins = useCallback(async () => {
@@ -64,9 +62,11 @@ export function BotEditor() {
         setCreate(true);
         setBot(defaultBot);
       }
+      setLoading(false);
     } else {
       setCreate(true);
       setBot(defaultBot);
+      setLoading(false);
     }
   }, [query]);
 

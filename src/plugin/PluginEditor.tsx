@@ -120,7 +120,7 @@ export function PluginEditor() {
   /* 测试参数 */
   const [testArgs, setTestArgs] = useState<Record<string, string>>({});
   /* 查询地址参数 */
-  const query = useQuery("id");
+  const { value: query } = useQuery("id");
   /* 插件 */
   const [plugin, setPlugin] = useState<PluginProps | undefined>();
   /* 测试工具 */

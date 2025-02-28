@@ -182,8 +182,6 @@ const WorkflowGraph = memo(() => {
                 ...state.data.nodes,
                 [change.id]: {
                   ...state.data.nodes[change.id],
-                  width: dimensions.width,
-                  height: dimensions.height,
                 },
               },
             },
