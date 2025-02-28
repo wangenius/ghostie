@@ -1,4 +1,4 @@
-import { DelayedSuspense } from "@/components/custom/DelayedSuspense";
+import { AnimateSuspense } from "@/components/custom/AnimateSuspense";
 import { Header } from "@/components/custom/Header";
 import { LoadingSpin } from "@/components/custom/LoadingSpin";
 import { Button } from "@/components/ui/button";
@@ -114,10 +114,6 @@ const WorkflowGraph = memo(({ workflow }: { workflow: Workflow }) => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
   const { onEdgesChange, onConnect } = useEdges();
-
-  if (!workflowState.data.id) {
-    throw Promise.resolve();
-  }
 
   // 使用 useMemo 缓存节点和边的数据
   const nodes = useMemo(
@@ -295,16 +291,12 @@ const WorkflowEditorContent = () => {
           cmd.close();
         }}
       />
-      <DelayedSuspense
-        fallback={<LoadingSpin />}
-        minDelay={300}
-        className="flex-col"
-      >
+      <AnimateSuspense fallback={<LoadingSpin />} className="flex-col">
         <ReactFlowProvider>
           <WorkflowInfo />
           <WorkflowGraph workflow={workflow} />
         </ReactFlowProvider>
-      </DelayedSuspense>
+      </AnimateSuspense>
     </div>
   );
 };

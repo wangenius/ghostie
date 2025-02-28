@@ -1,4 +1,4 @@
-import { DelayedSuspense } from "@/components/custom/DelayedSuspense";
+import { AnimateSuspense } from "@/components/custom/AnimateSuspense";
 import { Header } from "@/components/custom/Header";
 import { LoadingSpin } from "@/components/custom/LoadingSpin";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,6 @@ import { TbChevronRight, TbFileText, TbSearch } from "react-icons/tb";
 
 export const KnowledgePreview = () => {
   const { value: id, setValue } = useQuery("id");
-
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-background to-muted/30">
       <Header
@@ -25,9 +24,9 @@ export const KnowledgePreview = () => {
           cmd.close();
         }}
       />
-      <DelayedSuspense fallback={<LoadingSpin />} minDelay={300}>
+      <AnimateSuspense fallback={<LoadingSpin />}>
         <KnowledgeContent id={id} />
-      </DelayedSuspense>
+      </AnimateSuspense>
     </div>
   );
 };
@@ -37,8 +36,41 @@ const KnowledgeContent = ({ id }: { id: string }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+
   const docs = KnowledgeStore.use();
   const previewDocument = docs[id || ""];
+  if (!id) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-16 h-16 mx-auto bg-muted/10 rounded-2xl flex items-center justify-center">
+            <TbFileText className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-xl font-semibold">请选择文档</h3>
+          <p className="text-sm text-muted-foreground">
+            从知识库列表中选择一个文档以查看详情
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!previewDocument) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-16 h-16 mx-auto bg-destructive/10 rounded-2xl flex items-center justify-center">
+            <TbFileText className="w-8 h-8 text-destructive" />
+          </div>
+          <h3 className="text-xl font-semibold">未找到文档</h3>
+          <p className="text-sm text-muted-foreground">
+            请确认文档 ID 是否正确
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const handleSemanticSearch = async () => {
     if (!searchQuery.trim()) return;
     setSearchLoading(true);
@@ -52,9 +84,6 @@ const KnowledgeContent = ({ id }: { id: string }) => {
     }
   };
 
-  if (!previewDocument) {
-    throw Promise.resolve(null);
-  }
   return (
     <div className="flex-1 overflow-hidden flex gap-6 px-4 pb-4">
       <Card className="h-full w-[360px] overflow-hidden backdrop-blur-sm bg-card/95 flex flex-col">
