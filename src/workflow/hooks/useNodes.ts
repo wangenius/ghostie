@@ -6,6 +6,10 @@ import {
   WorkflowNode,
   NodeConfig,
   FilterNodeConfig,
+  ChatNodeConfig,
+  BotNodeConfig,
+  PluginNodeConfig,
+  BranchNodeConfig,
 } from "../types/nodes";
 import { gen } from "@/utils/generator";
 
@@ -72,20 +76,20 @@ export const useNodes = () => {
       switch (type) {
         case "start":
         case "end":
-          nodeData = { ...baseData };
+          nodeData = { ...baseData } as NodeConfig;
           break;
         case "chat":
           nodeData = {
             ...baseData,
             model: "",
             system: "",
-          };
+          } as ChatNodeConfig;
           break;
         case "bot":
           nodeData = {
             ...baseData,
             bot: "",
-          };
+          } as BotNodeConfig;
           break;
         case "plugin":
           nodeData = {
@@ -93,13 +97,13 @@ export const useNodes = () => {
             plugin: "",
             tool: "",
             args: {},
-          };
+          } as PluginNodeConfig;
           break;
         case "branch":
           nodeData = {
             ...baseData,
             conditions: [],
-          };
+          } as BranchNodeConfig;
           break;
         case "filter":
           nodeData = {
@@ -115,7 +119,7 @@ export const useNodes = () => {
           } as FilterNodeConfig;
           break;
         default:
-          nodeData = baseData;
+          nodeData = baseData as NodeConfig;
       }
 
       const newNode: WorkflowNode = {

@@ -41,8 +41,9 @@ export class WorkflowManager {
    * 保存工作流
    * @param workflow 工作流数据
    */
-  static update(workflow: WorkflowProps) {
+  static async update(workflow: WorkflowProps) {
     const now = new Date().toISOString();
+    await WorkflowManager.store.ready();
     const existingWorkflow = this.store.current[workflow.id];
     if (!existingWorkflow) {
       console.log("工作流不存在");
@@ -63,10 +64,15 @@ export class WorkflowManager {
    * 获取工作流
    * @param id 工作流ID
    */
-  static get(id: string): WorkflowProps | undefined {
+  static async get(id: string): Promise<WorkflowProps | undefined> {
+    await WorkflowManager.store.ready();
     return this.store.current[id];
   }
 
+  /**
+   * 删除工作流
+   * @param id 工作流ID
+   */
   static delete(id: string) {
     cmd
       .confirm(`确定删除工作流[${this.store.current[id]?.name}(${id})]吗？`)

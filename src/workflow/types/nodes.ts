@@ -26,6 +26,12 @@ export interface WorkflowProps {
   nodes: Record<string, WorkflowNode>;
   /* 工作流边 */
   edges: Record<string, WorkflowEdge>;
+  /* 工作流视图 */
+  viewport: {
+    x: number;
+    y: number;
+    zoom: number;
+  };
 }
 /* 节点动作，用于记录节点执行历史 */
 export interface NodeAction {

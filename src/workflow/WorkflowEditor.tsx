@@ -1,19 +1,25 @@
+import { DelayedSuspense } from "@/components/custom/DelayedSuspense";
 import { Header } from "@/components/custom/Header";
+import { LoadingSpin } from "@/components/custom/LoadingSpin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@/hook/useQuery";
 import { cmd } from "@/utils/shell";
 import { Play } from "lucide-react";
-import { memo, useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
   ReactFlowProvider,
   SelectionMode,
   useReactFlow,
+  Viewport,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import { ContextMenu } from "./components/ContextMenu";
 import { CustomEdge } from "./components/CustomEdge";
+import { useEdges } from "./hooks/useEdges";
+import { useNodes } from "./hooks/useNodes";
 import { BotNode } from "./nodes/BotNode";
 import { BranchNode } from "./nodes/BranchNode";
 import { ChatNode } from "./nodes/ChatNode";
@@ -23,10 +29,6 @@ import { PluginNode } from "./nodes/PluginNode";
 import { StartNode } from "./nodes/StartNode";
 import { NodeType } from "./types/nodes";
 import { Workflow } from "./Workflow";
-import { useNodes } from "./hooks/useNodes";
-import { useEdges } from "./hooks/useEdges";
-import { ContextMenu } from "./components/ContextMenu";
-import { FLOW_CONFIG } from "./constants";
 
 /* 节点类型 */
 const nodeTypes = {
@@ -146,7 +148,6 @@ const WorkflowGraph = memo(() => {
 
   const flowConfig = useMemo(
     () => ({
-      ...FLOW_CONFIG,
       panOnScroll: true,
       panOnDrag: [1, 2],
       selectionOnDrag: true,
@@ -156,6 +157,22 @@ const WorkflowGraph = memo(() => {
     }),
     [],
   );
+
+  useEffect(() => {
+    if (workflowState.data.viewport) {
+      console.log("viewport changed:", workflowState.data.viewport);
+    }
+  }, [
+    workflowState.data.viewport?.x,
+    workflowState.data.viewport?.y,
+    workflowState.data.viewport?.zoom,
+  ]);
+
+  console.log(workflowState.data);
+
+  if (workflowState.data.id === "") {
+    return <div>加载中...</div>;
+  }
 
   return (
     <div
@@ -181,7 +198,22 @@ const WorkflowGraph = memo(() => {
         onClick={closeMenu}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        fitView
+        defaultViewport={workflowState.data?.viewport}
+        minZoom={0.1}
+        maxZoom={10}
+        onMoveEnd={(_, viewport: Viewport) => {
+          EditorWorkflow.set((state) => ({
+            ...state,
+            data: {
+              ...state.data,
+              viewport: {
+                x: viewport.x,
+                y: viewport.y,
+                zoom: viewport.zoom,
+              },
+            },
+          }));
+        }}
         className="w-full h-full bg-background"
         {...flowConfig}
       >
@@ -203,44 +235,28 @@ const WorkflowGraph = memo(() => {
 
 /* 工作流编辑器 */
 export const WorkflowEditor = () => {
+  /* 工作流ID */
   const queryId = useQuery("id");
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const initWorkflow = async () => {
-      try {
-        setIsLoading(true);
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        if (queryId) {
-          EditorWorkflow.reset(queryId);
-        }
-      } catch (error) {
-        console.error("初始化工作流失败:", error);
-        EditorWorkflow.reset("new");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initWorkflow();
+    if (queryId) {
+      EditorWorkflow.reset(queryId);
+    }
   }, [queryId]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">加载中...</div>
-    );
-  }
 
   return (
     <div className="flex flex-col h-screen">
       <Header title={"编辑工作流"} />
-      <div className="flex-1 flex flex-col">
+      <DelayedSuspense
+        fallback={<LoadingSpin />}
+        minDelay={500}
+        className="flex-col"
+      >
         <WorkflowInfo />
         <ReactFlowProvider>
           <WorkflowGraph />
         </ReactFlowProvider>
-      </div>
+      </DelayedSuspense>
     </div>
   );
 };

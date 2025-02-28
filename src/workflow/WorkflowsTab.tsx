@@ -9,8 +9,8 @@ import { PiDotsThreeBold } from "react-icons/pi";
 import {
   TbDownload,
   TbEdit,
-  TbListDetails,
   TbPlus,
+  TbShape3,
   TbTrash,
   TbUpload,
 } from "react-icons/tb";
@@ -23,22 +23,13 @@ export default function WorkflowsTab() {
   /* 工作流列表 */
   const workflows = WorkflowManager.use();
 
-  /* 导入工作流 */
-  const handleImport = () => {
-    console.log("导入");
-  };
-
-  const handleExport = () => {
-    console.log("导出");
-  };
-
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button
             onClick={() => {
-              new Workflow().save();
+              new Workflow().register();
             }}
           >
             <TbPlus className="w-4 h-4 mr-1" />
@@ -54,12 +45,11 @@ export default function WorkflowsTab() {
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleImport}>
+              <DropdownMenuItem onClick={() => {}}>
                 <TbUpload className="w-4 h-4 mr-2" />
-                <span>导入</span>
+                <span>工作流市场</span>
               </DropdownMenuItem>
-
-              <DropdownMenuItem onClick={handleExport}>
+              <DropdownMenuItem onClick={() => {}}>
                 <TbDownload className="w-4 h-4 mr-2" />
                 <span>导出</span>
               </DropdownMenuItem>
@@ -83,7 +73,7 @@ export default function WorkflowsTab() {
                 {/* 左侧图标 */}
                 <div className="shrink-0">
                   <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-muted p-2">
-                    <TbListDetails className="w-6 h-6" />
+                    <TbShape3 className="w-6 h-6" />
                   </div>
                 </div>
 

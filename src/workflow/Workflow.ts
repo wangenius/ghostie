@@ -64,6 +64,11 @@ const INITIAL_WORKFLOW: WorkflowProps = {
   updatedAt: "",
   nodes: initialNodes,
   edges: initialEdges,
+  viewport: {
+    x: 0,
+    y: 0,
+    zoom: 1,
+  },
 };
 
 /* 工作流 */
@@ -101,7 +106,14 @@ export class Workflow {
     WorkflowManager.update(this.state.current.data);
   }
 
-  save() {
+  /** 注册工作流，创建一个新的id */
+  register() {
+    this.state.set((state) => {
+      return {
+        ...state,
+        data: { ...state.data, id: gen.id() },
+      };
+    });
     WorkflowManager.create(this.state.current.data);
   }
 
@@ -247,12 +259,15 @@ export class Workflow {
   }
 
   constructor(workflowId?: string) {
+    this.init(workflowId);
+  }
+
+  public async init(workflowId?: string): Promise<Workflow> {
     const existingWorkflow = workflowId
-      ? WorkflowManager.get(workflowId)
+      ? await WorkflowManager.get(workflowId)
       : undefined;
     const workflow = existingWorkflow || {
       ...INITIAL_WORKFLOW,
-      id: gen.id(),
     };
 
     if (workflowId && !existingWorkflow) {
@@ -264,6 +279,7 @@ export class Workflow {
       data: workflow,
     }));
     this.initNodeStates();
+    return this;
   }
 
   private initNodeStates() {
@@ -861,15 +877,14 @@ export class Workflow {
     }
   }
 
-  reset(id?: string) {
-    console.log(id);
+  async reset(id?: string) {
     const workflow =
       id === "new"
         ? {
             ...INITIAL_WORKFLOW,
             id: gen.id(),
           }
-        : WorkflowManager.get(id || "");
+        : await WorkflowManager.get(id || "");
 
     if (!workflow) {
       throw new Error(`工作流不存在: ${id}`);

@@ -22,9 +22,3 @@ export const EDGE_CONFIG = {
   type: "default",
   markerEnd: { type: MarkerType.ArrowClosed },
 };
-
-export const FLOW_CONFIG = {
-  minZoom: 0.1,
-  maxZoom: 10,
-  defaultViewport: { x: 0, y: 0, zoom: 0.8 },
-};
