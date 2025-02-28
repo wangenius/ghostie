@@ -9,14 +9,14 @@ import { PiDotsThreeBold } from "react-icons/pi";
 import {
   TbDownload,
   TbEdit,
+  TbListDetails,
   TbPlus,
   TbTrash,
   TbUpload,
-  TbListDetails,
 } from "react-icons/tb";
+import { Workflow } from "./Workflow";
 import { WorkflowEditor } from "./WorkflowEditor";
 import { WorkflowManager } from "./WorkflowManager";
-import { cmd } from "@/utils/shell";
 
 /* 工作流列表 */
 export default function WorkflowsTab() {
@@ -32,18 +32,13 @@ export default function WorkflowsTab() {
     console.log("导出");
   };
 
-  const handleDelete = (id: string) => {
-    WorkflowManager.store.delete(id);
-    cmd.message("删除成功", "工作流已删除", "info");
-  };
-
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button
             onClick={() => {
-              WorkflowEditor.open();
+              new Workflow().save();
             }}
           >
             <TbPlus className="w-4 h-4 mr-1" />
@@ -118,7 +113,7 @@ export default function WorkflowsTab() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleDelete(id)}
+                    onClick={() => WorkflowManager.delete(id)}
                   >
                     <TbTrash className="w-4 h-4" />
                   </Button>

@@ -83,7 +83,7 @@ export class Workflow {
     {
       onChange: (state, oldState) => {
         if (state.data.id === oldState.data.id) {
-          WorkflowManager.save(state.data);
+          WorkflowManager.update(state.data);
         }
       },
     },
@@ -97,9 +97,14 @@ export class Workflow {
     return this.state.current;
   }
 
-  save() {
-    WorkflowManager.save(this.state.current.data);
+  update() {
+    WorkflowManager.update(this.state.current.data);
   }
+
+  save() {
+    WorkflowManager.create(this.state.current.data);
+  }
+
   // 获取所有节点
   public getNodes(): WorkflowNode[] {
     return Object.values(this.state.current.data?.nodes || {});

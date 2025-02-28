@@ -23,9 +23,9 @@ export interface WorkflowProps {
   /* 更新时间 */
   updatedAt: string;
   /* 工作流节点 */
-  nodes: WorkflowNode[];
+  nodes: Record<string, WorkflowNode>;
   /* 工作流边 */
-  edges: WorkflowEdge[];
+  edges: Record<string, WorkflowEdge>;
 }
 /* 节点动作，用于记录节点执行历史 */
 export interface NodeAction {

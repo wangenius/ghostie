@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useQuery } from "@/hook/useQuery";
 import { cmd } from "@/utils/shell";
 import { Play } from "lucide-react";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState, useMemo } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -43,6 +43,7 @@ const nodeTypes = {
 const edgeTypes = {
   default: CustomEdge,
 };
+
 /* 当前编辑的工作流 */
 export const EditorWorkflow = new Workflow();
 
@@ -140,7 +141,20 @@ const WorkflowGraph = memo(() => {
         addNode(type, menu.flowPosition);
       }
     },
-    [menu, addNode],
+    [menu?.flowPosition, addNode],
+  );
+
+  const flowConfig = useMemo(
+    () => ({
+      ...FLOW_CONFIG,
+      panOnScroll: true,
+      panOnDrag: [1, 2],
+      selectionOnDrag: true,
+      selectNodesOnDrag: true,
+      preventScrolling: true,
+      selectionMode: SelectionMode.Partial,
+    }),
+    [],
   );
 
   return (
@@ -169,13 +183,7 @@ const WorkflowGraph = memo(() => {
         edgeTypes={edgeTypes}
         fitView
         className="w-full h-full bg-background"
-        {...FLOW_CONFIG}
-        panOnScroll={false}
-        panOnDrag={[1, 2]}
-        selectionOnDrag={true}
-        selectNodesOnDrag={true}
-        preventScrolling={true}
-        selectionMode={SelectionMode.Partial}
+        {...flowConfig}
       >
         <Background />
         <Controls />
