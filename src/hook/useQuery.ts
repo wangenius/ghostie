@@ -1,8 +1,29 @@
-import { useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { listen } from "@tauri-apps/api/event";
 
 export function useQuery(key: string) {
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const value = searchParams.get(key);
-  return value || "";
+  const [value, setValue] = useState("");
+
+  useEffect(() => {
+    const unlisten = listen<Record<string, string>>(
+      "window-params",
+      (event) => {
+        const params = event.payload;
+        if (params && params[key]) {
+          setValue(params[key]);
+        }
+      },
+    );
+
+    return () => {
+      unlisten.then((unlistenFn) => unlistenFn());
+    };
+  }, [key]);
+
+  console.log(value);
+
+  return {
+    value,
+    setValue,
+  };
 }

@@ -24,7 +24,7 @@ const fadeVariants = {
 
 export const DelayedSuspense: React.FC<DelayedSuspenseProps> = ({
   fallback,
-  minDelay = 1000,
+  minDelay = 500,
   children,
   className,
 }) => {

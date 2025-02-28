@@ -1,8 +1,7 @@
 use super::file::get_config_dir;
 use open;
 use std::collections::HashMap;
-use tauri::{LogicalSize, Manager, Size, WindowEvent};
-use urlencoding;
+use tauri::{Emitter, LogicalSize, Manager, Size, WindowEvent};
 
 #[tauri::command]
 pub async fn open_window(
@@ -33,25 +32,10 @@ pub async fn open_window(
         }
     }
 
-    // 构建查询字符串
+    // 使用emit发送数据
     if let Some(query_params) = query {
-        let query_string: Vec<String> = query_params
-            .iter()
-            .filter(|(_, v)| !v.is_empty())
-            .map(|(k, v)| format!("{}={}", k, urlencoding::encode(v)))
-            .collect();
-
-        if !query_string.is_empty() {
-            let url = format!(
-                "/{}{}{}",
-                name,
-                if query_string.is_empty() { "" } else { "?" },
-                query_string.join("&")
-            );
-            window
-                .eval(&format!("window.location.href = '{}'", url))
-                .map_err(|e| format!("Failed to navigate to URL: {}", e))?;
-        }
+        app.emit("window-params", query_params)
+            .map_err(|e| format!("Failed to emit params: {}", e))?;
     }
 
     window
