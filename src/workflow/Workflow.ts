@@ -73,12 +73,21 @@ export class Workflow {
     nodeStates: Record<string, NodeState>;
     executedNodes: Set<string>;
     isExecuting: boolean;
-  }>({
-    data: INITIAL_WORKFLOW,
-    nodeStates: {},
-    executedNodes: new Set(),
-    isExecuting: false,
-  });
+  }>(
+    {
+      data: INITIAL_WORKFLOW,
+      nodeStates: {},
+      executedNodes: new Set(),
+      isExecuting: false,
+    },
+    {
+      onChange: (state, oldState) => {
+        if (state.data.id === oldState.data.id) {
+          WorkflowManager.save(state.data);
+        }
+      },
+    },
+  );
 
   use = this.state.use.bind(this.state);
 
