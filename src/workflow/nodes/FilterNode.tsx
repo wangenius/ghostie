@@ -11,9 +11,9 @@ import { motion } from "framer-motion";
 import { ChevronDown, ChevronRight, X } from "lucide-react";
 import { useState } from "react";
 import { NodeProps } from "reactflow";
-import { EditorWorkflow } from "../WorkflowEditor";
 import { FilterNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
+import { useEditorWorkflow } from "../context/EditorContext";
 
 // 定义过滤条件类型
 type Operator =
@@ -288,7 +288,8 @@ const GroupItem = ({
 };
 
 export const FilterNode = (props: NodeProps<FilterNodeConfig>) => {
-  const st = EditorWorkflow.use((s) => s.nodeStates[props.id]);
+  const workflow = useEditorWorkflow();
+  const workflowState = workflow.use();
   const data = props.data as FilterNodeConfig;
   const [rootGroup, setRootGroup] = useState<FilterGroup>(() => {
     // 从现有配置转换或创建新的根组
@@ -304,7 +305,7 @@ export const FilterNode = (props: NodeProps<FilterNodeConfig>) => {
 
   const updateNodeData = (group: FilterGroup) => {
     setRootGroup(group);
-    EditorWorkflow.set((state) => ({
+    workflow.set((state) => ({
       ...state,
       data: {
         ...state.data,
@@ -331,8 +332,8 @@ export const FilterNode = (props: NodeProps<FilterNodeConfig>) => {
       right={1}
       variant="default"
       title="高级数据过滤"
-      state={st.status}
-      outputs={st.outputs}
+      state={workflowState.nodeStates[props.id].status}
+      outputs={workflowState.nodeStates[props.id].outputs}
     >
       <motion.div
         className="flex flex-col gap-3 p-3"

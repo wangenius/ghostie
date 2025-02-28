@@ -28,7 +28,10 @@ import { FilterNode } from "./nodes/FilterNode";
 import { PluginNode } from "./nodes/PluginNode";
 import { StartNode } from "./nodes/StartNode";
 import { NodeType } from "./types/nodes";
-import { Workflow } from "./Workflow";
+import {
+  EditorContextProvider,
+  useEditorWorkflow,
+} from "./context/EditorContext";
 
 /* 节点类型 */
 const nodeTypes = {
@@ -46,20 +49,18 @@ const edgeTypes = {
   default: CustomEdge,
 };
 
-/* 当前编辑的工作流 */
-export const EditorWorkflow = new Workflow();
-
 /* 工作流表单组件 */
 const WorkflowInfo = memo(() => {
-  const workflow = EditorWorkflow.use();
+  const workflow = useEditorWorkflow();
+  const workflowState = workflow.use();
 
   return (
     <div className="flex items-center gap-4 px-3 bg-card">
       <div className="flex-1 grid grid-cols-[1fr,1.5fr] gap-3">
         <Input
-          value={workflow?.data.name}
+          value={workflowState?.data.name}
           onChange={(e) => {
-            EditorWorkflow.set((state) => ({
+            workflow.set((state) => ({
               ...state,
               data: {
                 ...state.data,
@@ -70,9 +71,9 @@ const WorkflowInfo = memo(() => {
           placeholder="工作流名称"
         />
         <Input
-          value={workflow?.data.description}
+          value={workflowState?.data.description}
           onChange={(e) => {
-            EditorWorkflow.set((state) => ({
+            workflow.set((state) => ({
               ...state,
               data: {
                 ...state.data,
@@ -86,13 +87,13 @@ const WorkflowInfo = memo(() => {
 
       <div className="flex items-center gap-2">
         <Button
-          onClick={() => EditorWorkflow.execute()}
-          disabled={workflow?.isExecuting}
+          onClick={() => workflow.execute()}
+          disabled={workflowState?.isExecuting}
           size="sm"
           className="h-8"
         >
           <Play className="w-4 h-4" />
-          {workflow?.isExecuting ? "执行中..." : "执行"}
+          {workflowState?.isExecuting ? "执行中..." : "执行"}
         </Button>
       </div>
     </div>
@@ -101,7 +102,8 @@ const WorkflowInfo = memo(() => {
 
 /* 工作流图组件 */
 const WorkflowGraph = memo(() => {
-  const workflowState = EditorWorkflow.use();
+  const workflow = useEditorWorkflow();
+  const workflowState = workflow.use();
   const [menu, setMenu] = useState<{
     x: number;
     y: number;
@@ -111,6 +113,10 @@ const WorkflowGraph = memo(() => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
   const { onEdgesChange, onConnect } = useEdges();
+
+  if (!workflowState.data.id) {
+    throw Promise.resolve(null);
+  }
 
   const showMenu = useCallback(
     (event: React.MouseEvent) => {
@@ -139,20 +145,20 @@ const WorkflowGraph = memo(() => {
   const handleNodeSelect = useCallback(
     (type: NodeType) => {
       if (menu?.flowPosition) {
-        EditorWorkflow.addNode(type, menu.flowPosition);
+        workflow.addNode(type, menu.flowPosition);
       }
     },
-    [menu?.flowPosition],
+    [menu?.flowPosition, workflow],
   );
+
   const onNodesChange = (changes: NodeChange[]) => {
-    console.log("changes", changes);
     changes.forEach((change) => {
       if (change.type === "position" && change.position) {
-        EditorWorkflow.updateNodePosition(change.id, change.position);
+        workflow.updateNodePosition(change.id, change.position);
       } else if (change.type === "remove") {
-        EditorWorkflow.removeNode(change.id);
+        workflow.removeNode(change.id);
       } else if (change.type === "select") {
-        EditorWorkflow.set((state) => ({
+        workflow.set((state) => ({
           ...state,
           data: {
             ...state.data,
@@ -168,7 +174,7 @@ const WorkflowGraph = memo(() => {
       } else if (change.type === "dimensions") {
         const dimensions = (change as any).dimensions;
         if (dimensions) {
-          EditorWorkflow.set((state) => ({
+          workflow.set((state) => ({
             ...state,
             data: {
               ...state.data,
@@ -187,16 +193,6 @@ const WorkflowGraph = memo(() => {
     });
   };
 
-  useEffect(() => {
-    if (workflowState.data.viewport) {
-      console.log("viewport changed:", workflowState.data.viewport);
-    }
-  }, [
-    workflowState.data.viewport?.x,
-    workflowState.data.viewport?.y,
-    workflowState.data.viewport?.zoom,
-  ]);
-
   return (
     <div
       ref={reactFlowWrapper}
@@ -207,6 +203,7 @@ const WorkflowGraph = memo(() => {
       }}
     >
       <ReactFlow
+        key={workflowState.data.id}
         nodes={Object.values(workflowState.data.nodes || {})}
         edges={Object.values(workflowState.data.edges || {})}
         onNodesChange={onNodesChange}
@@ -227,7 +224,7 @@ const WorkflowGraph = memo(() => {
         panOnDrag={[1, 2]}
         selectionMode={SelectionMode.Partial}
         onMoveEnd={(_, viewport: Viewport) => {
-          EditorWorkflow.set((state) => ({
+          workflow.set((state) => ({
             ...state,
             data: {
               ...state.data,
@@ -257,34 +254,67 @@ const WorkflowGraph = memo(() => {
   );
 });
 
-/* 工作流编辑器 */
-export const WorkflowEditor = () => {
-  /* 工作流ID */
-  const { value: queryId } = useQuery("id");
+/* 工作流编辑器内容 */
+const WorkflowEditorContent = () => {
+  const workflow = useEditorWorkflow();
+  const { value: queryId, setValue } = useQuery("id");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (queryId) {
-      EditorWorkflow.reset(queryId);
-    }
-  }, [queryId]);
+    const initWorkflow = async () => {
+      if (queryId) {
+        await workflow.reset(queryId);
+        setIsLoading(false);
+      }
+    };
+
+    initWorkflow();
+  }, [queryId, workflow]);
+
+  // 如果没有 queryId，不渲染内容
+  if (!queryId) return null;
 
   return (
     <div className="flex flex-col h-screen">
-      <Header title={"编辑工作流"} />
+      <Header
+        title={"编辑工作流"}
+        close={() => {
+          setValue("");
+          workflow.reset();
+          cmd.close();
+        }}
+      />
       <DelayedSuspense
         fallback={<LoadingSpin />}
-        minDelay={500}
+        minDelay={300}
         className="flex-col"
       >
-        <WorkflowInfo />
-        <ReactFlowProvider>
-          <WorkflowGraph />
-        </ReactFlowProvider>
+        {isLoading ? (
+          <LoadingSpin />
+        ) : (
+          <ReactFlowProvider>
+            <WorkflowInfo />
+            <WorkflowGraph />
+          </ReactFlowProvider>
+        )}
       </DelayedSuspense>
     </div>
   );
 };
 
-WorkflowEditor.open = (id: string = "new") => {
-  cmd.open("workflow-edit", { id }, { width: 1000, height: 600 });
+/* 工作流编辑器 */
+export const WorkflowEditor = () => {
+  return (
+    <EditorContextProvider>
+      <WorkflowEditorContent />
+    </EditorContextProvider>
+  );
+};
+
+WorkflowEditor.open = async (id: string = "new") => {
+  try {
+    cmd.open("workflow-edit", { id }, { width: 1000, height: 600 });
+  } catch (error) {
+    console.error("打开工作流失败:", error);
+  }
 };

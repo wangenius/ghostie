@@ -3,10 +3,11 @@ import { BranchNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { EditorWorkflow } from "../WorkflowEditor";
+import { useEditorWorkflow } from "../context/EditorContext";
 
 export const BranchNode = (props: NodeProps<BranchNodeConfig>) => {
-  const st = EditorWorkflow.use((s) => s.nodeStates[props.id]);
+  const workflow = useEditorWorkflow();
+  const workflowState = workflow.use();
 
   return (
     <NodePortal
@@ -15,7 +16,7 @@ export const BranchNode = (props: NodeProps<BranchNodeConfig>) => {
       right={props.data.conditions?.length || 1}
       variant="branch"
       title="分支"
-      state={st.status}
+      state={workflowState.nodeStates[props.id].status}
     >
       <motion.div
         className="flex flex-col gap-3 p-1"
@@ -24,21 +25,26 @@ export const BranchNode = (props: NodeProps<BranchNodeConfig>) => {
         transition={{ duration: 0.2 }}
       >
         {/* 执行结果 */}
-        {(st.status === "completed" || st.status === "failed") && (
+        {(workflowState.nodeStates[props.id].status === "completed" ||
+          workflowState.nodeStates[props.id].status === "failed") && (
           <div
             className={cn(
               "text-xs p-2 rounded border",
-              st.status === "completed"
+              workflowState.nodeStates[props.id].status === "completed"
                 ? "bg-green-50 border-green-200"
                 : "bg-red-50 border-red-200",
             )}
           >
-            {st.status === "completed" ? (
+            {workflowState.nodeStates[props.id].status === "completed" ? (
               <div className="font-medium text-green-700">
-                选择分支: {st.outputs.data?.label || "默认分支"}
+                选择分支:{" "}
+                {workflowState.nodeStates[props.id].outputs.data?.label ||
+                  "默认分支"}
               </div>
             ) : (
-              <div className="font-medium text-red-700">{st.error}</div>
+              <div className="font-medium text-red-700">
+                {workflowState.nodeStates[props.id].error}
+              </div>
             )}
           </div>
         )}

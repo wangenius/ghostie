@@ -7,11 +7,11 @@ import { useState } from "react";
 import { TbPlus } from "react-icons/tb";
 import { NodeProps } from "reactflow";
 import { StartNodeConfig } from "../types/nodes";
-import { EditorWorkflow } from "../WorkflowEditor";
 import { NodePortal } from "./NodePortal";
-
+import { useEditorWorkflow } from "../context/EditorContext";
 export const StartNode = (props: NodeProps<StartNodeConfig>) => {
-  const workflow = EditorWorkflow.use();
+  const workflow = useEditorWorkflow();
+  const workflowState = workflow.use();
 
   const [composingValues, setComposingValues] = useState<
     Record<string, { key: string; value: string }>
@@ -26,7 +26,7 @@ export const StartNode = (props: NodeProps<StartNodeConfig>) => {
       ...inputs,
       [newKey]: "",
     };
-    EditorWorkflow.set((s) => ({
+    workflow.set((s) => ({
       ...s,
       data: {
         ...s.data,
@@ -47,7 +47,7 @@ export const StartNode = (props: NodeProps<StartNodeConfig>) => {
   const removeInput = (key: string) => {
     const newInputs = { ...inputs };
     delete newInputs[key];
-    EditorWorkflow.set((s) => ({
+    workflow.set((s) => ({
       ...s,
       data: {
         ...s.data,
@@ -71,7 +71,7 @@ export const StartNode = (props: NodeProps<StartNodeConfig>) => {
       delete newInputs[oldKey];
     }
     newInputs[newKey] = value;
-    EditorWorkflow.set((s) => ({
+    workflow.set((s) => ({
       ...s,
       data: {
         ...s.data,
@@ -128,7 +128,7 @@ export const StartNode = (props: NodeProps<StartNodeConfig>) => {
       right={1}
       variant="default"
       title="开始"
-      state={workflow.nodeStates[props.id].status}
+      state={workflowState.nodeStates[props.id].status}
     >
       <motion.div
         className="flex flex-col gap-3 p-1"

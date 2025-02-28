@@ -12,13 +12,14 @@ import { useState } from "react";
 import { NodeProps } from "reactflow";
 import { BotNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
-import { EditorWorkflow } from "../WorkflowEditor";
+import { useEditorWorkflow } from "../context/EditorContext";
 import { Bot } from "lucide-react";
 
 export const BotNode = (props: NodeProps<BotNodeConfig>) => {
   const bots = BotManager.use();
   const [prompt, setPrompt] = useState(props.data.prompt);
-  const st = EditorWorkflow.use((s) => s.nodeStates[props.id]);
+  const workflow = useEditorWorkflow();
+  const workflowState = workflow.use();
 
   return (
     <NodePortal
@@ -27,8 +28,8 @@ export const BotNode = (props: NodeProps<BotNodeConfig>) => {
       right={1}
       variant="bot"
       title="机器人"
-      state={st.status}
-      outputs={st.outputs}
+      state={workflowState.nodeStates[props.id].status}
+      outputs={workflowState.nodeStates[props.id].outputs}
     >
       <motion.div
         className="flex flex-col gap-3 p-1"
@@ -39,7 +40,7 @@ export const BotNode = (props: NodeProps<BotNodeConfig>) => {
         <Select
           value={props.data.bot}
           onValueChange={(value) => {
-            EditorWorkflow.set((state) => ({
+            workflow.set((state) => ({
               ...state,
               data: {
                 ...state.data,
@@ -76,7 +77,7 @@ export const BotNode = (props: NodeProps<BotNodeConfig>) => {
           value={prompt}
           onChange={(e) => {
             setPrompt(e.target.value);
-            EditorWorkflow.set((s) => ({
+            workflow.set((s) => ({
               ...s,
               data: {
                 ...s.data,

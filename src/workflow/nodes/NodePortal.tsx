@@ -5,7 +5,6 @@ import React, { useEffect } from "react";
 import { TbCheck, TbLoader2, TbX, TbCopy } from "react-icons/tb";
 import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
 import CustomHandle from "../components/CustomHandle";
-import { EditorWorkflow } from "../WorkflowEditor";
 import {
   Popover,
   PopoverContent,
@@ -21,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import { useEditorWorkflow } from "../context/EditorContext";
 
 type NodeVariant =
   | "default"
@@ -64,19 +64,20 @@ export const NodePortal = ({
   outputs,
 }: BaseNodeProps) => {
   const updateNodeInternals = useUpdateNodeInternals();
-  const workflow = EditorWorkflow.use();
+  const workflow = useEditorWorkflow();
+  const workflowState = workflow.use();
 
   useEffect(() => {
     updateNodeInternals(id);
   }, [id, data, left, right, updateNodeInternals]);
 
   // 获取所有入边节点的输出
-  const incomingNodes = Object.values(workflow.data.edges)
+  const incomingNodes = Object.values(workflowState.data.edges)
     .filter((edge) => edge.target === id)
     .map((edge) => ({
       nodeId: edge.source,
-      node: workflow.data.nodes[edge.source],
-      outputs: workflow.nodeStates[edge.source]?.outputs || {},
+      node: workflowState.data.nodes[edge.source],
+      outputs: workflowState.nodeStates[edge.source]?.outputs || {},
     }))
     .filter((node) => Object.keys(node.outputs).length > 0);
 
@@ -106,7 +107,7 @@ export const NodePortal = ({
                 {
                   label: "删除",
                   onClick: () => {
-                    EditorWorkflow.deleteNode(id);
+                    workflow.deleteNode(id);
                     close();
                   },
                 },

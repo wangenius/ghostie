@@ -1,26 +1,28 @@
 import { useCallback } from "react";
 import { Connection, EdgeChange } from "reactflow";
-import { EditorWorkflow } from "../WorkflowEditor";
+import { useEditorWorkflow } from "../context/EditorContext";
 import { gen } from "@/utils/generator";
 import { EDGE_CONFIG } from "../constants";
 
 export const useEdges = () => {
+  const workflow = useEditorWorkflow();
+
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
-      if (!EditorWorkflow) return;
+      if (!workflow) return;
 
       changes.forEach((change) => {
         if (change.type === "remove") {
-          EditorWorkflow.removeEdge(change.id);
+          workflow.removeEdge(change.id);
         }
       });
     },
-    [EditorWorkflow],
+    [workflow],
   );
 
   const onConnect = useCallback(
     (params: Connection) => {
-      if (!EditorWorkflow) return;
+      if (!workflow) return;
 
       const sourceId = params.sourceHandle || "";
       const targetId = params.targetHandle || "";
@@ -41,9 +43,9 @@ export const useEdges = () => {
         },
       };
 
-      EditorWorkflow.addEdge(edge);
+      workflow.addEdge(edge);
     },
-    [EditorWorkflow],
+    [workflow],
   );
 
   return {

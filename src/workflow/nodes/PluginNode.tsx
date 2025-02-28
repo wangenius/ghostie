@@ -11,12 +11,13 @@ import { motion } from "framer-motion";
 import { Puzzle } from "lucide-react";
 import { NodeProps } from "reactflow";
 import { PluginNodeConfig } from "../types/nodes";
-import { EditorWorkflow } from "../WorkflowEditor";
+import { useEditorWorkflow } from "../context/EditorContext";
 import { NodePortal } from "./NodePortal";
 
 export const PluginNode = (props: NodeProps<PluginNodeConfig>) => {
   const plugins = PluginManager.use();
-  const st = EditorWorkflow.use((s) => s.nodeStates[props.id]);
+  const workflow = useEditorWorkflow();
+  const workflowState = workflow.use();
   const selectedPlugin = plugins[props.data.plugin] as PluginProps | undefined;
 
   return (
@@ -26,8 +27,8 @@ export const PluginNode = (props: NodeProps<PluginNodeConfig>) => {
       right={1}
       variant="plugin"
       title="插件"
-      state={st.status}
-      outputs={st.outputs}
+      state={workflowState.nodeStates[props.id].status}
+      outputs={workflowState.nodeStates[props.id].outputs}
     >
       <motion.div
         className="flex flex-col gap-3 p-1"
@@ -38,7 +39,7 @@ export const PluginNode = (props: NodeProps<PluginNodeConfig>) => {
         <Select
           value={props.data.plugin}
           onValueChange={(value) => {
-            EditorWorkflow.set((state) => ({
+            workflow.set((state) => ({
               ...state,
               data: {
                 ...state.data,
@@ -75,7 +76,7 @@ export const PluginNode = (props: NodeProps<PluginNodeConfig>) => {
           <Select
             value={props.data.tool}
             onValueChange={(value) => {
-              EditorWorkflow.set((state) => ({
+              workflow.set((state) => ({
                 ...state,
                 data: {
                   ...state.data,
@@ -125,7 +126,7 @@ export const PluginNode = (props: NodeProps<PluginNodeConfig>) => {
                   className="h-8 px-2 text-xs rounded-md border bg-background transition-colors"
                   value={props.data.args?.[key] || ""}
                   onChange={(e) => {
-                    EditorWorkflow.set((state) => ({
+                    workflow.set((state) => ({
                       ...state,
                       data: {
                         ...state.data,

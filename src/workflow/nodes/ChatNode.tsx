@@ -12,15 +12,15 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { NodeProps } from "reactflow";
 import { ChatNodeConfig } from "../types/nodes";
-import { EditorWorkflow } from "../WorkflowEditor";
+import { useEditorWorkflow } from "../context/EditorContext";
 import { NodePortal } from "./NodePortal";
 
 export const ChatNode = (props: NodeProps<ChatNodeConfig>) => {
   const models = ModelManager.use();
   const [system, setSystem] = useState(props.data.system);
   const [user, setUser] = useState(props.data.user);
-  const workflow = EditorWorkflow.use();
-  const st = workflow.nodeStates[props.id];
+  const workflow = useEditorWorkflow();
+  const workflowState = workflow.use();
 
   return (
     <NodePortal
@@ -29,8 +29,8 @@ export const ChatNode = (props: NodeProps<ChatNodeConfig>) => {
       right={1}
       variant="chat"
       title="对话"
-      state={st.status}
-      outputs={st.outputs}
+      state={workflowState.nodeStates[props.id].status}
+      outputs={workflowState.nodeStates[props.id].outputs}
     >
       <motion.div
         className="flex flex-col gap-3 p-1"
@@ -43,7 +43,7 @@ export const ChatNode = (props: NodeProps<ChatNodeConfig>) => {
           <Select
             value={props.data.model}
             onValueChange={(value) => {
-              EditorWorkflow.set((s) => ({
+              workflow.set((s) => ({
                 ...s,
                 data: {
                   ...s.data,
@@ -85,7 +85,7 @@ export const ChatNode = (props: NodeProps<ChatNodeConfig>) => {
             data-id={`${props.id}-system`}
             onChange={(e) => {
               setSystem(e.target.value);
-              EditorWorkflow.set((s) => ({
+              workflow.set((s) => ({
                 ...s,
                 data: {
                   ...s.data,
@@ -114,7 +114,7 @@ export const ChatNode = (props: NodeProps<ChatNodeConfig>) => {
             value={user}
             onChange={(e) => {
               setUser(e.target.value);
-              EditorWorkflow.set((s) => ({
+              workflow.set((s) => ({
                 ...s,
                 data: {
                   ...s.data,
