@@ -117,7 +117,7 @@ export const NodePortal = ({
       }}
       className={cn(
         // 基础样式
-        "transition-all duration-200 border p-2 rounded-xl w-[260px] h-auto relative",
+        "transition-all duration-200 border p-2 rounded-xl w-[260px] h-auto relative z-10",
         // 变体样式
         variants[variant],
         // 选中样式

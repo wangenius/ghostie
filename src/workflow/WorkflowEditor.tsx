@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { useQuery } from "@/hook/useQuery";
 import { cmd } from "@/utils/shell";
 import { Play } from "lucide-react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
+  NodeChange,
   ReactFlowProvider,
   SelectionMode,
   useReactFlow,
@@ -19,7 +20,6 @@ import "reactflow/dist/style.css";
 import { ContextMenu } from "./components/ContextMenu";
 import { CustomEdge } from "./components/CustomEdge";
 import { useEdges } from "./hooks/useEdges";
-import { useNodes } from "./hooks/useNodes";
 import { BotNode } from "./nodes/BotNode";
 import { BranchNode } from "./nodes/BranchNode";
 import { ChatNode } from "./nodes/ChatNode";
@@ -110,7 +110,6 @@ const WorkflowGraph = memo(() => {
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
-  const { onNodesChange, addNode } = useNodes();
   const { onEdgesChange, onConnect } = useEdges();
 
   const showMenu = useCallback(
@@ -140,23 +139,53 @@ const WorkflowGraph = memo(() => {
   const handleNodeSelect = useCallback(
     (type: NodeType) => {
       if (menu?.flowPosition) {
-        addNode(type, menu.flowPosition);
+        EditorWorkflow.addNode(type, menu.flowPosition);
       }
     },
-    [menu?.flowPosition, addNode],
+    [menu?.flowPosition],
   );
-
-  const flowConfig = useMemo(
-    () => ({
-      panOnScroll: true,
-      panOnDrag: [1, 2],
-      selectionOnDrag: true,
-      selectNodesOnDrag: true,
-      preventScrolling: true,
-      selectionMode: SelectionMode.Partial,
-    }),
-    [],
-  );
+  const onNodesChange = (changes: NodeChange[]) => {
+    console.log("changes", changes);
+    changes.forEach((change) => {
+      if (change.type === "position" && change.position) {
+        EditorWorkflow.updateNodePosition(change.id, change.position);
+      } else if (change.type === "remove") {
+        EditorWorkflow.removeNode(change.id);
+      } else if (change.type === "select") {
+        EditorWorkflow.set((state) => ({
+          ...state,
+          data: {
+            ...state.data,
+            nodes: {
+              ...state.data.nodes,
+              [change.id]: {
+                ...state.data.nodes[change.id],
+                selected: change.selected,
+              },
+            },
+          },
+        }));
+      } else if (change.type === "dimensions") {
+        const dimensions = (change as any).dimensions;
+        if (dimensions) {
+          EditorWorkflow.set((state) => ({
+            ...state,
+            data: {
+              ...state.data,
+              nodes: {
+                ...state.data.nodes,
+                [change.id]: {
+                  ...state.data.nodes[change.id],
+                  width: dimensions.width,
+                  height: dimensions.height,
+                },
+              },
+            },
+          }));
+        }
+      }
+    });
+  };
 
   useEffect(() => {
     if (workflowState.data.viewport) {
@@ -167,12 +196,6 @@ const WorkflowGraph = memo(() => {
     workflowState.data.viewport?.y,
     workflowState.data.viewport?.zoom,
   ]);
-
-  console.log(workflowState.data);
-
-  if (workflowState.data.id === "") {
-    return <div>加载中...</div>;
-  }
 
   return (
     <div
@@ -195,12 +218,14 @@ const WorkflowGraph = memo(() => {
         }}
         onPaneContextMenu={showMenu}
         onDoubleClick={showMenu}
-        onClick={closeMenu}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultViewport={workflowState.data?.viewport}
         minZoom={0.1}
         maxZoom={10}
+        selectionOnDrag={true}
+        panOnDrag={[1, 2]}
+        selectionMode={SelectionMode.Partial}
         onMoveEnd={(_, viewport: Viewport) => {
           EditorWorkflow.set((state) => ({
             ...state,
@@ -215,7 +240,6 @@ const WorkflowGraph = memo(() => {
           }));
         }}
         className="w-full h-full bg-background"
-        {...flowConfig}
       >
         <Background />
         <Controls />
@@ -236,7 +260,7 @@ const WorkflowGraph = memo(() => {
 /* 工作流编辑器 */
 export const WorkflowEditor = () => {
   /* 工作流ID */
-  const queryId = useQuery("id");
+  const { value: queryId } = useQuery("id");
 
   useEffect(() => {
     if (queryId) {

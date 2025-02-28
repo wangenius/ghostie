@@ -12,6 +12,8 @@ import {
   WorkflowProps,
   PluginNodeConfig,
   FilterNodeConfig,
+  NodeConfig,
+  NodeType,
 } from "./types/nodes";
 import { WorkflowManager } from "./WorkflowManager";
 import { Echo } from "echo-state";
@@ -184,7 +186,72 @@ export class Workflow {
   }
 
   // 添加节点
-  public addNode(node: WorkflowNode) {
+  public addNode(type: NodeType, position: { x: number; y: number }) {
+    const baseData = {
+      type,
+      name: type,
+      inputs: {},
+      outputs: {},
+    };
+
+    let nodeData: NodeConfig;
+    switch (type) {
+      case "start":
+      case "end":
+        nodeData = { ...baseData } as NodeConfig;
+        break;
+      case "chat":
+        nodeData = {
+          ...baseData,
+          model: "",
+          system: "",
+        } as ChatNodeConfig;
+        break;
+      case "bot":
+        nodeData = {
+          ...baseData,
+          bot: "",
+        } as BotNodeConfig;
+        break;
+      case "plugin":
+        nodeData = {
+          ...baseData,
+          plugin: "",
+          tool: "",
+          args: {},
+        } as PluginNodeConfig;
+        break;
+      case "branch":
+        nodeData = {
+          ...baseData,
+          conditions: [],
+        } as BranchNodeConfig;
+        break;
+      case "filter":
+        nodeData = {
+          ...baseData,
+          filter: {
+            group: {
+              conditions: [],
+              id: gen.id(),
+              type: "AND",
+              isEnabled: true,
+            },
+          },
+        } as FilterNodeConfig;
+        break;
+      default:
+        nodeData = baseData as NodeConfig;
+    }
+
+    const newNode: WorkflowNode = {
+      id: gen.id(),
+      type,
+      name: type,
+      position,
+      data: nodeData,
+    };
+
     this.state.set((state) => {
       if (!state.data) return state;
       return {
@@ -193,12 +260,12 @@ export class Workflow {
           ...state.data,
           nodes: {
             ...state.data.nodes,
-            [node.id]: node,
+            [newNode.id]: newNode,
           },
         },
         nodeStates: {
           ...state.nodeStates,
-          [node.id]: {
+          [newNode.id]: {
             status: "pending",
             inputs: {},
             outputs: {},
