@@ -168,6 +168,70 @@ impl DenoRuntime {
 
         println!("最终检测结果: {}", is_found);
 
+        // 如果没有找到 Deno，尝试安装
+        if !is_found {
+            println!("Deno 未安装，开始安装...");
+            // 使用 PowerShell 执行安装脚本
+            let install_result = Command::new("powershell")
+                .arg("-ExecutionPolicy")
+                .arg("Bypass")
+                .arg("-File")
+                .arg("scripts/install-deno.ps1")
+                .output();
+
+            match install_result {
+                Ok(output) => {
+                    if output.status.success() {
+                        println!("Deno 安装成功！");
+                        // 刷新 PATH 环境变量
+                        if let Ok(new_path) = std::env::var("PATH") {
+                            std::env::set_var("PATH", new_path);
+                        }
+                        return Ok(Self {
+                            is_installed: true,
+                            base_args: vec![
+                                "run".to_string(),
+                                "--no-check".to_string(),
+                                "--allow-read".to_string(),
+                                "--allow-write".to_string(),
+                                "--allow-net".to_string(),
+                                "--allow-env".to_string(),
+                                "--allow-run".to_string(),
+                            ],
+                        });
+                    } else {
+                        let error_msg = String::from_utf8_lossy(&output.stderr);
+                        println!("Deno 安装失败: {}", error_msg);
+
+                        // 发送系统通知
+                        if let Some(app_handle) = tauri::AppHandle::try_from_env() {
+                            let _ = app_handle
+                                .notification()
+                                .builder()
+                                .title("Deno 安装失败")
+                                .body(&format!("安装过程中出现错误：{}", error_msg))
+                                .icon("error")
+                                .show();
+                        }
+                    }
+                }
+                Err(e) => {
+                    println!("执行安装脚本失败: {}", e);
+
+                    // 发送系统通知
+                    if let Some(app_handle) = tauri::AppHandle::try_from_env() {
+                        let _ = app_handle
+                            .notification()
+                            .builder()
+                            .title("Deno 安装失败")
+                            .body(&format!("无法执行安装脚本：{}", e))
+                            .icon("error")
+                            .show();
+                    }
+                }
+            }
+        }
+
         Ok(Self {
             is_installed: is_found,
             base_args: vec![
