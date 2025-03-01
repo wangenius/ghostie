@@ -20,8 +20,11 @@ import { KnowledgeStore } from "../knowledge/KnowledgeStore";
 
 /** 请求配置 */
 interface RequestConfig {
+  /** 用户消息类型 */
   user: MessageType;
+  /** 助手消息类型 */
   assistant: MessageType;
+  /** 工具消息类型 */
   function: MessageType;
 }
 
@@ -191,7 +194,7 @@ export class ChatModel {
   }
 
   /** 流式生成
-   * @param prompt 提示词
+   * @param prompt 提示词，如果为空，则使用历史消息，因为可能存在assistant的消息
    * @param config 单独配置生成消息的显示类型
    * @returns 流式生成结果
    */
@@ -208,13 +211,21 @@ export class ChatModel {
       await this.stop();
     }
 
+    /* 生成请求ID */
     this.currentRequestId = gen.id();
+    /* 内容 */
     let content = "";
+    /* 消息 */
     let messages: MessagePrototype[] = [];
+    /* 工具调用 */
     let tool_calls: ToolCallReply[] = [];
 
     try {
-      if (prompt) {
+      /* 如果提示词为空，则使用历史消息 */
+      if (!prompt) {
+        messages = this.historyMessage.listWithOutType();
+      } else {
+        /* 添加用户消息 */
         messages = this.historyMessage.push([
           {
             role: "user",
@@ -223,11 +234,9 @@ export class ChatModel {
             created_at: Date.now(),
           },
         ]);
-      } else {
-        messages = this.historyMessage.listWithOutType();
       }
 
-      // 创建初始的助手消息
+      /* 添加助手消息 */
       this.historyMessage.push([
         {
           role: "assistant",

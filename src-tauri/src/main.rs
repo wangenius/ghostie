@@ -77,6 +77,7 @@ async fn main() {
             TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
+                .show_menu_on_left_click(false)
                 .on_menu_event(move |app, event| {
                     if let Some(window) = app.get_webview_window("main") {
                         match event.id().as_ref() {
@@ -97,8 +98,12 @@ async fn main() {
                 .on_tray_icon_event(|tray, event| {
                     if let Some(window) = tray.app_handle().get_webview_window("main") {
                         match event {
-                            tauri::tray::TrayIconEvent::Click { .. } => {
-                                let _ = window.show();
+                            tauri::tray::TrayIconEvent::Click { button, .. } => {
+                                if button == tauri::tray::MouseButton::Left {
+                                    // 左键单击显示窗口
+                                    let _ = window.set_focus();
+                                    let _ = window.show();
+                                }
                             }
                             _ => {}
                         }

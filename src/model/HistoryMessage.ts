@@ -19,14 +19,14 @@ export interface ChatHistoryItem {
 }
 
 /** 全部聊天的历史记录存档
- * @todo: 需要迁移到 indexedDB 中, 目前不支持过量数据存储
  */
 export const ChatHistory = new Echo<Record<string, ChatHistoryItem>>(
   {},
   {
     name: "history",
+    storage: "indexedDB",
     sync: true,
-  }
+  },
 );
 
 /** 消息历史记录类
@@ -51,7 +51,7 @@ export class HistoryMessage implements ChatHistoryItem {
     {
       name: "current:history",
       sync: true,
-    }
+    },
   );
 
   /** 创建一个消息历史记录，id会生成一个新的，即历史记录中会出现一个新的内容 */
@@ -276,7 +276,7 @@ export class HistoryMessage implements ChatHistoryItem {
         delete newState[id];
         return newState;
       },
-      { replace: true }
+      { replace: true },
     );
   }
 }
