@@ -234,17 +234,20 @@ export class ChatModel {
             created_at: Date.now(),
           },
         ]);
-      }
 
-      /* 添加助手消息 */
-      this.historyMessage.push([
-        {
-          role: "assistant",
-          content: "",
-          type: "assistant:loading",
-          created_at: Date.now(),
-        },
-      ]);
+        /* 等待一个微小延迟以确保用户消息被渲染 */
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        /* 添加助手消息 */
+        this.historyMessage.push([
+          {
+            role: "assistant",
+            content: "",
+            type: "assistant:loading",
+            created_at: Date.now(),
+          },
+        ]);
+      }
 
       /* 创建请求体 */
       const requestBody: ChatModelRequestBody = {

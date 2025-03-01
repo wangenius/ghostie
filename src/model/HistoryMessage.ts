@@ -169,11 +169,18 @@ export class HistoryMessage implements ChatHistoryItem {
    * @returns 所有消息, 包括系统消息，但不包括 type 为 assistant:warning 的消息
    */
   push(message: Message[]): MessagePrototype[] {
-    this.list = [...this.list, ...message];
-    ChatHistory.set((prev) => {
-      const newState = { ...prev };
-      newState[this.id].list = this.list;
-      return newState;
+    const newList = [...this.list, ...message];
+    this.list = newList;
+
+    // 使用对象展开来创建一个新的状态对象，确保触发更新
+    ChatHistory.set({
+      ...ChatHistory.current,
+      [this.id]: {
+        id: this.id,
+        bot: this.bot,
+        system: this.system,
+        list: newList,
+      },
     });
 
     return this.processMessages(this.list);
