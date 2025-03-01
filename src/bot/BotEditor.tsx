@@ -19,7 +19,8 @@ import { cmd } from "@/utils/shell";
 import { BotProps } from "@common/types/bot";
 import { useQuery } from "@hook/useQuery";
 import { useCallback, useEffect, useRef, useState } from "react";
-
+import { AnimateSuspense } from "@/components/custom/AnimateSuspense";
+import { LoadingSpin } from "@/components/custom/LoadingSpin";
 const defaultBot: BotProps = {
   id: "",
   name: "",
@@ -33,7 +34,6 @@ export function BotEditor() {
   const [create, setCreate] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [loading, setLoading] = useState(true);
   const knowledge = KnowledgeStore.use();
   const { value: query } = useQuery("id");
   const models = ModelManager.use();
@@ -43,11 +43,9 @@ export function BotEditor() {
   const loadPlugins = useCallback(async () => {
     const tools = await cmd.invoke<Record<string, PluginProps>>("plugins_list");
     setPlugins(tools);
-    setLoading(false);
   }, []);
 
   useEffect(() => {
-    setLoading(true);
     loadPlugins();
   }, [loadPlugins]);
 
@@ -62,11 +60,9 @@ export function BotEditor() {
         setCreate(true);
         setBot(defaultBot);
       }
-      setLoading(false);
     } else {
       setCreate(true);
       setBot(defaultBot);
-      setLoading(false);
     }
   }, [query]);
 
@@ -74,7 +70,6 @@ export function BotEditor() {
     cmd.close();
     setBot(defaultBot);
     setCreate(true);
-    setLoading(true);
   };
 
   const handleSubmit = async () => {
@@ -95,23 +90,17 @@ export function BotEditor() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col h-screen bg-background">
-        <Header title="添加助手" close={handleClose} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-screen bg-background">
       <Header title={create ? "添加助手" : "编辑助手"} close={handleClose} />
 
-      <div className="flex-1 overflow-auto p-4">
-        <div className="space-y-4">
+      <AnimateSuspense
+        fallback={<LoadingSpin />}
+        deps={[query]}
+        className="flex-col px-3 justify-between"
+        minDelay={300}
+      >
+        <div className="space-y-4 flex-1 overflow-auto">
           <div className="space-y-1.5">
             <label className="block text-xs text-muted-foreground">
               助手名称
@@ -195,29 +184,29 @@ export function BotEditor() {
             />
           </div>
         </div>
-      </div>
 
-      <div className="flex justify-end gap-2 px-4 py-3">
-        <button
-          onClick={handleClose}
-          className="px-3 h-8 text-xs text-muted-foreground hover:bg-secondary rounded transition-colors"
-        >
-          取消
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={!bot.name || !bot.system || isSubmitting}
-          className="px-3 h-8 text-xs text-primary-foreground bg-primary rounded hover:opacity-90 disabled:opacity-50 transition-colors"
-        >
-          {isSubmitting
-            ? create
-              ? "添加中..."
-              : "更新中..."
-            : create
-            ? "添加"
-            : "更新"}
-        </button>
-      </div>
+        <div className="flex justify-end gap-2 px-4 py-3">
+          <button
+            onClick={handleClose}
+            className="px-3 h-8 text-xs text-muted-foreground hover:bg-secondary rounded transition-colors"
+          >
+            取消
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!bot.name || !bot.system || isSubmitting}
+            className="px-3 h-8 text-xs text-primary-foreground bg-primary rounded hover:opacity-90 disabled:opacity-50 transition-colors"
+          >
+            {isSubmitting
+              ? create
+                ? "添加中..."
+                : "更新中..."
+              : create
+              ? "添加"
+              : "更新"}
+          </button>
+        </div>
+      </AnimateSuspense>
     </div>
   );
 }

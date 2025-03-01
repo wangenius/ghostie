@@ -1,4 +1,6 @@
+import { AnimateSuspense } from "@/components/custom/AnimateSuspense";
 import { Header } from "@/components/custom/Header";
+import { LoadingSpin } from "@/components/custom/LoadingSpin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,11 +33,9 @@ export function ModelEditor() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { value: query } = useQuery("id");
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     inputRef.current?.focus();
-    setLoading(true);
     if (query !== "new" && query !== null) {
       const modelData = ModelManager.store.current[query];
       if (modelData) {
@@ -49,14 +49,12 @@ export function ModelEditor() {
       setCreate(true);
       setModel(defaultModel);
     }
-    setLoading(false);
   }, [query]);
 
   const handleClose = async () => {
     cmd.close();
     setModel(defaultModel);
     setCreate(true);
-    setLoading(true);
   };
 
   const handleSubmit = async () => {
@@ -78,21 +76,15 @@ export function ModelEditor() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col h-screen bg-background">
-        <Header title={create ? "添加模型" : "编辑模型"} close={handleClose} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-screen bg-background">
       <Header title={create ? "添加模型" : "编辑模型"} close={handleClose} />
-      <div className="flex-1 overflow-auto p-4">
+      <AnimateSuspense
+        fallback={<LoadingSpin />}
+        deps={[query]}
+        className="flex-col px-3 justify-between"
+        minDelay={300}
+      >
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="block text-xs text-muted-foreground">
@@ -173,43 +165,43 @@ export function ModelEditor() {
             />
           </div>
         </div>
-      </div>
 
-      <div className="flex justify-end gap-2 px-4 py-3">
-        <Button
-          variant="ghost"
-          onClick={() => {
-            ModelManager.copy(model.id);
-            cmd.message("一个新的模型副本已添加", "成功");
-          }}
-        >
-          <TbCopy className="w-4 h-4" />
-          添加副本
-        </Button>
+        <div className="flex justify-end gap-2 py-3">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              ModelManager.copy(model.id);
+              cmd.message("一个新的模型副本已添加", "成功");
+            }}
+          >
+            <TbCopy className="w-4 h-4" />
+            添加副本
+          </Button>
 
-        <Button variant="ghost" onClick={handleClose}>
-          取消
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          disabled={
-            !model.name ||
-            !model.model ||
-            !model.api_url ||
-            (create && !model.api_key) ||
-            isSubmitting
-          }
-          variant="primary"
-        >
-          {isSubmitting
-            ? create
-              ? "添加中..."
-              : "更新中..."
-            : create
-            ? "添加"
-            : "更新"}
-        </Button>
-      </div>
+          <Button variant="ghost" onClick={handleClose}>
+            取消
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={
+              !model.name ||
+              !model.model ||
+              !model.api_url ||
+              (create && !model.api_key) ||
+              isSubmitting
+            }
+            variant="primary"
+          >
+            {isSubmitting
+              ? create
+                ? "添加中..."
+                : "更新中..."
+              : create
+              ? "添加"
+              : "更新"}
+          </Button>
+        </div>
+      </AnimateSuspense>
     </div>
   );
 }

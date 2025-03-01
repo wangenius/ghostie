@@ -17,7 +17,8 @@ import CodeMirror from "@uiw/react-codemirror";
 import { useCallback, useEffect, useState } from "react";
 import { TbBook } from "react-icons/tb";
 import { PluginManager } from "./PluginManager";
-
+import { AnimateSuspense } from "@/components/custom/AnimateSuspense";
+import { LoadingSpin } from "@/components/custom/LoadingSpin";
 // 添加新的 ParamInput 组件
 interface ParamInputProps {
   property: ToolProperty;
@@ -111,8 +112,6 @@ function ParamInput({
 }
 
 export function PluginEditor() {
-  /* 是否加载中 */
-  const [loading, setLoading] = useState(true);
   /* 是否提交中 */
   const [isSubmitting, setIsSubmitting] = useState(false);
   /* 是否创建 */
@@ -154,14 +153,10 @@ export function PluginEditor() {
     } catch (error) {
       console.error("加载插件失败:", error);
       handleClose();
-    } finally {
-      setLoading(false);
     }
   }, [query]);
 
   useEffect(() => {
-    setLoading(true);
-
     init();
   }, [query]);
 
@@ -170,7 +165,6 @@ export function PluginEditor() {
     setContent("");
     setCreate(true);
     cmd.close();
-    setLoading(true);
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -245,22 +239,15 @@ export function PluginEditor() {
     (tool) => tool.name === testTool,
   )?.parameters;
 
-  if (loading) {
-    return (
-      <div className="flex flex-col h-screen bg-background">
-        <Header title={create ? "添加插件" : "编辑插件"} close={handleClose} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-screen bg-background">
       <Header title={create ? "添加插件" : "编辑插件"} close={handleClose} />
 
-      <div className="flex-1 overflow-hidden flex">
+      <AnimateSuspense
+        fallback={<LoadingSpin />}
+        deps={[query]}
+        className="flex-1 overflow-hidden flex"
+      >
         {/* 左侧代码编辑区域 */}
         <div className="flex-1 p-4 overflow-auto flex flex-col">
           <div className="mb-4">
@@ -391,7 +378,7 @@ export function PluginEditor() {
             </Button>
           </div>
         </div>
-      </div>
+      </AnimateSuspense>
     </div>
   );
 }
