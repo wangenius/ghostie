@@ -15,10 +15,12 @@ import { useQuery } from "@hook/useQuery";
 import { githubLight } from "@uiw/codemirror-theme-github";
 import CodeMirror from "@uiw/react-codemirror";
 import { useCallback, useEffect, useState } from "react";
-import { TbBook } from "react-icons/tb";
+import { TbBook, TbLoader2, TbTestPipe } from "react-icons/tb";
 import { PluginManager } from "./PluginManager";
 import { AnimateSuspense } from "@/components/custom/AnimateSuspense";
 import { LoadingSpin } from "@/components/custom/LoadingSpin";
+import { Drawer } from "@/components/ui/drawer";
+import JsonViewer from "@/components/custom/JsonViewer";
 // 添加新的 ParamInput 组件
 interface ParamInputProps {
   property: ToolProperty;
@@ -126,6 +128,10 @@ export function PluginEditor() {
   const [testTool, setTestTool] = useState<string>("");
   /* 脚本内容 */
   const [content, setContent] = useState("");
+  /* 测试抽屉是否打开 */
+  const [isTestDrawerOpen, setIsTestDrawerOpen] = useState(false);
+
+  const [result, setResult] = useState<any>(null);
 
   const init = useCallback(async () => {
     try {
@@ -225,8 +231,7 @@ export function PluginEditor() {
         tool: tool,
         args: testArgs,
       });
-      console.log(result);
-      cmd.message(JSON.stringify(result).slice(0, 200), "测试成功");
+      setResult(result);
     } catch (error) {
       console.log(error);
       cmd.message("请打开调试窗口查看错误信息", "测试失败", "warning");
@@ -241,7 +246,23 @@ export function PluginEditor() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <Header title={create ? "添加插件" : "编辑插件"} close={handleClose} />
+      <Header
+        title={create ? "添加插件" : "编辑插件"}
+        close={handleClose}
+        extra={
+          <Button
+            onClick={() => {
+              window.open(
+                "https://ccn0kkxjz1z2.feishu.cn/wiki/MxzywoXxaiyF08kRREkcEl1Vnfh",
+              );
+            }}
+            variant="ghost"
+          >
+            <TbBook className="w-4 h-4" />
+            开发文档
+          </Button>
+        }
+      />
 
       <AnimateSuspense
         fallback={<LoadingSpin />}
@@ -250,134 +271,156 @@ export function PluginEditor() {
       >
         {/* 左侧代码编辑区域 */}
         <div className="flex-1 p-4 overflow-auto flex flex-col">
-          <div className="mb-4">
-            <h3 className="text-lg font-medium">{plugin?.name}</h3>
-            <p className="text-sm text-muted-foreground">
-              {plugin?.description}
-            </p>
-          </div>
-          <div className="space-y-1.5 flex-1">
-            <div className="flex items-center justify-between">
-              <label className="block text-xs text-muted-foreground">
-                脚本内容
-              </label>
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-medium">{plugin?.name}</h3>
+              <p className="text-sm text-muted-foreground">
+                {plugin?.description}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
               <Button
-                onClick={() => {
-                  window.open(
-                    "https://ccn0kkxjz1z2.feishu.cn/wiki/MxzywoXxaiyF08kRREkcEl1Vnfh",
-                  );
-                }}
+                onClick={() => setIsTestDrawerOpen(true)}
                 variant="ghost"
+                className="gap-2"
               >
-                <TbBook className="w-4 h-4" />
-                开发文档
+                <TbTestPipe className="w-4 h-4" />
+                测试
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleUpdate}
+                disabled={!content || isSubmitting}
+              >
+                {isSubmitting
+                  ? create
+                    ? "创建中..."
+                    : "更新中..."
+                  : create
+                  ? "创建"
+                  : "更新"}
               </Button>
             </div>
-            <div className="rounded-md overflow-hidden flex-1 border focus-within:border-primary/40">
-              <CodeMirror
-                value={content}
-                height="calc(100vh - 300px)"
-                theme={githubLight}
-                extensions={[javascript({ typescript: true })]}
-                onChange={(value) => setContent(value)}
-                placeholder={`编写你的插件代码, 参考开发文档`}
-                basicSetup={{
-                  lineNumbers: false,
-                  highlightActiveLineGutter: true,
-                  highlightSpecialChars: true,
-                  foldGutter: false,
-                  drawSelection: true,
-                  dropCursor: true,
-                  allowMultipleSelections: true,
-                  indentOnInput: true,
-                  syntaxHighlighting: true,
-                  autocompletion: true,
-                  lintKeymap: true,
-                }}
-              />
-            </div>
           </div>
-          <div className="mt-4">
-            <Button
-              variant="primary"
-              onClick={handleUpdate}
-              disabled={!content || isSubmitting}
-              className="w-full h-12 text-lg"
-            >
-              {isSubmitting
-                ? create
-                  ? "创建中..."
-                  : "更新中..."
-                : create
-                ? "创建"
-                : "更新"}
-            </Button>
+          <div className="rounded-md overflow-y-auto flex-1 border focus-within:border-primary/40">
+            <CodeMirror
+              value={content}
+              theme={githubLight}
+              extensions={[javascript({ typescript: true })]}
+              onChange={(value) => setContent(value)}
+              placeholder={`编写你的插件代码, 参考开发文档`}
+              basicSetup={{
+                lineNumbers: false,
+                highlightActiveLineGutter: true,
+                highlightSpecialChars: true,
+                foldGutter: false,
+                drawSelection: true,
+                dropCursor: true,
+                allowMultipleSelections: true,
+                indentOnInput: true,
+                syntaxHighlighting: true,
+                autocompletion: true,
+                lintKeymap: true,
+              }}
+            />
           </div>
         </div>
 
-        {/* 右侧测试区域 */}
-        <div className="w-[400px] flex flex-col">
-          <div className="flex-1 p-4 overflow-auto">
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-muted-foreground">
-                  测试工具
-                </label>
-                <Select
-                  value={testTool}
-                  onValueChange={(value) => setTestTool(value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择测试工具" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {plugin?.tools.map((tool) => (
-                      <SelectItem key={tool.name} value={tool.name}>
-                        {tool.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        {/* 测试抽屉 */}
+        <Drawer
+          direction="right"
+          open={isTestDrawerOpen}
+          onOpenChange={setIsTestDrawerOpen}
+          className="w-[380px]"
+        >
+          <div className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">测试工具</h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    选择要测试的工具并配置相关参数
+                  </p>
+                  <Select
+                    value={testTool}
+                    onValueChange={(value) => setTestTool(value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="选择测试工具" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {plugin?.tools.map((tool) => (
+                        <SelectItem key={tool.name} value={tool.name}>
+                          {tool.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {testTool && (
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-muted-foreground">
-                    测试参数
-                  </label>
-                  <div className="space-y-3">
-                    {parameters &&
-                      Object.entries(parameters.properties || {}).map(
-                        ([key, property]) => (
-                          <ParamInput
-                            key={key}
-                            name={key}
-                            property={property}
-                            value={testArgs[key]}
-                            onChange={(value) =>
-                              setTestArgs((prev) => ({ ...prev, [key]: value }))
-                            }
-                          />
-                        ),
-                      )}
+                {testTool && (
+                  <div className="bg-muted/30 rounded-lg">
+                    <h4 className="text-sm font-medium mb-4 flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
+                      测试参数配置
+                    </h4>
+                    <div className="space-y-4">
+                      {parameters &&
+                        Object.entries(parameters.properties || {}).map(
+                          ([key, property]) => (
+                            <div
+                              key={key}
+                              className="bg-background rounded-md p-3"
+                            >
+                              <ParamInput
+                                name={key}
+                                property={property}
+                                value={testArgs[key]}
+                                onChange={(value) =>
+                                  setTestArgs((prev) => ({
+                                    ...prev,
+                                    [key]: value,
+                                  }))
+                                }
+                              />
+                            </div>
+                          ),
+                        )}
+                    </div>
                   </div>
+                )}
+              </div>
+              {result && (
+                <div className="bg-muted/30 rounded-lg">
+                  <h4 className="text-sm font-medium mb-4 flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
+                    测试结果
+                  </h4>
+                  <JsonViewer data={result} />
                 </div>
               )}
             </div>
-          </div>
 
-          {/* 底部按钮区域 */}
-          <div className="p-4">
-            <Button
-              disabled={!testTool}
-              onClick={() => test(testTool)}
-              className="w-full h-12 text-lg"
-              variant="secondary"
-            >
-              运行测试
-            </Button>
+            {/* 底部按钮区域 */}
+            <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <Button
+                disabled={!testTool}
+                onClick={() => test(testTool)}
+                className="w-full h-11 text-base font-medium"
+                variant="default"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <TbLoader2 className="w-4 h-4 animate-spin" />
+                    测试运行中...
+                  </span>
+                ) : (
+                  "运行测试"
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
+        </Drawer>
       </AnimateSuspense>
     </div>
   );
