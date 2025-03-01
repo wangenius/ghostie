@@ -33,8 +33,8 @@ export const EditorContextProvider = ({
 export const useEditorWorkflow = () => {
   const context = useContext(EditorContext);
   if (!context) {
-    throw new Error(
-      "useEditorWorkflow must be used within EditorContextProvider",
+    throw Promise.reject(
+      new Error("useEditorWorkflow must be used within EditorContextProvider"),
     );
   }
   return context.workflow;

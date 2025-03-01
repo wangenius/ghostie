@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@/hook/useQuery";
 import { cmd } from "@/utils/shell";
+import { debounce } from "lodash";
 import { Play } from "lucide-react";
-import { memo, useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -19,6 +20,10 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import { ContextMenu } from "./components/ContextMenu";
 import { CustomEdge } from "./components/CustomEdge";
+import {
+  EditorContextProvider,
+  useEditorWorkflow,
+} from "./context/EditorContext";
 import { useEdges } from "./hooks/useEdges";
 import { BotNode } from "./nodes/BotNode";
 import { BranchNode } from "./nodes/BranchNode";
@@ -28,12 +33,7 @@ import { FilterNode } from "./nodes/FilterNode";
 import { PluginNode } from "./nodes/PluginNode";
 import { StartNode } from "./nodes/StartNode";
 import { NodeType } from "./types/nodes";
-import {
-  EditorContextProvider,
-  useEditorWorkflow,
-} from "./context/EditorContext";
 import { Workflow } from "./Workflow";
-import { debounce } from "lodash";
 
 /* 节点类型 */
 const nodeTypes = {
@@ -114,6 +114,10 @@ const WorkflowGraph = memo(({ workflow }: { workflow: Workflow }) => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
   const { onEdgesChange, onConnect } = useEdges();
+
+  if (!workflowState.data.id) {
+    throw Promise.reject(new Error("工作流 ID 不存在"));
+  }
 
   // 使用 useMemo 缓存节点和边的数据
   const nodes = useMemo(
@@ -291,7 +295,12 @@ const WorkflowEditorContent = () => {
           cmd.close();
         }}
       />
-      <AnimateSuspense fallback={<LoadingSpin />} className="flex-col">
+      <AnimateSuspense
+        fallback={<LoadingSpin />}
+        className="flex-col"
+        minDelay={300}
+        deps={[value]} // 添加 deps 依赖
+      >
         <ReactFlowProvider>
           <WorkflowInfo />
           <WorkflowGraph workflow={workflow} />

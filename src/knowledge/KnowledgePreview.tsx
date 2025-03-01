@@ -24,7 +24,7 @@ export const KnowledgePreview = () => {
           cmd.close();
         }}
       />
-      <AnimateSuspense fallback={<LoadingSpin />}>
+      <AnimateSuspense fallback={<LoadingSpin />} minDelay={500} deps={[id]}>
         <KnowledgeContent id={id} />
       </AnimateSuspense>
     </div>
@@ -39,6 +39,7 @@ const KnowledgeContent = ({ id }: { id: string }) => {
 
   const docs = KnowledgeStore.use();
   const previewDocument = docs[id || ""];
+
   if (!id) {
     return (
       <div className="flex-1 flex items-center justify-center">
