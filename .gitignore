@@ -29,3 +29,5 @@ Cargo.lock
 *.key.pub
 .env
 *.css.map
+
+*.

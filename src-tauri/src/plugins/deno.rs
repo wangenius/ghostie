@@ -5,12 +5,29 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::Mutex as StdMutex;
+use tauri::AppHandle;
+use tauri_plugin_notification::NotificationExt;
 use thiserror::Error;
 use tokio::sync::Mutex;
 use toml;
 
 use crate::utils::file::get_config_dir;
 use crate::utils::gen::generate_id;
+
+// 全局 AppHandle 状态
+static APP_HANDLE: Lazy<StdMutex<Option<AppHandle>>> = Lazy::new(|| StdMutex::new(None));
+
+// 设置 AppHandle 的函数
+pub fn set_app_handle(handle: AppHandle) {
+    let mut app_handle = APP_HANDLE.lock().unwrap();
+    *app_handle = Some(handle);
+}
+
+// 获取 AppHandle 的函数
+fn get_app_handle() -> Option<AppHandle> {
+    APP_HANDLE.lock().unwrap().clone()
+}
 
 // 定义错误类型
 #[derive(Error, Debug, Serialize)]
@@ -203,8 +220,8 @@ impl DenoRuntime {
                         let error_msg = String::from_utf8_lossy(&output.stderr);
                         println!("Deno 安装失败: {}", error_msg);
 
-                        // 发送系统通知
-                        if let Some(app_handle) = tauri::AppHandle::try_from_env() {
+                        // 使用全局 AppHandle 发送通知
+                        if let Some(app_handle) = get_app_handle() {
                             let _ = app_handle
                                 .notification()
                                 .builder()
@@ -218,8 +235,8 @@ impl DenoRuntime {
                 Err(e) => {
                     println!("执行安装脚本失败: {}", e);
 
-                    // 发送系统通知
-                    if let Some(app_handle) = tauri::AppHandle::try_from_env() {
+                    // 使用全局 AppHandle 发送通知
+                    if let Some(app_handle) = get_app_handle() {
                         let _ = app_handle
                             .notification()
                             .builder()

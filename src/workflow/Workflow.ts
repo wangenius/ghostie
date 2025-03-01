@@ -377,6 +377,10 @@ export class Workflow {
           // end节点的输出是所有输入的汇总
           initialOutputs = {};
           break;
+        case "panel":
+          // panel节点的输出是所有输入的汇总
+          initialOutputs = {};
+          break;
         default:
           initialOutputs = { result: null };
       }
@@ -526,6 +530,13 @@ export class Workflow {
           break;
 
         case "end":
+          result = {
+            success: true,
+            data: inputs,
+          };
+          break;
+
+        case "panel":
           result = {
             success: true,
             data: inputs,

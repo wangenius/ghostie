@@ -61,6 +61,8 @@ thiserror = "1.0"
 zip = "0.6"
 quick-xml = "0.31"
 pdf-extract = "0.8.2"
+tokio-util = { version = "0.7", features = ["codec"] }
+tauri-plugin-notification = "2"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-autostart = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }

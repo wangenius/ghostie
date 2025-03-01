@@ -34,6 +34,7 @@ import { PluginNode } from "./nodes/PluginNode";
 import { StartNode } from "./nodes/StartNode";
 import { NodeType } from "./types/nodes";
 import { Workflow } from "./Workflow";
+import { PanelNode } from "./nodes/PanelNode";
 
 /* 节点类型 */
 const nodeTypes = {
@@ -44,6 +45,7 @@ const nodeTypes = {
   plugin: PluginNode,
   branch: BranchNode,
   filter: FilterNode,
+  panel: PanelNode,
 } as const;
 
 /* 边类型 */

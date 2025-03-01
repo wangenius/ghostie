@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use ghostie::plugins::{deno, knowledge};
+use ghostie::plugins::{chat, deno, knowledge};
 use ghostie::utils;
 use tauri::{
     menu::{Menu, MenuItem},
@@ -13,6 +13,7 @@ use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut,
 #[tokio::main]
 async fn main() {
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_global_shortcut::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::default().build())
@@ -41,6 +42,9 @@ async fn main() {
         )
         .manage(knowledge::KnowledgeState::new())
         .setup(|app| {
+            // 设置全局 AppHandle
+            deno::set_app_handle(app.handle().clone());
+
             // 仅在桌面平台启用自动更新功能
             #[cfg(desktop)]
             let _ = app
@@ -105,6 +109,8 @@ async fn main() {
         })
         // 启用系统对话框插件
         .invoke_handler(tauri::generate_handler![
+            chat::chat_stream,
+            chat::cancel_stream,
             utils::file::open_files_path,
             utils::file::open_file,
             utils::file::save_file,

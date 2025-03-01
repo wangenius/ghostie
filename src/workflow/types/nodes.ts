@@ -81,7 +81,8 @@ export type NodeType =
   | "bot"
   | "plugin"
   | "branch"
-  | "filter";
+  | "filter"
+  | "panel";
 
 /* 基础节点配置 */
 export interface BaseNodeConfig {
@@ -104,6 +105,10 @@ export interface StartNodeConfig extends BaseNodeConfig {
 export interface EndNodeConfig extends BaseNodeConfig {
   type: "end";
   result?: string;
+}
+
+export interface PanelNodeConfig extends BaseNodeConfig {
+  type: "panel";
 }
 
 export interface ChatNodeConfig extends BaseNodeConfig {

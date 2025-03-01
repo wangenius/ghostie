@@ -5,6 +5,7 @@ import {
   TbPlug,
   TbRobot,
   TbFilter,
+  TbLayoutBoard,
 } from "react-icons/tb";
 import { MarkerType } from "reactflow";
 
@@ -16,6 +17,7 @@ export const NODE_TYPES = {
   plugin: { label: "插件", icon: TbPlug },
   branch: { label: "分支", icon: TbArrowsSplit },
   filter: { label: "过滤", icon: TbFilter },
+  panel: { label: "面板", icon: TbLayoutBoard },
 } as const;
 
 export const EDGE_CONFIG = {
