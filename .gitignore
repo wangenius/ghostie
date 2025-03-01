@@ -28,6 +28,4 @@ Cargo.lock
 *.key
 *.key.pub
 .env
-
-*.css
 *.css.map

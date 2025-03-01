@@ -1,0 +1,54 @@
+@font-face {
+  font-family: "mono";
+  src: url("JetBrainsMono-Regular.ttf") format("opentype");
+}
+@font-face {
+  font-family: "siyuan";
+  src: url("SourceHanSerifCN-Medium.otf") format("opentype");
+  font-weight: normal;
+}
+@font-face {
+  font-family: "harmony";
+  src: url("HarmonyOS_Sans_SC_Regular.ttf") format("opentype");
+}
+[data-font=siyuan] * {
+  font-family: "siyuan";
+}
+
+[data-font=harmony] * {
+  font-family: "harmony";
+}
+
+.mono {
+  font-family: "mono" !important;
+}
+
+code * {
+  font-family: "mono";
+}
+
+.code * {
+  font-family: "mono";
+}
+
+.cm-line {
+  font-family: "mono";
+}
+
+.cm-line * {
+  font-family: "mono";
+}
+
+.cm-theme {
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.cm-editor {
+  overflow: hidden;
+}
+
+.cm-scroller {
+  background: transparent;
+  border-radius: 5px;
+}/*# sourceMappingURL=variables.css.map */
