@@ -1,16 +1,13 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
 import { BotEditor } from "./bot/BotEditor";
 import { ModelEditor } from "./model/ModelEditor";
-import { PluginEditor } from "./plugin/PluginEditor";
-import { MainView } from "./page/main/MainView";
-import { SettingsPage } from "./settings/SettingsPage";
-import { SettingsManager } from "./settings/SettingsManager";
-import { useEffect } from "react";
-import { EnvEditor } from "./plugin/EnvEditor";
 import { HistoryPage } from "./page/history/HistoryPage";
-import { KnowledgeCreator } from "./knowledge/KnowledgeCreator";
-import { KnowledgePreview } from "./knowledge/KnowledgePreview";
-import { WorkflowEditor } from "./workflow/WorkflowEditor";
+import { MainView } from "./page/main/MainView";
+import { EnvEditor } from "./plugin/EnvEditor";
+import { PluginEditor } from "./plugin/PluginEditor";
+import { SettingsManager } from "./settings/SettingsManager";
+import { SettingsPage } from "./settings/SettingsPage";
+import { Page } from "./utils/PageRouter";
 
 /* 主应用,提供路由 */
 function App() {
@@ -37,20 +34,13 @@ function App() {
       id="app"
       className="h-full w-full bg-background"
     >
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<MainView />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/model-edit" element={<ModelEditor />} />
-          <Route path="/bot-edit" element={<BotEditor />} />
-          <Route path="/plugin-edit" element={<PluginEditor />} />
-          <Route path="/env-edit" element={<EnvEditor />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/knowledge-creator" element={<KnowledgeCreator />} />
-          <Route path="/knowledge-preview" element={<KnowledgePreview />} />
-          <Route path="/workflow-edit" element={<WorkflowEditor />} />
-        </Routes>
-      </BrowserRouter>
+      <Page name="main" component={<MainView />} />
+      <Page name="settings" component={<SettingsPage />} />
+      <Page name="model" component={<ModelEditor />} />
+      <Page name="bot" component={<BotEditor />} />
+      <Page name="plugin" component={<PluginEditor />} />
+      <Page name="env" component={<EnvEditor />} />
+      <Page name="history" component={<HistoryPage />} />
     </div>
   );
 }

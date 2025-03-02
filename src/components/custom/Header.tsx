@@ -1,10 +1,10 @@
-import { cmd } from "@/utils/shell";
 import { TbX } from "react-icons/tb";
 import { Button } from "../ui/button";
+import { Page } from "@/utils/PageRouter";
 
 export const Header = ({
   title,
-  close = () => cmd.close(),
+  close = () => Page.to("main"),
   extra,
 }: {
   title: string;

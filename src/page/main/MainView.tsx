@@ -27,10 +27,9 @@ import {
   TbSettings,
   TbSortDescending2,
 } from "react-icons/tb";
-import { HistoryPage } from "../history/HistoryPage";
 import { BotItem } from "./components/BotItem";
 import { MessageItem } from "./components/MessageItem";
-import { debounce } from "lodash";
+import { Page } from "@/utils/PageRouter";
 
 // 将常量提取到组件外部
 const SETTINGS_WINDOW_OPTIONS = { width: 800, height: 600 };
@@ -61,12 +60,10 @@ export function MainView() {
   // 计算综合得分
   const calculateScore = useCallback((bot: BotProps) => {
     if (!bot.lastUsed) return 0;
-
     const now = Date.now();
     const daysSinceLastUse = (now - bot.lastUsed) / (1000 * 60 * 60 * 24);
     const usageScore = (bot.usageCount || 0) * 100;
     const recencyScore = Math.max(0, 100 - Math.min(daysSinceLastUse, 100));
-
     return usageScore + recencyScore;
   }, []);
 
@@ -167,7 +164,6 @@ export function MainView() {
       }
       if (e.ctrlKey && e.key.toLowerCase() === "h") {
         e.preventDefault();
-        HistoryPage.open();
       }
       if (e.ctrlKey && e.key.toLowerCase() === "o") {
         e.preventDefault();
@@ -260,11 +256,11 @@ const Header = memo(function Header({
 }: HeaderProps) {
   const sortType = SettingsManager.use((state) => state.sortType);
   const handleSettingsClick = useCallback(() => {
-    cmd.open("settings", {}, SETTINGS_WINDOW_OPTIONS);
+    Page.to("settings");
   }, []);
 
   const handleHistoryClick = useCallback(() => {
-    HistoryPage.open();
+    Page.to("history");
   }, []);
 
   const handleInputChange = useCallback(
@@ -456,17 +452,7 @@ interface ChatBoxProps {
 const ChatBox = memo(function ChatBox({ currentBot, onEndChat }: ChatBoxProps) {
   const list = ChatHistory.use();
   const message = list[currentBot.model.historyMessage.id];
-  const containerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // 使用防抖的滚动处理函数
-  const handleScroll = useMemo(
-    () =>
-      debounce(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100),
-    [],
-  );
 
   if (!message) {
     onEndChat();
@@ -474,30 +460,13 @@ const ChatBox = memo(function ChatBox({ currentBot, onEndChat }: ChatBoxProps) {
   }
 
   useEffect(() => {
-    handleScroll();
-    return () => {
-      handleScroll.cancel();
-    };
-  }, [list, handleScroll]);
-
-  // 计算每条消息的预估高度
-  const estimatedItemSize = 100;
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [list]);
 
   return (
-    <div
-      ref={containerRef}
-      className="px-2 space-y-2 my-2 h-full overflow-auto"
-    >
+    <div className="px-2 space-y-2 my-2">
       {message.list.map((message, index) => (
-        <div
-          key={index}
-          style={{
-            height: Math.min(estimatedItemSize, message.content.length / 2),
-            contain: "content",
-          }}
-        >
-          <MessageItem message={message} />
-        </div>
+        <MessageItem key={index} message={message} />
       ))}
       <div ref={messagesEndRef} />
     </div>

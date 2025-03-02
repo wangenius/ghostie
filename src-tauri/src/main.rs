@@ -120,8 +120,6 @@ async fn main() {
             utils::file::open_file,
             utils::file::save_file,
             utils::file::read_file_text,
-            utils::window::open_window,
-            utils::window::hide_window,
             utils::window::open_config_dir,
             utils::update::check_update,
             utils::update::install_update,
