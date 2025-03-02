@@ -151,3 +151,21 @@ option {
 .react-flow__attribution {
   display: none !important;
 }
+
+.cm-scroller {
+  height: 100% !important;
+  overflow: auto !important;
+}
+
+.cm-editor {
+  height: 100% !important;
+  overflow: auto !important;
+}
+
+.cm-line {
+  line-height: 1.8 !important;
+  &.cm-activeLine {
+    background-color: #00000010 !important;
+    border-radius: 0.25rem !important;
+  }
+}

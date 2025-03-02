@@ -1,5 +1,5 @@
 import { Workflow } from "../Workflow";
-import { createContext, useContext, useRef } from "react";
+import { createContext, useContext, useEffect, useRef } from "react";
 
 interface EditorContextType {
   workflow: Workflow;
@@ -9,15 +9,21 @@ const EditorContext = createContext<EditorContextType | null>(null);
 
 /** 工作流编辑器上下文提供者 */
 export const EditorContextProvider = ({
+  id,
   children,
 }: {
+  id: string;
   children: React.ReactNode;
 }) => {
   /** 工作流实例 */
   const workflowRef = useRef<Workflow>();
   if (!workflowRef.current) {
-    workflowRef.current = new Workflow();
+    workflowRef.current = new Workflow(id);
   }
+
+  useEffect(() => {
+    workflowRef.current?.init(id);
+  }, [id]);
 
   return (
     <EditorContext.Provider value={{ workflow: workflowRef.current }}>

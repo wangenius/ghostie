@@ -35,6 +35,8 @@ export function Drawer({
             { "--initial-transform": "calc(100% + 8px)" } as React.CSSProperties
           }
         >
+          <DrawerPrimitive.Title className="sr-only"></DrawerPrimitive.Title>
+          <DrawerPrimitive.Description className="sr-only"></DrawerPrimitive.Description>
           <div className="bg-zinc-50 h-full w-full grow p-5 flex flex-col rounded-lg">
             {children}
           </div>

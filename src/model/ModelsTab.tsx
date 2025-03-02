@@ -12,6 +12,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 
@@ -116,7 +123,7 @@ export function ModelsTab() {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
+                <Button size="icon">
                   <PiDotsThreeBold className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -215,81 +222,107 @@ export function ModelsTab() {
                     />
                   </div>
 
-                  {/* 表单区域 - 使用卡片式设计 */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs text-muted-foreground">
+                      类型
+                    </label>
+                    <Select
+                      value={selectedModel.type}
+                      onValueChange={(value) =>
+                        setSelectedModel(
+                          selectedModel
+                            ? {
+                                ...selectedModel,
+                                type: value as ModelType,
+                              }
+                            : undefined,
+                        )
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="请选择模式" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.values(ModelType).map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {ModelTypeList[type]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div>
-                    <div className="bg-card rounded-xl p-6 border shadow-sm">
-                      <h3 className="text-lg font-medium mb-4">API 配置</h3>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium mb-1.5 block">
-                            MODEL NAME
-                          </label>
-                          <Input
-                            type="text"
-                            spellCheck={false}
-                            value={selectedModel?.model || ""}
-                            onChange={(e) =>
-                              setSelectedModel(
-                                selectedModel
-                                  ? { ...selectedModel, model: e.target.value }
-                                  : undefined,
-                              )
-                            }
-                            placeholder="如：gpt-3.5-turbo"
-                            className="w-full font-mono"
-                          />
-                          <p className="text-xs text-muted-foreground mt-1.5">
-                            例如：gpt-3.5-turbo
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium mb-1.5 block">
-                            API URL
-                          </label>
-                          <Input
-                            type="text"
-                            spellCheck={false}
-                            value={selectedModel?.api_url || ""}
-                            onChange={(e) =>
-                              setSelectedModel(
-                                selectedModel
-                                  ? {
-                                      ...selectedModel,
-                                      api_url: e.target.value,
-                                    }
-                                  : undefined,
-                              )
-                            }
-                            placeholder="整个 API URL，包括base_url/v1/chat/completions"
-                            className="w-full font-mono"
-                          />
-                          <p className="text-xs text-muted-foreground mt-1.5">
-                            例如：https://api.openai.com/v1/chat/completions
-                          </p>
-                        </div>
+                    <h3 className="text-lg font-medium mb-4">API 配置</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium mb-1.5 block">
+                          MODEL NAME
+                        </label>
+                        <Input
+                          type="text"
+                          spellCheck={false}
+                          value={selectedModel?.model || ""}
+                          onChange={(e) =>
+                            setSelectedModel(
+                              selectedModel
+                                ? { ...selectedModel, model: e.target.value }
+                                : undefined,
+                            )
+                          }
+                          placeholder="如：gpt-3.5-turbo"
+                          className="w-full font-mono"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1.5">
+                          例如：gpt-3.5-turbo
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1.5 block">
+                          API URL
+                        </label>
+                        <Input
+                          type="text"
+                          spellCheck={false}
+                          value={selectedModel?.api_url || ""}
+                          onChange={(e) =>
+                            setSelectedModel(
+                              selectedModel
+                                ? {
+                                    ...selectedModel,
+                                    api_url: e.target.value,
+                                  }
+                                : undefined,
+                            )
+                          }
+                          placeholder="整个 API URL，包括base_url/v1/chat/completions"
+                          className="w-full font-mono"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1.5">
+                          例如：https://api.openai.com/v1/chat/completions
+                        </p>
+                      </div>
 
-                        <div>
-                          <label className="text-sm font-medium mb-1.5 block">
-                            API Key
-                          </label>
-                          <Input
-                            type="password"
-                            spellCheck={false}
-                            value={selectedModel?.api_key || ""}
-                            onChange={(e) =>
-                              setSelectedModel(
-                                selectedModel
-                                  ? {
-                                      ...selectedModel,
-                                      api_key: e.target.value,
-                                    }
-                                  : undefined,
-                              )
-                            }
-                            placeholder="如需更新 API Key 请输入新的值"
-                            className="w-full font-mono"
-                          />
-                        </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1.5 block">
+                          API Key
+                        </label>
+                        <Input
+                          type="password"
+                          spellCheck={false}
+                          value={selectedModel?.api_key || ""}
+                          onChange={(e) =>
+                            setSelectedModel(
+                              selectedModel
+                                ? {
+                                    ...selectedModel,
+                                    api_key: e.target.value,
+                                  }
+                                : undefined,
+                            )
+                          }
+                          placeholder="如需更新 API Key 请输入新的值"
+                          className="w-full font-mono"
+                        />
                       </div>
                     </div>
                   </div>

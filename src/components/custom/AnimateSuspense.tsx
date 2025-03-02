@@ -114,7 +114,7 @@ export const AnimateSuspense: React.FC<AnimateSuspenseProps> = ({
   useEffect(() => {
     setKey((prev) => prev + 1);
     setIsSuspended(true);
-  }, deps);
+  }, [deps]);
 
   const handleSuspend = useCallback(() => {
     setIsSuspended(true);

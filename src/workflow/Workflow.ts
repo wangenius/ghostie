@@ -110,13 +110,15 @@ export class Workflow {
 
   /** 注册工作流，创建一个新的id */
   register() {
+    const id = gen.id();
     this.state.set((state) => {
       return {
         ...state,
-        data: { ...state.data, id: gen.id() },
+        data: { ...state.data, id },
       };
     });
     WorkflowManager.create(this.state.current.data);
+    return id;
   }
 
   // 获取所有节点

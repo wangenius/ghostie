@@ -1,13 +1,12 @@
-import { AnimateSuspense } from "@/components/custom/AnimateSuspense";
-import { Header } from "@/components/custom/Header";
 import { LoadingSpin } from "@/components/custom/LoadingSpin";
 import { Button } from "@/components/ui/button";
+import { Drawer } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
-import { useQuery } from "@/hook/useQuery";
+import { Textarea } from "@/components/ui/textarea";
 import { cmd } from "@/utils/shell";
 import { debounce } from "lodash";
-import { Play } from "lucide-react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, Suspense, useCallback, useMemo, useRef, useState } from "react";
+import { TbBook, TbLoader2, TbPencil, TbPlayerPlay } from "react-icons/tb";
 import ReactFlow, {
   Background,
   Controls,
@@ -20,21 +19,18 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import { ContextMenu } from "./components/ContextMenu";
 import { CustomEdge } from "./components/CustomEdge";
-import {
-  EditorContextProvider,
-  useEditorWorkflow,
-} from "./context/EditorContext";
+import { useEditorWorkflow } from "./context/EditorContext";
 import { useEdges } from "./hooks/useEdges";
 import { BotNode } from "./nodes/BotNode";
 import { BranchNode } from "./nodes/BranchNode";
 import { ChatNode } from "./nodes/ChatNode";
 import { EndNode } from "./nodes/EndNode";
 import { FilterNode } from "./nodes/FilterNode";
+import { PanelNode } from "./nodes/PanelNode";
 import { PluginNode } from "./nodes/PluginNode";
 import { StartNode } from "./nodes/StartNode";
 import { NodeType } from "./types/nodes";
 import { Workflow } from "./Workflow";
-import { PanelNode } from "./nodes/PanelNode";
 
 /* 节点类型 */
 const nodeTypes = {
@@ -57,49 +53,133 @@ const edgeTypes = {
 const WorkflowInfo = memo(() => {
   const workflow = useEditorWorkflow();
   const workflowState = workflow.use();
+  const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+
+  // 打开编辑抽屉时初始化数据
+  const handleOpenEdit = useCallback(() => {
+    setEditName(workflowState?.data.name || "");
+    setEditDescription(workflowState?.data.description || "");
+    setIsEditDrawerOpen(true);
+  }, [workflowState?.data.name, workflowState?.data.description]);
+
+  // 处理名称变更
+  const handleNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newName = e.target.value;
+      setEditName(newName);
+      workflow.set((state) => ({
+        ...state,
+        data: {
+          ...state.data,
+          name: newName,
+        },
+      }));
+    },
+    [workflow],
+  );
+
+  // 处理描述变更
+  const handleDescriptionChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const newDescription = e.target.value;
+      setEditDescription(newDescription);
+      workflow.set((state) => ({
+        ...state,
+        data: {
+          ...state.data,
+          description: newDescription,
+        },
+      }));
+    },
+    [workflow],
+  );
 
   return (
-    <div className="flex items-center gap-4 px-3 bg-card">
-      <div className="flex-1 grid grid-cols-[1fr,1.5fr] gap-3">
-        <Input
-          value={workflowState?.data.name}
-          onChange={(e) => {
-            workflow.set((state) => ({
-              ...state,
-              data: {
-                ...state.data,
-                name: e.target.value,
-              },
-            }));
-          }}
-          placeholder="工作流名称"
-        />
-        <Input
-          value={workflowState?.data.description}
-          onChange={(e) => {
-            workflow.set((state) => ({
-              ...state,
-              data: {
-                ...state.data,
-                description: e.target.value,
-              },
-            }));
-          }}
-          placeholder="工作流描述"
-        />
+    <div className="flex flex-col pt-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex-1 truncate mr-4">
+          <h3 className="text-2xl font-semibold truncate">
+            {workflowState?.data.name || "未命名工作流"}
+          </h3>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button onClick={handleOpenEdit} variant="ghost">
+            <TbPencil className="w-4 h-4" />
+            编辑
+          </Button>
+          <Button
+            onClick={() => {
+              window.open(
+                "https://ccn0kkxjz1z2.feishu.cn/wiki/MxzywoXxaiyF08kRREkcEl1Vnfh",
+              );
+            }}
+            variant="ghost"
+          >
+            <TbBook className="w-4 h-4" />
+            开发文档
+          </Button>
+          <Button
+            onClick={() => workflow.execute()}
+            disabled={workflowState?.isExecuting}
+            variant="primary"
+          >
+            {workflowState?.isExecuting ? (
+              <span className="flex items-center gap-2">
+                <TbLoader2 className="w-4 h-4 animate-spin" />
+                执行中...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <TbPlayerPlay className="w-4 h-4" />
+                执行
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button
-          onClick={() => workflow.execute()}
-          disabled={workflowState?.isExecuting}
-          size="sm"
-          className="h-8"
-        >
-          <Play className="w-4 h-4" />
-          {workflowState?.isExecuting ? "执行中..." : "执行"}
-        </Button>
-      </div>
+      {/* 编辑抽屉 */}
+      <Drawer
+        direction="right"
+        open={isEditDrawerOpen}
+        onOpenChange={setIsEditDrawerOpen}
+        className="w-[380px]"
+      >
+        <div className="flex flex-col h-full">
+          <div className="flex-1 overflow-y-auto">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-1">编辑工作流</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  修改工作流的基本信息
+                </p>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">名称</label>
+                    <Input
+                      value={editName}
+                      onChange={handleNameChange}
+                      placeholder="输入工作流名称"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">描述</label>
+                    <Textarea
+                      value={editDescription}
+                      onChange={handleDescriptionChange}
+                      placeholder="输入工作流描述"
+                      className="min-h-[100px] resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Drawer>
     </div>
   );
 });
@@ -227,7 +307,7 @@ const WorkflowGraph = memo(({ workflow }: { workflow: Workflow }) => {
   return (
     <div
       ref={reactFlowWrapper}
-      className="w-full h-full relative"
+      className="w-full h-full relative rounded-lg border focus-within:border-primary/40 overflow-hidden"
       onContextMenu={preventContextMenu}
     >
       <ReactFlow
@@ -275,49 +355,19 @@ const WorkflowGraph = memo(({ workflow }: { workflow: Workflow }) => {
 });
 
 /* 工作流编辑器内容 */
-const WorkflowEditorContent = () => {
+export const WorkflowEditor = () => {
   /** 编辑器的工作流实例 */
   const workflow = useEditorWorkflow();
-  /** 查询参数 */
-  const { value, setValue } = useQuery("id");
-
-  useEffect(() => {
-    if (value) {
-      workflow.reset(value);
-    }
-  }, [value, workflow]);
 
   return (
-    <div className="flex flex-col h-screen">
-      <Header
-        title={"编辑工作流"}
-        close={() => {
-          setValue("");
-          workflow.reset();
-          cmd.close();
-        }}
-      />
-      <AnimateSuspense
-        fallback={<LoadingSpin />}
-        className="flex-col"
-        minDelay={300}
-        deps={[value]} // 添加 deps 依赖
-      >
+    <div className="flex flex-col h-full px-4 space-y-4">
+      <Suspense fallback={<LoadingSpin />}>
         <ReactFlowProvider>
           <WorkflowInfo />
           <WorkflowGraph workflow={workflow} />
         </ReactFlowProvider>
-      </AnimateSuspense>
+      </Suspense>
     </div>
-  );
-};
-
-/** 工作流编辑器 */
-export const WorkflowEditor = () => {
-  return (
-    <EditorContextProvider>
-      <WorkflowEditorContent />
-    </EditorContextProvider>
   );
 };
 

@@ -11,7 +11,7 @@ import {
   TbSettings,
   TbShape3,
 } from "react-icons/tb";
-import { BotsList } from "../bot/BotsList";
+import { BotsTab } from "../bot/BotsTab";
 import { KnowledgeTab } from "../knowledge/KnowledgeTab";
 import { ModelsTab } from "../model/ModelsTab";
 import { PluginsTab } from "../plugin/PluginsTab";
@@ -23,8 +23,8 @@ const SETTINGS_NAV_ITEMS = [
   { id: "general", label: "通用", icon: TbSettings },
   { id: "models", label: "大模型", icon: TbBox },
   { id: "bots", label: "机器人", icon: TbGhost3 },
-  { id: "workflows", label: "工作流", icon: TbShape3 },
   { id: "plugins", label: "插件库", icon: TbFileFunction },
+  { id: "workflows", label: "工作流", icon: TbShape3 },
   { id: "knowledge", label: "知识库", icon: TbDatabase },
   { id: "shortcuts", label: "快捷键", icon: TbKeyboard },
 ] as const;
@@ -47,7 +47,7 @@ export function SettingsPage() {
       case "models":
         return <ModelsTab />;
       case "bots":
-        return <BotsList />;
+        return <BotsTab />;
       case "plugins":
         return <PluginsTab />;
       case "knowledge":
@@ -74,7 +74,7 @@ export function SettingsPage() {
       {/* 主体内容区 */}
       <div className="flex flex-1 gap-8 p-6 pt-4 overflow-hidden">
         {/* 左侧导航 */}
-        <div className="w-52 flex flex-col justify-between">
+        <div className="w-44 flex flex-col justify-between">
           <div className="flex flex-col space-y-0.5">
             {SETTINGS_NAV_ITEMS.map(({ id, label, icon: Icon }) => (
               <Button
