@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { TOOL_NAME_SPLIT } from "@/bot/Bot";
+import { defaultBot, TOOL_NAME_SPLIT } from "@/bot/Bot";
 import { BotManager } from "@/bot/BotManger";
 import { Knowledge, KnowledgeStore } from "@/knowledge/KnowledgeStore";
 import { ModelManager } from "@/model/ModelManager";
@@ -21,13 +21,7 @@ import { useQuery } from "@hook/useQuery";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimateSuspense } from "@/components/custom/AnimateSuspense";
 import { LoadingSpin } from "@/components/custom/LoadingSpin";
-const defaultBot: BotProps = {
-  id: "",
-  name: "",
-  system: "",
-  model: "",
-  tools: [],
-};
+import { Slider } from "@/components/ui/slider";
 
 export function BotEditor() {
   const [bot, setBot] = useState<BotProps>(defaultBot);
@@ -136,6 +130,57 @@ export function BotEditor() {
                   ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs text-muted-foreground">
+              选择模式
+            </label>
+            <Select
+              value={bot.mode}
+              onValueChange={(value) =>
+                setBot({ ...bot, mode: value as "react" | "plan" })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="请选择模式" />
+              </SelectTrigger>
+              <SelectContent>
+                {[
+                  { key: "react", label: "ReAct" },
+                  {
+                    key: "plan",
+                    label: (
+                      <span className="flex items-center text-red-500">
+                        Plan&Execute(实验性)
+                      </span>
+                    ),
+                  },
+                ].map((mode) => (
+                  <SelectItem key={mode.key} value={mode.key}>
+                    {mode.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs text-muted-foreground">
+              选择温度
+            </label>
+            <Slider
+              value={[bot.temperature]}
+              min={0}
+              max={2}
+              step={0.1}
+              onValueChange={(value) =>
+                setBot({ ...bot, temperature: value[0] })
+              }
+            />
+            <div className="text-xs text-muted-foreground">
+              {bot.temperature}
+            </div>
           </div>
 
           <div className="space-y-1.5">

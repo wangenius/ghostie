@@ -201,9 +201,9 @@ export class ChatModel {
   public async stream(
     prompt?: string,
     config: RequestConfig = {
-      user: "user:input",
-      assistant: "assistant:reply",
-      function: "function:result",
+      user: MessageType.USER_INPUT,
+      assistant: MessageType.ASSISTANT_REPLY,
+      function: MessageType.FUNCTION_RESULT,
     },
   ): Promise<ChatModelResponse<string>> {
     // 如果有正在进行的请求，先停止它
@@ -243,7 +243,7 @@ export class ChatModel {
           {
             role: "assistant",
             content: "",
-            type: "assistant:loading",
+            type: MessageType.ASSISTANT_PENDING,
             created_at: Date.now(),
           },
         ]);
@@ -304,7 +304,7 @@ export class ChatModel {
         (event) => {
           this.historyMessage.updateLastMessage({
             content: `请求失败: ${event.payload}`,
-            type: "assistant:error",
+            type: MessageType.ASSISTANT_ERROR,
           });
           throw new Error(event.payload);
         },
@@ -325,7 +325,7 @@ export class ChatModel {
       if (tool_calls.length > 0) {
         this.historyMessage.updateLastMessage({
           tool_calls,
-          type: "assistant:tool",
+          type: MessageType.ASSISTANT_TOOL,
         });
       }
 

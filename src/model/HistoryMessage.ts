@@ -2,7 +2,7 @@
  * 负责管理所有的消息历史记录
  */
 import { gen } from "@/utils/generator";
-import { Message, MessagePrototype } from "@common/types/model";
+import { Message, MessagePrototype, MessageType } from "@common/types/model";
 import { Echo } from "echo-state";
 import { SettingsManager } from "../settings/SettingsManager";
 
@@ -74,7 +74,7 @@ export class HistoryMessage implements ChatHistoryItem {
       system: {
         role: "system",
         content: system,
-        type: "system",
+        type: MessageType.SYSTEM,
         created_at: Date.now(),
       },
       list: [],

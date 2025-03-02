@@ -40,6 +40,7 @@ export class ChatManager {
         return newBot;
       },
       endChat: () => {
+        this.state.current.currentBot?.stop();
         this.state.set({
           isActive: false,
           currentBot: undefined,

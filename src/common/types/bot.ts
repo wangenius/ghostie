@@ -15,12 +15,16 @@ export interface BotProps {
   model: string;
   /* 工具 */
   tools: string[];
+  /* 知识库 */
+  knowledges?: string[];
+  /* 温度 */
+  temperature: number;
+  /* Agent模式 */
+  mode: "react" | "plan";
   /* 置顶 */
   pinned?: boolean;
   /* 使用次数 */
   usageCount?: number;
   /* 最后使用时间 */
   lastUsed?: number;
-  /* 知识库 */
-  knowledges?: string[];
 }

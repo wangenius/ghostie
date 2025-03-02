@@ -54,15 +54,34 @@ export interface ToolCallReply {
 }
 
 /** 消息类型 */
-export type MessageType =
-  | "system"
-  | "user:input"
-  | "user:hidden"
-  | "assistant:loading"
-  | "assistant:reply"
-  | "assistant:tool"
-  | "assistant:error"
-  | "function:result";
+export enum MessageType {
+  /** 系统消息 - 用于设置系统级别的提示和配置 */
+  SYSTEM = "system",
+
+  /** 用户输入消息 - 用户的主动输入 */
+  USER_INPUT = "user:input",
+
+  /** 用户隐藏消息 - 系统内部流转的用户消息，不显示给用户 */
+  USER_HIDDEN = "user:hidden",
+
+  /** 助手加载消息 - 表示助手正在处理中 */
+  ASSISTANT_PENDING = "assistant:pending",
+
+  /** 助手回复消息 - 助手的标准回复 */
+  ASSISTANT_REPLY = "assistant:reply",
+
+  /** 助手工具消息 - 助手调用工具时的消息 */
+  ASSISTANT_TOOL = "assistant:tool",
+
+  /** 助手处理消息 - 助手处理中间步骤的消息 */
+  ASSISTANT_PROCESS = "assistant:process",
+
+  /** 助手错误消息 - 助手处理出错时的消息 */
+  ASSISTANT_ERROR = "assistant:error",
+
+  /** 函数执行结果消息 - 工具函数执行后的结果 */
+  FUNCTION_RESULT = "function:result",
+}
 
 /** 消息原型 */
 export interface MessagePrototype {
@@ -135,7 +154,7 @@ export interface ChatModelRequestBody {
 export interface ChatModelResponse<
   T = string,
   ToolArguments = any,
-  ToolResult = any
+  ToolResult = any,
 > {
   /* 响应体 */
   body: T;
