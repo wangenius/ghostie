@@ -25,7 +25,6 @@ export const ChatHistory = new Echo<Record<string, ChatHistoryItem>>(
   {
     name: "history",
     storage: "indexedDB",
-    sync: true,
   },
 );
 
@@ -50,7 +49,6 @@ export class HistoryMessage implements ChatHistoryItem {
     },
     {
       name: "current:history",
-      sync: true,
     },
   );
 

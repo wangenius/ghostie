@@ -7,7 +7,6 @@ export class PluginManager {
     {},
     {
       name: "plugins",
-      sync: true,
     },
   );
 

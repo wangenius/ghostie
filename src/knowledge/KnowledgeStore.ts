@@ -102,8 +102,7 @@ export class KnowledgeStore {
     {
       name: "knowledge",
       storage: "indexedDB",
-      sync: true,
-    }
+    },
   );
 
   static use = this.store.use.bind(this.store);
@@ -128,7 +127,7 @@ export class KnowledgeStore {
   // 生成文本向量
   private static async textToEmbedding(
     text: string,
-    model: Model
+    model: Model,
   ): Promise<number[]> {
     if (!model) {
       throw new Error("未配置模型");
@@ -177,7 +176,7 @@ export class KnowledgeStore {
       name?: string;
       description?: string;
       onProgress?: (progress: ProgressCallback) => void;
-    }
+    },
   ): Promise<Knowledge> {
     const model = SettingsManager.current.knowledge.contentModel;
     if (!model) {
@@ -210,7 +209,7 @@ export class KnowledgeStore {
           currentFile: file.path.split("\\").pop(),
         });
         return { path: file.path, content };
-      })
+      }),
     );
 
     // 处理每个文件
@@ -305,7 +304,7 @@ export class KnowledgeStore {
    */
   static async search(
     query: string,
-    knowledgeIds: string[] = []
+    knowledgeIds: string[] = [],
   ): Promise<SearchResult[]> {
     /* 获取模型 */
     const model = SettingsManager.current.knowledge.searchModel;
@@ -330,7 +329,7 @@ export class KnowledgeStore {
         for (const chunk of file.chunks) {
           const similarity = this.cosineSimilarity(
             queryEmbedding,
-            chunk.embedding
+            chunk.embedding,
           );
           if (similarity > SettingsManager.current.knowledge.threshold) {
             results.push({

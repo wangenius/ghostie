@@ -1,5 +1,6 @@
 import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
+import { Page } from "@/utils/PageRouter";
 import { Echo } from "echo-state";
 import {
   TbBox,
@@ -11,13 +12,12 @@ import {
   TbShape3,
 } from "react-icons/tb";
 import { BotsList } from "../bot/BotsList";
-import { GeneralSettingsPage } from "./GeneralSettingsPage";
 import { KnowledgeTab } from "../knowledge/KnowledgeTab";
 import { ModelsTab } from "../model/ModelsTab";
 import { PluginsTab } from "../plugin/PluginsTab";
-import ShortcutsTab from "./ShortcutsTab";
 import WorkflowsTab from "../workflow/WorkflowsTab";
-import { Page } from "@/utils/PageRouter";
+import { GeneralSettingsPage } from "./GeneralSettingsPage";
+import ShortcutsTab from "./ShortcutsTab";
 
 const SETTINGS_NAV_ITEMS = [
   { id: "general", label: "通用", icon: TbSettings },
@@ -32,10 +32,11 @@ const SETTINGS_NAV_ITEMS = [
 type SettingsTab = (typeof SETTINGS_NAV_ITEMS)[number]["id"];
 
 const SettingsNav = new Echo<{ activeTab: SettingsTab }>(
-  { activeTab: SETTINGS_NAV_ITEMS[0].id },
+  {
+    activeTab: SETTINGS_NAV_ITEMS[0].id,
+  },
   {
     name: "settings-nav",
-    sync: true,
   },
 );
 
@@ -71,30 +72,53 @@ export function SettingsPage() {
       />
 
       {/* 主体内容区 */}
-      <div className="flex flex-1 gap-6 p-6 pt-2 overflow-hidden">
+      <div className="flex flex-1 gap-8 p-6 pt-4 overflow-hidden">
         {/* 左侧导航 */}
-        <div className="w-44">
-          <div className="flex flex-col gap-1">
+        <div className="w-52 flex flex-col justify-between">
+          <div className="flex flex-col space-y-0.5">
             {SETTINGS_NAV_ITEMS.map(({ id, label, icon: Icon }) => (
               <Button
                 key={id}
                 onClick={() =>
                   SettingsNav.set({ activeTab: id as SettingsTab })
                 }
-                variant={activeTab === id ? "primary" : "ghost"}
-                className={`flex items-center justify-start gap-2.5 py-2 px-3.5 rounded-lg text-sm transition-all h-10`}
+                variant="ghost"
+                className={`group relative flex items-center justify-start gap-3 py-2 px-4 h-12 text-sm transition-all duration-200
+                  ${
+                    activeTab === id
+                      ? "text-primary font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-5 before:bg-primary before:rounded-full"
+                      : "text-muted-foreground hover:text-foreground"
+                  }
+                  hover:bg-transparent
+                `}
               >
-                <Icon className="w-5 h-5" />
-                {label}
+                <div
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
+                  ${
+                    activeTab === id
+                      ? "bg-primary/10"
+                      : "bg-muted/50 group-hover:bg-muted"
+                  }`}
+                >
+                  <Icon
+                    className={`w-[18px] h-[18px] transition-colors ${
+                      activeTab === id
+                        ? "text-primary"
+                        : "text-muted-foreground group-hover:text-foreground"
+                    }`}
+                  />
+                </div>
+                <span className="flex-1">{label}</span>
+                {activeTab === id && (
+                  <div className="absolute inset-0 bg-primary/5 rounded-lg" />
+                )}
               </Button>
             ))}
           </div>
         </div>
 
         {/* 右侧内容 */}
-        <div className="flex-1 min-w-0 overflow-auto rounded-xl bg-card/30">
-          <div className="px-6">{renderContent()}</div>
-        </div>
+        <div className="flex-1 min-w-0 overflow-hidden">{renderContent()}</div>
       </div>
     </div>
   );

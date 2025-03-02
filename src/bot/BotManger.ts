@@ -9,8 +9,7 @@ export class BotManager {
     {},
     {
       name: "bots",
-      sync: true,
-    }
+    },
   );
 
   /* 使用机器人管理器的hook方法 */

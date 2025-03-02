@@ -11,7 +11,6 @@ export class WorkflowManager {
     {
       name: "workflows",
       storage: "indexedDB",
-      sync: true,
     },
   );
 

@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { BotEditor } from "./bot/BotEditor";
-import { ModelEditor } from "./model/ModelEditor";
 import { HistoryPage } from "./page/history/HistoryPage";
 import { MainView } from "./page/main/MainView";
 import { EnvEditor } from "./plugin/EnvEditor";
@@ -27,6 +26,7 @@ function App() {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
+
   return (
     <div
       data-theme={theme.name}
@@ -36,7 +36,6 @@ function App() {
     >
       <Page name="main" component={<MainView />} />
       <Page name="settings" component={<SettingsPage />} />
-      <Page name="model" component={<ModelEditor />} />
       <Page name="bot" component={<BotEditor />} />
       <Page name="plugin" component={<PluginEditor />} />
       <Page name="env" component={<EnvEditor />} />

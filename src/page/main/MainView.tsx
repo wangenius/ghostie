@@ -1,3 +1,5 @@
+import { Bot } from "@/bot/Bot";
+import { BotManager } from "@/bot/BotManger";
 import { BotProps } from "@/common/types/bot";
 import { LogoIcon } from "@/components/custom/LogoIcon";
 import { Button } from "@/components/ui/button";
@@ -9,14 +11,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Bot } from "@/bot/Bot";
-import { BotManager } from "@/bot/BotManger";
 import { ChatManager } from "@/model/ChatManager";
 import { ChatHistory } from "@/model/HistoryMessage";
 import { SettingsManager } from "@/settings/SettingsManager";
+import { Page } from "@/utils/PageRouter";
 import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
-import { cmd } from "@utils/shell";
-import { memo, useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   TbArrowBigLeft,
   TbClockDown,
@@ -29,10 +29,6 @@ import {
 } from "react-icons/tb";
 import { BotItem } from "./components/BotItem";
 import { MessageItem } from "./components/MessageItem";
-import { Page } from "@/utils/PageRouter";
-
-// 将常量提取到组件外部
-const SETTINGS_WINDOW_OPTIONS = { width: 800, height: 600 };
 
 type SortType = "default" | "mostUsed" | "recentUsed";
 
@@ -172,7 +168,7 @@ export function MainView() {
       // 打开设置
       if (e.ctrlKey && e.key === ",") {
         e.preventDefault();
-        cmd.open("settings", {}, SETTINGS_WINDOW_OPTIONS);
+        Page.to("settings");
         return;
       }
       // 选择助手

@@ -9,8 +9,7 @@ export class ModelManager {
     {},
     {
       name: "models",
-      sync: true,
-    }
+    },
   );
 
   static get(id: string) {
@@ -19,23 +18,18 @@ export class ModelManager {
 
   static use = ModelManager.store.use.bind(ModelManager.store);
 
-  static add(model: Omit<Model, "id">) {
-    if (!model.name) {
-      throw new Error("模型名称不能为空");
-    }
-    /* 判断是否已经有这个模型 */
-    if (ModelManager.store.current[model.name]) {
-      throw new Error(`模型 ${model.name} 已存在`);
-    }
-
+  static add(model: Omit<Model, "id">): Model {
     const id = gen.id();
 
+    const newModel: Model = {
+      ...model,
+      id,
+    };
+
     ModelManager.store.set({
-      [id]: {
-        ...model,
-        id,
-      },
+      [id]: newModel,
     });
+    return newModel;
   }
   static copy(id: string) {
     const model = ModelManager.get(id);
