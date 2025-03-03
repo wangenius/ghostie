@@ -163,4 +163,8 @@ option {
 .cm-line.cm-activeLine {
   background-color: rgba(151, 151, 151, 0.062745098) !important;
   border-radius: 0.25rem !important;
+}
+
+[data-sonner-toast=true] li {
+  @apply items-start;
 }/*# sourceMappingURL=globals.css.map */

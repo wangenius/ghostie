@@ -22,6 +22,8 @@ export interface WorkflowProps {
   createdAt: string;
   /* 更新时间 */
   updatedAt: string;
+  /* 激活 */
+
   /* 工作流节点 */
   nodes: Record<string, WorkflowNode>;
   /* 工作流边 */

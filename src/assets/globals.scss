@@ -169,3 +169,9 @@ option {
     border-radius: 0.25rem !important;
   }
 }
+
+[data-sonner-toast="true"] {
+  &li {
+    @apply !items-start;
+  }
+}

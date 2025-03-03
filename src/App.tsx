@@ -35,7 +35,6 @@ function App() {
     >
       <Page name="main" component={<MainView />} />
       <Page name="settings" component={<SettingsPage />} />
-
       <Page name="env" component={<EnvEditor />} />
       <Page name="history" component={<HistoryPage />} />
     </div>

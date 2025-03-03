@@ -2,15 +2,18 @@ import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
 import { Page } from "@/utils/PageRouter";
 import { Echo } from "echo-state";
+import { PiCheck, PiInfo, PiWarning, PiXCircle } from "react-icons/pi";
 import {
   TbBox,
   TbDatabase,
   TbFileFunction,
   TbGhost3,
   TbKeyboard,
+  TbLoader2,
   TbSettings,
   TbShape3,
 } from "react-icons/tb";
+import { Toaster } from "sonner";
 import { BotsTab } from "../bot/BotsTab";
 import { KnowledgeTab } from "../knowledge/KnowledgeTab";
 import { ModelsTab } from "../model/ModelsTab";
@@ -63,6 +66,18 @@ export function SettingsPage() {
 
   return (
     <div className="flex flex-col h-full bg-background">
+      <Toaster
+        visibleToasts={2}
+        expand
+        richColors
+        icons={{
+          success: <PiCheck className="text-green-500" />,
+          info: <PiInfo className="text-blue-500" />,
+          warning: <PiWarning className="text-yellow-500" />,
+          error: <PiXCircle className="text-red-500" />,
+          loading: <TbLoader2 className="text-gray-500" />,
+        }}
+      />
       {/* 标题栏 */}
       <Header
         title="设置"

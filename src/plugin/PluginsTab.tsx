@@ -10,7 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
 import { useCallback, useEffect, useState } from "react";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
@@ -29,6 +28,7 @@ import { TestDrawer } from "./components/TestDrawer";
 import { javascript } from "@codemirror/lang-javascript";
 import { githubLight } from "@uiw/codemirror-theme-github";
 import CodeMirror from "@uiw/react-codemirror";
+import { toast } from "sonner";
 // 默认插件属性
 const defaultPluginProps: Partial<PluginProps> = {
   name: "新插件",
@@ -140,6 +140,9 @@ export function PluginsTab() {
     try {
       setIsSubmitting(true);
       if (!selectedPlugin) {
+        return;
+      }
+      if (selectedPlugin.id === "new") {
         // 创建新插件
         const result = await cmd.invoke<PluginProps>("plugin_import", {
           content: content,
@@ -165,11 +168,7 @@ export function PluginsTab() {
       }
     } catch (error) {
       console.error(error);
-      cmd.message(
-        JSON.stringify(error || { error: "未知错误" }),
-        selectedPlugin ? "更新失败" : "创建失败",
-        "error",
-      );
+      toast.error(JSON.stringify(error || { error: "未知错误" }));
     } finally {
       setIsSubmitting(false);
     }
@@ -197,7 +196,7 @@ export function PluginsTab() {
   const handleAdd = () => {
     setSelectedPlugin({
       ...defaultPluginProps,
-      id: gen.id(),
+      id: "new",
     } as PluginProps);
     setContent("");
   };
