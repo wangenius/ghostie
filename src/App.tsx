@@ -10,6 +10,7 @@ import { Page } from "./utils/PageRouter";
 function App() {
   const theme = SettingsManager.use((selector) => selector.theme);
   const font = SettingsManager.use((selector) => selector.font);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Alt") {

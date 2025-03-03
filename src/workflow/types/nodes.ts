@@ -22,17 +22,6 @@ export interface WorkflowProps {
   createdAt: string;
   /* 更新时间 */
   updatedAt: string;
-  /* 定时配置 */
-  schedule?: {
-    /* 是否启用定时 */
-    enabled: boolean;
-    /* cron 表达式 */
-    cron: string;
-    /* 上次执行时间 */
-    lastRunAt?: string;
-    /* 下次执行时间 */
-    nextRunAt?: string;
-  };
   /* 工作流节点 */
   nodes: Record<string, WorkflowNode>;
   /* 工作流边 */

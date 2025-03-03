@@ -31,6 +31,7 @@ interface NodeState {
   startTime?: string;
   endTime?: string;
 }
+/* 初始化节点 */
 const initialNodes: Record<string, WorkflowNode> = {
   start: {
     id: "start",
