@@ -50,7 +50,7 @@ const edgeTypes = {
 };
 
 /* 工作流表单组件 */
-const WorkflowInfo = memo(() => {
+export const WorkflowInfo = memo(() => {
   const workflow = useEditorWorkflow();
   const workflowState = workflow.use();
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
@@ -97,13 +97,11 @@ const WorkflowInfo = memo(() => {
   );
 
   return (
-    <div className="flex flex-col pt-4 space-y-4">
+    <div className="flex flex-col">
       <div className="flex items-center justify-between">
-        <div className="flex-1 truncate mr-4">
-          <h3 className="text-2xl font-semibold truncate">
-            {workflowState?.data.name || "未命名工作流"}
-          </h3>
-        </div>
+        <h3 className="text-2xl font-semibold truncate">
+          {workflowState?.data.name || "未命名工作流"}
+        </h3>
 
         <div className="flex items-center gap-2">
           <Button onClick={handleOpenEdit} variant="ghost">
@@ -360,14 +358,12 @@ export const WorkflowEditor = () => {
   const workflow = useEditorWorkflow();
 
   return (
-    <div className="flex flex-col h-full px-4 space-y-4">
-      <Suspense fallback={<LoadingSpin />}>
-        <ReactFlowProvider>
-          <WorkflowInfo />
-          <WorkflowGraph workflow={workflow} />
-        </ReactFlowProvider>
-      </Suspense>
-    </div>
+    <Suspense fallback={<LoadingSpin />}>
+      <WorkflowInfo />
+      <ReactFlowProvider>
+        <WorkflowGraph workflow={workflow} />
+      </ReactFlowProvider>
+    </Suspense>
   );
 };
 

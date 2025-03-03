@@ -161,6 +161,6 @@ option {
   line-height: 1.8 !important;
 }
 .cm-line.cm-activeLine {
-  background-color: rgba(0, 0, 0, 0.062745098) !important;
+  background-color: rgba(151, 151, 151, 0.062745098) !important;
   border-radius: 0.25rem !important;
 }/*# sourceMappingURL=globals.css.map */

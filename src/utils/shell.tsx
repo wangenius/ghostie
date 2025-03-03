@@ -1,6 +1,7 @@
+import { dialog } from "@/components/custom/DialogModal";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { confirm, message } from "@tauri-apps/plugin-dialog";
+import { message } from "@tauri-apps/plugin-dialog";
 
 /** @Description base method abstract */
 export abstract class cmd {
@@ -46,10 +47,18 @@ export abstract class cmd {
   }
 
   /** @Description confirm cancel throw and return rest value */
-  static async confirm(msg: string) {
-    return await confirm(msg, {
-      title: "echo",
-      kind: "info",
+  static async confirm(msg: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      dialog.confirm({
+        title: "提示",
+        content: msg,
+        onCancel: () => {
+          resolve(false);
+        },
+        onOk: () => {
+          resolve(true);
+        },
+      });
     });
   }
 

@@ -1,13 +1,24 @@
 import { Button } from "@/components/ui/button";
 import { ModelManager } from "@/model/ModelManager";
+import { gen } from "@/utils/generator";
 import { cmd } from "@utils/shell";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
-import { TbDownload, TbPlus, TbTrash, TbUpload, TbRobot } from "react-icons/tb";
-import { gen } from "@/utils/generator";
+import { TbDownload, TbPlus, TbRobot, TbUpload } from "react-icons/tb";
 
+import { defaultBot, TOOL_NAME_SPLIT } from "@/bot/Bot";
+import { BotManager } from "@/bot/BotManger";
 import { BotProps } from "@/common/types/bot";
 import { ModelType } from "@/common/types/model";
 import { PluginProps, ToolProps } from "@/common/types/plugin";
+import { PreferenceBody } from "@/components/layout/PreferenceBody";
+import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
+import { PreferenceList } from "@/components/layout/PreferenceList";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { MultiSelect } from "@/components/ui/multi-select";
 import {
@@ -17,19 +28,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { defaultBot, TOOL_NAME_SPLIT } from "@/bot/Bot";
-import { BotManager } from "@/bot/BotManger";
-import { Knowledge, KnowledgeStore } from "@/knowledge/KnowledgeStore";
-import { cn } from "@/lib/utils";
-import { useCallback, useEffect, useState } from "react";
 import { Slider } from "@/components/ui/slider";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
+import { Knowledge, KnowledgeStore } from "@/knowledge/KnowledgeStore";
+import { useCallback, useEffect, useState } from "react";
 
 /** 机器人列表 */
 export function BotsTab() {
@@ -128,27 +130,30 @@ export function BotsTab() {
   };
 
   return (
-    <div className="h-full flex overflow-hidden">
+    <PreferenceLayout>
       {/* 左侧列表 */}
-      <div className="w-[400px] bg-muted flex flex-col h-full overflow-auto rounded-xl p-2 gap-2">
-        <div className="flex-none flex justify-end items-center">
-          <div className="flex items-center gap-2">
+      <PreferenceList
+        left={
+          <Button
+            onClick={() => {
+              window.open(
+                "https://ccn0kkxjz1z2.feishu.cn/wiki/CNUbwM7xSizLoWk95Cuc3XgKnsf?from=from_copylink",
+                "_blank",
+              );
+            }}
+            variant="outline"
+          >
+            <PiStorefrontDuotone className="w-4 h-4" />
+            助手仓库
+          </Button>
+        }
+        right={
+          <>
+            {" "}
             <Button className="flex-1" onClick={handleCreateBot}>
-              <TbPlus className="w-4 h-4 mr-2" />
+              <TbPlus className="w-4 h-4" />
               添加助手
-            </Button>
-            <Button
-              onClick={() => {
-                window.open(
-                  "https://ccn0kkxjz1z2.feishu.cn/wiki/CNUbwM7xSizLoWk95Cuc3XgKnsf?from=from_copylink",
-                  "_blank",
-                );
-              }}
-              variant="outline"
-            >
-              <PiStorefrontDuotone className="w-4 h-4" />
-              助手仓库
-            </Button>
+            </Button>{" "}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -168,261 +173,231 @@ export function BotsTab() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto pr-1 space-y-2 p-1">
-          {Object.entries(bots).map(([id, bot]) => (
-            <div
-              key={id}
-              className={cn(
-                "group relative px-4 py-3 rounded-lg transition-all hover:bg-muted-foreground/10 select-none",
-                selectedBot?.id === id
-                  ? "bg-primary/10 ring-1 ring-primary/20"
-                  : "bg-background",
-              )}
-              onClick={() => {
-                setSelectedBot(bot);
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm truncate">
-                      {bot.name || "未命名助手"}
-                    </span>
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground truncate">
-                    {bot.system?.slice(0, 50)}...
-                  </div>
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteBot(id);
-                  }}
-                >
-                  <TbTrash className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+          </>
+        }
+        items={Object.entries(bots).map(([id, bot]) => ({
+          id,
+          title: bot.name || "未命名助手",
+          description: bot.system?.slice(0, 50) || "暂无提示词",
+          onClick: () => setSelectedBot(bot),
+          actived: selectedBot?.id === id,
+          onRemove: () => handleDeleteBot(id),
+        }))}
+        emptyText="请选择一个助手或点击添加按钮创建新助手"
+        EmptyIcon={TbRobot}
+      />
 
       {/* 右侧编辑区域 */}
-      <div className="flex-1 min-w-0 h-full overflow-hidden flex flex-col">
-        {selectedBot ? (
-          <>
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-8">
-                <div className="max-w-2xl mx-auto">
-                  {/* 顶部标题区域 */}
-                  <div className="mb-8">
-                    <Input
-                      type="text"
-                      variant="title"
-                      spellCheck={false}
-                      value={selectedBot?.name || ""}
-                      onChange={(e) =>
+      <PreferenceBody
+        emptyText="请选择一个助手或点击添加按钮创建新助手"
+        EmptyIcon={TbRobot}
+        isEmpty={!selectedBot}
+      >
+        {selectedBot && (
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-6 max-w-3xl mx-auto">
+              {/* 顶部标题区域 */}
+              <div className="mb-10">
+                <Input
+                  type="text"
+                  variant="title"
+                  spellCheck={false}
+                  value={selectedBot?.name || ""}
+                  onChange={(e) =>
+                    setSelectedBot(
+                      selectedBot
+                        ? { ...selectedBot, name: e.target.value }
+                        : undefined,
+                    )
+                  }
+                  placeholder="为你的助手起个名字"
+                  className="w-full text-2xl font-medium tracking-tight"
+                />
+              </div>
+
+              <div className="space-y-8">
+                <div className="grid grid-cols-2 gap-6">
+                  {/* 模型选择 */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">
+                      选择模型
+                    </label>
+                    <Select
+                      value={selectedBot.model}
+                      onValueChange={(value) =>
                         setSelectedBot(
                           selectedBot
-                            ? { ...selectedBot, name: e.target.value }
+                            ? { ...selectedBot, model: value }
                             : undefined,
                         )
                       }
-                      placeholder="为你的助手起个名字"
-                      className="w-full"
-                    />
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="请选择模型" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.values(models)
+                          .filter((model) => model.type === ModelType.TEXT)
+                          .map((model) => (
+                            <SelectItem key={model.id} value={model.id}>
+                              {model.name + ":" + model.model}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">基础配置</h3>
-                    <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <label className="block text-xs text-muted-foreground">
-                          选择模型
-                        </label>
-                        <Select
-                          value={selectedBot.model}
-                          onValueChange={(value) =>
-                            setSelectedBot(
-                              selectedBot
-                                ? { ...selectedBot, model: value }
-                                : undefined,
-                            )
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="请选择模型" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.values(models)
-                              .filter((model) => model.type === ModelType.TEXT)
-                              .map((model) => (
-                                <SelectItem key={model.id} value={model.id}>
-                                  {model.name + ":" + model.model}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block text-xs text-muted-foreground">
-                          选择模式
-                        </label>
-                        <Select
-                          value={selectedBot.mode}
-                          onValueChange={(value) =>
-                            setSelectedBot(
-                              selectedBot
-                                ? {
-                                    ...selectedBot,
-                                    mode: value as "react" | "plan",
-                                  }
-                                : undefined,
-                            )
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="请选择模式" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[
-                              { key: "react", label: "ReAct" },
-                              {
-                                key: "plan",
-                                label: (
-                                  <span className="flex items-center text-red-500">
-                                    Plan&Execute(实验性)
-                                  </span>
-                                ),
-                              },
-                            ].map((mode) => (
-                              <SelectItem key={mode.key} value={mode.key}>
-                                {mode.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block text-xs text-muted-foreground">
-                          选择温度
-                        </label>
-                        <Slider
-                          value={[selectedBot.temperature]}
-                          min={0}
-                          max={2}
-                          step={0.1}
-                          onValueChange={(value) =>
-                            setSelectedBot(
-                              selectedBot
-                                ? {
-                                    ...selectedBot,
-                                    temperature: value[0],
-                                  }
-                                : undefined,
-                            )
-                          }
-                        />
-                        <div className="text-xs text-muted-foreground">
-                          {selectedBot.temperature}
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block text-xs text-muted-foreground">
-                          选择插件
-                        </label>
-                        <MultiSelect
-                          options={Object.values(plugins).flatMap(
-                            (plugin: PluginProps) =>
-                              plugin.tools.map((tool: ToolProps) => ({
-                                label: "[" + plugin.name + "]" + tool.name,
-                                value: tool.name + TOOL_NAME_SPLIT + plugin.id,
-                              })),
-                          )}
-                          value={selectedBot.tools}
-                          onChange={(value) =>
-                            setSelectedBot(
-                              selectedBot
-                                ? { ...selectedBot, tools: value }
-                                : undefined,
-                            )
-                          }
-                          className="bg-secondary"
-                          placeholder="选择插件..."
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block text-xs text-muted-foreground">
-                          选择知识库
-                        </label>
-                        <MultiSelect
-                          options={Object.values(knowledge).map(
-                            (knowledge: Knowledge) => ({
-                              label:
-                                knowledge.name + "(" + knowledge.version + ")",
-                              value: knowledge.id,
-                            }),
-                          )}
-                          value={selectedBot.knowledges || []}
-                          onChange={(value) =>
-                            setSelectedBot(
-                              selectedBot
-                                ? {
-                                    ...selectedBot,
-                                    knowledges: value,
-                                  }
-                                : undefined,
-                            )
-                          }
-                          className="bg-secondary"
-                          placeholder="选择知识库..."
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block text-xs text-muted-foreground">
-                          助手提示词
-                        </label>
-                        <Textarea
-                          value={selectedBot.system}
-                          onChange={(e) =>
-                            setSelectedBot(
-                              selectedBot
-                                ? {
-                                    ...selectedBot,
-                                    system: e.target.value,
-                                  }
-                                : undefined,
-                            )
-                          }
-                          className="w-full h-56 px-3 py-2 bg-secondary rounded-md text-sm focus:bg-secondary/80 transition-colors outline-none placeholder:text-muted-foreground resize-none"
-                          placeholder="请输入助手提示词"
-                        />
-                      </div>
-                    </div>
+                  {/* 模式选择 */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">
+                      选择模式
+                    </label>
+                    <Select
+                      value={selectedBot.mode}
+                      onValueChange={(value) =>
+                        setSelectedBot(
+                          selectedBot
+                            ? {
+                                ...selectedBot,
+                                mode: value as "react" | "plan",
+                              }
+                            : undefined,
+                        )
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="请选择模式" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[
+                          { key: "react", label: "ReAct" },
+                          {
+                            key: "plan",
+                            label: (
+                              <span className="flex items-center text-red-500">
+                                Plan&Execute(实验性)
+                              </span>
+                            ),
+                          },
+                        ].map((mode) => (
+                          <SelectItem key={mode.key} value={mode.key}>
+                            {mode.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
+
+                {/* 温度设置 */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-muted-foreground">
+                      选择温度
+                    </label>
+                    <span className="text-sm text-muted-foreground">
+                      {selectedBot.temperature}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[selectedBot.temperature]}
+                    min={0}
+                    max={2}
+                    step={0.1}
+                    onValueChange={(value) =>
+                      setSelectedBot(
+                        selectedBot
+                          ? {
+                              ...selectedBot,
+                              temperature: value[0],
+                            }
+                          : undefined,
+                      )
+                    }
+                    className="py-2"
+                  />
+                </div>
+
+                {/* 插件选择 */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    选择插件
+                  </label>
+                  <MultiSelect
+                    options={Object.values(plugins).flatMap(
+                      (plugin: PluginProps) =>
+                        plugin.tools.map((tool: ToolProps) => ({
+                          label: "[" + plugin.name + "]" + tool.name,
+                          value: tool.name + TOOL_NAME_SPLIT + plugin.id,
+                        })),
+                    )}
+                    value={selectedBot.tools}
+                    onChange={(value) =>
+                      setSelectedBot(
+                        selectedBot
+                          ? { ...selectedBot, tools: value }
+                          : undefined,
+                      )
+                    }
+                    className="bg-secondary/50 hover:bg-secondary/70 transition-colors"
+                    placeholder="选择插件..."
+                  />
+                </div>
+
+                {/* 知识库选择 */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    选择知识库
+                  </label>
+                  <MultiSelect
+                    options={Object.values(knowledge).map(
+                      (knowledge: Knowledge) => ({
+                        label: knowledge.name + "(" + knowledge.version + ")",
+                        value: knowledge.id,
+                      }),
+                    )}
+                    value={selectedBot.knowledges || []}
+                    onChange={(value) =>
+                      setSelectedBot(
+                        selectedBot
+                          ? {
+                              ...selectedBot,
+                              knowledges: value,
+                            }
+                          : undefined,
+                      )
+                    }
+                    className="bg-secondary/50 hover:bg-secondary/70 transition-colors"
+                    placeholder="选择知识库..."
+                  />
+                </div>
+
+                {/* 助手提示词 */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    助手提示词
+                  </label>
+                  <Textarea
+                    value={selectedBot.system}
+                    onChange={(e) =>
+                      setSelectedBot(
+                        selectedBot
+                          ? {
+                              ...selectedBot,
+                              system: e.target.value,
+                            }
+                          : undefined,
+                      )
+                    }
+                    className="w-full h-56 bg-secondary/50 hover:bg-secondary/70 transition-colors rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground resize-none p-4"
+                    placeholder="请输入助手提示词"
+                  />
                 </div>
               </div>
             </div>
-          </>
-        ) : (
-          <div className="h-full flex items-center justify-center text-muted-foreground flex-col gap-3">
-            <TbRobot className="w-12 h-12 text-muted-foreground/50" />
-            <p>请选择一个助手或点击添加按钮创建新助手</p>
           </div>
         )}
-      </div>
-    </div>
+      </PreferenceBody>
+    </PreferenceLayout>
   );
 }

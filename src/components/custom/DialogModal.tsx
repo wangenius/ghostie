@@ -1,10 +1,10 @@
-import React, { ReactNode, useEffect, useRef, useState } from 'react';
-import ReactDOM from 'react-dom/client';
-import { createPortal } from 'react-dom';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { TbCheck, TbX } from 'react-icons/tb';
-import { AnimatePresence, motion } from 'framer-motion';
+import React, { ReactNode, useEffect, useRef, useState } from "react";
+import ReactDOM from "react-dom/client";
+import { createPortal } from "react-dom";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { TbCheck, TbX } from "react-icons/tb";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface DialogOptions {
   title?: string;
@@ -14,7 +14,7 @@ interface DialogOptions {
   onClose?: () => void;
   closeIconHide?: boolean;
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   autoFocus?: boolean;
   transparent?: boolean;
   [key: string]: any;
@@ -35,11 +35,11 @@ export function dialog({
   transparent = false,
   ...props
 }: DialogOptions): CloseDialog {
-  if (typeof window !== 'undefined' && window.event) {
+  if (typeof window !== "undefined" && window.event) {
     window.event.stopPropagation?.();
   }
 
-  const dialogRoot = document.createElement('div');
+  const dialogRoot = document.createElement("div");
   document.body.appendChild(dialogRoot);
   const root = ReactDOM.createRoot(dialogRoot);
 
@@ -53,14 +53,14 @@ export function dialog({
       }
 
       const handleEscape = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
+        if (e.key === "Escape") {
           setIsOpen(false);
         }
       };
 
-      document.addEventListener('keydown', handleEscape);
+      document.addEventListener("keydown", handleEscape);
       return () => {
-        document.removeEventListener('keydown', handleEscape);
+        document.removeEventListener("keydown", handleEscape);
         document.body.removeChild(dialogRoot);
       };
     }, []);
@@ -99,7 +99,7 @@ export function dialog({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{
-                type: 'spring',
+                type: "spring",
                 damping: 25,
                 stiffness: 400,
                 mass: 0.5,
@@ -109,20 +109,20 @@ export function dialog({
                   props.onAnimationComplete();
                 }
                 // 动画完成后，自动聚焦第一个输入框
-                const input = dialogRef.current?.querySelector('input');
+                const input = dialogRef.current?.querySelector("input");
                 if (input instanceof HTMLInputElement) {
                   input.focus();
                 }
               }}
               className={cn(
-                'relative z-50 max-h-[85vh] max-w-[80vw] rounded-lg bg-background p-6 pt-3 shadow-lg w-[800px] flex flex-col gap-4',
+                "relative z-50 max-h-[85vh] max-w-[80vw] rounded-lg bg-background p-3 shadow-lg w-[800px] flex flex-col gap-2",
                 className,
-                transparent && 'bg-transparent backdrop-blur-none !shadow-none'
+                transparent && "bg-transparent backdrop-blur-none !shadow-none",
               )}
               {...props}
             >
               {(title || !closeIconHide) && (
-                <div className="flex items-center justify-between mt-1 mb-3 flex-none">
+                <div className="flex items-center justify-between mb-3 flex-none pl-3">
                   {title && (
                     <div>
                       <h2 className="font-semibold">{title}</h2>
@@ -136,7 +136,7 @@ export function dialog({
                       variant="ghost"
                       size="icon"
                       onClick={handleClose}
-                      className="rounded-full hover:bg-muted"
+                      className="hover:bg-muted"
                     >
                       <TbX className="h-4 w-4" />
                     </Button>
@@ -146,13 +146,13 @@ export function dialog({
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex-1 overflow-hidden"
+                className="flex-1 overflow-hidden px-2"
               >
-                {typeof content === 'function' ? content(handleClose) : content}
+                {typeof content === "function" ? content(handleClose) : content}
               </motion.div>
 
               {footer &&
-                (typeof footer === 'function' ? (
+                (typeof footer === "function" ? (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -173,7 +173,7 @@ export function dialog({
           </div>
         )}
       </AnimatePresence>,
-      document.body
+      document.body,
     );
   };
 
@@ -182,19 +182,19 @@ export function dialog({
   return () => {
     const dialogElement = dialogRoot.firstElementChild;
     if (dialogElement) {
-      const closeEvent = new Event('close');
+      const closeEvent = new Event("close");
       dialogElement.dispatchEvent(closeEvent);
     }
   };
 }
 
 dialog.confirm = ({
-  title = '确认',
+  title = "确认",
   content,
   onOk,
-  variants = 'default',
-  okText = '确认',
-  cancelText = '取消',
+  variants = "default",
+  okText = "确认",
+  cancelText = "取消",
   onCancel,
 }: {
   title?: string;
@@ -204,19 +204,19 @@ dialog.confirm = ({
   okText?: string;
   cancelText?: string;
   variants?:
-  | 'link'
-  | 'default'
-  | 'destructive'
-  | 'outline'
-  | 'secondary'
-  | 'ghost'
-  | null;
+    | "link"
+    | "default"
+    | "destructive"
+    | "outline"
+    | "secondary"
+    | "ghost"
+    | null;
 }) => {
   return dialog({
-    className: 'md:max-w-[520px]',
+    className: "md:max-w-[520px]",
     title,
     content,
-    footer: close => {
+    footer: (close) => {
       return (
         <div className="flex justify-end gap-2">
           <Button
