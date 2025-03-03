@@ -25,6 +25,11 @@ export default function WorkflowsTab() {
     setSelectedWorkflow(id === selectedWorkflow ? null : id);
   };
 
+  const handleCreateWorkflow = async () => {
+    const workflow = await Workflow.create();
+    workflow.register();
+  };
+
   return (
     <PreferenceLayout>
       {/* 左侧列表 */}
@@ -45,13 +50,7 @@ export default function WorkflowsTab() {
         }
         right={
           <>
-            <Button
-              className="flex-1"
-              onClick={async () => {
-                const workflow = new Workflow();
-                workflow.register();
-              }}
-            >
+            <Button className="flex-1" onClick={handleCreateWorkflow}>
               <TbPlus className="w-4 h-4 mr-2" />
               新建工作流
             </Button>

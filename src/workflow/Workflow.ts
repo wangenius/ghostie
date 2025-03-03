@@ -104,10 +104,6 @@ export class Workflow {
     return this.state.current;
   }
 
-  update() {
-    WorkflowManager.update(this.state.current.data);
-  }
-
   /** 注册工作流，创建一个新的id */
   register() {
     const id = gen.id();
@@ -327,9 +323,16 @@ export class Workflow {
     });
   }
 
+  /** 创建工作流实例 */
+  static async create(workflowId?: string): Promise<Workflow> {
+    const workflow = new Workflow();
+    await workflow.init(workflowId);
+    return workflow;
+  }
+
   /** 初始化工作流 */
-  constructor(workflowId?: string) {
-    this.init(workflowId);
+  constructor() {
+    // 构造函数中不再调用异步的 init
   }
 
   /** 初始化工作流 */

@@ -16,13 +16,17 @@ export const EditorContextProvider = ({
   children: React.ReactNode;
 }) => {
   /** 工作流实例 */
-  const workflowRef = useRef<Workflow>();
-  if (!workflowRef.current) {
-    workflowRef.current = new Workflow(id);
-  }
+  const workflowRef = useRef<Workflow>(new Workflow());
 
   useEffect(() => {
-    workflowRef.current?.init(id);
+    const initWorkflow = async () => {
+      if (id) {
+        workflowRef.current = await Workflow.create(id);
+      } else {
+        workflowRef.current = await Workflow.create();
+      }
+    };
+    initWorkflow();
   }, [id]);
 
   return (
