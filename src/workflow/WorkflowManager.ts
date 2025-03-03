@@ -1,9 +1,8 @@
 import { Echo } from "echo-state";
-import { WorkflowProps } from "./types/nodes";
 import { gen } from "@/utils/generator";
-import { cmd } from "@/utils/shell";
-import { Cron } from "croner";
+import { WorkflowProps } from "./types/nodes";
 import { Workflow } from "./Workflow";
+import { CronExpressionParser } from "cron-parser";
 
 /* 工作流管理器 */
 export class WorkflowManager {
@@ -16,11 +15,224 @@ export class WorkflowManager {
     },
   );
 
-  /* 存储所有定时任务 */
-  private static scheduledTasks: Record<string, Cron[]> = {};
+  /**
+   * 任务存储实例
+   * 使用 Echo 状态管理库实现持久化存储
+   * @private
+   */
+  private static taskStore = new Echo<Record<string, Task>>({});
+
+  /**
+   * 最大重试次数
+   * @private
+   */
+  private static MAX_RETRY_COUNT = 3;
+
+  /**
+   * 重试延迟（毫秒）
+   * @private
+   */
+  private static RETRY_DELAY = 1000;
 
   /* 工作流状态使用 */
   static use = WorkflowManager.store.use.bind(WorkflowManager.store);
+
+  /**
+   * 计算下一次运行时间
+   * @param cronExpression cron 表达式
+   * @returns {Date} 下一次运行的时间
+   * @throws {Error} 当 cron 表达式无效时抛出错误
+   * @private
+   */
+  private static calculateNextRun(cronExpression: string): Date {
+    try {
+      const interval = CronExpressionParser.parse(cronExpression);
+      return interval.next().toDate();
+    } catch (error) {
+      console.error("无效的 cron 表达式:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 创建精确的定时器
+   * @private
+   */
+  private static createPreciseTimer(
+    taskId: string,
+    cronExpr: string,
+    onTick: () => Promise<void>,
+  ): NodeJS.Timeout {
+    const scheduleNextRun = () => {
+      try {
+        const nextRun = this.calculateNextRun(cronExpr);
+        const now = new Date();
+        const delay = nextRun.getTime() - now.getTime();
+
+        return setTimeout(async () => {
+          try {
+            await onTick();
+            // 重置重试计数
+            const task = this.taskStore.current[taskId];
+            if (task) {
+              task.retryCount = 0;
+              task.lastError = undefined;
+            }
+          } catch (error) {
+            console.error(`执行任务[${taskId}]失败:`, error);
+            // 处理重试逻辑
+            const task = this.taskStore.current[taskId];
+            if (task) {
+              task.retryCount = (task.retryCount || 0) + 1;
+              task.lastError = error as Error;
+
+              if (task.retryCount <= this.MAX_RETRY_COUNT) {
+                console.log(`准备第 ${task.retryCount} 次重试...`);
+                setTimeout(() => onTick(), this.RETRY_DELAY * task.retryCount);
+              }
+            }
+          } finally {
+            // 无论成功失败，都调度下一次执行
+            const newTimer = scheduleNextRun();
+            // 更新定时器引用
+            const currentTask = this.taskStore.current[taskId];
+            if (currentTask) {
+              const index = currentTask.timers.findIndex((t) => t === timer);
+              if (index !== -1) {
+                currentTask.timers[index] = newTimer;
+              }
+            }
+          }
+        }, Math.max(0, delay));
+      } catch (error) {
+        console.error(`调度任务[${taskId}]失败:`, error);
+        return setTimeout(() => scheduleNextRun(), this.RETRY_DELAY);
+      }
+    };
+
+    const timer = scheduleNextRun();
+    return timer;
+  }
+
+  /**
+   * 调度一个新的定时任务
+   * @param id 任务ID
+   * @param cronExpressions cron 表达式（可以包含多个表达式，每行一个）
+   * @returns {Promise<boolean>} 是否成功调度
+   */
+  static async schedule(id: string, cronExpressions: string): Promise<boolean> {
+    try {
+      // 如果任务已存在，先停止它
+      await this.unschedule(id);
+
+      const schedules = cronExpressions
+        .split("\n")
+        .map((expr) => expr.trim())
+        .filter((expr) => expr !== "");
+
+      if (schedules.length === 0) {
+        console.error("没有有效的 cron 表达式");
+        return false;
+      }
+
+      const timers: NodeJS.Timeout[] = [];
+      const nextRunTimes: Date[] = [];
+
+      // 为每个 cron 表达式创建定时器
+      schedules.forEach((cronExpr) => {
+        try {
+          const nextRun = this.calculateNextRun(cronExpr);
+          nextRunTimes.push(nextRun);
+
+          const timer = this.createPreciseTimer(id, cronExpr, async () => {
+            console.log(`触发任务[${id}]`);
+            await this.executeWorkflow(id);
+          });
+
+          timers.push(timer);
+        } catch (error) {
+          console.error(`为表达式 ${cronExpr} 创建定时器失败:`, error);
+        }
+      });
+
+      // 保存任务信息
+      this.taskStore.set((state) => ({
+        ...state,
+        [id]: {
+          id,
+          schedules,
+          timers,
+          nextRunTime:
+            nextRunTimes.length > 0
+              ? new Date(Math.min(...nextRunTimes.map((d) => d.getTime())))
+              : undefined,
+          retryCount: 0,
+        },
+      }));
+
+      return true;
+    } catch (error) {
+      console.error("调度任务失败:", error);
+      return false;
+    }
+  }
+
+  /**
+   * 取消一个定时任务的调度
+   * @param id 任务ID
+   * @returns {Promise<void>}
+   */
+  static async unschedule(id: string): Promise<void> {
+    const task = this.taskStore.current[id];
+    if (task) {
+      // 清除所有定时器
+      task.timers.forEach((timer) => clearInterval(timer));
+      // 从存储中移除任务
+      this.taskStore.delete(id);
+      console.log(`已取消任务[${id}]`);
+    }
+  }
+
+  /**
+   * 检查任务是否已被调度
+   * @param id 任务ID
+   * @returns {boolean} 是否已被调度
+   */
+  static isScheduled(id: string): boolean {
+    return id in this.taskStore.current;
+  }
+
+  /**
+   * 获取所有已调度的任务ID列表
+   * @returns {string[]} 任务ID数组
+   */
+  static getScheduledTasks(): string[] {
+    return Object.keys(this.taskStore.current);
+  }
+
+  /**
+   * 初始化所有已保存的定时任务
+   * @returns {Promise<void>}
+   */
+  static async initScheduledTasks(): Promise<void> {
+    try {
+      await this.store.ready();
+      const workflows = Object.values(await this.store.getCurrent());
+
+      // 并行初始化定时任务
+      await Promise.all(
+        workflows
+          .filter(
+            (workflow) => workflow.schedule?.enabled && workflow.schedule.cron,
+          )
+          .map((workflow) =>
+            this.schedule(workflow.id, workflow.schedule!.cron),
+          ),
+      );
+    } catch (error) {
+      console.error("初始化定时任务失败:", error);
+    }
+  }
 
   static create(workflow: WorkflowProps) {
     if (this.store.current[workflow.id]) {
@@ -47,7 +259,7 @@ export class WorkflowManager {
    */
   static async update(workflow: WorkflowProps) {
     const now = new Date().toISOString();
-    await WorkflowManager.store.ready();
+    await this.store.ready();
     const existingWorkflow = this.store.current[workflow.id];
     if (!existingWorkflow) {
       console.log("工作流不存在");
@@ -55,21 +267,29 @@ export class WorkflowManager {
     }
 
     // 如果定时配置发生变化，需要更新定时任务
-    if (workflow.schedule?.enabled && workflow.schedule.cron) {
-      await this.scheduleWorkflow(workflow.id, workflow.schedule.cron);
-    } else {
-      await this.unscheduleWorkflow(workflow.id);
+    const scheduleChanged =
+      workflow.schedule?.enabled !== existingWorkflow.schedule?.enabled ||
+      workflow.schedule?.cron !== existingWorkflow.schedule?.cron;
+
+    if (scheduleChanged) {
+      if (workflow.schedule?.enabled && workflow.schedule.cron) {
+        await this.schedule(workflow.id, workflow.schedule.cron);
+      } else {
+        await this.unschedule(workflow.id);
+      }
     }
+
+    const updatedWorkflow = {
+      ...existingWorkflow,
+      ...workflow,
+      updatedAt: now,
+    };
 
     this.store.set({
       ...this.store.current,
-      [workflow.id]: {
-        ...existingWorkflow,
-        ...workflow,
-        updatedAt: now,
-      },
+      [workflow.id]: updatedWorkflow,
     });
-    return this.store.current[workflow.id];
+    return updatedWorkflow;
   }
 
   /**
@@ -77,7 +297,7 @@ export class WorkflowManager {
    * @param id 工作流ID
    */
   static async get(id: string): Promise<WorkflowProps | undefined> {
-    await WorkflowManager.store.ready();
+    await this.store.ready();
     return this.store.current[id];
   }
 
@@ -85,16 +305,13 @@ export class WorkflowManager {
    * 删除工作流
    * @param id 工作流ID
    */
-  static delete(id: string) {
-    cmd
-      .confirm(`确定删除工作流[${this.store.current[id]?.name}(${id})]吗？`)
-      .then(async (result) => {
-        if (result) {
-          // 删除工作流前先取消定时任务
-          await this.unscheduleWorkflow(id);
-          this.store.delete(id);
-        }
-      });
+  static async delete(id: string) {
+    const workflow = this.store.current[id];
+    if (workflow) {
+      // 如果工作流有定时任务，需要先取消
+      await this.unschedule(id);
+      this.store.delete(id);
+    }
   }
 
   /**
@@ -103,118 +320,32 @@ export class WorkflowManager {
    */
   static async executeWorkflow(id: string) {
     try {
-      console.timeStamp(`开始执行工作流[${id}]`);
       const workflow = await Workflow.create(id);
       const result = await workflow.execute();
-
-      console.timeStamp(`执行工作流[${id}]结果:${JSON.stringify(result)}`);
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
+      console.log(
+        `执行工作流[${id}]结果:时间：${new Date().toLocaleString()} ${JSON.stringify(
+          result,
+        )}`,
+      );
       return result;
     } catch (error) {
       console.error(`执行工作流[${id}]失败:`, error);
       throw error;
     }
   }
-
-  /**
-   * 设置工作流定时执行
-   * @param id 工作流ID
-   * @param cron cron表达式或多个cron表达式（用换行符分隔）
-   */
-  static async scheduleWorkflow(id: string, cron: string) {
-    try {
-      // 取消现有的定时任务
-      await this.unscheduleWorkflow(id);
-
-      // 分割多个cron表达式
-      const cronExpressions = cron.split("\n").filter((expr) => expr.trim());
-
-      // 为每个cron表达式创建定时任务
-      const tasks: Cron[] = [];
-      for (const expr of cronExpressions) {
-        try {
-          // 验证cron表达式
-          const task = new Cron(expr, async () => {
-            const workflow = await this.get(id);
-            if (workflow?.schedule?.enabled) {
-              const now = new Date().toISOString();
-
-              // 更新上次执行时间
-              await this.update({
-                ...workflow,
-                schedule: {
-                  ...workflow.schedule,
-                  lastRunAt: now,
-                },
-              });
-
-              // 执行工作流
-              try {
-                await this.executeWorkflow(id);
-              } catch (error) {
-                console.error(`定时执行工作流[${id}]失败:`, error);
-              }
-            }
-          });
-          tasks.push(task);
-        } catch (error) {
-          console.error(`无效的 cron 表达式: ${expr}`, error);
-          // 如果有任何一个表达式无效，停止所有任务并返回失败
-          tasks.forEach((t) => t.stop());
-          return false;
-        }
-      }
-
-      // 存储定时任务引用
-      this.scheduledTasks[id] = tasks;
-
-      return true;
-    } catch (error) {
-      console.error(`设置工作流[${id}]定时执行失败:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * 取消工作流定时执行
-   * @param id 工作流ID
-   */
-  static async unscheduleWorkflow(id: string) {
-    try {
-      const tasks = this.scheduledTasks[id];
-      if (tasks) {
-        tasks.forEach((task) => task.stop());
-        delete this.scheduledTasks[id];
-      }
-      return true;
-    } catch (error) {
-      console.error(`取消工作流[${id}]定时执行失败:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * 初始化所有已启用的定时任务
-   */
-  static async initScheduledTasks() {
-    try {
-      await this.store.ready();
-      const workflows = Object.values(this.store.current);
-
-      for (const workflow of workflows) {
-        if (workflow.schedule?.enabled && workflow.schedule.cron) {
-          await this.scheduleWorkflow(workflow.id, workflow.schedule.cron);
-        }
-      }
-    } catch (error) {
-      console.error("初始化定时任务失败:", error);
-    }
-  }
 }
 
-// 初始化所有定时任务
+/**
+ * 定时任务接口
+ */
+interface Task {
+  id: string;
+  schedules: string[];
+  timers: NodeJS.Timeout[];
+  nextRunTime?: Date;
+  retryCount?: number;
+  lastError?: Error;
+}
+
+/* 初始化所有定时任务 */
 WorkflowManager.initScheduledTasks();

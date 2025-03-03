@@ -22,6 +22,7 @@ import { gen } from "@/utils/generator";
 import { PluginManager } from "@/plugin/PluginManager";
 import { cmd } from "@/utils/shell";
 
+/* 节点状态 */
 interface NodeState {
   inputs: Record<string, any>;
   outputs: Record<string, any>;
@@ -497,11 +498,9 @@ export class Workflow {
 
   private async executeNode(node: WorkflowNode): Promise<NodeResult> {
     try {
-      console.log("执行节点", node);
       // 构建图结构以获取前置节点
       const { predecessors } = this.buildExecutionGraph();
       const inputs = this.collectNodeInputs(node.id, predecessors);
-      console.log("节点输入", inputs);
       this.updateNodeState(node.id, {
         status: "running",
         startTime: new Date().toISOString(),
@@ -598,7 +597,6 @@ export class Workflow {
             tool: pluginConfig.tool,
             args: pluginConfig.args,
           });
-          console.log(pluginResult);
           result = {
             success: true,
             data: {
@@ -621,7 +619,6 @@ export class Workflow {
 
         case "filter":
           const filterConfig = node.data as FilterNodeConfig;
-          console.log(inputs);
           const inputData = Object.values(inputs)[0]?.result;
 
           if (!inputData || !Array.isArray(inputData)) {
@@ -782,8 +779,6 @@ export class Workflow {
   /* 执行工作流 */
   public async execute(): Promise<NodeResult> {
     try {
-      console.log("开始执行工作流", this.current.data);
-
       // 构建图结构
       const graph = this.buildExecutionGraph();
 
@@ -822,7 +817,6 @@ export class Workflow {
         isExecuting: false,
       }));
 
-      console.error("工作流执行错误:", error);
       return {
         success: false,
         data: null,

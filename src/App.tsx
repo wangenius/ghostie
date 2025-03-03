@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { HistoryPage } from "./page/history/HistoryPage";
 import { MainView } from "./page/main/MainView";
 import { EnvEditor } from "./plugin/EnvEditor";
-
 import { SettingsManager } from "./settings/SettingsManager";
 import { SettingsPage } from "./settings/SettingsPage";
 import { Page } from "./utils/PageRouter";
