@@ -10,12 +10,14 @@ export function Drawer({
   onOpenChange,
   children,
   className,
+  trigger,
 }: {
   direction?: "right" | "left";
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
   className?: string;
+  trigger?: React.ReactNode;
 }) {
   return (
     <DrawerPrimitive.Root
@@ -23,11 +25,12 @@ export function Drawer({
       open={open}
       onOpenChange={onOpenChange}
     >
+      {trigger && <DrawerPrimitive.Trigger>{trigger}</DrawerPrimitive.Trigger>}
       <DrawerPrimitive.Portal>
         <DrawerPrimitive.Overlay className="fixed inset-0 bg-black/40" />
         <DrawerPrimitive.Content
           className={cn(
-            "right-2 top-2 bottom-2 fixed z-10 outline-none flex w-[320px]",
+            "right-2 top-2 bottom-2 fixed z-10 outline-none flex w-[320px] ",
             className,
           )}
           // The gap between the edge of the screen and the drawer is 8px in this case.
@@ -37,7 +40,7 @@ export function Drawer({
         >
           <DrawerPrimitive.Title className="sr-only"></DrawerPrimitive.Title>
           <DrawerPrimitive.Description className="sr-only"></DrawerPrimitive.Description>
-          <div className="bg-zinc-50 h-full w-full grow p-4 flex flex-col rounded-lg">
+          <div className="bg-zinc-50 h-full w-full grow p-4 flex flex-col rounded-lg gap-1">
             {children}
           </div>
         </DrawerPrimitive.Content>

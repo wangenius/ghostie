@@ -1,24 +1,21 @@
 import { BotManager } from "@/bot/BotManger";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Drawer } from "@/components/ui/drawer";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { memo, useState, useCallback, useMemo } from "react";
+import { memo, useCallback, useState } from "react";
+import { TbGhost3 } from "react-icons/tb";
 import { NodeProps } from "reactflow";
+import { useEditorWorkflow } from "../context/EditorContext";
 import { BotNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
-import { useEditorWorkflow } from "../context/EditorContext";
-import { Bot } from "lucide-react";
 
 const BotNodeComponent = (props: NodeProps<BotNodeConfig>) => {
   const bots = BotManager.use();
   const [prompt, setPrompt] = useState(props.data.prompt);
   const workflow = useEditorWorkflow();
+  const [open, setOpen] = useState(false);
 
   const handleBotChange = useCallback(
     (value: string) => {
@@ -66,16 +63,6 @@ const BotNodeComponent = (props: NodeProps<BotNodeConfig>) => {
     [workflow, props.id],
   );
 
-  const botItems = useMemo(
-    () =>
-      Object.values(bots).map((bot) => (
-        <SelectItem key={bot.id} value={bot.id} className="text-sm">
-          {bot.name}
-        </SelectItem>
-      )),
-    [bots],
-  );
-
   return (
     <NodePortal {...props} left={1} right={1} variant="bot" title="机器人">
       <motion.div
@@ -84,13 +71,41 @@ const BotNodeComponent = (props: NodeProps<BotNodeConfig>) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <Select value={props.data.bot} onValueChange={handleBotChange}>
-          <SelectTrigger variant="dust" className="h-8 transition-colors">
-            <Bot className="h-4 w-4" />
-            <SelectValue placeholder="选择机器人" className="flex-1" />
-          </SelectTrigger>
-          <SelectContent>{botItems}</SelectContent>
-        </Select>
+        <div className="space-y-1.5">
+          <Button
+            onClick={() => setOpen(true)}
+            variant="ghost"
+            className="w-full bg-muted-foreground/10"
+          >
+            <TbGhost3 />
+            {bots[props.data.bot]?.name || "选择机器人"}
+          </Button>
+        </div>
+        <Drawer open={open} onOpenChange={setOpen}>
+          <h3 className="font-bold mb-4">选择机器人</h3>
+          {Object.values(bots).map((bot) => (
+            <div
+              key={bot.id}
+              className={cn(
+                "flex items-center justify-start w-full px-3 py-2 text-sm rounded-lg hover:bg-muted-foreground/20 cursor-pointer transition-colors gap-2 overflow-hidden",
+                props.data.bot === bot.id && "bg-muted-foreground/10",
+              )}
+              onClick={() => {
+                handleBotChange(bot.id);
+              }}
+            >
+              <Button variant="ghost" size="icon" className="h-6 w-6">
+                <TbGhost3 className="h-4 w-4 text-primary flex-none" />
+              </Button>
+              <div className="flex flex-col gap-1">
+                <span className="font-medium">{bot.name}</span>
+                <span className="text-xs text-muted-foreground line-clamp-1">
+                  {bot.system}
+                </span>
+              </div>
+            </div>
+          ))}
+        </Drawer>
 
         <Textarea
           variant="dust"

@@ -1,3 +1,4 @@
+import { ToolParameters } from "@/common/types/plugin";
 import { Node } from "reactflow";
 import { WorkflowEdge } from "./edges";
 
@@ -108,6 +109,7 @@ export interface BaseNodeConfig {
 
 export interface StartNodeConfig extends BaseNodeConfig {
   type: "start";
+  parameters?: ToolParameters;
 }
 
 export interface EndNodeConfig extends BaseNodeConfig {

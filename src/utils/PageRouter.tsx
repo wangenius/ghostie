@@ -21,11 +21,17 @@ export const Page = ({
   if (name === "main") {
     Window.getByLabel("main").then((window) => {
       window?.setSize(new LogicalSize(600, 400));
+      window?.center();
+      window?.setResizable(false);
+      window?.setMinSize(new LogicalSize(600, 400));
+      window?.setMaxSize(new LogicalSize(600, 400));
     });
   } else {
     Window.getByLabel("main").then((window) => {
+      window?.setSize(new LogicalSize(1200, 800));
+      window?.center();
       window?.setMinSize(new LogicalSize(1200, 800));
-      window?.maximize();
+      window?.setResizable(true);
     });
   }
   return <Fragment>{component}</Fragment>;

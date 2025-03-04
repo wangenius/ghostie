@@ -2,26 +2,26 @@ import { Bot } from "@/bot/Bot";
 import { BotManager } from "@/bot/BotManger";
 import { ChatModel } from "@/model/ChatModel";
 import { ModelManager } from "@/model/ModelManager";
+import { PluginManager } from "@/plugin/PluginManager";
+import { gen } from "@/utils/generator";
+import { cmd } from "@/utils/shell";
+import { Echo } from "echo-state";
 import { ExpressionEvaluator } from "./ExpressionEvaluator";
+import { WorkflowEdge } from "./types/edges";
 import {
   BotNodeConfig,
   BranchNodeConfig,
   ChatNodeConfig,
-  NodeResult,
-  WorkflowNode,
-  WorkflowProps,
-  PluginNodeConfig,
   FilterNodeConfig,
   NodeConfig,
-  NodeType,
+  NodeResult,
   NodeState,
+  NodeType,
+  PluginNodeConfig,
+  WorkflowNode,
+  WorkflowProps,
 } from "./types/nodes";
 import { WorkflowManager } from "./WorkflowManager";
-import { Echo } from "echo-state";
-import { WorkflowEdge } from "./types/edges";
-import { gen } from "@/utils/generator";
-import { PluginManager } from "@/plugin/PluginManager";
-import { cmd } from "@/utils/shell";
 
 /* 初始化节点 */
 const initialNodes: Record<string, WorkflowNode> = {
@@ -560,9 +560,7 @@ export class Workflow {
             .stream(parsedUser);
           result = {
             success: true,
-            data: {
-              result: res.body,
-            },
+            data: res.body,
           };
           break;
 
@@ -577,9 +575,7 @@ export class Workflow {
           const botResult = await bot.chat(parsedPrompt);
           result = {
             success: true,
-            data: {
-              result: botResult.content,
-            },
+            data: botResult.content,
           };
           break;
 
@@ -602,9 +598,7 @@ export class Workflow {
           });
           result = {
             success: true,
-            data: {
-              result: pluginResult,
-            },
+            data: pluginResult,
           };
           break;
 
@@ -737,9 +731,7 @@ export class Workflow {
 
           result = {
             success: true,
-            data: {
-              result: filteredData,
-            },
+            data: filteredData,
           };
           break;
 
@@ -811,6 +803,8 @@ export class Workflow {
         ...state,
         isExecuting: false,
       }));
+
+      console.log(this.current);
 
       return {
         success: true,

@@ -24,7 +24,7 @@ const EndNodeComponent = (props: NodeProps<EndNodeConfig>) => {
             <div key={key} className="space-y-1 overflow-auto">
               <div className="text-xs font-medium text-gray-400">{key}</div>
               {typeof value === "object" ? (
-                <JsonViewer data={value.result} />
+                <JsonViewer data={value} />
               ) : (
                 <div className="text-sm text-gray-300">{value}</div>
               )}

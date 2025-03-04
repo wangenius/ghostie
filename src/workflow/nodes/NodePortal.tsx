@@ -66,10 +66,6 @@ const NodePortalComponent = ({
 
   const state = workflowState.nodeStates[id];
 
-  if (!state) {
-    return null;
-  }
-
   // 使用 useMemo 缓存入边节点的计算结果
   const incomingNodes = useMemo(
     () =>
@@ -124,9 +120,9 @@ const NodePortalComponent = ({
   const handleClassName = useMemo(
     () =>
       cn(
-        state.status === "completed" && "bg-green-500",
-        state.status === "failed" && "bg-red-500",
-        state.status === "running" && "bg-blue-500",
+        state?.status === "completed" && "bg-green-500",
+        state?.status === "failed" && "bg-red-500",
+        state?.status === "running" && "bg-blue-500",
       ),
     [state],
   );
@@ -168,7 +164,9 @@ const NodePortalComponent = ({
       ),
     [incomingNodes, handleCopyParameter],
   );
-
+  if (!state) {
+    return null;
+  }
   return (
     <div
       onClick={handleNodeClick}

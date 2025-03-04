@@ -1,19 +1,16 @@
+import { Button } from "@/components/ui/button";
+import { Drawer } from "@/components/ui/drawer";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ModelManager } from "@/model/ModelManager";
 import { motion } from "framer-motion";
-import { memo, useState, useCallback, useMemo } from "react";
+import { memo, useCallback, useState } from "react";
+import { TbBox } from "react-icons/tb";
 import { NodeProps } from "reactflow";
-import { ChatNodeConfig } from "../types/nodes";
 import { useEditorWorkflow } from "../context/EditorContext";
+import { ChatNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
+import { cn } from "@/lib/utils";
 
 const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
   const models = ModelManager.use();
@@ -91,15 +88,7 @@ const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
     [workflow, props.id],
   );
 
-  const modelItems = useMemo(
-    () =>
-      Object.values(models).map((model) => (
-        <SelectItem key={model.id} value={model.id} className="text-sm">
-          {model.name}
-        </SelectItem>
-      )),
-    [models],
-  );
+  const [open, setOpen] = useState(false);
 
   return (
     <NodePortal {...props} left={1} right={1} variant="chat" title="对话">
@@ -110,14 +99,38 @@ const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
         transition={{ duration: 0.2 }}
       >
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-gray-600">选择模型</Label>
-          <Select value={props.data.model} onValueChange={handleModelChange}>
-            <SelectTrigger variant="dust" className="h-8 transition-colors">
-              <SelectValue placeholder="选择模型" />
-            </SelectTrigger>
-            <SelectContent>{modelItems}</SelectContent>
-          </Select>
+          <Button
+            onClick={() => setOpen(true)}
+            variant="ghost"
+            className="w-full bg-muted-foreground/10"
+          >
+            <TbBox />
+            {models[props.data.model]?.name || "选择模型"}
+          </Button>
         </div>
+        <Drawer open={open} onOpenChange={setOpen}>
+          <h3 className="font-bold mb-4">选择模型</h3>
+          {Object.values(models).map((model) => (
+            <div
+              key={model.id}
+              className={cn(
+                "flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg hover:bg-muted-foreground/20 cursor-pointer transition-colors",
+                props.data.model === model.id && "bg-muted-foreground/10",
+              )}
+              onClick={() => {
+                handleModelChange(model.id);
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <TbBox className="h-4 w-4 text-primary flex-none" />
+                <span className="font-medium">{model.name}</span>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {model.model}
+              </span>
+            </div>
+          ))}
+        </Drawer>
 
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-gray-600">

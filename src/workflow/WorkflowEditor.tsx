@@ -1,8 +1,11 @@
+import { ToolProperty } from "@/common/types/plugin";
 import { CronInput } from "@/components/custom/CronInput";
+import { dialog } from "@/components/custom/DialogModal";
 import { LoadingSpin } from "@/components/custom/LoadingSpin";
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { debounce } from "lodash";
@@ -31,7 +34,7 @@ import { PanelNode } from "./nodes/PanelNode";
 import { PluginNode } from "./nodes/PluginNode";
 import { StartNode } from "./nodes/StartNode";
 import { SchedulerManager } from "./scheduler/SchedulerManager";
-import { NodeType } from "./types/nodes";
+import { NodeType, StartNodeConfig } from "./types/nodes";
 import { Workflow } from "./Workflow";
 
 type FrequencyType = "cron";
@@ -171,7 +174,16 @@ export const WorkflowInfo = memo(() => {
     },
     [scheduleEnabled, workflowState?.data.id],
   );
-
+  // 处理执行测试
+  const handleExecuteTest = useCallback(async () => {
+    dialog({
+      title: "请输入参数",
+      className: "w-[480px]",
+      content: (close) => (
+        <ParamInputDialog close={close} workflow={workflow} />
+      ),
+    });
+  }, [workflow]);
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between">
@@ -196,7 +208,7 @@ export const WorkflowInfo = memo(() => {
             开发文档
           </Button>
           <Button
-            onClick={() => workflow.execute()}
+            onClick={handleExecuteTest}
             disabled={workflowState?.isExecuting}
             variant="primary"
           >
@@ -208,7 +220,7 @@ export const WorkflowInfo = memo(() => {
             ) : (
               <span className="flex items-center gap-2">
                 <TbPlayerPlay className="w-4 h-4" />
-                执行
+                执行测试
               </span>
             )}
           </Button>
@@ -462,5 +474,140 @@ export const WorkflowEditor = () => {
         <WorkflowGraph workflow={workflow} />
       </ReactFlowProvider>
     </Suspense>
+  );
+};
+
+const ParamInputDialog = ({
+  close,
+  workflow,
+}: {
+  close: () => void;
+  workflow: Workflow;
+}) => {
+  const workflowState = workflow.use();
+  const [paramValues, setParamValues] = useState<Record<string, any>>({});
+
+  // 处理参数值变更
+  const handleParamValueChange = useCallback((path: string[], value: any) => {
+    setParamValues((prev) => {
+      const newValues = { ...prev };
+      let current = newValues;
+      for (let i = 0; i < path.length - 1; i++) {
+        if (!current[path[i]]) {
+          current[path[i]] = {};
+        }
+        current = current[path[i]];
+      }
+      current[path[path.length - 1]] = value;
+      return newValues;
+    });
+  }, []);
+
+  // 处理参数确认
+  const handleParamConfirm = useCallback(() => {
+    workflow.updateNode("start", {
+      inputs: paramValues,
+    });
+    close();
+    workflow.execute();
+  }, [workflow, paramValues, close]);
+
+  // 渲染单个参数输入项
+  const renderParamInput = useCallback(
+    (
+      name: string,
+      property: ToolProperty,
+      path: string[] = [],
+      required: boolean = false,
+    ) => {
+      const currentPath = [...path, name];
+      const currentValue = currentPath.reduce(
+        (obj, key) => obj?.[key],
+        paramValues,
+      );
+
+      if (property.type === "object" && property.properties) {
+        return (
+          <div key={name} className="space-y-2 border rounded-lg p-4">
+            <Label className="font-bold">
+              {name}
+              {required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
+            <div className="space-y-4 pl-4">
+              {Object.entries(property.properties).map(([subName, subProp]) =>
+                renderParamInput(
+                  subName,
+                  subProp as ToolProperty,
+                  currentPath,
+                  false, // 对象内部的必填项在 ToolParameters 中定义
+                ),
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      if (property.type === "array" && property.items) {
+        // TODO: 数组类型的处理可以在这里添加
+        return null;
+      }
+
+      return (
+        <div key={name} className="space-y-2">
+          <Label>
+            {name}
+            {required && <span className="text-red-500 ml-1">*</span>}
+          </Label>
+          <Input
+            type={property.type === "number" ? "number" : "text"}
+            placeholder={property.description}
+            value={currentValue?.toString() || ""}
+            onChange={(e) =>
+              handleParamValueChange(
+                currentPath,
+                property.type === "number"
+                  ? Number(e.target.value)
+                  : e.target.value,
+              )
+            }
+          />
+        </div>
+      );
+    },
+    [paramValues, handleParamValueChange],
+  );
+
+  // 渲染所有参数输入
+  const renderParamInputs = useCallback(() => {
+    const startNode = workflowState?.data.nodes["start"];
+    if (!startNode) return null;
+
+    const parameters = (startNode.data as StartNodeConfig).parameters;
+    if (!parameters?.properties) return null;
+
+    return (
+      <div className="space-y-4">
+        {Object.entries(parameters.properties).map(([name, prop]) => {
+          return renderParamInput(
+            name,
+            prop as ToolProperty,
+            [],
+            parameters.required?.includes(name) || false,
+          );
+        })}
+      </div>
+    );
+  }, [workflowState?.data.nodes, renderParamInput]);
+
+  return (
+    <div className="space-y-4">
+      {renderParamInputs()}
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={close}>
+          取消
+        </Button>
+        <Button onClick={handleParamConfirm}>确认</Button>
+      </div>
+    </div>
   );
 };
