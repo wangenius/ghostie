@@ -192,8 +192,8 @@ const NodePortalComponent = ({
               <PopoverContent className="w-80" align="end">
                 <div className="space-y-2">
                   <div className="text-sm font-medium">执行结果</div>
-                  <div className="text-sm bg-green-50 border border-green-200 rounded p-2">
-                    {state.outputs?.result}
+                  <div className="text-sm bg-green-50 border border-green-200 rounded p-2 max-h-[300px] overflow-y-auto">
+                    {JSON.stringify(state.outputs.result)}
                   </div>
                 </div>
               </PopoverContent>

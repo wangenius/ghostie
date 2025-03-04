@@ -12,11 +12,11 @@ const BranchNodeComponent = (props: NodeProps<BranchNodeConfig>) => {
   const nodeState = workflowState.nodeStates[props.id];
 
   const renderExecutionResult = useMemo(() => {
-    if (nodeState.status !== "completed" && nodeState.status !== "failed") {
+    if (nodeState?.status !== "completed" && nodeState?.status !== "failed") {
       return null;
     }
 
-    const isCompleted = nodeState.status === "completed";
+    const isCompleted = nodeState?.status === "completed";
     return (
       <div
         className={cn(
@@ -35,7 +35,11 @@ const BranchNodeComponent = (props: NodeProps<BranchNodeConfig>) => {
         )}
       </div>
     );
-  }, [nodeState.status, nodeState.outputs.data?.label, nodeState.error]);
+  }, [nodeState?.status, nodeState?.outputs.data?.label, nodeState?.error]);
+
+  if (!nodeState) {
+    return null;
+  }
 
   return (
     <NodePortal

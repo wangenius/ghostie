@@ -12,15 +12,11 @@ const EndNodeComponent = (props: NodeProps<EndNodeConfig>) => {
   const workflowState = workflow.use();
   const nodeState = workflowState.nodeStates[props.id];
 
-  if (!nodeState) {
-    return null;
-  }
-
   const renderOutputs = useMemo(() => {
-    if (nodeState.status === "completed") {
+    if (nodeState?.status === "completed") {
       return (
         <div className="space-y-2">
-          {Object.entries(nodeState.outputs).map(([key, value]) => (
+          {Object.entries(nodeState?.outputs || {}).map(([key, value]) => (
             <div key={key} className="space-y-1 overflow-auto">
               <div className="text-xs font-medium text-gray-400">{key}</div>
               {typeof value === "object" ? (
@@ -34,22 +30,25 @@ const EndNodeComponent = (props: NodeProps<EndNodeConfig>) => {
       );
     }
     return null;
-  }, [nodeState.status, nodeState.outputs]);
+  }, [nodeState?.status, nodeState?.outputs]);
 
   const renderError = useMemo(() => {
-    if (nodeState.status === "failed") {
+    if (nodeState?.status === "failed") {
       return (
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-red-500">
             <TbCircleX className="h-4 w-4" />
             <span className="text-sm">执行失败</span>
           </div>
-          <div className="pl-6 text-xs text-red-500">{nodeState.error}</div>
+          <div className="pl-6 text-xs text-red-500">{nodeState?.error}</div>
         </div>
       );
     }
     return null;
-  }, [nodeState.status, nodeState.error]);
+  }, [nodeState?.status, nodeState?.error]);
+  if (!nodeState) {
+    return null;
+  }
 
   return (
     <NodePortal {...props} left={1} right={0} variant="default" title="结束">
