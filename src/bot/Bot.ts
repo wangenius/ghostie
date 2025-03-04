@@ -81,6 +81,7 @@ export class Bot implements Omit<BotProps, "model"> {
       .setBot(config.id)
       .setTools(tools)
       .setKnowledge(config.knowledges || [])
+      .setWorkflows(config.workflows || [])
       .system(config.system);
     this.tools = config.tools || [];
     this.context = new Context();

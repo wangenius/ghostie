@@ -498,11 +498,287 @@ export class Workflow {
     return edge?.condition === selectedCondition?.id;
   }
 
+  private parseInputReferences(text: string, inputs: Record<string, any>) {
+    console.log(text);
+    console.log(inputs);
+
+    const result = text.replace(
+      /\{\{inputs\.([^.]+)\.([^}]+)\}\}/g,
+      (match, nodeId, key) => {
+        const nodeInputs = inputs[nodeId];
+        if (!nodeInputs) return match;
+        const value = nodeInputs[key];
+
+        // 处理不同类型的值
+        if (value === null || value === undefined) {
+          return JSON.stringify(value);
+        }
+
+        switch (typeof value) {
+          case "object":
+            return JSON.stringify(value, null, 2);
+          case "string":
+            return value;
+          default:
+            return String(value);
+        }
+      },
+    );
+    console.log(result);
+    return result;
+  }
+
+  private async executeStartNode(
+    inputs: Record<string, any>,
+  ): Promise<NodeResult> {
+    return {
+      success: true,
+      data: inputs,
+    };
+  }
+
+  private async executeEndNode(
+    inputs: Record<string, any>,
+  ): Promise<NodeResult> {
+    return {
+      success: true,
+      data: inputs,
+    };
+  }
+
+  private async executePanelNode(
+    inputs: Record<string, any>,
+  ): Promise<NodeResult> {
+    return {
+      success: true,
+      data: inputs,
+    };
+  }
+
+  private async executeChatNode(
+    node: WorkflowNode,
+    inputs: Record<string, any>,
+  ): Promise<NodeResult> {
+    const chatConfig = node.data as ChatNodeConfig;
+    const parsedSystem = this.parseInputReferences(chatConfig.system, inputs);
+    const parsedUser = this.parseInputReferences(chatConfig.user, inputs);
+    const res = await new ChatModel(ModelManager.get(chatConfig.model))
+      .system(parsedSystem)
+      .stream(parsedUser);
+    return {
+      success: true,
+      data: {
+        result: res.body,
+      },
+    };
+  }
+
+  private async executeBotNode(
+    node: WorkflowNode,
+    inputs: Record<string, any>,
+  ): Promise<NodeResult> {
+    const botConfig = node.data as BotNodeConfig;
+    const bot = new Bot(BotManager.get(botConfig.bot));
+    const parsedPrompt = this.parseInputReferences(
+      botConfig.prompt || "",
+      inputs,
+    );
+    const botResult = await bot.chat(parsedPrompt);
+    return {
+      success: true,
+      data: {
+        result: botResult.content,
+      },
+    };
+  }
+
+  /** 执行插件节点
+   *  @param node - 插件节点
+   *  @param inputs - 插件节点的输入
+   *  @returns 插件节点的执行结果
+   */
+  private async executePluginNode(
+    node: WorkflowNode,
+    inputs: Record<string, any>,
+  ): Promise<NodeResult> {
+    const pluginConfig = node.data as PluginNodeConfig;
+    const plugin = PluginManager.get(pluginConfig.plugin);
+    if (!plugin) {
+      throw new Error(`插件不存在: ${pluginConfig.plugin}`);
+    }
+    const tool = plugin.tools.find((t) => t.name === pluginConfig.tool);
+    if (!tool) {
+      throw new Error(`工具不存在: ${pluginConfig.tool}`);
+    }
+
+    const processedArgs = Object.entries(pluginConfig.args || {}).reduce(
+      (acc, [key, value]) => ({
+        ...acc,
+        [key]:
+          typeof value === "string"
+            ? this.parseInputReferences(value, inputs)
+            : value,
+      }),
+      {},
+    );
+
+    console.log(processedArgs);
+
+    const pluginResult = await cmd.invoke("plugin_execute", {
+      id: plugin.id,
+      tool: pluginConfig.tool,
+      args: processedArgs,
+    });
+    return {
+      success: true,
+      data: {
+        result: pluginResult,
+      },
+    };
+  }
+
+  private async executeBranchNode(
+    node: WorkflowNode,
+    inputs: Record<string, any>,
+  ): Promise<NodeResult> {
+    const branchConfig = node.data as BranchNodeConfig;
+    const evaluator = new ExpressionEvaluator();
+    const matchedCondition = branchConfig.conditions.find((condition) =>
+      evaluator.evaluate(condition.expression, inputs),
+    );
+    return {
+      success: true,
+      data: matchedCondition || branchConfig.conditions[0],
+    };
+  }
+
+  private evaluateCondition(condition: any, item: any): boolean {
+    const { field, operator, value, dataType } = condition;
+    let itemValue = item[field];
+
+    if (field.includes(".")) {
+      const parts = field.split(".");
+      itemValue = parts.reduce(
+        (obj: Record<string, any>, part: string) => obj?.[part],
+        item,
+      );
+    }
+
+    if (itemValue === undefined) {
+      return operator === "notExists";
+    }
+
+    let typedValue: any;
+    let typedItemValue: any;
+
+    switch (dataType) {
+      case "number":
+        typedValue = Number(value);
+        typedItemValue = Number(itemValue);
+        break;
+      case "boolean":
+        typedValue = value.toLowerCase() === "true";
+        typedItemValue = Boolean(itemValue);
+        break;
+      case "date":
+        typedValue = new Date(value);
+        typedItemValue = new Date(itemValue);
+        break;
+      default:
+        typedValue = String(value);
+        typedItemValue = String(itemValue);
+    }
+
+    switch (operator) {
+      case "equals":
+        return typedItemValue === typedValue;
+      case "notEquals":
+        return typedItemValue !== typedValue;
+      case "contains":
+        return String(typedItemValue).includes(String(typedValue));
+      case "notContains":
+        return !String(typedItemValue).includes(String(typedValue));
+      case "startsWith":
+        return String(typedItemValue).startsWith(String(typedValue));
+      case "endsWith":
+        return String(typedItemValue).endsWith(String(typedValue));
+      case "greaterThan":
+        return typedItemValue > typedValue;
+      case "lessThan":
+        return typedItemValue < typedValue;
+      case "greaterThanOrEqual":
+        return typedItemValue >= typedValue;
+      case "lessThanOrEqual":
+        return typedItemValue <= typedValue;
+      case "matches":
+        try {
+          const regex = new RegExp(value);
+          return regex.test(String(typedItemValue));
+        } catch {
+          return false;
+        }
+      case "in":
+        const valueList = value.split(",").map((v: string) => v.trim());
+        return valueList.includes(String(typedItemValue));
+      case "notIn":
+        const excludeList = value.split(",").map((v: string) => v.trim());
+        return !excludeList.includes(String(typedItemValue));
+      case "exists":
+        return itemValue !== undefined;
+      case "notExists":
+        return itemValue === undefined;
+      default:
+        return false;
+    }
+  }
+
+  private evaluateGroup(group: any, item: any): boolean {
+    if (!group.conditions || group.conditions.length === 0) {
+      return true;
+    }
+
+    const results = group.conditions.map((condition: any) => {
+      if ("operator" in condition) {
+        return this.evaluateCondition(condition, item);
+      } else {
+        return this.evaluateGroup(condition, item);
+      }
+    });
+
+    return group.type === "AND"
+      ? results.every(Boolean)
+      : results.some(Boolean);
+  }
+
+  private async executeFilterNode(
+    node: WorkflowNode,
+    inputs: Record<string, any>,
+  ): Promise<NodeResult> {
+    const filterConfig = node.data as FilterNodeConfig;
+    const inputData = Object.values(inputs)[0]?.result;
+
+    if (!inputData || !Array.isArray(inputData)) {
+      throw new Error("过滤节点的输入数据必须是数组");
+    }
+
+    const filteredData = inputData.filter((item) => {
+      return this.evaluateGroup(filterConfig.filter.group, item);
+    });
+
+    return {
+      success: true,
+      data: filteredData,
+    };
+  }
+
   private async executeNode(node: WorkflowNode): Promise<NodeResult> {
     try {
       // 构建图结构以获取前置节点
       const { predecessors } = this.buildExecutionGraph();
+      // 收集前置节点的输出作为当前节点的输入
       const inputs = this.collectNodeInputs(node.id, predecessors);
+
+      // 更新节点状态
       this.updateNodeState(node.id, {
         status: "running",
         startTime: new Date().toISOString(),
@@ -511,235 +787,31 @@ export class Workflow {
 
       let result: NodeResult;
 
-      // 解析包含输入参数引用的文本
-      const parseInputReferences = (
-        text: string,
-        inputs: Record<string, any>,
-      ) => {
-        return text.replace(
-          /\{\{inputs\.([^.]+)\.([^}]+)\}\}/g,
-          (match, nodeId, key) => {
-            const nodeInputs = inputs[nodeId];
-            if (!nodeInputs) return match;
-            const value = nodeInputs[key];
-            return value !== undefined ? String(value) : match;
-          },
-        );
-      };
-
       switch (node.type) {
         case "start":
-          result = {
-            success: true,
-            data: inputs,
-          };
+          result = await this.executeStartNode(inputs);
           break;
-
         case "end":
-          result = {
-            success: true,
-            data: inputs,
-          };
+          result = await this.executeEndNode(inputs);
           break;
-
         case "panel":
-          result = {
-            success: true,
-            data: inputs,
-          };
+          result = await this.executePanelNode(inputs);
           break;
-
         case "chat":
-          const chatConfig = node.data as ChatNodeConfig;
-          // 解析系统提示词中的输入参数引用
-          const parsedSystem = parseInputReferences(chatConfig.system, inputs);
-          const parsedUser = parseInputReferences(chatConfig.user, inputs);
-          const res = await new ChatModel(ModelManager.get(chatConfig.model))
-            .system(parsedSystem)
-            .stream(parsedUser);
-          result = {
-            success: true,
-            data: {
-              result: res.body,
-            },
-          };
+          result = await this.executeChatNode(node, inputs);
           break;
-
         case "bot":
-          const botConfig = node.data as BotNodeConfig;
-          const bot = new Bot(BotManager.get(botConfig.bot));
-          // 解析提示词中的输入参数引用
-          const parsedPrompt = parseInputReferences(
-            botConfig.prompt || "",
-            inputs,
-          );
-          const botResult = await bot.chat(parsedPrompt);
-          result = {
-            success: true,
-            data: {
-              result: botResult.content,
-            },
-          };
+          result = await this.executeBotNode(node, inputs);
           break;
-
         case "plugin":
-          const pluginConfig = node.data as PluginNodeConfig;
-          const plugin = PluginManager.get(pluginConfig.plugin);
-          if (!plugin) {
-            throw new Error(`插件不存在: ${pluginConfig.plugin}`);
-          }
-          const tool = plugin.tools.find((t) => t.name === pluginConfig.tool);
-          if (!tool) {
-            throw new Error(`工具不存在: ${pluginConfig.tool}`);
-          }
-
-          // 直接使用当前编辑的脚本和依赖进行测试
-          const pluginResult = await cmd.invoke("plugin_execute", {
-            id: plugin.id,
-            tool: pluginConfig.tool,
-            args: pluginConfig.args,
-          });
-          result = {
-            success: true,
-            data: {
-              result: pluginResult,
-            },
-          };
+          result = await this.executePluginNode(node, inputs);
           break;
-
         case "branch":
-          const branchConfig = node.data as BranchNodeConfig;
-          const evaluator = new ExpressionEvaluator();
-          const matchedCondition = branchConfig.conditions.find((condition) =>
-            evaluator.evaluate(condition.expression, inputs),
-          );
-          result = {
-            success: true,
-            data: matchedCondition || branchConfig.conditions[0],
-          };
+          result = await this.executeBranchNode(node, inputs);
           break;
-
         case "filter":
-          const filterConfig = node.data as FilterNodeConfig;
-          const inputData = Object.values(inputs)[0]?.result;
-
-          if (!inputData || !Array.isArray(inputData)) {
-            throw new Error("过滤节点的输入数据必须是数组");
-          }
-
-          const evaluateCondition = (condition: any, item: any): boolean => {
-            const { field, operator, value, dataType } = condition;
-            let itemValue = item[field];
-
-            // 处理嵌套字段
-            if (field.includes(".")) {
-              const parts = field.split(".");
-              itemValue = parts.reduce(
-                (obj: Record<string, any>, part: string) => obj?.[part],
-                item,
-              );
-            }
-
-            // 如果字段不存在
-            if (itemValue === undefined) {
-              return operator === "notExists";
-            }
-
-            // 根据数据类型转换值
-            let typedValue: any;
-            let typedItemValue: any;
-
-            switch (dataType) {
-              case "number":
-                typedValue = Number(value);
-                typedItemValue = Number(itemValue);
-                break;
-              case "boolean":
-                typedValue = value.toLowerCase() === "true";
-                typedItemValue = Boolean(itemValue);
-                break;
-              case "date":
-                typedValue = new Date(value);
-                typedItemValue = new Date(itemValue);
-                break;
-              default:
-                typedValue = String(value);
-                typedItemValue = String(itemValue);
-            }
-
-            switch (operator) {
-              case "equals":
-                return typedItemValue === typedValue;
-              case "notEquals":
-                return typedItemValue !== typedValue;
-              case "contains":
-                return String(typedItemValue).includes(String(typedValue));
-              case "notContains":
-                return !String(typedItemValue).includes(String(typedValue));
-              case "startsWith":
-                return String(typedItemValue).startsWith(String(typedValue));
-              case "endsWith":
-                return String(typedItemValue).endsWith(String(typedValue));
-              case "greaterThan":
-                return typedItemValue > typedValue;
-              case "lessThan":
-                return typedItemValue < typedValue;
-              case "greaterThanOrEqual":
-                return typedItemValue >= typedValue;
-              case "lessThanOrEqual":
-                return typedItemValue <= typedValue;
-              case "matches":
-                try {
-                  const regex = new RegExp(value);
-                  return regex.test(String(typedItemValue));
-                } catch {
-                  return false;
-                }
-              case "in":
-                const valueList = value.split(",").map((v: string) => v.trim());
-                return valueList.includes(String(typedItemValue));
-              case "notIn":
-                const excludeList = value
-                  .split(",")
-                  .map((v: string) => v.trim());
-                return !excludeList.includes(String(typedItemValue));
-              case "exists":
-                return itemValue !== undefined;
-              case "notExists":
-                return itemValue === undefined;
-              default:
-                return false;
-            }
-          };
-
-          const evaluateGroup = (group: any, item: any): boolean => {
-            if (!group.conditions || group.conditions.length === 0) {
-              return true;
-            }
-
-            const results = group.conditions.map((condition: any) => {
-              if ("operator" in condition) {
-                return evaluateCondition(condition, item);
-              } else {
-                return evaluateGroup(condition, item);
-              }
-            });
-
-            return group.type === "AND"
-              ? results.every(Boolean)
-              : results.some(Boolean);
-          };
-
-          const filteredData = inputData.filter((item) => {
-            return evaluateGroup(filterConfig.filter.group, item);
-          });
-
-          result = {
-            success: true,
-            data: filteredData,
-          };
+          result = await this.executeFilterNode(node, inputs);
           break;
-
         default:
           throw new Error(`不支持的节点类型: ${node.type}`);
       }

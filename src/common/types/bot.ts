@@ -17,6 +17,8 @@ export interface BotProps {
   tools: string[];
   /* 知识库 */
   knowledges?: string[];
+  /* 工作流 */
+  workflows?: string[];
   /* 温度 */
   temperature: number;
   /* Agent模式 */

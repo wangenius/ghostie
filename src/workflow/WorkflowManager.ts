@@ -18,6 +18,8 @@ export class WorkflowManager {
   /* 工作流状态使用 */
   static use = WorkflowManager.store.use.bind(WorkflowManager.store);
 
+  static current = WorkflowManager.store.getCurrent();
+
   /* 初始化工作流管理器 */
   static async init(): Promise<void> {
     await this.store.ready();

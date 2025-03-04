@@ -17,6 +17,9 @@ import {
 import { TOOL_NAME_SPLIT } from "../bot/Bot";
 import { HistoryMessage } from "./HistoryMessage";
 import { KnowledgeStore } from "../knowledge/KnowledgeStore";
+import { WorkflowManager } from "@/workflow/WorkflowManager";
+import { StartNodeConfig } from "@/workflow/types/nodes";
+import { Workflow } from "@/workflow/Workflow";
 
 /** 请求配置 */
 interface RequestConfig {
@@ -42,6 +45,8 @@ export class ChatModel {
   private tools: ToolRequestBody | undefined;
   /** 知识 */
   private knowledges: ToolRequestBody | undefined;
+  /** 工作流 */
+  private workflows: ToolRequestBody | undefined;
   /** 当前请求ID */
   private currentRequestId: string | undefined;
 
@@ -75,6 +80,31 @@ export class ChatModel {
     return this;
   }
 
+  public setWorkflows(workflows: string[]): this {
+    if (workflows.length) {
+      /* 获取工作流 */
+      WorkflowManager.current.then((flows) => {
+        workflows.forEach((workflow) => {
+          const flow = flows[workflow];
+          if (!flow) return;
+          if (!this.workflows) {
+            this.workflows = [];
+          }
+          /* 将工作流变成工具 */
+          this.workflows?.push({
+            type: "function",
+            function: {
+              name: `workflow_${flow.id}`,
+              description: flow.description,
+              parameters: (flow.nodes["start"]?.data as StartNodeConfig)
+                .parameters,
+            },
+          });
+        });
+      });
+    }
+    return this;
+  }
   public setKnowledge(docs: string[]): this {
     if (docs.length) {
       /* 获取知识库 */
@@ -161,6 +191,25 @@ export class ChatModel {
         name: tool_call.function.name,
         arguments: tool_call.function.arguments,
         result: knowledgeDoc,
+      };
+    }
+
+    /* 工作流工具 */
+    if (tool_call.function.name.startsWith("workflow_")) {
+      const id = tool_call.function.name.split("_")[1];
+      const workflow = await new Workflow().init(id);
+      if (!workflow) {
+        return {
+          name: tool_call.function.name,
+          arguments: tool_call.function.arguments,
+          result: "工作流不存在",
+        };
+      }
+      const result = await workflow.execute();
+      return {
+        name: tool_call.function.name,
+        arguments: tool_call.function.arguments,
+        result,
       };
     }
 
@@ -262,6 +311,10 @@ export class ChatModel {
 
       if (this.knowledges?.length) {
         requestBody.tools = [...(requestBody.tools || []), ...this.knowledges];
+      }
+
+      if (this.workflows?.length) {
+        requestBody.tools = [...(requestBody.tools || []), ...this.workflows];
       }
 
       // 监听流式响应事件

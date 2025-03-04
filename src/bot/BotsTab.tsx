@@ -31,6 +31,8 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Knowledge, KnowledgeStore } from "@/knowledge/KnowledgeStore";
+import { WorkflowManager } from "@/workflow/WorkflowManager";
+import { WorkflowProps } from "@/workflow/types/nodes";
 import { useCallback, useEffect, useState } from "react";
 
 /** 机器人列表 */
@@ -38,6 +40,7 @@ export function BotsTab() {
   const bots = BotManager.use();
   const models = ModelManager.use();
   const knowledge = KnowledgeStore.use();
+  const workflows = WorkflowManager.use();
   const [selectedBot, setSelectedBot] = useState<BotProps | undefined>();
   const [plugins, setPlugins] = useState<Record<string, PluginProps>>({});
 
@@ -341,6 +344,34 @@ export function BotsTab() {
                     }
                     className="bg-secondary/50 hover:bg-secondary/70 transition-colors"
                     placeholder="选择插件..."
+                  />
+                </div>
+
+                {/* 工作流选择 */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    选择工作流
+                  </label>
+                  <MultiSelect
+                    options={Object.values(workflows).map(
+                      (workflow: WorkflowProps) => ({
+                        label: workflow.name,
+                        value: workflow.id,
+                      }),
+                    )}
+                    value={selectedBot.workflows || []}
+                    onChange={(value) =>
+                      setSelectedBot(
+                        selectedBot
+                          ? {
+                              ...selectedBot,
+                              workflows: value,
+                            }
+                          : undefined,
+                      )
+                    }
+                    className="bg-secondary/50 hover:bg-secondary/70 transition-colors"
+                    placeholder="选择工作流..."
                   />
                 </div>
 
