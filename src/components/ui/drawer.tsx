@@ -37,7 +37,7 @@ export function Drawer({
         >
           <DrawerPrimitive.Title className="sr-only"></DrawerPrimitive.Title>
           <DrawerPrimitive.Description className="sr-only"></DrawerPrimitive.Description>
-          <div className="bg-zinc-50 h-full w-full grow p-5 flex flex-col rounded-lg">
+          <div className="bg-zinc-50 h-full w-full grow p-4 flex flex-col rounded-lg">
             {children}
           </div>
         </DrawerPrimitive.Content>

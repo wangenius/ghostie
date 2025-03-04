@@ -9,7 +9,15 @@ export type WorkflowNode<
   /* 节点名称 */
   name: string;
 };
-
+/* 节点状态 */
+export interface NodeState {
+  inputs: Record<string, any>;
+  outputs: Record<string, any>;
+  status: "pending" | "running" | "completed" | "failed" | "skipped";
+  error?: string;
+  startTime?: string;
+  endTime?: string;
+}
 /* 工作流 */
 export interface WorkflowProps {
   /* 工作流ID */

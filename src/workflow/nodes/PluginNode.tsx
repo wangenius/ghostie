@@ -18,7 +18,6 @@ import { NodePortal } from "./NodePortal";
 const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
   const plugins = PluginManager.use();
   const workflow = useEditorWorkflow();
-  const workflowState = workflow.use();
   const selectedPlugin = plugins[props.data.plugin] as PluginProps | undefined;
 
   const handlePluginChange = useCallback(
@@ -137,15 +136,7 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
   }, [selectedPlugin, props.data.tool, props.data.args, handleParameterChange]);
 
   return (
-    <NodePortal
-      {...props}
-      left={1}
-      right={1}
-      variant="plugin"
-      title="插件"
-      state={workflowState.nodeStates[props.id].status}
-      outputs={workflowState.nodeStates[props.id].outputs}
-    >
+    <NodePortal {...props} left={1} right={1} variant="plugin" title="插件">
       <motion.div
         className="flex flex-col gap-3 p-1"
         initial={{ opacity: 0, y: 5 }}

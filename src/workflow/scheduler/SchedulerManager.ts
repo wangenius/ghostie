@@ -94,7 +94,7 @@ class SchedulerManager {
       // 如果延迟小于0，说明已经错过了执行时间，立即执行
       if (delay <= 0) {
         console.log(`任务[${id}]已错过执行时间，立即执行`);
-        await this.executeWorkflowWithRetry(id);
+        await this.executeWorkflow(id);
         // 执行完后，安排下一次执行
         this.scheduleNextRun(id, cronExpr);
         return;
@@ -111,7 +111,7 @@ class SchedulerManager {
         }
 
         console.log(`开始执行任务[${id}]`);
-        await this.executeWorkflowWithRetry(id);
+        await this.executeWorkflow(id);
         // 执行完后，安排下一次执行
         this.scheduleNextRun(id, cronExpr);
       }, delay);
@@ -137,7 +137,7 @@ class SchedulerManager {
     }
   }
 
-  private static async executeWorkflowWithRetry(id: string) {
+  private static async executeWorkflow(id: string) {
     // 检查任务是否还存在且启用
     const task = this.store.current[id];
     if (!task || !task.enabled) {

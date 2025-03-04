@@ -148,10 +148,12 @@ option {
   -webkit-app-region: no-drag;
 }
 
+/* 隐藏 react-flow 的 attribution */
 .react-flow__attribution {
   display: none !important;
 }
 
+/* 代码编辑器 */
 .cm-scroller {
   height: 100% !important;
   overflow: auto !important;
@@ -167,11 +169,5 @@ option {
   &.cm-activeLine {
     background-color: #97979710 !important;
     border-radius: 0.25rem !important;
-  }
-}
-
-[data-sonner-toast="true"] {
-  &li {
-    @apply !items-start;
   }
 }

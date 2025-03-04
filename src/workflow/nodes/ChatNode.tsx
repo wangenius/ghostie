@@ -20,7 +20,6 @@ const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
   const [system, setSystem] = useState(props.data.system);
   const [user, setUser] = useState(props.data.user);
   const workflow = useEditorWorkflow();
-  const workflowState = workflow.use();
 
   const handleModelChange = useCallback(
     (value: string) => {
@@ -103,15 +102,7 @@ const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
   );
 
   return (
-    <NodePortal
-      {...props}
-      left={1}
-      right={1}
-      variant="chat"
-      title="对话"
-      state={workflowState.nodeStates[props.id].status}
-      outputs={workflowState.nodeStates[props.id].outputs}
-    >
+    <NodePortal {...props} left={1} right={1} variant="chat" title="对话">
       <motion.div
         className="flex flex-col gap-3 p-1"
         initial={{ opacity: 0, y: 5 }}

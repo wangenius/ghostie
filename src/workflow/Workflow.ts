@@ -14,6 +14,7 @@ import {
   FilterNodeConfig,
   NodeConfig,
   NodeType,
+  NodeState,
 } from "./types/nodes";
 import { WorkflowManager } from "./WorkflowManager";
 import { Echo } from "echo-state";
@@ -22,15 +23,6 @@ import { gen } from "@/utils/generator";
 import { PluginManager } from "@/plugin/PluginManager";
 import { cmd } from "@/utils/shell";
 
-/* 节点状态 */
-interface NodeState {
-  inputs: Record<string, any>;
-  outputs: Record<string, any>;
-  status: "pending" | "running" | "completed" | "failed" | "skipped";
-  error?: string;
-  startTime?: string;
-  endTime?: string;
-}
 /* 初始化节点 */
 const initialNodes: Record<string, WorkflowNode> = {
   start: {
@@ -299,12 +291,14 @@ export class Workflow {
       if (!state.data) return state;
 
       const { [nodeId]: _, ...remainingNodes } = state.data.nodes;
+      const { [nodeId]: __, ...remainingNodeStates } = state.nodeStates;
       return {
         ...state,
         data: {
           ...state.data,
           nodes: remainingNodes,
         },
+        nodeStates: remainingNodeStates,
       };
     });
   }
@@ -341,26 +335,31 @@ export class Workflow {
   public async init(workflowId?: string): Promise<Workflow> {
     /* 初始化，将工作流数据设置到state中 */
     const workflow = workflowId
-      ? await WorkflowManager.get(workflowId)
-      : {
-          ...INITIAL_WORKFLOW,
-        };
+      ? (await WorkflowManager.get(workflowId)) ?? INITIAL_WORKFLOW
+      : INITIAL_WORKFLOW;
 
-    /* 设置工作流数据到state中 */
-    this.state.set((state) => ({
-      ...state,
-      data: workflow,
-    }));
+    // 设置工作流数据和初始状态
+    this.state.set(
+      () => ({
+        data: workflow,
+        nodeStates: {},
+        executedNodes: new Set(),
+        isExecuting: false,
+      }),
+      { replace: true },
+    );
 
     /* 初始化节点状态 */
-    this.initNodeStates();
+    this.initNodeStates(workflow);
     return this;
   }
 
   /** 初始化节点状态 */
-  private initNodeStates() {
+  private initNodeStates(workflow: WorkflowProps) {
+    let states: Record<string, NodeState> = {};
+
     /* 初始化节点状态 */
-    Object.values(this.state.current.data.nodes).forEach((node) => {
+    Object.values(workflow.nodes).forEach((node) => {
       let initialOutputs = {};
       // 根据节点类型初始化默认输出结构
       switch (node.type) {
@@ -391,19 +390,22 @@ export class Workflow {
         default:
           initialOutputs = { result: null };
       }
-      /* 设置节点状态 */
-      this.state.set((state) => ({
-        ...state,
-        nodeStates: {
-          ...state.nodeStates,
-          [node.id]: {
-            inputs: {},
-            outputs: initialOutputs,
-            status: "pending",
-          },
-        },
-      }));
+
+      states[node.id] = {
+        inputs: {},
+        outputs: initialOutputs,
+        status: "pending",
+      };
     });
+
+    /* 设置节点状态 */
+    this.state.set(
+      (prev) => ({
+        ...prev,
+        nodeStates: states,
+      }),
+      { replace: false },
+    );
   }
 
   private getNodeState(nodeId: string): NodeState {
@@ -771,9 +773,11 @@ export class Workflow {
     this.state.set((state) => {
       if (!state.data) return state;
       const { [nodeId]: __, ...remainingNodes } = state.data.nodes;
+      const { [nodeId]: _, ...remainingNodeStates } = state.nodeStates;
       return {
         ...state,
         data: { ...state.data, nodes: remainingNodes },
+        nodeStates: remainingNodeStates,
       };
     });
   }
@@ -955,33 +959,6 @@ export class Workflow {
         }),
       );
     }
-  }
-
-  /** 重置工作流
-   * @param id 工作流id
-   * @description 重置工作流，如果id为new，则创建一个新的工作流，该工作流的id为空，需要通过workflow.register()方法注册
-   */
-  async reset(id?: string) {
-    /* 如果id为new，则创建一个新的工作流 */
-    if (!id) {
-      this.state.set((state) => ({
-        ...state,
-        data: {
-          ...INITIAL_WORKFLOW,
-        },
-      }));
-    } else {
-      /* 如果id不为new，则获取工作流 */
-      const workflow = await WorkflowManager.get(id || "");
-      if (!workflow) {
-        throw new Error(`工作流不存在: ${id}`);
-      }
-      this.state.set((state) => ({
-        ...state,
-        data: workflow,
-      }));
-    }
-    this.initNodeStates();
   }
 
   public getExecutionState() {

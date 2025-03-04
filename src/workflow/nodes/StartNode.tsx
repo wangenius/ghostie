@@ -12,7 +12,6 @@ import { useEditorWorkflow } from "../context/EditorContext";
 
 const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
   const workflow = useEditorWorkflow();
-  const workflowState = workflow.use();
 
   const [composingValues, setComposingValues] = useState<
     Record<string, { key: string; value: string }>
@@ -220,14 +219,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
   );
 
   return (
-    <NodePortal
-      {...props}
-      left={0}
-      right={1}
-      variant="default"
-      title="开始"
-      state={workflowState.nodeStates[props.id].status}
-    >
+    <NodePortal {...props} left={0} right={1} variant="default" title="开始">
       <motion.div
         className="flex flex-col gap-3 p-1"
         initial={{ opacity: 0, y: 5 }}

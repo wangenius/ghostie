@@ -5,13 +5,11 @@ import { Drawer } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { cmd } from "@/utils/shell";
 import { debounce } from "lodash";
 import { memo, Suspense, useCallback, useMemo, useRef, useState } from "react";
 import { TbBook, TbLoader2, TbPencil, TbPlayerPlay } from "react-icons/tb";
 import ReactFlow, {
   Background,
-  Controls,
   NodeChange,
   ReactFlowProvider,
   SelectionMode,
@@ -20,6 +18,7 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { ContextMenu } from "./components/ContextMenu";
+import { CustomControls } from "./components/CustomControls";
 import { CustomEdge } from "./components/CustomEdge";
 import { useEditorWorkflow } from "./context/EditorContext";
 import { useEdges } from "./hooks/useEdges";
@@ -227,21 +226,17 @@ export const WorkflowInfo = memo(() => {
           <div className="flex-1 overflow-y-auto">
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold mb-1">编辑工作流</h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  修改工作流的基本信息
-                </p>
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">名称</label>
+                  <div>
                     <Input
                       value={editName}
+                      variant="title"
+                      className="p-0 m-0 rounded-none "
                       onChange={handleNameChange}
                       placeholder="输入工作流名称"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">描述</label>
                     <Textarea
                       value={editDescription}
                       onChange={handleDescriptionChange}
@@ -250,9 +245,9 @@ export const WorkflowInfo = memo(() => {
                     />
                   </div>
                   <div className="space-y-4 pt-4 border-t">
-                    <h4 className="text-sm font-medium">定时设置</h4>
+                    <h4 className="font-bold">定时设置</h4>
                     <div className="flex items-center justify-between">
-                      <label className="text-sm">启用定时执行</label>
+                      <label className="text-sm">Cron表达式</label>
                       <Switch
                         checked={scheduleEnabled}
                         onCheckedChange={handleScheduleEnabledChange}
@@ -261,9 +256,6 @@ export const WorkflowInfo = memo(() => {
                     {scheduleEnabled && (
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">
-                            Cron 表达式
-                          </label>
                           <CronInput
                             value={frequency.cronExpression || ""}
                             onChange={handleCronExpressionChange}
@@ -302,10 +294,9 @@ const WorkflowGraph = memo(({ workflow }: { workflow: Workflow }) => {
   }
 
   // 使用 useMemo 缓存节点和边的数据
-  const nodes = useMemo(
-    () => Object.values(workflowState.data.nodes || {}),
-    [workflowState.data.nodes],
-  );
+  const nodes = useMemo(() => {
+    return Object.values(workflowState.data.nodes || {});
+  }, [workflowState]);
 
   const edges = useMemo(
     () => Object.values(workflowState.data.edges || {}),
@@ -439,7 +430,12 @@ const WorkflowGraph = memo(({ workflow }: { workflow: Workflow }) => {
         panActivationKeyCode="Space"
       >
         <Background />
-        <Controls />
+        <CustomControls
+          position="bottom-center"
+          showZoom
+          showFitView
+          showReset
+        />
       </ReactFlow>
 
       {menu && (
@@ -467,12 +463,4 @@ export const WorkflowEditor = () => {
       </ReactFlowProvider>
     </Suspense>
   );
-};
-
-WorkflowEditor.open = async (id: string = "new") => {
-  try {
-    cmd.open("workflow-edit", { id }, { width: 1000, height: 600 });
-  } catch (error) {
-    console.error("打开工作流失败:", error);
-  }
 };

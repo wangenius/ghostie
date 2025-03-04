@@ -89,7 +89,7 @@ export function SettingsPage() {
       {/* 主体内容区 */}
       <div className="flex flex-1 gap-8 p-6 pt-4 overflow-hidden">
         {/* 左侧导航 */}
-        <div className="w-44 flex flex-col justify-between">
+        <div className="w-48 flex flex-col justify-between">
           <div className="flex flex-col space-y-0.5">
             {SETTINGS_NAV_ITEMS.map(({ id, label, icon: Icon }) => (
               <Button

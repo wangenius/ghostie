@@ -20,10 +20,16 @@ export const EditorContextProvider = ({
 
   useEffect(() => {
     const initWorkflow = async () => {
-      if (id) {
-        workflowRef.current = await Workflow.create(id);
-      } else {
-        workflowRef.current = await Workflow.create();
+      try {
+        if (id) {
+          // 使用新的工作流实例，避免状态混淆
+          workflowRef.current = await Workflow.create(id);
+        } else {
+          workflowRef.current = await Workflow.create();
+        }
+        console.log(`正在编辑工作流 ${id}`);
+      } catch (error) {
+        console.error(`加载工作流 ${id} 失败:`, error);
       }
     };
     initWorkflow();

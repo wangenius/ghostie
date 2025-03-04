@@ -12,6 +12,10 @@ const EndNodeComponent = (props: NodeProps<EndNodeConfig>) => {
   const workflowState = workflow.use();
   const nodeState = workflowState.nodeStates[props.id];
 
+  if (!nodeState) {
+    return null;
+  }
+
   const renderOutputs = useMemo(() => {
     if (nodeState.status === "completed") {
       return (

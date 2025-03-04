@@ -1,6 +1,6 @@
+import { LogicalSize, Window } from "@tauri-apps/api/window";
 import { Echo } from "echo-state";
 import { Fragment, ReactNode } from "react";
-import { Window } from "@tauri-apps/api/window";
 
 const PageStore = new Echo<{ page: string; data: Record<string, any> }>(
   { page: "main", data: {} },
@@ -20,16 +20,14 @@ export const Page = ({
   if (page !== name) return null;
   if (name === "main") {
     Window.getByLabel("main").then((window) => {
-      if (window?.isMaximized()) {
-        window.toggleMaximize();
-      }
+      window?.setSize(new LogicalSize(600, 400));
     });
   } else {
     Window.getByLabel("main").then((window) => {
+      window?.setMinSize(new LogicalSize(1200, 800));
       window?.maximize();
     });
   }
-
   return <Fragment>{component}</Fragment>;
 };
 

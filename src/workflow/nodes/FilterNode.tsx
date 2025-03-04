@@ -331,7 +331,6 @@ const GroupItem = memo(GroupItemComponent);
 
 const FilterNodeComponent = (props: NodeProps<FilterNodeConfig>) => {
   const workflow = useEditorWorkflow();
-  const workflowState = workflow.use();
   const nodeData = props.data as FilterNodeConfig;
 
   const updateNodeData = useCallback(
@@ -359,14 +358,7 @@ const FilterNodeComponent = (props: NodeProps<FilterNodeConfig>) => {
   );
 
   return (
-    <NodePortal
-      {...props}
-      left={1}
-      right={1}
-      variant="condition"
-      title="过滤"
-      state={workflowState.nodeStates[props.id].status}
-    >
+    <NodePortal {...props} left={1} right={1} variant="condition" title="过滤">
       <motion.div
         className="flex flex-col gap-3 p-1"
         initial={{ opacity: 0, y: 5 }}

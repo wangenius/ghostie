@@ -44,7 +44,6 @@ const BranchNodeComponent = (props: NodeProps<BranchNodeConfig>) => {
       right={props.data.conditions?.length || 1}
       variant="branch"
       title="分支"
-      state={nodeState.status}
     >
       <motion.div
         className="flex flex-col gap-3 p-1"

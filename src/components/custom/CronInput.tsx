@@ -1,10 +1,9 @@
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { SchedulerManager } from "@/workflow/scheduler/SchedulerManager";
 import { CronExpressionParser } from "cron-parser";
-import { Info } from "lucide-react";
 import { memo, useCallback, useState } from "react";
-import { Button } from "../ui/button";
-import { NestedDrawer } from "../ui/drawer";
+import { TbInfoCircle } from "react-icons/tb";
 
 /**
  * Cron表达式格式说明：
@@ -30,11 +29,6 @@ import { NestedDrawer } from "../ui/drawer";
 // 常用表达式配置
 const COMMON_EXPRESSIONS = [
   {
-    label: "每秒执行",
-    value: "* * * * * *",
-    description: "每秒执行一次任务",
-  },
-  {
     label: "每分钟执行",
     value: "0 * * * * *",
     description: "每分钟执行一次任务",
@@ -45,14 +39,14 @@ const COMMON_EXPRESSIONS = [
     description: "每小时整点执行",
   },
   {
-    label: "每天零点",
-    value: "0 0 0 * * *",
-    description: "每天凌晨0点执行",
+    label: "每天9点",
+    value: "0 0 9 * * *",
+    description: "每天9点执行",
   },
   {
-    label: "每周一零点",
-    value: "0 0 0 * * 1",
-    description: "每周一凌晨0点执行",
+    label: "每周一9点",
+    value: "0 0 9 * * 1",
+    description: "每周一9点执行",
   },
   {
     label: "工作日9点",
@@ -60,19 +54,19 @@ const COMMON_EXPRESSIONS = [
     description: "周一到周五每天9点执行",
   },
   {
-    label: "每月1号零点",
-    value: "0 0 0 1 * *",
-    description: "每月1号凌晨0点执行",
+    label: "每月1号9点",
+    value: "0 0 9 1 * *",
+    description: "每月1号9点执行",
   },
   {
-    label: "每月最后一天",
-    value: "0 0 0 L * *",
-    description: "每月最后一天凌晨0点执行",
+    label: "每月最后一天9点",
+    value: "0 0 9 L * *",
+    description: "每月最后一天9点执行",
   },
   {
-    label: "每月最后一个周五",
-    value: "0 0 0 * * 5L",
-    description: "每月最后一个周五凌晨0点执行",
+    label: "每月最后的周五9点",
+    value: "0 0 9 * * 5L",
+    description: "每月最后的周五9点",
   },
 ];
 
@@ -471,7 +465,7 @@ export const CronInput = memo(
     const description = getScheduleDescription(customExpression);
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-2">
         <div className="space-y-2">
           <Input
             value={customExpression}
@@ -482,18 +476,32 @@ export const CronInput = memo(
           {error && <p className="text-xs text-destructive">{error}</p>}
         </div>
         {description && (
-          <div>
-            <p className="text-sm text-muted-foreground">{description[0]}</p>
-            <p className="text-sm text-muted-foreground">{description[1]}</p>
+          <div className="bg-muted-foreground/10 p-4 rounded-lg">
+            <div className="space-y-2 border-primary/20">
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground">执行规则</span>
+                <p className="text-sm font-medium">{description[0]}</p>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground">
+                  下次执行时间
+                </span>
+                <p className="text-sm font-medium">{description[1]}</p>
+              </div>
+            </div>
           </div>
         )}
 
-        <Button onClick={() => setOpen(true)} variant="outline" size="icon">
-          <Info className="w-4 h-4" />
-        </Button>
+        <div className="bg-muted text-xs text-muted-foreground space-y-4 p-3 rounded-lg">
+          <div
+            onClick={() => setOpen((prev) => !prev)}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:cursor-pointer hover:text-primary hover:underline transition-colors rounded-md hover:bg-muted/50"
+          >
+            <TbInfoCircle className="h-4 w-4" />
+            <span>Cron表达式格式说明</span>
+          </div>
 
-        <NestedDrawer open={open} onOpenChange={setOpen} direction="right">
-          <div className="text-xs text-muted-foreground space-y-4">
+          <div className={cn("space-y-3", open ? "block" : "hidden")}>
             <div>
               <h4 className="font-medium text-foreground mb-2">
                 Cron 表达式格式
@@ -586,7 +594,7 @@ export const CronInput = memo(
               </div>
             </div>
           </div>
-        </NestedDrawer>
+        </div>
       </div>
     );
   },

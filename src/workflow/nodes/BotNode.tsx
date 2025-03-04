@@ -19,7 +19,6 @@ const BotNodeComponent = (props: NodeProps<BotNodeConfig>) => {
   const bots = BotManager.use();
   const [prompt, setPrompt] = useState(props.data.prompt);
   const workflow = useEditorWorkflow();
-  const workflowState = workflow.use();
 
   const handleBotChange = useCallback(
     (value: string) => {
@@ -78,15 +77,7 @@ const BotNodeComponent = (props: NodeProps<BotNodeConfig>) => {
   );
 
   return (
-    <NodePortal
-      {...props}
-      left={1}
-      right={1}
-      variant="bot"
-      title="机器人"
-      state={workflowState.nodeStates[props.id].status}
-      outputs={workflowState.nodeStates[props.id].outputs}
-    >
+    <NodePortal {...props} left={1} right={1} variant="bot" title="机器人">
       <motion.div
         className="flex flex-col gap-3 p-1"
         initial={{ opacity: 0, y: 5 }}

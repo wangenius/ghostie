@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
-import React, { useEffect, useCallback, useMemo, memo } from "react";
+import React, { memo, useCallback, useEffect, useMemo } from "react";
 import { TbCheck, TbCopy, TbDots, TbLoader2, TbX } from "react-icons/tb";
 import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
 import { toast } from "sonner";
@@ -33,9 +33,7 @@ interface BaseNodeProps extends NodeProps {
   left: number;
   right: number;
   variant?: NodeVariant;
-  state?: "idle" | "pending" | "running" | "completed" | "failed" | "skipped";
   title?: string;
-  outputs?: Record<string, any>;
 }
 
 const variants: Record<NodeVariant, string> = {
@@ -56,9 +54,7 @@ const NodePortalComponent = ({
   id,
   data,
   variant = "default",
-  state = "idle",
   title,
-  outputs,
 }: BaseNodeProps) => {
   const updateNodeInternals = useUpdateNodeInternals();
   const workflow = useEditorWorkflow();
@@ -67,6 +63,12 @@ const NodePortalComponent = ({
   useEffect(() => {
     updateNodeInternals(id);
   }, [id, data, left, right, updateNodeInternals]);
+
+  const state = workflowState.nodeStates[id];
+
+  if (!state) {
+    return null;
+  }
 
   // 使用 useMemo 缓存入边节点的计算结果
   const incomingNodes = useMemo(
@@ -122,9 +124,9 @@ const NodePortalComponent = ({
   const handleClassName = useMemo(
     () =>
       cn(
-        state === "completed" && "bg-green-500",
-        state === "failed" && "bg-red-500",
-        state === "running" && "bg-blue-500",
+        state.status === "completed" && "bg-green-500",
+        state.status === "failed" && "bg-red-500",
+        state.status === "running" && "bg-blue-500",
       ),
     [state],
   );
@@ -177,12 +179,12 @@ const NodePortalComponent = ({
         <div className="text-sm font-bold flex-1">{title || variant}</div>
         <div className="flex items-center gap-2">
           {renderIncomingNodesMenu}
-          {state === "running" && (
+          {state.status === "running" && (
             <div className="flex items-center gap-1">
               <TbLoader2 className="animate-spin rounded-full text-blue-500" />
             </div>
           )}
-          {state === "completed" && (
+          {state.status === "completed" && (
             <Popover>
               <PopoverTrigger asChild>
                 <div className="flex items-center gap-1 cursor-pointer hover:opacity-80">
@@ -193,13 +195,13 @@ const NodePortalComponent = ({
                 <div className="space-y-2">
                   <div className="text-sm font-medium">执行结果</div>
                   <div className="text-sm bg-green-50 border border-green-200 rounded p-2">
-                    {outputs?.result}
+                    {state.outputs?.result}
                   </div>
                 </div>
               </PopoverContent>
             </Popover>
           )}
-          {state === "failed" && (
+          {state.status === "failed" && (
             <Popover>
               <PopoverTrigger asChild>
                 <div className="flex items-center gap-1 cursor-pointer hover:opacity-80">
@@ -210,25 +212,28 @@ const NodePortalComponent = ({
                 <div className="space-y-2">
                   <div className="text-sm font-medium">错误信息</div>
                   <div className="text-sm bg-red-50 border border-red-200 rounded p-2 text-red-600">
-                    {outputs?.error}
+                    {state.error}
                   </div>
                 </div>
               </PopoverContent>
             </Popover>
           )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <TbDots className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleDeleteNode}>
-                <TbX className="h-4 w-4" />
-                删除
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+
+          {id !== "start" && id !== "end" && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <TbDots className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleDeleteNode}>
+                  <TbX className="h-4 w-4" />
+                  删除
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 

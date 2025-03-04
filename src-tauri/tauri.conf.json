@@ -15,7 +15,7 @@
         "title": "ghostie",
         "width": 600,
         "height": 400,
-        "resizable": false,
+        "resizable": true,
         "decorations": false,
         "skipTaskbar": true,
         "transparent": true,

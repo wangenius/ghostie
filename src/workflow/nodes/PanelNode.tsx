@@ -12,14 +12,16 @@ const PanelNodeComponent = (props: NodeProps<PanelNodeConfig>) => {
   const workflowState = workflow.use();
   const nodeState = workflowState.nodeStates[props.id];
 
-  console.log(nodeState);
+  if (!nodeState) {
+    return null;
+  }
 
   const renderOutputs = useMemo(() => {
     if (nodeState.status === "completed") {
       return (
         <div className="space-y-2">
           {Object.entries(nodeState.outputs).map(([key, value]) => (
-            <div key={key} className="space-y-1 overflow-auto">
+            <div key={key} className="space-y-1 nowheel overflow-auto">
               <div className="text-xs font-medium text-gray-400">{key}</div>
               {typeof value === "object" ? (
                 <JsonViewer data={value.result} />
@@ -32,7 +34,11 @@ const PanelNodeComponent = (props: NodeProps<PanelNodeConfig>) => {
       );
     }
     return null;
-  }, [nodeState.status, nodeState.outputs]);
+  }, [nodeState]);
+
+  if (!nodeState) {
+    return null;
+  }
 
   const renderError = useMemo(() => {
     if (nodeState.status === "failed") {
