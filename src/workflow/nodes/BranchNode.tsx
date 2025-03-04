@@ -3,11 +3,11 @@ import { BranchNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useEditorWorkflow } from "../context/EditorContext";
+import { Workflow } from "../Workflow";
 import { memo, useMemo } from "react";
 
 const BranchNodeComponent = (props: NodeProps<BranchNodeConfig>) => {
-  const workflow = useEditorWorkflow();
+  const workflow = Workflow.instance;
   const workflowState = workflow.use();
   const nodeState = workflowState.nodeStates[props.id];
 

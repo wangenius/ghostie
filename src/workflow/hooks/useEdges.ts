@@ -1,11 +1,11 @@
 import { useCallback } from "react";
 import { Connection, EdgeChange } from "reactflow";
-import { useEditorWorkflow } from "../context/EditorContext";
 import { gen } from "@/utils/generator";
 import { EDGE_CONFIG } from "../constants";
+import { Workflow } from "../Workflow";
 
 export const useEdges = () => {
-  const workflow = useEditorWorkflow();
+  const workflow = Workflow.instance;
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {

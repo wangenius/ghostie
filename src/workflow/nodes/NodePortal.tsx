@@ -18,7 +18,7 @@ import { TbCheck, TbCopy, TbDots, TbLoader2, TbX } from "react-icons/tb";
 import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
 import { toast } from "sonner";
 import CustomHandle from "../components/CustomHandle";
-import { useEditorWorkflow } from "../context/EditorContext";
+import { Workflow } from "../Workflow";
 
 type NodeVariant =
   | "default"
@@ -57,7 +57,7 @@ const NodePortalComponent = ({
   title,
 }: BaseNodeProps) => {
   const updateNodeInternals = useUpdateNodeInternals();
-  const workflow = useEditorWorkflow();
+  const workflow = Workflow.instance;
   const workflowState = workflow.use();
 
   useEffect(() => {
@@ -108,7 +108,7 @@ const NodePortalComponent = ({
   const nodeClassName = useMemo(
     () =>
       cn(
-        "transition-all duration-200 border p-2 rounded-xl w-[260px] h-auto relative",
+        "transition-all duration-200 border p-2 rounded-xl w-[250px] h-auto relative",
         variants[variant],
         selected && `ring-2 ring-primary/40`,
         !isConnectable && "opacity-60 cursor-not-allowed",

@@ -3,12 +3,12 @@ import { TbCircleX } from "react-icons/tb";
 import { NodeProps } from "reactflow";
 import { NodePortal } from "./NodePortal";
 import JsonViewer from "@/components/custom/JsonViewer";
-import { useEditorWorkflow } from "../context/EditorContext";
 import { memo, useMemo } from "react";
 import { PanelNodeConfig } from "../types/nodes";
+import { Workflow } from "../Workflow";
 
 const PanelNodeComponent = (props: NodeProps<PanelNodeConfig>) => {
-  const workflow = useEditorWorkflow();
+  const workflow = Workflow.instance;
   const workflowState = workflow.use();
   const nodeState = workflowState.nodeStates[props.id];
 

@@ -14,7 +14,6 @@ import { TbDownload, TbPlus, TbShape3, TbUpload } from "react-icons/tb";
 import { Workflow } from "./Workflow";
 import { WorkflowEditor } from "./WorkflowEditor";
 import { WorkflowManager } from "./WorkflowManager";
-import { EditorContextProvider } from "./context/EditorContext";
 /* 工作流列表 */
 export default function WorkflowsTab() {
   /* 工作流列表 */
@@ -23,6 +22,7 @@ export default function WorkflowsTab() {
 
   const handleWorkflowSelect = (id: string) => {
     setSelectedWorkflow(id === selectedWorkflow ? null : id);
+    Workflow.instance.init(id);
   };
 
   const handleCreateWorkflow = async () => {
@@ -98,11 +98,7 @@ export default function WorkflowsTab() {
         EmptyIcon={TbShape3}
         isEmpty={!selectedWorkflow}
       >
-        {selectedWorkflow && (
-          <EditorContextProvider id={selectedWorkflow}>
-            <WorkflowEditor />
-          </EditorContextProvider>
-        )}
+        <WorkflowEditor />
       </PreferenceBody>
     </PreferenceLayout>
   );

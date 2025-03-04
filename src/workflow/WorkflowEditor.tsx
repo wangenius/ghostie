@@ -9,7 +9,15 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { debounce } from "lodash";
-import { memo, Suspense, useCallback, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { TbBook, TbLoader2, TbPencil, TbPlayerPlay } from "react-icons/tb";
 import ReactFlow, {
   Background,
@@ -23,7 +31,6 @@ import "reactflow/dist/style.css";
 import { ContextMenu } from "./components/ContextMenu";
 import { CustomControls } from "./components/CustomControls";
 import { CustomEdge } from "./components/CustomEdge";
-import { useEditorWorkflow } from "./context/EditorContext";
 import { useEdges } from "./hooks/useEdges";
 import { BotNode } from "./nodes/BotNode";
 import { BranchNode } from "./nodes/BranchNode";
@@ -63,7 +70,7 @@ const edgeTypes = {
 
 /* 工作流表单组件 */
 export const WorkflowInfo = memo(() => {
-  const workflow = useEditorWorkflow();
+  const workflow = Workflow.instance;
   const workflowState = workflow.use();
   const scheduler = SchedulerManager.use();
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
@@ -289,7 +296,8 @@ export const WorkflowInfo = memo(() => {
 /* CronInput 组件 */
 
 /* 工作流图组件 */
-const WorkflowGraph = memo(({ workflow }: { workflow: Workflow }) => {
+const WorkflowGraph = memo(() => {
+  const workflow = Workflow.instance;
   const workflowState = workflow.use();
   const [menu, setMenu] = useState<{
     x: number;
@@ -305,29 +313,35 @@ const WorkflowGraph = memo(({ workflow }: { workflow: Workflow }) => {
     throw Promise.reject(new Error("工作流 ID 不存在"));
   }
 
-  // 使用 useMemo 缓存节点和边的数据
-  const nodes = useMemo(() => {
-    return Object.values(workflowState.data.nodes || {});
-  }, [workflowState]);
+  useEffect(() => {
+    console.log(workflowState.data.nodes);
+  }, [workflowState.data.nodes]);
 
-  const edges = useMemo(
-    () => Object.values(workflowState.data.edges || {}),
-    [workflowState.data.edges],
-  );
+  // 使用 useMemo 缓存节点和边的数据
+  const nodes = Object.values(workflowState.data.nodes);
+
+  const edges = Object.values(workflowState.data.edges);
 
   // 使用 useCallback 和 debounce 优化节点位置更新
   const updateNodePosition = useCallback(
     debounce((id: string, position: { x: number; y: number }) => {
-      workflow.updateNodePosition(id, position);
-    }, 2),
+      requestAnimationFrame(() => {
+        workflow.updateNodePosition(id, position);
+      });
+    }, 8),
     [workflow],
   );
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
+      const positionChanges: {
+        id: string;
+        position: { x: number; y: number };
+      }[] = [];
+
       changes.forEach((change) => {
         if (change.type === "position" && change.position) {
-          updateNodePosition(change.id, change.position);
+          positionChanges.push({ id: change.id, position: change.position });
         } else if (change.type === "remove") {
           workflow.removeNode(change.id);
         } else if (change.type === "select") {
@@ -346,6 +360,14 @@ const WorkflowGraph = memo(({ workflow }: { workflow: Workflow }) => {
           }));
         }
       });
+
+      // 批量更新位置
+      if (positionChanges.length > 0) {
+        updateNodePosition(
+          positionChanges[positionChanges.length - 1].id,
+          positionChanges[positionChanges.length - 1].position,
+        );
+      }
     },
     [workflow, updateNodePosition],
   );
@@ -440,8 +462,19 @@ const WorkflowGraph = memo(({ workflow }: { workflow: Workflow }) => {
         deleteKeyCode={["Backspace", "Delete"]}
         multiSelectionKeyCode={["Control", "Meta"]}
         panActivationKeyCode="Space"
+        snapToGrid={true}
+        snapGrid={[25, 25]}
+        elevateNodesOnSelect={true}
+        defaultEdgeOptions={{
+          type: "default",
+          animated: false,
+        }}
+        proOptions={{ hideAttribution: true }}
+        nodeOrigin={[0.5, 0.5]}
+        fitViewOptions={{ padding: 0.2 }}
+        autoPanOnNodeDrag={true}
       >
-        <Background />
+        <Background gap={25} />
         <CustomControls
           position="bottom-center"
           showZoom
@@ -461,21 +494,6 @@ const WorkflowGraph = memo(({ workflow }: { workflow: Workflow }) => {
     </div>
   );
 });
-
-/* 工作流编辑器内容 */
-export const WorkflowEditor = () => {
-  /** 编辑器的工作流实例 */
-  const workflow = useEditorWorkflow();
-
-  return (
-    <Suspense fallback={<LoadingSpin />}>
-      <WorkflowInfo />
-      <ReactFlowProvider>
-        <WorkflowGraph workflow={workflow} />
-      </ReactFlowProvider>
-    </Suspense>
-  );
-};
 
 const ParamInputDialog = ({
   close,
@@ -609,5 +627,16 @@ const ParamInputDialog = ({
         <Button onClick={handleParamConfirm}>确认</Button>
       </div>
     </div>
+  );
+};
+/* 工作流编辑器内容 */
+export const WorkflowEditor = () => {
+  return (
+    <Suspense fallback={<LoadingSpin />}>
+      <WorkflowInfo />
+      <ReactFlowProvider>
+        <WorkflowGraph />
+      </ReactFlowProvider>
+    </Suspense>
   );
 };

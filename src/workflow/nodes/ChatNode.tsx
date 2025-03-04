@@ -7,16 +7,16 @@ import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
 import { TbBox } from "react-icons/tb";
 import { NodeProps } from "reactflow";
-import { useEditorWorkflow } from "../context/EditorContext";
 import { ChatNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 import { cn } from "@/lib/utils";
+import { Workflow } from "../Workflow";
 
 const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
   const models = ModelManager.use();
   const [system, setSystem] = useState(props.data.system);
   const [user, setUser] = useState(props.data.user);
-  const workflow = useEditorWorkflow();
+  const workflow = Workflow.instance;
 
   const handleModelChange = useCallback(
     (value: string) => {

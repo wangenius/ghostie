@@ -4,11 +4,11 @@ import { NodeProps } from "reactflow";
 import { EndNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 import JsonViewer from "@/components/custom/JsonViewer";
-import { useEditorWorkflow } from "../context/EditorContext";
+import { Workflow } from "../Workflow";
 import { memo, useMemo } from "react";
 
 const EndNodeComponent = (props: NodeProps<EndNodeConfig>) => {
-  const workflow = useEditorWorkflow();
+  const workflow = Workflow.instance;
   const workflowState = workflow.use();
   const nodeState = workflowState.nodeStates[props.id];
 

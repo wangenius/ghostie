@@ -91,8 +91,10 @@ export class Workflow {
   );
 
   use = this.state.use.bind(this.state);
-
   set = this.state.set.bind(this.state);
+
+  /* 全局工作流实例,用来在编辑器中使用 */
+  static instance = new Workflow();
 
   get current() {
     return this.state.current;
@@ -340,12 +342,12 @@ export class Workflow {
 
     // 设置工作流数据和初始状态
     this.state.set(
-      () => ({
+      {
         data: workflow,
         nodeStates: {},
         executedNodes: new Set(),
         isExecuting: false,
-      }),
+      },
       { replace: true },
     );
 
@@ -399,13 +401,10 @@ export class Workflow {
     });
 
     /* 设置节点状态 */
-    this.state.set(
-      (prev) => ({
-        ...prev,
-        nodeStates: states,
-      }),
-      { replace: false },
-    );
+    this.state.set((prev) => ({
+      ...prev,
+      nodeStates: states,
+    }));
   }
 
   private getNodeState(nodeId: string): NodeState {
@@ -560,7 +559,9 @@ export class Workflow {
             .stream(parsedUser);
           result = {
             success: true,
-            data: res.body,
+            data: {
+              result: res.body,
+            },
           };
           break;
 
@@ -575,7 +576,9 @@ export class Workflow {
           const botResult = await bot.chat(parsedPrompt);
           result = {
             success: true,
-            data: botResult.content,
+            data: {
+              result: botResult.content,
+            },
           };
           break;
 
@@ -598,7 +601,9 @@ export class Workflow {
           });
           result = {
             success: true,
-            data: pluginResult,
+            data: {
+              result: pluginResult,
+            },
           };
           break;
 

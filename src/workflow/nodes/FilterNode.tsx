@@ -13,7 +13,7 @@ import { memo, useState, useCallback, useMemo } from "react";
 import { NodeProps } from "reactflow";
 import { FilterNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
-import { useEditorWorkflow } from "../context/EditorContext";
+import { Workflow } from "../Workflow";
 
 // 定义过滤条件类型
 type Operator =
@@ -330,7 +330,7 @@ const GroupItemComponent = ({
 const GroupItem = memo(GroupItemComponent);
 
 const FilterNodeComponent = (props: NodeProps<FilterNodeConfig>) => {
-  const workflow = useEditorWorkflow();
+  const workflow = Workflow.instance;
   const nodeData = props.data as FilterNodeConfig;
 
   const updateNodeData = useCallback(

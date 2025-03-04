@@ -12,12 +12,12 @@ import { Puzzle } from "lucide-react";
 import { memo, useCallback, useMemo } from "react";
 import { NodeProps } from "reactflow";
 import { PluginNodeConfig } from "../types/nodes";
-import { useEditorWorkflow } from "../context/EditorContext";
 import { NodePortal } from "./NodePortal";
+import { Workflow } from "../Workflow";
 
 const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
   const plugins = PluginManager.use();
-  const workflow = useEditorWorkflow();
+  const workflow = Workflow.instance;
   const selectedPlugin = plugins[props.data.plugin] as PluginProps | undefined;
 
   const handlePluginChange = useCallback(

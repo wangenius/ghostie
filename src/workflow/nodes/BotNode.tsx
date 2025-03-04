@@ -7,14 +7,14 @@ import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
 import { TbGhost3 } from "react-icons/tb";
 import { NodeProps } from "reactflow";
-import { useEditorWorkflow } from "../context/EditorContext";
 import { BotNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
+import { Workflow } from "../Workflow";
 
 const BotNodeComponent = (props: NodeProps<BotNodeConfig>) => {
   const bots = BotManager.use();
   const [prompt, setPrompt] = useState(props.data.prompt);
-  const workflow = useEditorWorkflow();
+  const workflow = Workflow.instance;
   const [open, setOpen] = useState(false);
 
   const handleBotChange = useCallback(

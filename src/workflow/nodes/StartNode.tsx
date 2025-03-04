@@ -20,9 +20,9 @@ import { PlusCircle, Trash2 } from "lucide-react";
 import { nanoid } from "nanoid";
 import { memo, useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { NodeProps } from "reactflow";
-import { useEditorWorkflow } from "../context/EditorContext";
 import { StartNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
+import { Workflow } from "../Workflow";
 
 // 定义一个更易于编辑的参数格式
 interface EditableProperty {
@@ -200,7 +200,7 @@ const editableToToolParams = (
 };
 
 const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
-  const workflow = useEditorWorkflow();
+  const workflow = Workflow.instance;
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // 将ToolParameters转换为可编辑格式
