@@ -29,5 +29,4 @@ Cargo.lock
 *.key.pub
 .env
 *.css.map
-
 docs/.vitepress/cache
