@@ -10,7 +10,7 @@ hero:
       link: /workflow
     - theme: alt
       text: 在 GitHub 上查看
-      link: https://github.com/yourusername/ghostie
+      link: https://github.com/wangenius/ghostie
 
 features:
   - icon: 🚀
