@@ -2,8 +2,8 @@ import { defineConfig } from "vitepress";
 
 export default defineConfig({
   title: "Ghostie",
-  description: "Ghostie 工作流文档",
-  base: "/ghostie/",
+  description: "Ghostie文档",
+  base: "/",
   themeConfig: {
     nav: [
       { text: "首页", link: "/" },
