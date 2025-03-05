@@ -286,16 +286,3 @@ const KnowledgeContent = ({ id }: { id: string }) => {
     </div>
   );
 };
-
-KnowledgePreview.open = (id: string) => {
-  cmd.open(
-    "knowledge-preview",
-    {
-      id,
-    },
-    {
-      width: 1200,
-      height: 800,
-    },
-  );
-};

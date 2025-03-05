@@ -160,6 +160,8 @@ export function MainView() {
       }
       if (e.ctrlKey && e.key.toLowerCase() === "h") {
         e.preventDefault();
+        Page.to("history");
+        return;
       }
       if (e.ctrlKey && e.key.toLowerCase() === "o") {
         e.preventDefault();

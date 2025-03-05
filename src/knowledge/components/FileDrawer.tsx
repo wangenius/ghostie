@@ -17,22 +17,23 @@ export function FileDrawer({ open, onOpenChange, file }: FileDrawerProps) {
       open={open}
       onOpenChange={onOpenChange}
       className="w-[600px]"
+      title={
+        <div className="p-3">
+          <h3 className="text-lg font-semibold">{file?.name}</h3>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+            <TbFileText className="w-4 h-4" />
+            <span>{file?.file_type}</span>
+            <Badge variant="outline" className="bg-background/50">
+              {file?.chunks.length} 个知识块
+            </Badge>
+          </div>
+        </div>
+      }
     >
       <div className="flex flex-col h-full">
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-2">
           {file ? (
             <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold">{file.name}</h3>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                  <TbFileText className="w-4 h-4" />
-                  <span>{file.file_type}</span>
-                  <Badge variant="outline" className="bg-background/50">
-                    {file.chunks.length} 个知识块
-                  </Badge>
-                </div>
-              </div>
-
               <div className="space-y-3">
                 {file.chunks.map((chunk, index) => (
                   <Card

@@ -30,43 +30,17 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import { ContextMenu } from "./components/ContextMenu";
 import { CustomControls } from "./components/CustomControls";
-import { CustomEdge } from "./components/CustomEdge";
+import { edgeTypes, nodeTypes } from "./constants";
 import { useEdges } from "./hooks/useEdges";
-import { BotNode } from "./nodes/BotNode";
-import { BranchNode } from "./nodes/BranchNode";
-import { ChatNode } from "./nodes/ChatNode";
-import { EndNode } from "./nodes/EndNode";
-import { FilterNode } from "./nodes/FilterNode";
-import { PanelNode } from "./nodes/PanelNode";
-import { PluginNode } from "./nodes/PluginNode";
-import { StartNode } from "./nodes/StartNode";
 import { SchedulerManager } from "./scheduler/SchedulerManager";
 import { NodeType, StartNodeConfig } from "./types/nodes";
 import { Workflow } from "./Workflow";
-
 type FrequencyType = "cron";
 
 interface FrequencyConfig {
   type: FrequencyType;
   cronExpression?: string;
 }
-
-/* 节点类型 */
-const nodeTypes = {
-  start: StartNode,
-  end: EndNode,
-  chat: ChatNode,
-  bot: BotNode,
-  plugin: PluginNode,
-  branch: BranchNode,
-  filter: FilterNode,
-  panel: PanelNode,
-} as const;
-
-/* 边类型 */
-const edgeTypes = {
-  default: CustomEdge,
-};
 
 /* 工作流表单组件 */
 export const WorkflowInfo = memo(() => {
@@ -191,6 +165,7 @@ export const WorkflowInfo = memo(() => {
       ),
     });
   }, [workflow]);
+
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between">
@@ -206,7 +181,7 @@ export const WorkflowInfo = memo(() => {
           <Button
             onClick={() => {
               window.open(
-                "https://ccn0kkxjz1z2.feishu.cn/wiki/MxzywoXxaiyF08kRREkcEl1Vnfh",
+                "https://ccn0kkxjz1z2.feishu.cn/wiki/BUv7wNyX0ijiC4khYg0cNuvunn8",
               );
             }}
             variant="ghost"

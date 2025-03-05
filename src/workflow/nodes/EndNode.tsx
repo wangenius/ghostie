@@ -51,7 +51,7 @@ const EndNodeComponent = (props: NodeProps<EndNodeConfig>) => {
   }
 
   return (
-    <NodePortal {...props} left={1} right={0} variant="default" title="结束">
+    <NodePortal {...props} left={1} right={0} variant="end" title="结束">
       <motion.div
         className="flex flex-col gap-2"
         initial={{ opacity: 0, y: 5 }}

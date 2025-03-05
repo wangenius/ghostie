@@ -58,6 +58,12 @@ export function PluginsTab() {
   /* 测试结果 */
   const [result, setResult] = useState<any>(null);
 
+  // 处理测试工具变化
+  const handleTestToolChange = (value: string) => {
+    setTestTool(value);
+    setResult(null); // 重置测试结果
+  };
+
   // 加载插件列表
   const loadPlugins = useCallback(async () => {
     try {
@@ -87,6 +93,8 @@ export function PluginsTab() {
       if (plugin) {
         setSelectedPlugin(plugin.info);
         setContent(plugin.content);
+        setResult(null); // 重置测试结果
+        setTestTool(""); // 重置选中的测试工具
       }
     } catch (error) {
       console.error("加载插件失败:", error);
@@ -372,7 +380,7 @@ export function PluginsTab() {
         testArgs={testArgs}
         result={result}
         isSubmitting={isSubmitting}
-        onTestToolChange={setTestTool}
+        onTestToolChange={handleTestToolChange}
         onTestArgsChange={setTestArgs}
         onTest={handleTest}
       />

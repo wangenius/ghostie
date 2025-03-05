@@ -50,13 +50,7 @@ const PanelNodeComponent = (props: NodeProps<PanelNodeConfig>) => {
     return null;
   }
   return (
-    <NodePortal
-      {...props}
-      left={1}
-      right={1}
-      variant="default"
-      title="结果面板"
-    >
+    <NodePortal {...props} left={1} right={1} variant="panel" title="展示面板">
       <motion.div
         className="flex flex-col gap-2"
         initial={{ opacity: 0, y: 5 }}

@@ -54,7 +54,9 @@ export function Drawer({
             <DrawerPrimitive.Description>
               {description}
             </DrawerPrimitive.Description>
-            <div className="overflow-y-auto p-3 space-y-2">{children}</div>
+            <div className="overflow-y-auto p-3 space-y-2 flex-1">
+              {children}
+            </div>
           </div>
         </DrawerPrimitive.Content>
       </DrawerPrimitive.Portal>

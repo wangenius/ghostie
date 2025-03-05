@@ -728,7 +728,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
         {...props}
         left={0}
         right={1}
-        variant="default"
+        variant="start"
         title="开始节点"
       >
         <div

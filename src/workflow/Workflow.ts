@@ -12,7 +12,8 @@ import {
   BotNodeConfig,
   BranchNodeConfig,
   ChatNodeConfig,
-  FilterNodeConfig,
+  CodeNodeConfig,
+  IteratorNodeConfig,
   NodeConfig,
   NodeResult,
   NodeState,
@@ -221,19 +222,6 @@ export class Workflow {
           conditions: [],
         } as BranchNodeConfig;
         break;
-      case "filter":
-        nodeData = {
-          ...baseData,
-          filter: {
-            group: {
-              conditions: [],
-              id: gen.id(),
-              type: "AND",
-              isEnabled: true,
-            },
-          },
-        } as FilterNodeConfig;
-        break;
       default:
         nodeData = baseData as NodeConfig;
     }
@@ -437,8 +425,8 @@ export class Workflow {
   private collectNodeInputs(
     nodeId: string,
     predecessors: Map<string, Set<string>>,
-  ): Record<string, any> {
-    const inputs: Record<string, Record<string, any>> = {};
+  ): Record<WorkflowNode["id"], any> {
+    const inputs: Record<WorkflowNode["id"], Record<string, any>> = {};
 
     if (nodeId === "start") {
       return this.current.data!.nodes[nodeId].data.inputs;
@@ -499,32 +487,37 @@ export class Workflow {
   }
 
   private parseInputReferences(text: string, inputs: Record<string, any>) {
-    console.log(text);
-    console.log(inputs);
+    console.log("解析输入引用:", text);
+    console.log("可用输入:", inputs);
 
-    const result = text.replace(
-      /\{\{inputs\.([^.]+)\.([^}]+)\}\}/g,
-      (match, nodeId, key) => {
-        const nodeInputs = inputs[nodeId];
-        if (!nodeInputs) return match;
-        const value = nodeInputs[key];
-
-        // 处理不同类型的值
-        if (value === null || value === undefined) {
-          return JSON.stringify(value);
+    const result = text.replace(/\{\{inputs\.([^}]+)\}\}/g, (match, path) => {
+      // 按照点号分割路径
+      const parts = path.split(".");
+      // 从inputs对象开始遍历路径
+      let value = inputs;
+      for (const part of parts) {
+        if (value === undefined || value === null) {
+          return match; // 如果中间路径无效，返回原始匹配文本
         }
+        value = value[part];
+      }
 
-        switch (typeof value) {
-          case "object":
-            return JSON.stringify(value, null, 2);
-          case "string":
-            return value;
-          default:
-            return String(value);
-        }
-      },
-    );
-    console.log(result);
+      // 处理最终获取到的值
+      if (value === undefined || value === null) {
+        return JSON.stringify(value);
+      }
+
+      switch (typeof value) {
+        case "object":
+          return JSON.stringify(value, null, 2);
+        case "string":
+          return value;
+        default:
+          return String(value);
+      }
+    });
+
+    console.log("解析结果:", result);
     return result;
   }
 
@@ -633,6 +626,70 @@ export class Workflow {
       success: true,
       data: {
         result: pluginResult,
+      },
+    };
+  }
+
+  private async executeCodeNode(
+    node: WorkflowNode,
+    inputs: Record<string, any>,
+  ): Promise<NodeResult> {
+    const codeConfig = node.data as CodeNodeConfig;
+    const code = codeConfig.code;
+
+    console.log(inputs);
+
+    try {
+      // 创建一个安全的执行环境
+      const context = {
+        inputs,
+        console: {
+          log: (...args: any[]) => console.log(...args),
+          error: (...args: any[]) => console.error(...args),
+        },
+      };
+
+      // 构建函数体
+      const functionBody = `
+        "use strict";
+        const {inputs, console} = arguments[0];
+        ${code}
+      `;
+
+      // 创建并执行函数
+      const executeFn = new Function(functionBody);
+      const result = await executeFn(context);
+
+      return {
+        success: true,
+        data: {
+          result: result,
+        },
+      };
+    } catch (error) {
+      console.error("Code execution error:", error);
+      return {
+        success: false,
+        data: {
+          result: null,
+        },
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  private async executeIteratorNode(
+    node: WorkflowNode,
+    inputs: Record<string, any>,
+  ): Promise<NodeResult> {
+    const iteratorConfig = node.data as IteratorNodeConfig;
+    // const iterator = new Iterator(iteratorConfig.iterator);
+    // const result = await iterator.execute(inputs);
+    const result = inputs[iteratorConfig.target];
+    return {
+      success: true,
+      data: {
+        result: result,
       },
     };
   }
@@ -750,27 +807,6 @@ export class Workflow {
       : results.some(Boolean);
   }
 
-  private async executeFilterNode(
-    node: WorkflowNode,
-    inputs: Record<string, any>,
-  ): Promise<NodeResult> {
-    const filterConfig = node.data as FilterNodeConfig;
-    const inputData = Object.values(inputs)[0]?.result;
-
-    if (!inputData || !Array.isArray(inputData)) {
-      throw new Error("过滤节点的输入数据必须是数组");
-    }
-
-    const filteredData = inputData.filter((item) => {
-      return this.evaluateGroup(filterConfig.filter.group, item);
-    });
-
-    return {
-      success: true,
-      data: filteredData,
-    };
-  }
-
   private async executeNode(node: WorkflowNode): Promise<NodeResult> {
     try {
       // 构建图结构以获取前置节点
@@ -809,9 +845,16 @@ export class Workflow {
         case "branch":
           result = await this.executeBranchNode(node, inputs);
           break;
-        case "filter":
-          result = await this.executeFilterNode(node, inputs);
+
+        case "code":
+          console.log(inputs);
+          result = await this.executeCodeNode(node, inputs);
           break;
+
+        case "iterator":
+          result = await this.executeIteratorNode(node, inputs);
+          break;
+
         default:
           throw new Error(`不支持的节点类型: ${node.type}`);
       }
@@ -981,16 +1024,16 @@ export class Workflow {
           this.collectNodeInputs(nodeId, predecessors);
 
           // 执行节点
-          const result = await this.executeNode(node);
+          const res = await this.executeNode(node);
 
-          if (!result.success) {
-            throw new Error(`节点 ${nodeId} 执行失败: ${result.error}`);
+          if (!res.success) {
+            throw new Error(`节点 ${nodeId} 执行失败: ${res.error}`);
           }
 
           // 更新节点状态
           this.updateNodeState(nodeId, {
             status: "completed",
-            outputs: result.data,
+            outputs: res.data,
             endTime: new Date().toISOString(),
           });
 

@@ -16,15 +16,10 @@ import { TbCheck, TbDots, TbLoader2, TbNumber, TbX } from "react-icons/tb";
 import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
 import { toast } from "sonner";
 import CustomHandle from "../components/CustomHandle";
+import { NodeType } from "../types/nodes";
 import { Workflow } from "../Workflow";
 
-type NodeVariant =
-  | "default"
-  | "chat"
-  | "bot"
-  | "plugin"
-  | "condition"
-  | "branch";
+type NodeVariant = NodeType;
 
 interface BaseNodeProps extends NodeProps {
   children: React.ReactNode;
@@ -35,12 +30,15 @@ interface BaseNodeProps extends NodeProps {
 }
 
 const variants: Record<NodeVariant, string> = {
-  default: "bg-muted border-muted-foreground/20",
+  start: "bg-slate-50 border-slate-200",
+  end: "bg-red-50 border-red-200",
+  panel: "bg-muted border-muted-foreground/20",
   chat: "bg-blue-50 border-blue-200",
   bot: "bg-violet-50 border-violet-200",
   plugin: "bg-amber-50 border-amber-200",
-  condition: "bg-red-50 border-red-200",
   branch: "bg-orange-50 border-orange-200",
+  iterator: "bg-green-50 border-green-200",
+  code: "bg-purple-50 border-purple-200",
 };
 
 const NodePortalComponent = ({
@@ -51,7 +49,7 @@ const NodePortalComponent = ({
   right,
   id,
   data,
-  variant = "default",
+  variant = "start",
   title,
 }: BaseNodeProps) => {
   const updateNodeInternals = useUpdateNodeInternals();
@@ -64,10 +62,9 @@ const NodePortalComponent = ({
 
   const state = workflowState.nodeStates[id];
 
-  const handleCopyParameter = useCallback((nodeId: string, key: string) => {
-    const paramText = `{{inputs.${nodeId}.${key}}}`;
-    navigator.clipboard.writeText(paramText);
-    toast.success("参数已复制到剪贴板");
+  const handleCopyParameter = useCallback((nodeId: string) => {
+    navigator.clipboard.writeText(nodeId);
+    toast.success("节点ID已复制到剪贴板");
   }, []);
 
   const handleNodeClick = useCallback((e: React.MouseEvent) => {
@@ -166,9 +163,7 @@ const NodePortalComponent = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => handleCopyParameter(id, "result")}
-                >
+                <DropdownMenuItem onClick={() => handleCopyParameter(id)}>
                   <TbNumber className="h-4 w-4" />
                   {id}
                 </DropdownMenuItem>

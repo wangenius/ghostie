@@ -339,6 +339,7 @@ const BotItem = ({
                   (workflow: WorkflowProps) => ({
                     label: workflow.name,
                     value: workflow.id,
+                    description: workflow.description,
                   }),
                 )}
                 onSelect={(value) =>

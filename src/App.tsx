@@ -21,6 +21,11 @@ function App() {
       if (e.key.toLowerCase() === "r" && e.ctrlKey) {
         e.preventDefault();
       }
+
+      if (e.ctrlKey && e.key === "m") {
+        e.preventDefault();
+        Page.to("main");
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => {

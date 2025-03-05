@@ -1,6 +1,7 @@
 import { ToolParameters } from "@/common/types/plugin";
 import { Node } from "reactflow";
 import { WorkflowEdge } from "./edges";
+import { nodeTypes } from "../constants";
 
 /* 工作流节点 */
 export type WorkflowNode<
@@ -83,15 +84,7 @@ export interface NodeResult {
   error?: string;
 }
 /* 节点类型 */
-export type NodeType =
-  | "start"
-  | "end"
-  | "chat"
-  | "bot"
-  | "plugin"
-  | "branch"
-  | "filter"
-  | "panel";
+export type NodeType = keyof typeof nodeTypes;
 
 /* 基础节点配置 */
 export interface BaseNodeConfig {
@@ -135,6 +128,20 @@ export interface BotNodeConfig extends BaseNodeConfig {
   prompt: string;
 }
 
+export interface IteratorNodeConfig extends BaseNodeConfig {
+  type: "iterator";
+  /* 迭代对象,是state中outputs下的JSON对象的属性路径 */
+  target: string;
+  /* 最大迭代次数 */
+  max: number;
+}
+
+export interface CodeNodeConfig extends BaseNodeConfig {
+  type: "code";
+  /* 代码 */
+  code: string;
+}
+
 export interface PluginNodeConfig extends BaseNodeConfig {
   type: "plugin";
   plugin: string;
@@ -150,54 +157,6 @@ export interface BranchNodeConfig extends BaseNodeConfig {
   }>;
 }
 
-export interface FilterNodeConfig extends BaseNodeConfig {
-  type: "filter";
-  filter: {
-    group: {
-      id: string;
-      type: "AND" | "OR";
-      conditions: Array<
-        | {
-            id: string;
-            field: string;
-            operator:
-              | "equals"
-              | "notEquals"
-              | "contains"
-              | "notContains"
-              | "startsWith"
-              | "endsWith"
-              | "greaterThan"
-              | "lessThan"
-              | "greaterThanOrEqual"
-              | "lessThanOrEqual"
-              | "matches"
-              | "in"
-              | "notIn"
-              | "exists"
-              | "notExists";
-            value: string;
-            dataType:
-              | "string"
-              | "number"
-              | "boolean"
-              | "date"
-              | "array"
-              | "object";
-            isEnabled: boolean;
-          }
-        | {
-            id: string;
-            type: "AND" | "OR";
-            conditions: any[];
-            isEnabled: boolean;
-          }
-      >;
-      isEnabled: boolean;
-    };
-  };
-}
-
 export type NodeConfig =
   | StartNodeConfig
   | EndNodeConfig
@@ -205,4 +164,5 @@ export type NodeConfig =
   | BotNodeConfig
   | PluginNodeConfig
   | BranchNodeConfig
-  | FilterNodeConfig;
+  | CodeNodeConfig
+  | IteratorNodeConfig;
