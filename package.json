@@ -10,7 +10,10 @@
     "tauri": "tauri",
     "build:tauri": "npm run build && tauri build",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.3",
@@ -88,6 +91,7 @@
     "tailwindcss-animate": "^1.0.7",
     "ts-jest": "^29.2.5",
     "typescript": "^5.2.2",
-    "vite": "^5.3.1"
+    "vite": "^5.3.1",
+    "vitepress": "^1.6.3"
   }
 }

@@ -20,15 +20,15 @@ ghostie 是一个基于 Tauri + React 开发的跨平台智能助手应用。它
 ## 📸 界面预览
 
 <div align="center">
-    <img src="docs/home.png" alt="ghostie Logo" width="600"/>
+    <img src="docs/public/home.png" alt="ghostie Logo" width="600"/>
 </div>
 
 <div align="center">
-    <img src="docs/image.png" alt="ghostie Logo" width="600"/>
+    <img src="docs/public/image.png" alt="ghostie Logo" width="600"/>
 </div>
 
 <div align="center">
-    <img src="docs/settings.png" alt="History View" width="600"/>
+    <img src="docs/public/settings.png" alt="History View" width="600"/>
 </div>
 
 ## 🚀 快速开始

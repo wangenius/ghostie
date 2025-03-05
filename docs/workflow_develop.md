@@ -2,7 +2,7 @@
 
 ## 接口引用
 
-所有的接口引用都使用{{inputs.节点ID}}来引用。在任何输入字符串的地方可采用这种方式来引用。（包括代码节点）
+所有的接口引用都使用 <span v-pre>{{inputs.节点 ID}}</span> 来引用。在任何输入字符串的地方可采用这种方式来引用。（包括代码节点）
 
 ```
 {{inputs.start.query.name}} - 引用start节点的query参数的name属性
@@ -34,6 +34,8 @@ return sum;
 
 其他节点，如：chat、bot、plugin、branch、iterator、code、panel 等，都是直接使用输入端点的数据。
 
-bot\plugin\chat 等节点输入一般用 result 包裹结果。所以需要使用{{inputs.节点ID.result}}来引用。
+::: raw
+bot\\plugin\\chat 等节点输入一般用 result 包裹结果。所以需要使用 <span v-pre>{{inputs.节点 ID.result}}</span> 来引用。
+:::
 
 如果不确定，可以使用 panel 节点来查看某个节点的输出端点的数据。

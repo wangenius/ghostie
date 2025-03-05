@@ -41,3 +41,5 @@ new Workflow<Input, Output>();
 ### 节点
 
 节点是工作流中的一个步骤。
+
+![节点](./public/settings.png)
