@@ -3,7 +3,10 @@ import { defineConfig } from "vitepress";
 export default defineConfig({
   title: "Ghostie",
   description: "Ghostie文档",
-  base: "/",
+  base: "/ghostie/",
+  head: [
+    ["link", { rel: "icon", type: "image/x-icon", href: "public/icon.ico" }],
+  ],
   themeConfig: {
     nav: [
       { text: "首页", link: "/" },

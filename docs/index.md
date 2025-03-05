@@ -2,8 +2,11 @@
 layout: home
 hero:
   name: Ghostie
-  text: 强大的工作流引擎
+  text: 桌面轻量Agent平台
   tagline: 简单、灵活、高效的工作流管理工具
+  image:
+    src: /icon.png
+    alt: Ghostie Logo
   actions:
     - theme: brand
       text: 快速开始
@@ -11,7 +14,6 @@ hero:
     - theme: alt
       text: 在 GitHub 上查看
       link: https://github.com/wangenius/ghostie
-
 features:
   - icon: 🚀
     title: 简单易用
