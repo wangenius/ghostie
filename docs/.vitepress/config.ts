@@ -20,7 +20,7 @@ export default defineConfig({
       },
     ],
     socialLinks: [
-      { icon: "github", link: "https://github.com/yourusername/ghostie" },
+      { icon: "github", link: "https://github.com/wangenius/ghostie" },
     ],
   },
 });
