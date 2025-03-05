@@ -25,9 +25,9 @@ export const ContextMenu = ({ x, y, onClose, onSelect }: ContextMenuProps) => {
         }}
         className="fixed z-50 min-w-[160px] flex flex-col gap-1"
         style={{
-          top: y,
-          left: x,
-          transformOrigin: "top left",
+          x: x,
+          y: y,
+          translateY: -100,
         }}
       >
         <Menu

@@ -93,5 +93,12 @@
     "typescript": "^5.2.2",
     "vite": "^5.3.1",
     "vitepress": "^1.6.3"
+  },
+  "overrides": {
+    "rollup": {
+      "optionalDependencies": {
+        "@rollup/rollup-linux-x64-gnu": false
+      }
+    }
   }
 }
