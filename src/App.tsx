@@ -8,7 +8,9 @@ import { Page } from "./utils/PageRouter";
 
 /* 主应用,提供路由 */
 function App() {
+  /* 主题 */
   const theme = SettingsManager.use((selector) => selector.theme);
+  /* 字体 */
   const font = SettingsManager.use((selector) => selector.font);
 
   useEffect(() => {

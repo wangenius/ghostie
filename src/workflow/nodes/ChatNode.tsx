@@ -1,16 +1,13 @@
-import { Button } from "@/components/ui/button";
-import { Drawer } from "@/components/ui/drawer";
+import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ModelManager } from "@/model/ModelManager";
 import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
-import { TbBox } from "react-icons/tb";
 import { NodeProps } from "reactflow";
 import { ChatNodeConfig } from "../types/nodes";
-import { NodePortal } from "./NodePortal";
-import { cn } from "@/lib/utils";
 import { Workflow } from "../Workflow";
+import { NodePortal } from "./NodePortal";
 
 const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
   const models = ModelManager.use();
@@ -88,8 +85,6 @@ const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
     [workflow, props.id],
   );
 
-  const [open, setOpen] = useState(false);
-
   return (
     <NodePortal {...props} left={1} right={1} variant="chat" title="对话">
       <motion.div
@@ -98,39 +93,18 @@ const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <div className="space-y-1.5">
-          <Button
-            onClick={() => setOpen(true)}
-            variant="ghost"
-            className="w-full bg-muted-foreground/10"
-          >
-            <TbBox />
-            {models[props.data.model]?.name || "选择模型"}
-          </Button>
-        </div>
-        <Drawer open={open} onOpenChange={setOpen}>
-          <h3 className="font-bold mb-4">选择模型</h3>
-          {Object.values(models).map((model) => (
-            <div
-              key={model.id}
-              className={cn(
-                "flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg hover:bg-muted-foreground/20 cursor-pointer transition-colors",
-                props.data.model === model.id && "bg-muted-foreground/10",
-              )}
-              onClick={() => {
-                handleModelChange(model.id);
-              }}
-            >
-              <div className="flex items-center gap-2">
-                <TbBox className="h-4 w-4 text-primary flex-none" />
-                <span className="font-medium">{model.name}</span>
-              </div>
-              <span className="text-xs text-muted-foreground">
-                {model.model}
-              </span>
-            </div>
-          ))}
-        </Drawer>
+        <DrawerSelector
+          panelTitle="选择模型"
+          value={[props.data.model]}
+          items={Object.values(models).map((model) => {
+            return {
+              label: model.name,
+              value: model.id,
+              type: model.type,
+            };
+          })}
+          onSelect={(value) => handleModelChange(value[0])}
+        />
 
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-gray-600">

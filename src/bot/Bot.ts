@@ -20,7 +20,7 @@ export const defaultBot: BotProps = {
   model: "",
   tools: [],
   temperature: 0.5,
-  mode: "react",
+  mode: "ReAct",
 };
 /**
  * 机器人对象
@@ -42,7 +42,7 @@ export class Bot implements Omit<BotProps, "model"> {
   /* 机器人温度 */
   temperature: number;
   /* 机器人模式 */
-  mode: "react" | "plan";
+  mode: "ReAct" | "Execute";
   /* 机器人上下文 */
   context: Context;
   /* 机器人运行状态 */
@@ -79,6 +79,7 @@ export class Bot implements Omit<BotProps, "model"> {
 
     this.model = new ChatModel(model)
       .setBot(config.id)
+      .setTemperature(config.temperature)
       .setTools(tools)
       .setKnowledge(config.knowledges || [])
       .setWorkflows(config.workflows || [])
@@ -101,9 +102,9 @@ export class Bot implements Omit<BotProps, "model"> {
     this.isRunning = true;
     try {
       switch (this.mode) {
-        case "react":
+        case "ReAct":
           return await this.chatReAct(input);
-        case "plan":
+        case "Execute":
           return await this.chatPlan(input);
         default:
           return await this.chatReAct(input);

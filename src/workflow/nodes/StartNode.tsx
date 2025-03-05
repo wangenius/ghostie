@@ -717,16 +717,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
   // 渲染参数列表
   const renderParameters = useMemo(() => {
     return (
-      <div className="space-y-2">
-        <div className="flex items-center justify-end">
-          <Button onClick={addParam}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            添加参数
-          </Button>
-        </div>
-
-        {editableParams.map(renderParameterCard)}
-      </div>
+      <div className="space-y-2">{editableParams.map(renderParameterCard)}</div>
     );
   }, [editableParams, addParam, renderParameterCard]);
 
@@ -764,9 +755,21 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
         </div>
       </NodePortal>
 
-      <Drawer open={drawerOpen} onOpenChange={handleDrawerOpenChange}>
-        <h3 className="font-bold">节点配置</h3>
-
+      <Drawer
+        open={drawerOpen}
+        onOpenChange={handleDrawerOpenChange}
+        title={
+          <span className="flex items-center justify-between">
+            <h3 className="font-bold">节点配置</h3>
+            <div className="flex items-center justify-end">
+              <Button onClick={addParam}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                添加参数
+              </Button>
+            </div>
+          </span>
+        }
+      >
         <div className="flex-1 overflow-y-auto">{renderParameters}</div>
       </Drawer>
     </>

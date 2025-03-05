@@ -49,6 +49,8 @@ export class ChatModel {
   private workflows: ToolRequestBody | undefined;
   /** 当前请求ID */
   private currentRequestId: string | undefined;
+  /** 温度 */
+  private temperature: number = 1;
 
   /** 构造函数
    * @param config 模型配置
@@ -61,6 +63,11 @@ export class ChatModel {
 
   setBot(bot: string): this {
     this.historyMessage.setBot(bot);
+    return this;
+  }
+
+  setTemperature(temperature: number): this {
+    this.temperature = temperature;
     return this;
   }
 
@@ -304,6 +311,7 @@ export class ChatModel {
         messages,
         stream: true,
         parallel_tool_calls: true,
+        temperature: this.temperature,
       };
       if (this.tools?.length) {
         requestBody.tools = this.tools;

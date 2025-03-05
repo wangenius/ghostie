@@ -3,7 +3,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -12,9 +11,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { ChevronDown } from "lucide-react";
 import React, { memo, useCallback, useEffect, useMemo } from "react";
-import { TbCheck, TbCopy, TbDots, TbLoader2, TbX } from "react-icons/tb";
+import { TbCheck, TbDots, TbLoader2, TbNumber, TbX } from "react-icons/tb";
 import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
 import { toast } from "sonner";
 import CustomHandle from "../components/CustomHandle";
@@ -66,25 +64,6 @@ const NodePortalComponent = ({
 
   const state = workflowState.nodeStates[id];
 
-  // 使用 useMemo 缓存入边节点的计算结果
-  const incomingNodes = useMemo(
-    () =>
-      Object.values(workflowState.data.edges)
-        .filter((edge) => edge.target === id)
-        .map((edge) => ({
-          nodeId: edge.source,
-          node: workflowState.data.nodes[edge.source],
-          outputs: workflowState.nodeStates[edge.source]?.outputs || {},
-        }))
-        .filter((node) => Object.keys(node.outputs).length > 0),
-    [
-      id,
-      workflowState.data.edges,
-      workflowState.data.nodes,
-      workflowState.nodeStates,
-    ],
-  );
-
   const handleCopyParameter = useCallback((nodeId: string, key: string) => {
     const paramText = `{{inputs.${nodeId}.${key}}}`;
     navigator.clipboard.writeText(paramText);
@@ -127,43 +106,6 @@ const NodePortalComponent = ({
     [state],
   );
 
-  const renderIncomingNodesMenu = useMemo(
-    () =>
-      incomingNodes.length > 0 && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <ChevronDown className="h-3 w-3" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {incomingNodes.map((node, index) => (
-              <React.Fragment key={node.nodeId}>
-                {index > 0 && <DropdownMenuSeparator />}
-                <DropdownMenuItem disabled className="opacity-50">
-                  来自 {node.node.data.name || node.node.type}
-                </DropdownMenuItem>
-                {Object.entries(node.outputs).map(([key, value]) => (
-                  <DropdownMenuItem
-                    key={`${node.nodeId}-${key}`}
-                    onClick={() => handleCopyParameter(node.nodeId, key)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <TbCopy className="h-4 w-4" />
-                      <span>{key}</span>
-                      <span className="text-xs text-gray-500">
-                        ({typeof value})
-                      </span>
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-              </React.Fragment>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    [incomingNodes, handleCopyParameter],
-  );
   if (!state) {
     return null;
   }
@@ -176,7 +118,6 @@ const NodePortalComponent = ({
       <div className="flex items-center justify-between h-8 px-1">
         <div className="text-sm font-bold flex-1">{title || variant}</div>
         <div className="flex items-center gap-2">
-          {renderIncomingNodesMenu}
           {state.status === "running" && (
             <div className="flex items-center gap-1">
               <TbLoader2 className="animate-spin rounded-full text-blue-500" />
@@ -225,6 +166,12 @@ const NodePortalComponent = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => handleCopyParameter(id, "result")}
+                >
+                  <TbNumber className="h-4 w-4" />
+                  {id}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleDeleteNode}>
                   <TbX className="h-4 w-4" />
                   删除

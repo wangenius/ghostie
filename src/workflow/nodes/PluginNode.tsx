@@ -1,4 +1,5 @@
 import { PluginProps } from "@/common/types/plugin";
+import { DrawerSelector } from "@/components/ui/drawer-selector";
 import {
   Select,
   SelectContent,
@@ -8,12 +9,11 @@ import {
 } from "@/components/ui/select";
 import { PluginManager } from "@/plugin/PluginManager";
 import { motion } from "framer-motion";
-import { Puzzle } from "lucide-react";
 import { memo, useCallback, useMemo } from "react";
 import { NodeProps } from "reactflow";
 import { PluginNodeConfig } from "../types/nodes";
-import { NodePortal } from "./NodePortal";
 import { Workflow } from "../Workflow";
+import { NodePortal } from "./NodePortal";
 
 const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
   const plugins = PluginManager.use();
@@ -92,16 +92,6 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
     [workflow, props.id],
   );
 
-  const pluginItems = useMemo(
-    () =>
-      Object.entries(plugins).map(([id, plugin]) => (
-        <SelectItem key={id} value={id} className="text-sm">
-          {plugin.name}
-        </SelectItem>
-      )),
-    [plugins],
-  );
-
   const toolItems = useMemo(
     () =>
       selectedPlugin?.tools.map((tool) => (
@@ -143,13 +133,21 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <Select value={props.data.plugin} onValueChange={handlePluginChange}>
-          <SelectTrigger variant="dust" className="h-8 transition-colors">
-            <Puzzle className="h-4 w-4" />
-            <SelectValue placeholder="选择插件" className="flex-1" />
-          </SelectTrigger>
-          <SelectContent>{pluginItems}</SelectContent>
-        </Select>
+        <DrawerSelector
+          panelTitle="选择插件"
+          value={[props.data.plugin]}
+          items={Object.values(plugins)
+            .map((plugin) => {
+              return plugin.tools.map((tool) => ({
+                label: tool.name,
+                value: tool.name,
+                description: tool.description,
+                type: plugin.name,
+              }));
+            })
+            .flat()}
+          onSelect={(value) => handlePluginChange(value[0])}
+        />
 
         {selectedPlugin && (
           <Select value={props.data.tool} onValueChange={handleToolChange}>

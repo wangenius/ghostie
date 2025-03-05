@@ -134,6 +134,8 @@ export interface ChatModelRequestBody {
   stream?: boolean;
   /* 工具 */
   tools?: ToolRequestBody;
+  /* 温度 */
+  temperature?: number;
   /* 响应格式 */
   response_format?: {
     type: string;

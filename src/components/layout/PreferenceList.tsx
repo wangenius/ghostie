@@ -5,8 +5,8 @@ import { Button } from "../ui/button";
 
 interface SettingsListItemProps {
   id: string;
-  title: string;
-  description: string;
+  title: string | React.ReactNode;
+  description: string | React.ReactNode;
   icon?: React.ReactNode;
   onClick: (id: string) => void;
   actived: boolean;

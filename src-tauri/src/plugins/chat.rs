@@ -17,6 +17,7 @@ pub struct ChatModelRequestBody {
     pub stream: bool,
     pub parallel_tool_calls: bool,
     pub tools: Option<Vec<ToolRequestBody>>,
+    pub temperature: Option<f32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -1,21 +1,17 @@
 import { BotManager } from "@/bot/BotManger";
-import { Button } from "@/components/ui/button";
-import { Drawer } from "@/components/ui/drawer";
+import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
-import { TbGhost3 } from "react-icons/tb";
 import { NodeProps } from "reactflow";
 import { BotNodeConfig } from "../types/nodes";
-import { NodePortal } from "./NodePortal";
 import { Workflow } from "../Workflow";
+import { NodePortal } from "./NodePortal";
 
 const BotNodeComponent = (props: NodeProps<BotNodeConfig>) => {
   const bots = BotManager.use();
   const [prompt, setPrompt] = useState(props.data.prompt);
   const workflow = Workflow.instance;
-  const [open, setOpen] = useState(false);
 
   const handleBotChange = useCallback(
     (value: string) => {
@@ -71,41 +67,19 @@ const BotNodeComponent = (props: NodeProps<BotNodeConfig>) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <div className="space-y-1.5">
-          <Button
-            onClick={() => setOpen(true)}
-            variant="ghost"
-            className="w-full bg-muted-foreground/10"
-          >
-            <TbGhost3 />
-            {bots[props.data.bot]?.name || "选择机器人"}
-          </Button>
-        </div>
-        <Drawer open={open} onOpenChange={setOpen}>
-          <h3 className="font-bold mb-4">选择机器人</h3>
-          {Object.values(bots).map((bot) => (
-            <div
-              key={bot.id}
-              className={cn(
-                "flex items-center justify-start w-full px-3 py-2 text-sm rounded-lg hover:bg-muted-foreground/20 cursor-pointer transition-colors gap-2 overflow-hidden",
-                props.data.bot === bot.id && "bg-muted-foreground/10",
-              )}
-              onClick={() => {
-                handleBotChange(bot.id);
-              }}
-            >
-              <Button variant="ghost" size="icon" className="h-6 w-6">
-                <TbGhost3 className="h-4 w-4 text-primary flex-none" />
-              </Button>
-              <div className="flex flex-col gap-1">
-                <span className="font-medium">{bot.name}</span>
-                <span className="text-xs text-muted-foreground line-clamp-1">
-                  {bot.system}
-                </span>
-              </div>
-            </div>
-          ))}
-        </Drawer>
+        <DrawerSelector
+          panelTitle="选择机器人"
+          value={[props.data.bot]}
+          items={Object.values(bots).map((bot) => {
+            return {
+              label: bot.name,
+              value: bot.id,
+              description: bot.system,
+              type: bot.mode,
+            };
+          })}
+          onSelect={(value) => handleBotChange(value[0])}
+        />
 
         <Textarea
           variant="dust"

@@ -11,6 +11,9 @@ export function Drawer({
   children,
   className,
   trigger,
+  title,
+  description,
+  modal = true,
 }: {
   direction?: "right" | "left";
   open: boolean;
@@ -18,12 +21,16 @@ export function Drawer({
   children: React.ReactNode;
   className?: string;
   trigger?: React.ReactNode;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  modal?: boolean;
 }) {
   return (
     <DrawerPrimitive.Root
       direction={direction}
       open={open}
       onOpenChange={onOpenChange}
+      modal={modal}
     >
       {trigger && <DrawerPrimitive.Trigger>{trigger}</DrawerPrimitive.Trigger>}
       <DrawerPrimitive.Portal>
@@ -33,15 +40,21 @@ export function Drawer({
             "right-2 top-2 bottom-2 fixed z-10 outline-none flex w-[320px] ",
             className,
           )}
+          onClick={(e) => e.stopPropagation()}
+          onDrag={(e) => e.stopPropagation()}
           // The gap between the edge of the screen and the drawer is 8px in this case.
           style={
             { "--initial-transform": "calc(100% + 8px)" } as React.CSSProperties
           }
         >
-          <DrawerPrimitive.Title className="sr-only"></DrawerPrimitive.Title>
-          <DrawerPrimitive.Description className="sr-only"></DrawerPrimitive.Description>
-          <div className="bg-zinc-50 h-full w-full grow p-4 flex flex-col rounded-lg gap-1">
-            {children}
+          <div className="bg-zinc-50 h-full w-full grow flex flex-col rounded-lg gap-1 pt-4">
+            <DrawerPrimitive.Title className="px-4 font-bold">
+              {title}
+            </DrawerPrimitive.Title>
+            <DrawerPrimitive.Description>
+              {description}
+            </DrawerPrimitive.Description>
+            <div className="overflow-y-auto p-3 space-y-2">{children}</div>
           </div>
         </DrawerPrimitive.Content>
       </DrawerPrimitive.Portal>

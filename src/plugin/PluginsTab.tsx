@@ -3,6 +3,8 @@ import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
 import { Button } from "@/components/ui/button";
+import { tags as t } from "@lezer/highlight";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +28,7 @@ import { PluginManager } from "./PluginManager";
 import { TestDrawer } from "./components/TestDrawer";
 
 import { javascript } from "@codemirror/lang-javascript";
-import { githubLight } from "@uiw/codemirror-theme-github";
+import { githubDarkInit } from "@uiw/codemirror-theme-github";
 import CodeMirror from "@uiw/react-codemirror";
 import { toast } from "sonner";
 // 默认插件属性
@@ -262,7 +264,7 @@ export function PluginsTab() {
         emptyText="请选择一个插件或点击添加按钮创建新插件"
         EmptyIcon={TbPlug}
         isEmpty={!selectedPlugin && !content}
-        className="border rounded-xl"
+        className="rounded-xl"
         header={
           <>
             <h3 className="text-2xl font-semibold">
@@ -309,7 +311,40 @@ export function PluginsTab() {
         <CodeMirror
           className="h-full overflow-y-auto"
           value={content}
-          theme={githubLight}
+          theme={githubDarkInit({
+            settings: {
+              fontSize: 16,
+              background: "#292d3e",
+            },
+            styles: [
+              {
+                tag: t.keyword,
+                color: "#bd66d8",
+              },
+              {
+                tag: t.variableName,
+                color: "#8aa9f9",
+              },
+              {
+                tag: t.string,
+                color: "#ffffbbbb",
+              },
+              {
+                tag: t.number,
+                color: "#ae81ff",
+              },
+
+              {
+                tag: t.comment,
+                color: "#ffffff88",
+              },
+
+              {
+                tag: t.className,
+                color: "#66d9ef",
+              },
+            ],
+          })}
           extensions={[javascript({ typescript: true })]}
           onChange={setContent}
           placeholder={`编写你的插件代码, 参考开发文档`}
