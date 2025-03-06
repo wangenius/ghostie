@@ -122,7 +122,7 @@ export function BotsTab() {
           <Button
             onClick={() => {
               cmd.invoke("open_url", {
-                url: "https://ccn0kkxjz1z2.feishu.cn/wiki/CNUbwM7xSizLoWk95Cuc3XgKnsf?from=from_copylink",
+                url: "https://ghostie.wangenius.com/resources/bots",
               });
             }}
             variant="outline"

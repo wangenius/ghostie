@@ -217,10 +217,9 @@ export function PluginsTab() {
         left={
           <Button
             onClick={() => {
-              window.open(
-                "https://ccn0kkxjz1z2.feishu.cn/wiki/CNUbwM7xSizLoWk95Cuc3XgKnsf?from=from_copylink",
-                "_blank",
-              );
+              cmd.invoke("open_url", {
+                url: "https://ghostie.wangenius.com/resources/plugins",
+              });
             }}
             variant="outline"
           >

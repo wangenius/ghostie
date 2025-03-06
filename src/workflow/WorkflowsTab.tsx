@@ -14,6 +14,7 @@ import { TbDownload, TbPlus, TbShape3, TbUpload } from "react-icons/tb";
 import { Workflow } from "./Workflow";
 import { WorkflowEditor } from "./WorkflowEditor";
 import { WorkflowManager } from "./WorkflowManager";
+import { cmd } from "@/utils/shell";
 /* 工作流列表 */
 export default function WorkflowsTab() {
   /* 工作流列表 */
@@ -37,10 +38,9 @@ export default function WorkflowsTab() {
         left={
           <Button
             onClick={() => {
-              window.open(
-                "https://ccn0kkxjz1z2.feishu.cn/wiki/CNUbwM7xSizLoWk95Cuc3XgKnsf?from=from_copylink",
-                "_blank",
-              );
+              cmd.invoke("open_url", {
+                url: "https://ghostie.wangenius.com/resources/workflows",
+              });
             }}
             variant="outline"
           >

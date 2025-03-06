@@ -182,7 +182,7 @@ export const WorkflowInfo = memo(() => {
           <Button
             onClick={() => {
               cmd.invoke("open_url", {
-                url: "https://ghostie.wangenius.com/tutorials/workflow_develop",
+                url: "https://ghostie.wangenius.com/tutorials/workflow",
               });
             }}
             variant="ghost"
