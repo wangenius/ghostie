@@ -71,10 +71,15 @@ const INITIAL_WORKFLOW: WorkflowProps = {
 
 /* 工作流 */
 export class Workflow {
+  /* 工作流状态 */
   private state = new Echo<{
+    /* 工作流数据 */
     data: WorkflowProps;
+    /* 节点状态 */
     nodeStates: Record<string, NodeState>;
+    /* 已执行节点 */
     executedNodes: Set<string>;
+    /* 是否正在执行 */
     isExecuting: boolean;
   }>(
     {
@@ -358,18 +363,6 @@ export class Workflow {
           // start节点的输出就是它的inputs
           initialOutputs = node.data.inputs || {};
           break;
-        case "chat":
-          // chat节点的输出包含result字段
-          initialOutputs = { result: null };
-          break;
-        case "bot":
-          // bot节点的输出结构
-          initialOutputs = { result: null };
-          break;
-        case "branch":
-          // branch节点的输出是选中的条件
-          initialOutputs = { selectedCondition: null };
-          break;
         case "end":
           // end节点的输出是所有输入的汇总
           initialOutputs = {};
@@ -487,7 +480,15 @@ export class Workflow {
     return edge?.condition === selectedCondition?.id;
   }
 
-  private parseInputReferences(text: string, inputs: Record<string, any>) {
+  /** 解析输入引用
+   *  @param text - 需要解析的文本
+   *  @param inputs - 输入数据 以节点ID为key,value为节点的输出数据
+   *  @returns 解析后的文本 将text中的{{inputs.key}}的格式替换为inputs嵌套属性的值
+   */
+  private parseTextFromInputs(
+    text: string,
+    inputs: Record<WorkflowNode["id"], any>,
+  ) {
     console.log("解析输入引用:", text);
     console.log("可用输入:", inputs);
 
@@ -522,6 +523,7 @@ export class Workflow {
     return result;
   }
 
+  /** 执行开始节点 */
   private async executeStartNode(
     inputs: Record<string, any>,
   ): Promise<NodeResult> {
@@ -531,6 +533,7 @@ export class Workflow {
     };
   }
 
+  /** 执行结束节点 */
   private async executeEndNode(
     inputs: Record<string, any>,
   ): Promise<NodeResult> {
@@ -554,8 +557,8 @@ export class Workflow {
     inputs: Record<string, any>,
   ): Promise<NodeResult> {
     const chatConfig = node.data as ChatNodeConfig;
-    const parsedSystem = this.parseInputReferences(chatConfig.system, inputs);
-    const parsedUser = this.parseInputReferences(chatConfig.user, inputs);
+    const parsedSystem = this.parseTextFromInputs(chatConfig.system, inputs);
+    const parsedUser = this.parseTextFromInputs(chatConfig.user, inputs);
     const res = await new ChatModel(ModelManager.get(chatConfig.model))
       .system(parsedSystem)
       .stream(parsedUser);
@@ -573,7 +576,7 @@ export class Workflow {
   ): Promise<NodeResult> {
     const botConfig = node.data as BotNodeConfig;
     const bot = new Bot(BotManager.get(botConfig.bot));
-    const parsedPrompt = this.parseInputReferences(
+    const parsedPrompt = this.parseTextFromInputs(
       botConfig.prompt || "",
       inputs,
     );
@@ -610,7 +613,7 @@ export class Workflow {
         ...acc,
         [key]:
           typeof value === "string"
-            ? this.parseInputReferences(value, inputs)
+            ? this.parseTextFromInputs(value, inputs)
             : value,
       }),
       {},
@@ -699,7 +702,7 @@ export class Workflow {
     inputs: Record<string, any>,
   ): Promise<NodeResult> {
     const messageConfig = node.data as MessageNodeConfig;
-    const message = this.parseInputReferences(
+    const message = this.parseTextFromInputs(
       messageConfig.message || "",
       inputs,
     );
@@ -725,104 +728,6 @@ export class Workflow {
       success: true,
       data: matchedCondition || branchConfig.conditions[0],
     };
-  }
-
-  private evaluateCondition(condition: any, item: any): boolean {
-    const { field, operator, value, dataType } = condition;
-    let itemValue = item[field];
-
-    if (field.includes(".")) {
-      const parts = field.split(".");
-      itemValue = parts.reduce(
-        (obj: Record<string, any>, part: string) => obj?.[part],
-        item,
-      );
-    }
-
-    if (itemValue === undefined) {
-      return operator === "notExists";
-    }
-
-    let typedValue: any;
-    let typedItemValue: any;
-
-    switch (dataType) {
-      case "number":
-        typedValue = Number(value);
-        typedItemValue = Number(itemValue);
-        break;
-      case "boolean":
-        typedValue = value.toLowerCase() === "true";
-        typedItemValue = Boolean(itemValue);
-        break;
-      case "date":
-        typedValue = new Date(value);
-        typedItemValue = new Date(itemValue);
-        break;
-      default:
-        typedValue = String(value);
-        typedItemValue = String(itemValue);
-    }
-
-    switch (operator) {
-      case "equals":
-        return typedItemValue === typedValue;
-      case "notEquals":
-        return typedItemValue !== typedValue;
-      case "contains":
-        return String(typedItemValue).includes(String(typedValue));
-      case "notContains":
-        return !String(typedItemValue).includes(String(typedValue));
-      case "startsWith":
-        return String(typedItemValue).startsWith(String(typedValue));
-      case "endsWith":
-        return String(typedItemValue).endsWith(String(typedValue));
-      case "greaterThan":
-        return typedItemValue > typedValue;
-      case "lessThan":
-        return typedItemValue < typedValue;
-      case "greaterThanOrEqual":
-        return typedItemValue >= typedValue;
-      case "lessThanOrEqual":
-        return typedItemValue <= typedValue;
-      case "matches":
-        try {
-          const regex = new RegExp(value);
-          return regex.test(String(typedItemValue));
-        } catch {
-          return false;
-        }
-      case "in":
-        const valueList = value.split(",").map((v: string) => v.trim());
-        return valueList.includes(String(typedItemValue));
-      case "notIn":
-        const excludeList = value.split(",").map((v: string) => v.trim());
-        return !excludeList.includes(String(typedItemValue));
-      case "exists":
-        return itemValue !== undefined;
-      case "notExists":
-        return itemValue === undefined;
-      default:
-        return false;
-    }
-  }
-
-  private evaluateGroup(group: any, item: any): boolean {
-    if (!group.conditions || group.conditions.length === 0) {
-      return true;
-    }
-
-    const results = group.conditions.map((condition: any) => {
-      if ("operator" in condition) {
-        return this.evaluateCondition(condition, item);
-      } else {
-        return this.evaluateGroup(condition, item);
-      }
-    });
-
-    return group.type === "AND"
-      ? results.every(Boolean)
-      : results.some(Boolean);
   }
 
   private async executeNode(node: WorkflowNode): Promise<NodeResult> {
@@ -872,7 +777,6 @@ export class Workflow {
         case "iterator":
           result = await this.executeIteratorNode(node, inputs);
           break;
-
         case "message":
           result = await this.executeMessageNode(node, inputs);
           break;
