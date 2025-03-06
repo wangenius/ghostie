@@ -18,7 +18,15 @@ import {
   useRef,
   useState,
 } from "react";
-import { TbBook, TbLoader2, TbPencil, TbPlayerPlay } from "react-icons/tb";
+import {
+  TbBook,
+  TbLoader2,
+  TbPencil,
+  TbPlayerPlay,
+  TbMaximize,
+  TbMinimize,
+} from "react-icons/tb";
+import { motion } from "framer-motion";
 import ReactFlow, {
   Background,
   NodeChange,
@@ -28,14 +36,15 @@ import ReactFlow, {
   Viewport,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { ContextMenu } from "./components/ContextMenu";
+import { DragToolbar } from "./components/DragToolbar";
 import { CustomControls } from "./components/CustomControls";
-import { edgeTypes, nodeTypes } from "./constants";
+import { edgeTypes, NODE_TYPES, nodeTypes } from "./types/nodes";
 import { useEdges } from "./hooks/useEdges";
 import { SchedulerManager } from "./scheduler/SchedulerManager";
 import { NodeType, StartNodeConfig } from "./types/nodes";
 import { Workflow } from "./Workflow";
 import { cmd } from "@/utils/shell";
+import { cn } from "@/lib/utils";
 type FrequencyType = "cron";
 
 interface FrequencyConfig {
@@ -44,230 +53,251 @@ interface FrequencyConfig {
 }
 
 /* 工作流表单组件 */
-export const WorkflowInfo = memo(() => {
-  const workflow = Workflow.instance;
-  const workflowState = workflow.use();
-  const scheduler = SchedulerManager.use();
-  const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
-  const [editName, setEditName] = useState("");
-  const [editDescription, setEditDescription] = useState("");
-  const [scheduleEnabled, setScheduleEnabled] = useState(false);
-  const [frequency, setFrequency] = useState<FrequencyConfig>({
-    type: "cron",
-  });
-
-  // 打开编辑抽屉时初始化数据
-  const handleOpenEdit = useCallback(() => {
-    setEditName(workflowState?.data.name || "");
-    setEditDescription(workflowState?.data.description || "");
-
-    // 获取当前定时任务状态
-    const currentSchedule = scheduler[workflowState?.data.id];
-    setScheduleEnabled(currentSchedule?.enabled || false);
-
-    // 解析现有的 cron 表达式
-    if (currentSchedule?.schedules?.[0]) {
-      setFrequency({
-        type: "cron",
-        cronExpression: currentSchedule.schedules[0],
-      });
-    } else {
-      // 如果没有现有的定时任务，设置默认值
-      setFrequency({
-        type: "cron",
-        cronExpression: "0 0 * * * ?",
-      });
-    }
-
-    setIsEditDrawerOpen(true);
-  }, [
-    workflowState?.data.name,
-    workflowState?.data.description,
-    scheduler,
-    workflowState?.data.id,
-  ]);
-
-  // 处理名称变更
-  const handleNameChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newName = e.target.value;
-      setEditName(newName);
-      workflow.set((state) => ({
-        ...state,
-        data: {
-          ...state.data,
-          name: newName,
-        },
-      }));
-    },
-    [workflow],
-  );
-
-  // 处理描述变更
-  const handleDescriptionChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const newDescription = e.target.value;
-      setEditDescription(newDescription);
-      workflow.set((state) => ({
-        ...state,
-        data: {
-          ...state.data,
-          description: newDescription,
-        },
-      }));
-    },
-    [workflow],
-  );
-
-  // 处理定时启用状态变更
-  const handleScheduleEnabledChange = useCallback(
-    (checked: boolean) => {
-      setScheduleEnabled(checked);
-      if (checked) {
-        // 确保 frequency 已经初始化
-        if (!frequency.cronExpression) {
-          setFrequency({
-            type: "cron",
-            cronExpression: "0 0 * * * ?",
-          });
-        }
-        // 使用当前的 frequency 配置更新定时任务
-        SchedulerManager.schedule(
-          workflowState?.data.id,
-          frequency.cronExpression || "0 0 * * * ?",
-        );
-      } else {
-        SchedulerManager.unschedule(workflowState?.data.id);
-      }
-    },
-    [workflowState?.data.id, frequency.cronExpression],
-  );
-
-  // 处理 cron 表达式变更
-  const handleCronExpressionChange = useCallback(
-    (newExpression: string) => {
-      setFrequency((prev) => ({
-        ...prev,
-        cronExpression: newExpression,
-      }));
-      if (scheduleEnabled) {
-        SchedulerManager.schedule(workflowState?.data.id, newExpression);
-      }
-    },
-    [scheduleEnabled, workflowState?.data.id],
-  );
-  // 处理执行测试
-  const handleExecuteTest = useCallback(async () => {
-    dialog({
-      title: "请输入参数",
-      className: "w-[480px]",
-      content: (close) => (
-        <ParamInputDialog close={close} workflow={workflow} />
-      ),
+export const WorkflowInfo = memo(
+  ({
+    isFullscreen,
+    onToggleFullscreen,
+  }: {
+    isFullscreen: boolean;
+    onToggleFullscreen: () => void;
+  }) => {
+    const workflow = Workflow.instance;
+    const workflowState = workflow.use();
+    const scheduler = SchedulerManager.use();
+    const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+    const [editName, setEditName] = useState("");
+    const [editDescription, setEditDescription] = useState("");
+    const [scheduleEnabled, setScheduleEnabled] = useState(false);
+    const [frequency, setFrequency] = useState<FrequencyConfig>({
+      type: "cron",
     });
-  }, [workflow]);
 
-  return (
-    <div className="flex flex-col">
-      <div className="flex items-center justify-between">
-        <h3 className="text-2xl font-semibold truncate">
-          {workflowState?.data.name || "未命名工作流"}
-        </h3>
+    // 打开编辑抽屉时初始化数据
+    const handleOpenEdit = useCallback(() => {
+      setEditName(workflowState?.data.name || "");
+      setEditDescription(workflowState?.data.description || "");
 
-        <div className="flex items-center gap-2">
-          <Button onClick={handleOpenEdit} variant="ghost">
-            <TbPencil className="w-4 h-4" />
-            编辑
-          </Button>
-          <Button
-            onClick={() => {
-              cmd.invoke("open_url", {
-                url: "https://ghostie.wangenius.com/tutorials/workflow",
-              });
-            }}
-            variant="ghost"
-          >
-            <TbBook className="w-4 h-4" />
-            开发文档
-          </Button>
-          <Button
-            onClick={handleExecuteTest}
-            disabled={workflowState?.isExecuting}
-            variant="primary"
-          >
-            {workflowState?.isExecuting ? (
-              <span className="flex items-center gap-2">
-                <TbLoader2 className="w-4 h-4 animate-spin" />
-                执行中...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <TbPlayerPlay className="w-4 h-4" />
-                执行测试
-              </span>
-            )}
-          </Button>
+      // 获取当前定时任务状态
+      const currentSchedule = scheduler[workflowState?.data.id];
+      setScheduleEnabled(currentSchedule?.enabled || false);
+
+      // 解析现有的 cron 表达式
+      if (currentSchedule?.schedules?.[0]) {
+        setFrequency({
+          type: "cron",
+          cronExpression: currentSchedule.schedules[0],
+        });
+      } else {
+        // 如果没有现有的定时任务，设置默认值
+        setFrequency({
+          type: "cron",
+          cronExpression: "0 0 * * * ?",
+        });
+      }
+
+      setIsEditDrawerOpen(true);
+    }, [
+      workflowState?.data.name,
+      workflowState?.data.description,
+      scheduler,
+      workflowState?.data.id,
+    ]);
+
+    // 处理名称变更
+    const handleNameChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newName = e.target.value;
+        setEditName(newName);
+        workflow.set((state) => ({
+          ...state,
+          data: {
+            ...state.data,
+            name: newName,
+          },
+        }));
+      },
+      [workflow],
+    );
+
+    // 处理描述变更
+    const handleDescriptionChange = useCallback(
+      (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const newDescription = e.target.value;
+        setEditDescription(newDescription);
+        workflow.set((state) => ({
+          ...state,
+          data: {
+            ...state.data,
+            description: newDescription,
+          },
+        }));
+      },
+      [workflow],
+    );
+
+    // 处理定时启用状态变更
+    const handleScheduleEnabledChange = useCallback(
+      (checked: boolean) => {
+        setScheduleEnabled(checked);
+        if (checked) {
+          // 确保 frequency 已经初始化
+          if (!frequency.cronExpression) {
+            setFrequency({
+              type: "cron",
+              cronExpression: "0 0 * * * ?",
+            });
+          }
+          // 使用当前的 frequency 配置更新定时任务
+          SchedulerManager.schedule(
+            workflowState?.data.id,
+            frequency.cronExpression || "0 0 * * * ?",
+          );
+        } else {
+          SchedulerManager.unschedule(workflowState?.data.id);
+        }
+      },
+      [workflowState?.data.id, frequency.cronExpression],
+    );
+
+    // 处理 cron 表达式变更
+    const handleCronExpressionChange = useCallback(
+      (newExpression: string) => {
+        setFrequency((prev) => ({
+          ...prev,
+          cronExpression: newExpression,
+        }));
+        if (scheduleEnabled) {
+          SchedulerManager.schedule(workflowState?.data.id, newExpression);
+        }
+      },
+      [scheduleEnabled, workflowState?.data.id],
+    );
+    // 处理执行测试
+    const handleExecuteTest = useCallback(async () => {
+      dialog({
+        title: "请输入参数",
+        className: "w-[480px]",
+        content: (close) => (
+          <ParamInputDialog close={close} workflow={workflow} />
+        ),
+      });
+    }, [workflow]);
+
+    return (
+      <div className="flex flex-col">
+        <div className="flex items-center justify-between">
+          <h3 className="text-2xl font-semibold truncate">
+            {workflowState?.data.name || "未命名工作流"}
+          </h3>
+
+          <div className="flex items-center gap-2">
+            <Button onClick={onToggleFullscreen} variant="ghost">
+              {isFullscreen ? (
+                <>
+                  <TbMinimize className="w-4 h-4" />
+                  退出全屏
+                </>
+              ) : (
+                <>
+                  <TbMaximize className="w-4 h-4" />
+                  全屏
+                </>
+              )}
+            </Button>
+            <Button onClick={handleOpenEdit} variant="ghost">
+              <TbPencil className="w-4 h-4" />
+              编辑
+            </Button>
+            <Button
+              onClick={() => {
+                cmd.invoke("open_url", {
+                  url: "https://ghostie.wangenius.com/tutorials/workflow",
+                });
+              }}
+              variant="ghost"
+            >
+              <TbBook className="w-4 h-4" />
+              开发文档
+            </Button>
+            <Button
+              onClick={handleExecuteTest}
+              disabled={workflowState?.isExecuting}
+              variant="primary"
+            >
+              {workflowState?.isExecuting ? (
+                <span className="flex items-center gap-2">
+                  <TbLoader2 className="w-4 h-4 animate-spin" />
+                  执行中...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <TbPlayerPlay className="w-4 h-4" />
+                  执行测试
+                </span>
+              )}
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* 编辑抽屉 */}
-      <Drawer
-        direction="right"
-        open={isEditDrawerOpen}
-        onOpenChange={setIsEditDrawerOpen}
-        className="w-[380px]"
-      >
-        <div className="flex flex-col h-full">
-          <div className="flex-1 overflow-y-auto">
-            <div className="space-y-6">
-              <div>
-                <div className="space-y-4">
-                  <div>
-                    <Input
-                      value={editName}
-                      variant="title"
-                      className="p-0 m-0 rounded-none "
-                      onChange={handleNameChange}
-                      placeholder="输入工作流名称"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Textarea
-                      value={editDescription}
-                      onChange={handleDescriptionChange}
-                      placeholder="输入工作流描述"
-                      className="min-h-[100px] resize-none"
-                    />
-                  </div>
-                  <div className="space-y-4 pt-4 border-t">
-                    <h4 className="font-bold">定时设置</h4>
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm">Cron表达式</label>
-                      <Switch
-                        checked={scheduleEnabled}
-                        onCheckedChange={handleScheduleEnabledChange}
+        {/* 编辑抽屉 */}
+        <Drawer
+          direction="right"
+          open={isEditDrawerOpen}
+          onOpenChange={setIsEditDrawerOpen}
+          className="w-[380px]"
+          title={
+            <Input
+              value={editName}
+              variant="title"
+              className="p-0 m-0 rounded-none "
+              onChange={handleNameChange}
+              placeholder="输入工作流名称"
+            />
+          }
+        >
+          <div className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto">
+              <div className="space-y-6">
+                <div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Textarea
+                        value={editDescription}
+                        onChange={handleDescriptionChange}
+                        placeholder="输入工作流描述"
+                        className="min-h-[100px] resize-none"
                       />
                     </div>
-                    {scheduleEnabled && (
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <CronInput
-                            value={frequency.cronExpression || ""}
-                            onChange={handleCronExpressionChange}
-                          />
-                        </div>
+                    <div className="space-y-4 pt-4">
+                      <h4 className="font-bold">定时设置</h4>
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm">Cron表达式</label>
+                        <Switch
+                          checked={scheduleEnabled}
+                          onCheckedChange={handleScheduleEnabledChange}
+                        />
                       </div>
-                    )}
+                      {scheduleEnabled && (
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <CronInput
+                              value={frequency.cronExpression || ""}
+                              onChange={handleCronExpressionChange}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </Drawer>
-    </div>
-  );
-});
+        </Drawer>
+      </div>
+    );
+  },
+);
 
 /* CronInput 组件 */
 
@@ -275,12 +305,6 @@ export const WorkflowInfo = memo(() => {
 const WorkflowGraph = memo(() => {
   const workflow = Workflow.instance;
   const workflowState = workflow.use();
-  const [menu, setMenu] = useState<{
-    x: number;
-    y: number;
-    flowPosition?: { x: number; y: number };
-  } | null>(null);
-
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
   const { onEdgesChange, onConnect } = useEdges();
@@ -295,7 +319,6 @@ const WorkflowGraph = memo(() => {
 
   // 使用 useMemo 缓存节点和边的数据
   const nodes = Object.values(workflowState.data.nodes);
-
   const edges = Object.values(workflowState.data.edges);
 
   // 使用 useCallback 和 debounce 优化节点位置更新
@@ -319,6 +342,9 @@ const WorkflowGraph = memo(() => {
         if (change.type === "position" && change.position) {
           positionChanges.push({ id: change.id, position: change.position });
         } else if (change.type === "remove") {
+          if (change.id === "start" || change.id === "end") {
+            return;
+          }
           workflow.removeNode(change.id);
         } else if (change.type === "select") {
           workflow.set((state) => ({
@@ -339,10 +365,9 @@ const WorkflowGraph = memo(() => {
 
       // 批量更新位置
       if (positionChanges.length > 0) {
-        updateNodePosition(
-          positionChanges[positionChanges.length - 1].id,
-          positionChanges[positionChanges.length - 1].position,
-        );
+        positionChanges.forEach(({ id, position }) => {
+          updateNodePosition(id, position);
+        });
       }
     },
     [workflow, updateNodePosition],
@@ -367,49 +392,40 @@ const WorkflowGraph = memo(() => {
     [workflow],
   );
 
-  const preventContextMenu = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
   }, []);
 
-  const showMenu = useCallback(
-    (event: React.MouseEvent) => {
+  const onDrop = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
 
-      if (reactFlowWrapper.current) {
-        const flowPosition = screenToFlowPosition({
+      const type = event.dataTransfer.getData("application/reactflow");
+
+      if (!NODE_TYPES[type as NodeType]) {
+        return;
+      }
+
+      if (typeof type === "string" && reactFlowWrapper.current) {
+        const position = screenToFlowPosition({
           x: event.clientX,
           y: event.clientY,
         });
 
-        setMenu({
-          x: event.clientX,
-          y: event.clientY,
-          flowPosition,
+        workflow.addNode(type as NodeType, {
+          x: position.x,
+          y: position.y,
         });
       }
     },
-    [screenToFlowPosition],
-  );
-
-  const closeMenu = useCallback(() => {
-    setMenu(null);
-  }, []);
-
-  const handleNodeSelect = useCallback(
-    (type: NodeType) => {
-      if (menu?.flowPosition) {
-        workflow.addNode(type, menu.flowPosition);
-      }
-    },
-    [menu?.flowPosition, workflow],
+    [screenToFlowPosition, workflow],
   );
 
   return (
     <div
       ref={reactFlowWrapper}
       className="w-full h-full relative rounded-lg border focus-within:border-primary/40 overflow-hidden"
-      onContextMenu={preventContextMenu}
     >
       <ReactFlow
         key={workflowState.data.id}
@@ -418,23 +434,19 @@ const WorkflowGraph = memo(() => {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onEdgeContextMenu={preventContextMenu}
-        onPaneContextMenu={showMenu}
-        onDoubleClick={showMenu}
-        onClick={closeMenu}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultViewport={workflowState.data?.viewport}
         minZoom={0.1}
         maxZoom={10}
-        panOnDrag={[0, 1]}
+        panOnDrag={[0, 1, 2]}
         selectionMode={SelectionMode.Partial}
         onMoveEnd={onMoveEnd}
         className="w-full h-full bg-background"
         fitView
         elementsSelectable
-        nodesDraggable
-        nodesConnectable
         deleteKeyCode={["Backspace", "Delete"]}
         multiSelectionKeyCode={["Control", "Meta"]}
         panActivationKeyCode="Space"
@@ -458,15 +470,7 @@ const WorkflowGraph = memo(() => {
           showReset
         />
       </ReactFlow>
-
-      {menu && (
-        <ContextMenu
-          x={menu.x}
-          y={menu.y}
-          onClose={closeMenu}
-          onSelect={handleNodeSelect}
-        />
-      )}
+      <DragToolbar position="left" />
     </div>
   );
 });
@@ -607,12 +611,55 @@ const ParamInputDialog = ({
 };
 /* 工作流编辑器内容 */
 export const WorkflowEditor = () => {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const handleToggleFullscreen = useCallback(() => {
+    setIsFullscreen(!isFullscreen);
+  }, [isFullscreen]);
+
   return (
     <Suspense fallback={<LoadingSpin />}>
-      <WorkflowInfo />
-      <ReactFlowProvider>
-        <WorkflowGraph />
-      </ReactFlowProvider>
+      <motion.div
+        layout
+        className={cn("flex flex-col h-full", {
+          "fixed inset-0 z-50 bg-background": isFullscreen,
+          "relative w-full": !isFullscreen,
+        })}
+        initial={false}
+        animate={{
+          scale: isFullscreen ? 1 : 1,
+          opacity: 1,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 30,
+        }}
+      >
+        <motion.div
+          layout
+          className={cn("", {
+            "px-4 py-2": isFullscreen,
+            "p-0": !isFullscreen,
+          })}
+        >
+          <WorkflowInfo
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={handleToggleFullscreen}
+          />
+        </motion.div>
+        <motion.div
+          layout
+          className={cn("flex-1 min-h-0", {
+            "p-4 pt-0": isFullscreen,
+            "p-0 pt-2": !isFullscreen,
+          })}
+        >
+          <ReactFlowProvider>
+            <WorkflowGraph />
+          </ReactFlowProvider>
+        </motion.div>
+      </motion.div>
     </Suspense>
   );
 };

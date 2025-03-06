@@ -1,5 +1,6 @@
 use super::file::get_config_dir;
 use open;
+use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
@@ -12,5 +13,17 @@ pub async fn open_config_dir(_: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub async fn open_url(app: tauri::AppHandle, url: &str) -> Result<(), String> {
     let _ = app.opener().open_path(url, None::<&str>);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn notify(app: tauri::AppHandle, msg: &str) -> Result<(), String> {
+    let _ = app
+        .notification()
+        .builder()
+        .title("ghostie")
+        .body(msg)
+        .show()
+        .unwrap();
     Ok(())
 }

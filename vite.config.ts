@@ -20,6 +20,7 @@ export default defineConfig(async () => ({
       "@utils": path.resolve(__dirname, "./src/utils"),
       "@windows": path.resolve(__dirname, "./src/windows"),
       "@hook": path.resolve(__dirname, "./src/hook"),
+      "@workflow": path.resolve(__dirname, "./src/workflow"),
     },
   },
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`

@@ -139,6 +139,7 @@ async fn main() {
             deno::env_list,
             deno::env_save,
             utils::window::open_url,
+            utils::window::notify,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

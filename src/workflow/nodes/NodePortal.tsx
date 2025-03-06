@@ -12,11 +12,18 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import React, { memo, useCallback, useEffect, useMemo } from "react";
-import { TbCheck, TbDots, TbLoader2, TbNumber, TbX } from "react-icons/tb";
+import {
+  TbCheck,
+  TbDots,
+  TbLoader2,
+  TbNumber,
+  TbX,
+  TbProgressBolt,
+} from "react-icons/tb";
 import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
 import { toast } from "sonner";
 import CustomHandle from "../components/CustomHandle";
-import { NodeType } from "../types/nodes";
+import { NODE_TYPES, NodeType } from "../types/nodes";
 import { Workflow } from "../Workflow";
 
 type NodeVariant = NodeType;
@@ -28,18 +35,6 @@ interface BaseNodeProps extends NodeProps {
   variant?: NodeVariant;
   title?: string;
 }
-
-const variants: Record<NodeVariant, string> = {
-  start: "bg-slate-50 border-slate-200",
-  end: "bg-red-50 border-red-200",
-  panel: "bg-muted border-muted-foreground/20",
-  chat: "bg-blue-50 border-blue-200",
-  bot: "bg-violet-50 border-violet-200",
-  plugin: "bg-amber-50 border-amber-200",
-  branch: "bg-orange-50 border-orange-200",
-  iterator: "bg-green-50 border-green-200",
-  code: "bg-purple-50 border-purple-200",
-};
 
 const NodePortalComponent = ({
   children,
@@ -85,7 +80,7 @@ const NodePortalComponent = ({
     () =>
       cn(
         "transition-all duration-200 border p-2 rounded-xl w-[250px] h-auto relative",
-        variants[variant],
+        NODE_TYPES[variant].variant,
         selected && `ring-2 ring-primary/40`,
         !isConnectable && "opacity-60 cursor-not-allowed",
       ),
@@ -103,6 +98,12 @@ const NodePortalComponent = ({
     [state],
   );
 
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const Icon = NODE_TYPES[variant].icon;
   if (!state) {
     return null;
   }
@@ -111,9 +112,27 @@ const NodePortalComponent = ({
       onClick={handleNodeClick}
       onDoubleClick={handleNodeDoubleClick}
       className={nodeClassName}
+      onContextMenu={handleContextMenu}
     >
       <div className="flex items-center justify-between h-8 px-1">
-        <div className="text-sm font-bold flex-1">{title || variant}</div>
+        <div className="text-sm font-bold flex-1 flex items-center gap-1">
+          <Button
+            variant="ghost"
+            className="p-0 bg-muted-foreground/10"
+            size="icon"
+          >
+            <Icon className="h-4 w-4" />
+          </Button>
+          {title || variant}
+          {NODE_TYPES[variant].preview && (
+            <div className="flex items-center gap-1 bg-yellow-400 rounded-full pl-0.5 py-0.5 pr-2">
+              <div className="w-4 h-4 flex items-center justify-center">
+                <TbProgressBolt className="h-4 w-4 text-yellow-900" />
+              </div>
+              <span className="text-xs text-yellow-900">预览</span>
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           {state.status === "running" && (
             <div className="flex items-center gap-1">

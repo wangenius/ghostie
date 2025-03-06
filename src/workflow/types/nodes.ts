@@ -1,7 +1,114 @@
 import { ToolParameters } from "@/common/types/plugin";
-import { Node } from "reactflow";
+import { CustomEdge } from "@workflow/components/CustomEdge";
+import { BotNode } from "@workflow/nodes/BotNode";
+import { BranchNode } from "@workflow/nodes/BranchNode";
+import { ChatNode } from "@workflow/nodes/ChatNode";
+import { CodeNode } from "@workflow/nodes/CodeNode";
+import { EndNode } from "@workflow/nodes/EndNode";
+import { IteratorNode } from "@workflow/nodes/IteratorNode";
+import { MessageNode } from "@workflow/nodes/MessageNode";
+import { PanelNode } from "@workflow/nodes/PanelNode";
+import { PluginNode } from "@workflow/nodes/PluginNode";
+import { StartNode } from "@workflow/nodes/StartNode";
+import {
+  TbArrowIteration,
+  TbArrowsSplit,
+  TbBellRinging2,
+  TbCode,
+  TbFlag,
+  TbGhost3,
+  TbMessage,
+  TbPlug,
+  TbWallpaper,
+} from "react-icons/tb";
+import { MarkerType, Node } from "reactflow";
 import { WorkflowEdge } from "./edges";
-import { nodeTypes } from "../constants";
+/* 节点类型 */
+export const nodeTypes = {
+  /* 开始节点，一个工作流必须有且只有一个开始节点 */
+  start: StartNode,
+  /* 结束节点，一个工作流必须有且只有一个结束节点 */
+  end: EndNode,
+  /* 对话节点，用于与用户进行对话 */
+  chat: ChatNode,
+  /* 助手节点，用于执行助手任务 */
+  bot: BotNode,
+  /* 插件节点，用于执行插件任务 */
+  plugin: PluginNode,
+  /* 分支节点，用于根据条件执行不同的任务 */
+  branch: BranchNode,
+  /* 面板节点，用于显示面板 */
+  panel: PanelNode,
+  /* 迭代器节点，用于迭代执行任务 */
+  iterator: IteratorNode,
+  /* 代码节点，用于执行代码 */
+  code: CodeNode,
+  /* 消息节点，用于显示消息 */
+  message: MessageNode,
+} as const;
+
+/* 边类型 */
+export const edgeTypes = {
+  default: CustomEdge,
+};
+export const NODE_TYPES: Record<
+  keyof typeof nodeTypes,
+  { label: string; icon: React.ElementType; variant: string; preview?: boolean }
+> = {
+  start: {
+    label: "开始",
+    icon: TbFlag,
+    variant: "bg-slate-50 border-slate-200",
+  },
+  end: { label: "结束", icon: TbFlag, variant: "bg-red-50 border-red-200" },
+  chat: {
+    label: "对话",
+    icon: TbMessage,
+    variant: "bg-blue-50 border-blue-200",
+  },
+  bot: {
+    label: "助手",
+    icon: TbGhost3,
+    variant: "bg-violet-50 border-violet-200",
+  },
+  code: {
+    label: "代码",
+    icon: TbCode,
+    variant: "bg-purple-50 border-purple-200",
+  },
+  plugin: {
+    label: "插件",
+    icon: TbPlug,
+    variant: "bg-amber-50 border-amber-200",
+  },
+  branch: {
+    label: "分支",
+    icon: TbArrowsSplit,
+    variant: "bg-orange-50 border-orange-200",
+    preview: true,
+  },
+  iterator: {
+    label: "迭代器",
+    icon: TbArrowIteration,
+    variant: "bg-green-50 border-green-200",
+    preview: true,
+  },
+  panel: {
+    label: "面板",
+    icon: TbWallpaper,
+    variant: "bg-muted border-muted-foreground/20",
+  },
+  message: {
+    label: "消息",
+    icon: TbBellRinging2,
+    variant: "bg-purple-50 border-purple-200",
+  },
+} as const;
+
+export const EDGE_CONFIG = {
+  type: "default",
+  markerEnd: { type: MarkerType.ArrowClosed },
+};
 
 /* 工作流节点 */
 export type WorkflowNode<
@@ -110,6 +217,14 @@ export interface EndNodeConfig extends BaseNodeConfig {
   result?: string;
 }
 
+export interface MessageNodeConfig extends BaseNodeConfig {
+  type: "message";
+  /* 消息类型 */
+  variant: "success" | "error";
+  /* 消息内容 */
+  message: string;
+}
+
 export interface PanelNodeConfig extends BaseNodeConfig {
   type: "panel";
 }
@@ -165,4 +280,5 @@ export type NodeConfig =
   | PluginNodeConfig
   | BranchNodeConfig
   | CodeNodeConfig
-  | IteratorNodeConfig;
+  | IteratorNodeConfig
+  | MessageNodeConfig;

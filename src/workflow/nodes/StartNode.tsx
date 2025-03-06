@@ -733,10 +733,10 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
       >
         <div
           onClick={() => setDrawerOpen(true)}
-          className="rounded-md bg-foreground/10 p-2 hover:bg-foreground/20 transition-all duration-200 cursor-pointer"
+          className="rounded-md p-1 transition-all duration-200 cursor-pointer"
         >
           {editableParams.length === 0 ? (
-            <Button className="text-center text-sm text-gray-500">
+            <Button className="text-center text-sm text-gray-500 w-full">
               无参数，点击设置添加
             </Button>
           ) : (

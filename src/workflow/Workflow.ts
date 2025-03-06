@@ -14,6 +14,7 @@ import {
   ChatNodeConfig,
   CodeNodeConfig,
   IteratorNodeConfig,
+  MessageNodeConfig,
   NodeConfig,
   NodeResult,
   NodeState,
@@ -683,13 +684,30 @@ export class Workflow {
     inputs: Record<string, any>,
   ): Promise<NodeResult> {
     const iteratorConfig = node.data as IteratorNodeConfig;
-    // const iterator = new Iterator(iteratorConfig.iterator);
-    // const result = await iterator.execute(inputs);
+
     const result = inputs[iteratorConfig.target];
     return {
       success: true,
       data: {
         result: result,
+      },
+    };
+  }
+
+  private async executeMessageNode(
+    node: WorkflowNode,
+    inputs: Record<string, any>,
+  ): Promise<NodeResult> {
+    const messageConfig = node.data as MessageNodeConfig;
+    const message = this.parseInputReferences(
+      messageConfig.message || "",
+      inputs,
+    );
+    const success = await cmd.notify(message);
+    return {
+      success: success,
+      data: {
+        result: message,
       },
     };
   }
@@ -853,6 +871,10 @@ export class Workflow {
 
         case "iterator":
           result = await this.executeIteratorNode(node, inputs);
+          break;
+
+        case "message":
+          result = await this.executeMessageNode(node, inputs);
           break;
 
         default:

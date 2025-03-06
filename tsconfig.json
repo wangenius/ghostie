@@ -29,7 +29,8 @@
       "@components/*": ["./src/components/*"],
       "@utils/*": ["./src/utils/*"],
       "@windows/*": ["src/page/*"],
-      "@hook/*": ["./src/hook/*"]
+      "@hook/*": ["./src/hook/*"],
+      "@workflow/*": ["./src/workflow/*"]
     }
   },
   "include": ["src"],

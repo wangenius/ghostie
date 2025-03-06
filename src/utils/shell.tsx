@@ -2,7 +2,6 @@ import { dialog } from "@/components/custom/DialogModal";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { message } from "@tauri-apps/plugin-dialog";
-
 /** @Description base method abstract */
 export abstract class cmd {
   /**
@@ -71,5 +70,9 @@ export abstract class cmd {
       title,
       kind,
     });
+  }
+
+  static async notify(msg: string): Promise<boolean> {
+    return await cmd.invoke("notify", { msg });
   }
 }
