@@ -35,6 +35,7 @@ import { useEdges } from "./hooks/useEdges";
 import { SchedulerManager } from "./scheduler/SchedulerManager";
 import { NodeType, StartNodeConfig } from "./types/nodes";
 import { Workflow } from "./Workflow";
+import { cmd } from "@/utils/shell";
 type FrequencyType = "cron";
 
 interface FrequencyConfig {
@@ -180,9 +181,9 @@ export const WorkflowInfo = memo(() => {
           </Button>
           <Button
             onClick={() => {
-              window.open(
-                "https://ccn0kkxjz1z2.feishu.cn/wiki/BUv7wNyX0ijiC4khYg0cNuvunn8",
-              );
+              cmd.invoke("open_url", {
+                url: "https://ghostie.wangenius.com/tutorials/workflow_develop",
+              });
             }}
             variant="ghost"
           >

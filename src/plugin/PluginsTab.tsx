@@ -281,9 +281,9 @@ export function PluginsTab() {
             <div className="flex items-center gap-2">
               <Button
                 onClick={() => {
-                  window.open(
-                    "https://ccn0kkxjz1z2.feishu.cn/wiki/MxzywoXxaiyF08kRREkcEl1Vnfh",
-                  );
+                  cmd.invoke("open_url", {
+                    url: "https://ghostie.wangenius.com/tutorials/plugin",
+                  });
                 }}
                 variant="ghost"
               >

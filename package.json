@@ -43,6 +43,7 @@
     "@tauri-apps/plugin-dialog": "^2.2.0",
     "@tauri-apps/plugin-fs": "^2.2.0",
     "@tauri-apps/plugin-notification": "^2.2.1",
+    "@tauri-apps/plugin-opener": "^2.2.6",
     "@tauri-apps/plugin-process": "^2.2.0",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@uiw/codemirror-theme-atomone": "^4.23.10",

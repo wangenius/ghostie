@@ -14,6 +14,7 @@ interface SidebarItem {
 // 生成工作流侧边栏
 function generateWorkflowSidebar(): SidebarItem[] {
   const workflowsDir = path.join(__dirname, "../tutorials");
+  const resourcesDir = path.join(__dirname, "../resources");
 
   function processDirectory(dir: string): SidebarItem[] {
     const items: SidebarItem[] = [];
@@ -73,11 +74,16 @@ function generateWorkflowSidebar(): SidebarItem[] {
   }
 
   const sidebarItems = processDirectory(workflowsDir);
+  const resourcesItems = processDirectory(resourcesDir);
 
   return [
     {
-      text: "工作流文档",
+      text: "教程",
       items: sidebarItems,
+    },
+    {
+      text: "资源",
+      items: resourcesItems,
     },
   ];
 }
@@ -98,6 +104,7 @@ export default defineConfig({
     // 根据路径使用不同的侧边栏
     sidebar: {
       "/tutorials/": generateWorkflowSidebar(),
+      "/resources/": generateWorkflowSidebar(),
     },
     socialLinks: [
       { icon: "github", link: "https://github.com/wangenius/ghostie" },

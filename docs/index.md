@@ -17,14 +17,14 @@ hero:
 features:
   - icon: 🚀
     title: 便捷易用
-    details: 轻松呼起Ghostie，直接和Agent对话
-  - icon: 🔧
+    details: 任何时间，任何地点，快速唤醒Ghostie，迅速指挥Agent行动
+  - icon: 🎉
+    title: 界面友好
+    details: 轻量级应用大小，现代化设计语言，流畅的动画效果，深色模式支持，带来极致用户体验
+  - icon: 🎨
     title: 简单开发
-    details: 直观的可视化界面，轻松创建、管理Agent和工作流
-  - icon: 🔧
-    title: 灵活扩展
-    details: 支持多种节点类型，可自定义代码节点，高自定义的扩展中心
-  - icon: 📊
-    title: 生态丰富
-    details: 丰富的生态，支持多种Agent开发和运行环境
+    details: 简单易上手的可视化开发界面，轻松创建、管理Agent和工作流
+  - icon: 🛠️
+    title: 自由扩展
+    details: 自由的插件生态，支持自定义代码节点，完整的桌面权限，助您打造专属工作流
 ---

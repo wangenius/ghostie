@@ -13,6 +13,7 @@ use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut,
 #[tokio::main]
 async fn main() {
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_global_shortcut::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
@@ -137,6 +138,7 @@ async fn main() {
             deno::plugin_update,
             deno::env_list,
             deno::env_save,
+            utils::window::open_url,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

@@ -35,6 +35,10 @@
     "autostart:allow-disable",
     "autostart:allow-is-enabled",
     "dialog:default",
-    "notification:default"
+    "notification:default",
+    "opener:default",
+    "opener:allow-open-url",
+    "opener:allow-reveal-item-in-dir",
+    "opener:allow-default-urls"
   ]
 }
