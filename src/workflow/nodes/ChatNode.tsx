@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
 import { ChatNodeConfig } from "../types/nodes";
-import { Workflow } from "../Workflow";
+import { Workflow } from "../execute/Workflow";
 import { NodePortal } from "./NodePortal";
 
 const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {

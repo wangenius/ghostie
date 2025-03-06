@@ -19,7 +19,7 @@ import { HistoryMessage } from "./HistoryMessage";
 import { KnowledgeStore } from "../knowledge/KnowledgeStore";
 import { WorkflowManager } from "@/workflow/WorkflowManager";
 import { StartNodeConfig } from "@/workflow/types/nodes";
-import { Workflow } from "@/workflow/Workflow";
+import { Workflow } from "@/workflow/execute/Workflow";
 
 /** 请求配置 */
 interface RequestConfig {

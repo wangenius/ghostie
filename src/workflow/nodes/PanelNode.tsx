@@ -5,7 +5,7 @@ import { NodePortal } from "./NodePortal";
 import JsonViewer from "@/components/custom/JsonViewer";
 import { memo, useMemo } from "react";
 import { PanelNodeConfig } from "../types/nodes";
-import { Workflow } from "../Workflow";
+import { Workflow } from "../execute/Workflow";
 
 const PanelNodeComponent = (props: NodeProps<PanelNodeConfig>) => {
   const workflow = Workflow.instance;

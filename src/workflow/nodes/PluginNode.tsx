@@ -12,7 +12,7 @@ import { motion } from "framer-motion";
 import { memo, useCallback, useMemo } from "react";
 import { NodeProps } from "reactflow";
 import { PluginNodeConfig } from "../types/nodes";
-import { Workflow } from "../Workflow";
+import { Workflow } from "../execute/Workflow";
 import { NodePortal } from "./NodePortal";
 
 const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {

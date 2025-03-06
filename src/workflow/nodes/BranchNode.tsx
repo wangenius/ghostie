@@ -3,7 +3,7 @@ import { BranchNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Workflow } from "../Workflow";
+import { Workflow } from "../execute/Workflow";
 import { memo, useMemo } from "react";
 
 const BranchNodeComponent = (props: NodeProps<BranchNodeConfig>) => {

@@ -42,7 +42,7 @@ import { edgeTypes, NODE_TYPES, nodeTypes } from "./types/nodes";
 import { useEdges } from "./hooks/useEdges";
 import { SchedulerManager } from "./scheduler/SchedulerManager";
 import { NodeType, StartNodeConfig } from "./types/nodes";
-import { Workflow } from "./Workflow";
+import { Workflow } from "./execute/Workflow";
 import { cmd } from "@/utils/shell";
 import { cn } from "@/lib/utils";
 type FrequencyType = "cron";

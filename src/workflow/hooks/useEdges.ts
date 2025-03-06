@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { Connection, EdgeChange } from "reactflow";
 import { gen } from "@/utils/generator";
-import { Workflow } from "../Workflow";
+import { Workflow } from "../execute/Workflow";
 import { EDGE_CONFIG } from "../types/nodes";
 
 export const useEdges = () => {

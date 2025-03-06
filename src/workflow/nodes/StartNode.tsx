@@ -22,7 +22,7 @@ import { memo, useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { NodeProps } from "reactflow";
 import { StartNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
-import { Workflow } from "../Workflow";
+import { Workflow } from "../execute/Workflow";
 
 // 定义一个更易于编辑的参数格式
 interface EditableProperty {

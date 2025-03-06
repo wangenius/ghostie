@@ -11,7 +11,7 @@ import {
 import { useState } from "react";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 import { TbDownload, TbPlus, TbShape3, TbUpload } from "react-icons/tb";
-import { Workflow } from "./Workflow";
+import { Workflow } from "./execute/Workflow";
 import { WorkflowEditor } from "./WorkflowEditor";
 import { WorkflowManager } from "./WorkflowManager";
 import { cmd } from "@/utils/shell";

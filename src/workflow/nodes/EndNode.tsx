@@ -4,7 +4,7 @@ import { NodeProps } from "reactflow";
 import { EndNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 import JsonViewer from "@/components/custom/JsonViewer";
-import { Workflow } from "../Workflow";
+import { Workflow } from "../execute/Workflow";
 import { memo, useMemo } from "react";
 
 const EndNodeComponent = (props: NodeProps<EndNodeConfig>) => {

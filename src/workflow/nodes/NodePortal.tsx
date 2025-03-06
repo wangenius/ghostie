@@ -24,7 +24,7 @@ import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
 import { toast } from "sonner";
 import CustomHandle from "../components/CustomHandle";
 import { NODE_TYPES, NodeType } from "../types/nodes";
-import { Workflow } from "../Workflow";
+import { Workflow } from "../execute/Workflow";
 
 type NodeVariant = NodeType;
 
@@ -72,7 +72,7 @@ const NodePortalComponent = ({
   }, []);
 
   const handleDeleteNode = useCallback(() => {
-    workflow.deleteNode(id);
+    workflow.removeNode(id);
   }, [workflow, id]);
 
   // 使用 useMemo 缓存节点样式

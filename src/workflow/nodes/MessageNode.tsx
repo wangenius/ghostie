@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
 import { MessageNodeConfig } from "../types/nodes";
-import { Workflow } from "../Workflow";
+import { Workflow } from "../execute/Workflow";
 import { NodePortal } from "./NodePortal";
 
 const MessageNodeComponent = (props: NodeProps<MessageNodeConfig>) => {

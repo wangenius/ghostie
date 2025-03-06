@@ -2,7 +2,7 @@ import { gen } from "@/utils/generator";
 import { Echo } from "echo-state";
 import { SchedulerManager } from "./scheduler/SchedulerManager";
 import { WorkflowProps } from "./types/nodes";
-import { Workflow } from "./Workflow";
+import { Workflow } from "./execute/Workflow";
 
 /** 工作流管理器*/
 export class WorkflowManager {
