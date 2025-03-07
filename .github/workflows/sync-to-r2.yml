@@ -17,18 +17,37 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const assets = context.payload.release.assets
-              .filter(asset => asset.name.endsWith('.exe'))
-              .map(asset => ({
-                name: asset.name,
-                url: asset.browser_download_url
-              }));
+            let assets = [];
+            let version = 'latest';
+
+            if (context.eventName === 'release') {
+              assets = context.payload.release.assets
+                .filter(asset => asset.name.endsWith('.exe'))
+                .map(asset => ({
+                  name: asset.name,
+                  url: asset.browser_download_url
+                }));
+              version = context.payload.release.tag_name.replace('v', '');
+            } else {
+              const { data: releases } = await github.rest.repos.getLatestRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              });
+              assets = releases.assets
+                .filter(asset => asset.name.endsWith('.exe'))
+                .map(asset => ({
+                  name: asset.name,
+                  url: asset.browser_download_url
+                }));
+              version = releases.tag_name.replace('v', '');
+            }
+
             if (assets.length === 0) {
               core.setFailed('No .exe file found in release assets');
               return;
             }
             core.setOutput('asset', JSON.stringify(assets[0]));
-            core.setOutput('version', context.payload.release.tag_name.replace('v', ''));
+            core.setOutput('version', version);
 
       - name: Install AWS CLI
         run: |
