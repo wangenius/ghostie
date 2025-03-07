@@ -61,22 +61,25 @@ jobs:
           aws configure set aws_access_key_id ${{ env.R2_ACCESS_KEY_ID }}
           aws configure set aws_secret_access_key ${{ env.R2_SECRET_ACCESS_KEY }}
           aws configure set default.region us-east-1
+          aws configure set default.output json
+          aws configure set default.s3.addressing_style path
+          aws configure set default.s3.payload_signing_enabled false
 
       - name: Test R2 Connection and Permissions
         run: |
           echo "Testing R2 connection..."
           # 测试列出 bucket 内容
           aws s3 ls s3://product/ \
-            --endpoint-url "https://7769d61fdeb06398f4563cd23675fd39.r2.cloudflarestorage.com"
+            --endpoint-url "https://${{ env.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com"
 
           # 测试上传小文件
           echo "test" > test.txt
           aws s3 cp test.txt s3://product/test.txt \
-            --endpoint-url "https://7769d61fdeb06398f4563cd23675fd39.r2.cloudflarestorage.com"
+            --endpoint-url "https://${{ env.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com"
 
           # 测试删除测试文件
           aws s3 rm s3://product/test.txt \
-            --endpoint-url "https://7769d61fdeb06398f4563cd23675fd39.r2.cloudflarestorage.com"
+            --endpoint-url "https://${{ env.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com"
 
       - name: Download and upload release asset
         run: |
@@ -93,9 +96,12 @@ jobs:
 
           echo "Uploading $NAME to R2..."
           FILE_SIZE=$(stat -c%s "downloads/$NAME")
-          aws s3 cp "downloads/$NAME" "s3://product/ghostie.exe" \
-            --endpoint-url "https://7769d61fdeb06398f4563cd23675fd39.r2.cloudflarestorage.com" \
-            --cli-connect-timeout 6000 \
-            --cli-read-timeout 6000 \
-            --expected-size $FILE_SIZE \
-            --storage-class STANDARD
+          aws s3api put-object \
+            --bucket product \
+            --key ghostie.exe \
+            --body "downloads/$NAME" \
+            --endpoint-url "https://${{ env.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com" \
+            --content-type "application/octet-stream" \
+            --content-length $FILE_SIZE \
+            --checksum-algorithm CRC32 \
+            --debug
