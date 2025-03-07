@@ -92,7 +92,7 @@ export default defineConfig({
   title: "Ghostie",
   description: "Ghostie文档",
   base: process.env.NODE_ENV === "production" ? "/" : "/ghostie/",
-  head: [["link", { rel: "icon", type: "image/x-icon", href: "icon.ico" }]],
+  head: [["link", { rel: "icon", href: "./icon.png" }]],
   cleanUrls: true,
   themeConfig: {
     nav: [
