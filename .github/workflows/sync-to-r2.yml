@@ -60,7 +60,7 @@ jobs:
         run: |
           aws configure set aws_access_key_id ${{ env.R2_ACCESS_KEY_ID }}
           aws configure set aws_secret_access_key ${{ env.R2_SECRET_ACCESS_KEY }}
-          aws configure set default.region auto
+          aws configure set default.region us-east-1
 
       - name: Download and upload release asset
         run: |
@@ -77,4 +77,5 @@ jobs:
 
           echo "Uploading $NAME to R2..."
           aws s3 cp "downloads/$NAME" "s3://product/ghostie.exe" \
-            --endpoint-url "https://${{ env.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com"
+            --endpoint-url "https://${{ env.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com" \
+            --no-verify-ssl
