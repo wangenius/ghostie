@@ -65,22 +65,6 @@ jobs:
           aws configure set default.s3.addressing_style path
           aws configure set default.s3.payload_signing_enabled false
 
-      - name: Test R2 Connection and Permissions
-        run: |
-          echo "Testing R2 connection..."
-          # 测试列出 bucket 内容
-          aws s3 ls s3://product/ \
-            --endpoint-url "https://${{ env.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com"
-
-          # 测试上传小文件
-          echo "test" > test.txt
-          aws s3 cp test.txt s3://product/test.txt \
-            --endpoint-url "https://${{ env.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com"
-
-          # 测试删除测试文件
-          aws s3 rm s3://product/test.txt \
-            --endpoint-url "https://${{ env.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com"
-
       - name: Download and upload release asset
         run: |
           VERSION=${{ steps.get_release.outputs.version }}
