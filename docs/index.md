@@ -12,8 +12,8 @@ hero:
       text: 快速开始
       link: /tutorials/start
     - theme: alt
-      text: 在 GitHub 上查看
-      link: https://github.com/wangenius/ghostie
+      text: 下载
+      link: https://releases.wangenius.com/product/ghostie.exe
 features:
   - icon: 🚀
     title: 便捷易用

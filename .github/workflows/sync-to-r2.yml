@@ -1,0 +1,60 @@
+name: Sync to R2
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  sync-to-r2:
+    runs-on: ubuntu-latest
+    env:
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+
+    steps:
+      - name: Get release
+        id: get_release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const assets = context.payload.release.assets
+              .filter(asset => asset.name.endsWith('.exe'))
+              .map(asset => ({
+                name: asset.name,
+                url: asset.browser_download_url
+              }));
+            if (assets.length === 0) {
+              core.setFailed('No .exe file found in release assets');
+              return;
+            }
+            core.setOutput('asset', JSON.stringify(assets[0]));
+            core.setOutput('version', context.payload.release.tag_name.replace('v', ''));
+
+      - name: Install AWS CLI
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+
+      - name: Configure AWS CLI for R2
+        run: |
+          aws configure set aws_access_key_id ${{ env.R2_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ env.R2_SECRET_ACCESS_KEY }}
+          aws configure set default.region auto
+
+      - name: Download and upload release asset
+        run: |
+          VERSION=${{ steps.get_release.outputs.version }}
+          mkdir -p downloads
+
+          # 解析并下载 .exe 文件
+          ASSET_INFO='${{ steps.get_release.outputs.asset }}'
+          NAME=$(echo $ASSET_INFO | jq -r '.name')
+          URL=$(echo $ASSET_INFO | jq -r '.url')
+
+          echo "Downloading $NAME..."
+          curl -L -H "Accept: application/octet-stream" -o "downloads/$NAME" "$URL"
+
+          echo "Uploading $NAME to R2..."
+          aws s3 cp "downloads/$NAME" "s3://product/ghostie.exe" \
+            --endpoint-url https://releases.wangenius.com
