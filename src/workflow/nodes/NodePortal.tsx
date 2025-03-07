@@ -50,7 +50,7 @@ const NodePortalComponent = ({
 }: BaseNodeProps) => {
   const updateNodeInternals = useUpdateNodeInternals();
   const workflow = Workflow.instance;
-  const workflowState = workflow.state.use();
+  const workflowState = workflow.executor.use();
   const { onNodesChange } = useFlow();
 
   useEffect(() => {
@@ -58,6 +58,10 @@ const NodePortalComponent = ({
   }, [id, data, left, right, updateNodeInternals]);
 
   const state = workflowState[id];
+
+  useEffect(() => {
+    console.log(workflowState);
+  }, [workflowState]);
 
   const handleCopyParameter = useCallback((nodeId: string) => {
     navigator.clipboard.writeText(nodeId);

@@ -1,22 +1,8 @@
 import { gen } from "@/utils/generator";
 import { Echo } from "echo-state";
-import {
-  BotNodeConfig,
-  BranchNodeConfig,
-  ChatNodeConfig,
-  INITIAL_WORKFLOW,
-  NodeConfig,
-  NodeResult,
-  NodeState,
-  NodeType,
-  PluginNodeConfig,
-  WorkflowNode,
-  WorkflowProps,
-} from "../types/nodes";
+import { INITIAL_WORKFLOW, NodeResult, WorkflowProps } from "../types/nodes";
 import { WorkflowManager } from "../WorkflowManager";
-import { GraphExecutor } from "./GraphExecutor";
-import { NodeExecutor } from "./NodeExecutor";
-import { WorkflowState } from "./WorkflowState";
+import { WorkflowExecutor } from "./WorkflowExecutor";
 
 /* 工作流类 */
 export class Workflow {
@@ -29,7 +15,7 @@ export class Workflow {
     },
   });
 
-  state = new WorkflowState();
+  executor: WorkflowExecutor;
 
   use = this.store.use.bind(this.store);
   set = this.store.set.bind(this.store);
@@ -53,165 +39,6 @@ export class Workflow {
     return id;
   }
 
-  /** 更新节点数据 */
-  public updateNode<T extends NodeConfig>(
-    nodeId: string,
-    data: Partial<WorkflowNode<T>>,
-  ) {
-    this.store.set((state) => {
-      if (!state) return state;
-      const node = state.nodes[nodeId];
-      if (!node) return state;
-      return {
-        ...state,
-        nodes: {
-          ...state.nodes,
-          [nodeId]: {
-            ...node,
-            ...data,
-          },
-        },
-      };
-    });
-  }
-
-  public updateNodeData<T extends NodeConfig>(
-    nodeId: string,
-    selector: Partial<T> | ((data: T) => Partial<T>),
-  ) {
-    this.store.set((state) => {
-      if (!state) return state;
-      const node = state.nodes[nodeId];
-      if (!node) return state;
-      return {
-        ...state,
-        nodes: {
-          ...state.nodes,
-          [nodeId]: {
-            ...node,
-            data: {
-              ...node.data,
-              ...(typeof selector === "function"
-                ? selector(node.data as T)
-                : selector),
-            },
-          },
-        },
-      };
-    });
-  }
-
-  /** 更新节点位置 */
-  public updateNodePosition(
-    nodeId: string,
-    position: { x: number; y: number },
-  ) {
-    this.updateNode(nodeId, { position });
-  }
-
-  /** 添加节点 */
-  public addNode(
-    type: NodeType,
-    position: { x: number; y: number },
-  ): WorkflowNode {
-    const baseData = {
-      type,
-      name: type,
-    };
-    let nodeData: NodeConfig;
-    switch (type) {
-      case "start":
-      case "end":
-        nodeData = { ...baseData } as NodeConfig;
-        break;
-      case "chat":
-        nodeData = {
-          ...baseData,
-          model: "",
-          system: "",
-        } as ChatNodeConfig;
-        break;
-      case "bot":
-        nodeData = {
-          ...baseData,
-          bot: "",
-        } as BotNodeConfig;
-        break;
-      case "plugin":
-        nodeData = {
-          ...baseData,
-          plugin: "",
-          tool: "",
-          args: {},
-        } as PluginNodeConfig;
-        break;
-      case "branch":
-        nodeData = {
-          ...baseData,
-          conditions: [],
-          inputs: {},
-          outputs: {},
-        } as BranchNodeConfig;
-        break;
-      default:
-        nodeData = baseData as NodeConfig;
-    }
-
-    const newNode: WorkflowNode = {
-      id: gen.id(),
-      type,
-      name: type,
-      position,
-      data: nodeData,
-    };
-
-    this.store.set((state) => {
-      if (!state) return state;
-      return {
-        ...state,
-        nodes: {
-          ...state.nodes,
-          [newNode.id]: newNode,
-        },
-      };
-    });
-    this.state.initNodeStates(newNode.id);
-    return newNode;
-  }
-
-  /** 添加边 */
-  public addEdge(edge: any) {
-    this.store.set((state) => {
-      if (!state) return state;
-
-      return {
-        ...state,
-        edges: {
-          ...state.edges,
-          [edge.id]: edge,
-        },
-      };
-    });
-  }
-
-  /** 删除节点 */
-  public removeNode(nodeId: string) {
-    this.store.set((state) => {
-      if (!state) return state;
-      const { [nodeId]: _, ...remainingNodes } = state.nodes;
-      return {
-        ...state,
-        nodes: remainingNodes,
-      };
-    });
-    this.state.removeNodeState(nodeId);
-  }
-
-  /** 删除边 */
-  public removeEdge(edgeId: string) {
-    this.store.delete(edgeId);
-  }
-
   /** 创建工作流实例 */
   static async create(workflowId?: string): Promise<Workflow> {
     const workflow = new Workflow();
@@ -221,7 +48,7 @@ export class Workflow {
 
   /** 初始化工作流 */
   constructor() {
-    // 构造函数中不再调用异步的 init
+    this.executor = new WorkflowExecutor(INITIAL_WORKFLOW);
   }
 
   /** 初始化工作流 */
@@ -234,71 +61,22 @@ export class Workflow {
     // 设置工作流数据和初始状态
     this.store.set(workflow, { replace: true });
 
-    /* 初始化节点状态 */
-    this.initNodeStates();
+    // 重新创建执行器实例，使用最新的工作流数据
+    this.executor = new WorkflowExecutor(this.store.current);
     return this;
   }
 
-  /** 初始化节点状态 */
-  private initNodeStates() {
-    this.state = new WorkflowState();
-    const graphExecutor = new GraphExecutor(
-      {
-        nodes: this.store.current.nodes,
-        edges: this.store.current.edges,
-      },
-      new NodeExecutor((nodeId: string, update: Partial<NodeState>) =>
-        this.state.updateNodeState(nodeId, update),
-      ),
-      (nodeId) => this.state.current[nodeId],
-      (nodeId) => {
-        this.state.setExecutedNodes(nodeId);
-      },
-    );
-
-    const nodeStates = graphExecutor.initializeNodeStates();
-    this.store.set((state) => ({
-      ...state,
-      nodeStates,
-    }));
-  }
-
   /* 执行工作流 */
-  public async execute(): Promise<NodeResult> {
+  public async execute(inputs?: Record<string, any>): Promise<NodeResult> {
     try {
-      this.store.set((state) => ({
-        ...state,
-        executedNodes: new Set(),
-        isExecuting: true,
-      }));
-
-      const graphExecutor = new GraphExecutor(
-        {
-          nodes: this.store.current.nodes,
-          edges: this.store.current.edges,
-        },
-        new NodeExecutor((nodeId: string, update: Partial<NodeState>) => {
-          this.state.updateNodeState(nodeId, update);
-        }),
-        (nodeId) => this.state.current[nodeId],
-        (nodeId) => {
-          this.state.setExecutedNodes(nodeId);
-        },
-      );
-
-      const result = await graphExecutor.execute();
-
-      this.store.set((state) => ({
-        ...state,
-        isExecuting: false,
-      }));
-
+      /* 开始执行工作流 */
+      this.executor.isExecuting.set({ bool: true });
+      this.executor.reset(this.store.current);
+      const result = await this.executor.execute(inputs);
+      this.executor.isExecuting.set({ bool: false });
       return result;
     } catch (error) {
-      this.store.set((state) => ({
-        ...state,
-        isExecuting: false,
-      }));
+      this.executor.isExecuting.set({ bool: false });
 
       return {
         success: false,

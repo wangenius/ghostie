@@ -130,8 +130,6 @@ export const FlowProvider = ({ children }: { children: React.ReactNode }) => {
           targetHandle: targetId,
         },
       };
-
-      workflow.addEdge(edge);
       setEdges((eds) => [...eds, edge]);
     },
     [workflow],
@@ -145,6 +143,12 @@ export const FlowProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     workflow.set((state) => ({
       ...state,
+      edges: {
+        ...edges.reduce((acc, edge) => {
+          acc[edge.id] = edge;
+          return acc;
+        }, {} as Record<string, any>),
+      },
       nodes: {
         ...nodes.reduce((acc, node) => {
           acc[node.id] = node;
@@ -152,19 +156,8 @@ export const FlowProvider = ({ children }: { children: React.ReactNode }) => {
         }, {} as Record<string, any>),
       },
     }));
-  }, [nodes, workflow]);
+  }, [nodes, edges, workflow]);
 
-  useEffect(() => {
-    workflow.set((state) => ({
-      ...state,
-      edges: {
-        ...edges.reduce((acc, edge) => {
-          acc[edge.id] = edge;
-          return acc;
-        }, {} as Record<string, any>),
-      },
-    }));
-  }, [edges, workflow]);
   const updateNodeData = useCallback(
     <T extends NodeConfig>(
       id: string,

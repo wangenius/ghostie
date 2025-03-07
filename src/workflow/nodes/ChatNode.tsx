@@ -1,11 +1,13 @@
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ChatModel } from "@/model/ChatModel";
 import { ModelManager } from "@/model/ModelManager";
 import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
+import { NodeExecutor } from "../execute/NodeExecutor";
 import { ChatNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 
@@ -91,3 +93,63 @@ const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
 };
 
 export const ChatNode = memo(ChatNodeComponent);
+export class ChatNodeExecutor extends NodeExecutor {
+  public override async execute(inputs: Record<string, any>) {
+    try {
+      this.updateNodeState({
+        status: "running",
+        startTime: new Date().toISOString(),
+        inputs,
+      });
+
+      const chatConfig = this.node.data as ChatNodeConfig;
+      if (!chatConfig.model) {
+        throw new Error("未配置聊天模型");
+      }
+
+      const parsedSystem = this.parseTextFromInputs(
+        chatConfig.system || "",
+        inputs,
+      );
+      const parsedUser = this.parseTextFromInputs(
+        chatConfig.user || "",
+        inputs,
+      );
+
+      console.log("parsedSystem", parsedSystem);
+      console.log("parsedUser", parsedUser);
+
+      const model = ModelManager.get(chatConfig.model);
+      if (!model) {
+        throw new Error(`未找到模型: ${chatConfig.model}`);
+      }
+
+      const res = await new ChatModel(model)
+        .system(parsedSystem)
+        .stream(parsedUser);
+
+      console.log("res", res);
+
+      if (!res?.body) {
+        throw new Error("聊天响应为空");
+      }
+
+      this.updateNodeState({
+        status: "completed",
+        outputs: {
+          result: res.body,
+        },
+      });
+      return {
+        success: true,
+        data: {
+          result: res.body,
+        },
+      };
+    } catch (error) {
+      return this.createErrorResult(error);
+    }
+  }
+}
+
+NodeExecutor.register("chat", ChatNodeExecutor);

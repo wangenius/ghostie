@@ -4,12 +4,13 @@ import { memo, useMemo } from "react";
 import { TbCircleX } from "react-icons/tb";
 import { NodeProps } from "reactflow";
 import { Workflow } from "../execute/Workflow";
-import { EndNodeConfig } from "../types/nodes";
+import { EndNodeConfig, NodeState, WorkflowNode } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
+import { NodeExecutor } from "../execute/NodeExecutor";
 
 const EndNodeComponent = (props: NodeProps<EndNodeConfig>) => {
   const workflow = Workflow.instance;
-  const nodeState = workflow.state.use((selector) => selector[props.id]);
+  const nodeState = workflow.executor.use((selector) => selector[props.id]);
 
   const renderOutputs = useMemo(() => {
     if (nodeState?.status === "completed") {
@@ -62,3 +63,30 @@ const EndNodeComponent = (props: NodeProps<EndNodeConfig>) => {
 };
 
 export const EndNode = memo(EndNodeComponent);
+export class EndNodeExecutor extends NodeExecutor {
+  constructor(
+    node: WorkflowNode,
+    updateNodeState: (update: Partial<NodeState>) => void,
+  ) {
+    super(node, updateNodeState);
+  }
+
+  public override async execute(inputs: Record<string, any>) {
+    this.updateNodeState({
+      status: "running",
+      startTime: new Date().toISOString(),
+      inputs,
+    });
+
+    this.updateNodeState({
+      status: "completed",
+      outputs: inputs,
+    });
+    return {
+      success: true,
+      data: inputs,
+    };
+  }
+}
+
+NodeExecutor.register("end", EndNodeExecutor);

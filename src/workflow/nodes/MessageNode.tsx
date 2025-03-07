@@ -1,8 +1,10 @@
 import { Textarea } from "@/components/ui/textarea";
+import { cmd } from "@/utils/shell";
 import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
+import { NodeExecutor } from "../execute/NodeExecutor";
 import { MessageNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 
@@ -44,3 +46,38 @@ const MessageNodeComponent = (props: NodeProps<MessageNodeConfig>) => {
 };
 
 export const MessageNode = memo(MessageNodeComponent);
+
+export class MessageNodeExecutor extends NodeExecutor {
+  public override async execute(inputs: Record<string, any>) {
+    try {
+      const messageConfig = this.node.data as MessageNodeConfig;
+      const message = this.parseTextFromInputs(
+        messageConfig.message || "",
+        inputs,
+      );
+
+      if (!message) {
+        throw new Error("消息内容为空");
+      }
+
+      await cmd.notify(message);
+      this.updateNodeState({
+        status: "completed",
+        outputs: {
+          result: message,
+        },
+      });
+      return {
+        success: true,
+        data: {
+          result: message,
+        },
+      };
+    } catch (error) {
+      console.error("消息节点执行失败", error);
+      return this.createErrorResult(error);
+    }
+  }
+}
+
+NodeExecutor.register("message", MessageNodeExecutor);

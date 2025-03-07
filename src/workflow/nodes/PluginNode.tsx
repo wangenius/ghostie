@@ -5,8 +5,10 @@ import { motion } from "framer-motion";
 import { memo, useCallback, useMemo, useState, useEffect } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
-import { PluginNodeConfig } from "../types/nodes";
+import { PluginNodeConfig, NodeState, WorkflowNode } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
+import { NodeExecutor } from "../execute/NodeExecutor";
+import { cmd } from "@/utils/shell";
 
 const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
   const plugins = PluginManager.use();
@@ -129,3 +131,74 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
 };
 
 export const PluginNode = memo(PluginNodeComponent);
+export class PluginNodeExecutor extends NodeExecutor {
+  constructor(
+    node: WorkflowNode,
+    updateNodeState: (update: Partial<NodeState>) => void,
+  ) {
+    super(node, updateNodeState);
+  }
+
+  public override async execute(inputs: Record<string, any>) {
+    try {
+      this.updateNodeState({
+        status: "running",
+        startTime: new Date().toISOString(),
+        inputs,
+      });
+
+      const pluginConfig = this.node.data as PluginNodeConfig;
+      if (!pluginConfig.plugin) {
+        throw new Error("未配置插件");
+      }
+
+      const plugin = PluginManager.get(pluginConfig.plugin);
+      if (!plugin) {
+        throw new Error(`插件不存在: ${pluginConfig.plugin}`);
+      }
+
+      const tool = plugin.tools.find((t) => t.name === pluginConfig.tool);
+      if (!tool) {
+        throw new Error(`工具不存在: ${pluginConfig.tool}`);
+      }
+
+      const processedArgs = Object.entries(pluginConfig.args || {}).reduce(
+        (acc, [key, value]) => ({
+          ...acc,
+          [key]:
+            typeof value === "string"
+              ? this.parseTextFromInputs(value, inputs)
+              : value,
+        }),
+        {},
+      );
+
+      const pluginResult = await cmd.invoke("plugin_execute", {
+        id: plugin.id,
+        tool: pluginConfig.tool,
+        args: processedArgs,
+      });
+
+      if (!pluginResult) {
+        throw new Error("插件执行结果为空");
+      }
+
+      this.updateNodeState({
+        status: "completed",
+        outputs: {
+          result: pluginResult,
+        },
+      });
+      return {
+        success: true,
+        data: {
+          result: pluginResult,
+        },
+      };
+    } catch (error) {
+      return this.createErrorResult(error);
+    }
+  }
+}
+
+NodeExecutor.register("plugin", PluginNodeExecutor);

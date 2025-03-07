@@ -46,7 +46,7 @@ export const WorkflowInfo = memo(
   }) => {
     const workflow = Workflow.instance;
     const workflowData = workflow.use();
-    const { bool } = workflow.state.useIsExecuting();
+    const { bool } = workflow.executor.useIsExecuting();
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
     const scheduler = SchedulerManager.use(
       (selector) => selector[workflowData?.id],
@@ -321,11 +321,8 @@ const ParamInputDialog = ({
 
   // 处理参数确认
   const handleParamConfirm = useCallback(() => {
-    workflow.state.updateNodeState("start", {
-      inputs: paramValues,
-    });
     close();
-    workflow.execute();
+    workflow.execute(paramValues);
   }, [workflow, paramValues, close]);
 
   // 渲染单个参数输入项

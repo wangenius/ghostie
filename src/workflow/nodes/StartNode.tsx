@@ -21,6 +21,7 @@ import { nanoid } from "nanoid";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
+import { NodeExecutor } from "../execute/NodeExecutor";
 import { StartNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 // 定义一个更易于编辑的参数格式
@@ -764,3 +765,36 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
 };
 
 export const StartNode = memo(StartNodeComponent);
+export class StartNodeExecutor extends NodeExecutor {
+  public override async execute(inputs: Record<string, any>) {
+    try {
+      this.updateNodeState({
+        status: "running",
+        startTime: new Date().toISOString(),
+        inputs: inputs || {},
+      });
+
+      const result = {
+        success: true,
+        data: inputs || {},
+      };
+
+      this.updateNodeState({
+        status: "completed",
+        outputs: result.data,
+        endTime: new Date().toISOString(),
+      });
+
+      return result;
+    } catch (error) {
+      this.updateNodeState({
+        status: "failed",
+        error: error instanceof Error ? error.message : String(error),
+        endTime: new Date().toISOString(),
+      });
+      return super.createErrorResult(error);
+    }
+  }
+}
+
+NodeExecutor.register("start", StartNodeExecutor);
