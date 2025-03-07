@@ -101,10 +101,11 @@ export class ChatModel {
           this.workflows?.push({
             type: "function",
             function: {
-              name: `workflow_${flow.id}`,
+              name: `executeFlow_${flow.id}`,
               description: flow.description,
-              parameters: (flow.nodes["start"]?.data as StartNodeConfig)
-                .parameters,
+              parameters:
+                (flow.nodes["start"]?.data as StartNodeConfig).parameters ||
+                null,
             },
           });
         });
@@ -202,7 +203,7 @@ export class ChatModel {
     }
 
     /* 工作流工具 */
-    if (tool_call.function.name.startsWith("workflow_")) {
+    if (tool_call.function.name.startsWith("executeFlow_")) {
       const id = tool_call.function.name.split("_")[1];
       const workflow = await new Workflow().init(id);
       if (!workflow) {
