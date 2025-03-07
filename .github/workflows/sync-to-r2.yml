@@ -76,6 +76,10 @@ jobs:
           curl -L -H "Accept: application/octet-stream" -o "downloads/$NAME" "$URL"
 
           echo "Uploading $NAME to R2..."
+          FILE_SIZE=$(stat -c%s "downloads/$NAME")
           aws s3 cp "downloads/$NAME" "s3://product/ghostie.exe" \
-            --endpoint-url "https://${{ env.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com" \
-            --no-verify-ssl
+            --endpoint-url "https://7769d61fdeb06398f4563cd23675fd39.r2.cloudflarestorage.com" \
+            --cli-connect-timeout 6000 \
+            --cli-read-timeout 6000 \
+            --expected-size $FILE_SIZE \
+            --storage-class STANDARD
