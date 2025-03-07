@@ -5,84 +5,39 @@ import { ModelManager } from "@/model/ModelManager";
 import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
+import { useFlow } from "../context/FlowContext";
 import { ChatNodeConfig } from "../types/nodes";
-import { Workflow } from "../execute/Workflow";
 import { NodePortal } from "./NodePortal";
 
 const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
   const models = ModelManager.use();
   const [system, setSystem] = useState(props.data.system);
   const [user, setUser] = useState(props.data.user);
-  const workflow = Workflow.instance;
+  const { updateNodeData } = useFlow();
 
   const handleModelChange = useCallback(
-    (value: string) => {
-      workflow.set((s) => ({
-        ...s,
-        data: {
-          ...s.data,
-          nodes: {
-            ...s.data.nodes,
-            [props.id]: {
-              ...s.data.nodes[props.id],
-              data: {
-                ...s.data.nodes[props.id].data,
-                model: value,
-              },
-            },
-          },
-        },
-      }));
+    (model: string) => {
+      updateNodeData<ChatNodeConfig>(props.id, { model });
     },
-    [workflow, props.id],
+    [updateNodeData, props.id],
   );
 
   const handleSystemChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newValue = e.target.value;
       setSystem(newValue);
-      workflow.set((s) => ({
-        ...s,
-        data: {
-          ...s.data,
-          nodes: {
-            ...s.data.nodes,
-            [props.id]: {
-              ...s.data.nodes[props.id],
-              data: {
-                ...s.data.nodes[props.id].data,
-                system: newValue,
-              },
-            },
-          },
-        },
-      }));
+      updateNodeData<ChatNodeConfig>(props.id, { system: newValue });
     },
-    [workflow, props.id],
+    [updateNodeData, props.id],
   );
 
   const handleUserChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newValue = e.target.value;
       setUser(newValue);
-      workflow.set((s) => ({
-        ...s,
-        data: {
-          ...s.data,
-          nodes: {
-            ...s.data.nodes,
-            [props.id]: {
-              ...s.data.nodes[props.id],
-              data: {
-                ...s.data.nodes[props.id].data,
-                user: newValue,
-              },
-            },
-          },
-        },
-      }));
+      updateNodeData<ChatNodeConfig>(props.id, { user: newValue });
     },
-    [workflow, props.id],
+    [updateNodeData, props.id],
   );
 
   return (

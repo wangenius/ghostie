@@ -1,121 +1,84 @@
-import { PluginProps } from "@/common/types/plugin";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { PluginManager } from "@/plugin/PluginManager";
 import { motion } from "framer-motion";
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useState, useEffect } from "react";
 import { NodeProps } from "reactflow";
+import { useFlow } from "../context/FlowContext";
 import { PluginNodeConfig } from "../types/nodes";
-import { Workflow } from "../execute/Workflow";
 import { NodePortal } from "./NodePortal";
 
 const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
   const plugins = PluginManager.use();
-  const workflow = Workflow.instance;
-  const selectedPlugin = plugins[props.data.plugin] as PluginProps | undefined;
+  const { updateNodeData } = useFlow();
+  const [localInputs, setLocalInputs] = useState<Record<string, string>>({});
+
+  // 同步外部数据到本地状态
+  useEffect(() => {
+    if (props.data.args) {
+      setLocalInputs(
+        Object.entries(props.data.args).reduce(
+          (acc, [key, value]) => ({
+            ...acc,
+            [key]: String(value),
+          }),
+          {},
+        ),
+      );
+    }
+  }, [props.data.plugin, props.data.tool]);
 
   const handlePluginChange = useCallback(
     (value: string) => {
-      workflow.set((state) => ({
-        ...state,
-        data: {
-          ...state.data,
-          nodes: {
-            ...state.data.nodes,
-            [props.id]: {
-              ...state.data.nodes[props.id],
-              data: {
-                ...state.data.nodes[props.id].data,
-                plugin: value,
-                tool: "", // 重置工具选择
-                args: {}, // 重置参数
-              },
-            },
-          },
-        },
-      }));
+      const [plugin, tool] = value.split("::");
+      console.log(plugin, tool);
+      updateNodeData<PluginNodeConfig>(props.id, {
+        plugin,
+        tool,
+        args: {},
+      });
     },
-    [workflow, props.id],
-  );
-
-  const handleToolChange = useCallback(
-    (value: string) => {
-      workflow.set((state) => ({
-        ...state,
-        data: {
-          ...state.data,
-          nodes: {
-            ...state.data.nodes,
-            [props.id]: {
-              ...state.data.nodes[props.id],
-              data: {
-                ...state.data.nodes[props.id].data,
-                tool: value,
-                args: {}, // 重置参数
-              },
-            },
-          },
-        },
-      }));
-    },
-    [workflow, props.id],
+    [updateNodeData, props.id],
   );
 
   const handleParameterChange = useCallback(
     (key: string, value: string, type: string) => {
-      workflow.set((state) => ({
-        ...state,
-        data: {
-          ...state.data,
-          nodes: {
-            ...state.data.nodes,
-            [props.id]: {
-              ...state.data.nodes[props.id],
-              data: {
-                ...state.data.nodes[props.id].data,
-                args: {
-                  ...state.data.nodes[props.id].data.args,
-                  [key]: type === "number" ? Number(value) : value,
-                },
-              },
-            },
-          },
-        },
+      // 立即更新本地状态
+      setLocalInputs((prev) => ({
+        ...prev,
+        [key]: value,
       }));
-    },
-    [workflow, props.id],
-  );
 
-  const toolItems = useMemo(
-    () =>
-      selectedPlugin?.tools.map((tool) => (
-        <SelectItem key={tool.name} value={tool.name} className="text-sm">
-          {tool.name}
-        </SelectItem>
-      )),
-    [selectedPlugin],
+      // 使用setTimeout来模拟防抖，300ms后更新父组件状态
+      const timer = setTimeout(() => {
+        updateNodeData<PluginNodeConfig>(props.id, (data) => ({
+          args: {
+            ...data.args,
+            [key]: type === "number" ? Number(value) : value,
+          },
+        }));
+      }, 300);
+
+      return () => clearTimeout(timer);
+    },
+    [updateNodeData, props.id],
   );
 
   const parameterItems = useMemo(() => {
-    if (!selectedPlugin || !props.data.tool) return null;
+    if (!props.data.plugin || !props.data.tool) return null;
 
     const toolParameters =
-      selectedPlugin.tools.find((t) => t.name === props.data.tool)?.parameters
-        ?.properties || {};
+      plugins[props.data.plugin].tools.find((t) => t.name === props.data.tool)
+        ?.parameters?.properties || {};
 
     return Object.entries(toolParameters).map(([key, prop]) => (
       <div key={key} className="flex flex-col gap-1">
         <div className="text-xs text-gray-500">{key}</div>
-        <input
+        <Input
           type={prop.type === "number" ? "number" : "text"}
-          className="h-8 px-2 text-xs rounded-md border bg-background transition-colors"
-          value={props.data.args?.[key] || ""}
+          className="h-8 px-2 text-xs rounded-md border"
+          variant="dust"
+          value={localInputs[key] || ""}
           onChange={(e) =>
             handleParameterChange(key, e.target.value, prop.type)
           }
@@ -123,7 +86,12 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
         />
       </div>
     ));
-  }, [selectedPlugin, props.data.tool, props.data.args, handleParameterChange]);
+  }, [
+    plugins[props.data.plugin],
+    props.data.tool,
+    localInputs,
+    handleParameterChange,
+  ]);
 
   return (
     <NodePortal {...props} left={1} right={1} variant="plugin" title="插件">
@@ -135,12 +103,12 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
       >
         <DrawerSelector
           panelTitle="选择插件"
-          value={[props.data.plugin]}
+          value={[props.data.plugin + "::" + props.data.tool]}
           items={Object.values(plugins)
             .map((plugin) => {
               return plugin.tools.map((tool) => ({
                 label: tool.name,
-                value: tool.name,
+                value: plugin.id + "::" + tool.name,
                 description: tool.description,
                 type: plugin.name,
               }));
@@ -149,16 +117,7 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
           onSelect={(value) => handlePluginChange(value[0])}
         />
 
-        {selectedPlugin && (
-          <Select value={props.data.tool} onValueChange={handleToolChange}>
-            <SelectTrigger variant="dust" className="h-8 transition-colors">
-              <SelectValue placeholder="选择工具" className="flex-1" />
-            </SelectTrigger>
-            <SelectContent>{toolItems}</SelectContent>
-          </Select>
-        )}
-
-        {selectedPlugin && props.data.tool && (
+        {plugins[props.data.plugin] && (
           <div className="flex flex-col gap-2">
             <div className="text-xs font-medium">参数设置</div>
             {parameterItems}

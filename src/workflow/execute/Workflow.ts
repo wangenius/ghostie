@@ -1,12 +1,10 @@
 import { gen } from "@/utils/generator";
 import { Echo } from "echo-state";
-import { GraphExecutor } from "./GraphExecutor";
-import { NodeExecutor } from "./NodeExecutor";
-import { WorkflowEdge } from "../types/edges";
 import {
   BotNodeConfig,
   BranchNodeConfig,
   ChatNodeConfig,
+  INITIAL_WORKFLOW,
   NodeConfig,
   NodeResult,
   NodeState,
@@ -16,81 +14,33 @@ import {
   WorkflowProps,
 } from "../types/nodes";
 import { WorkflowManager } from "../WorkflowManager";
-
-/* 初始化节点 */
-const initialNodes: Record<string, WorkflowNode> = {
-  start: {
-    id: "start",
-    type: "start",
-    name: "开始",
-    data: {
-      type: "start",
-      name: "开始",
-      inputs: {},
-      outputs: {},
-    },
-    position: { x: 0, y: 0 },
-  },
-  end: {
-    id: "end",
-    type: "end",
-    name: "结束",
-    data: {
-      type: "end",
-      name: "结束",
-      inputs: {},
-      outputs: {},
-    },
-    position: { x: 850, y: 0 },
-  },
-};
-const initialEdges: Record<string, WorkflowEdge> = {};
-
-const INITIAL_WORKFLOW: WorkflowProps = {
-  id: "",
-  name: "",
-  description: "",
-  createdAt: "",
-  updatedAt: "",
-  nodes: initialNodes,
-  edges: initialEdges,
-  viewport: {
-    x: 0,
-    y: 0,
-    zoom: 1,
-  },
-};
+import { GraphExecutor } from "./GraphExecutor";
+import { NodeExecutor } from "./NodeExecutor";
+import { WorkflowState } from "./WorkflowState";
 
 /* 工作流类 */
 export class Workflow {
-  /* 该实例的状态 */
-  private state = new Echo<{
-    /* 工作流数据 */
-    data: WorkflowProps;
-    /* 节点状态 */
-    nodeStates: Record<string, NodeState>;
-    /* 已执行节点 */
-    executedNodes: Set<string>;
-    /* 是否正在执行 */
-    isExecuting: boolean;
-  }>(
-    {
-      data: INITIAL_WORKFLOW,
-      nodeStates: {},
-      executedNodes: new Set(),
-      isExecuting: false,
+  /* 该实例的状态存储 */
+  private store = new Echo<WorkflowProps>(INITIAL_WORKFLOW, {
+    onChange: (state, oldState) => {
+      if (state.id === oldState.id) {
+        WorkflowManager.update(state);
+      }
     },
-    {
-      onChange: (state, oldState) => {
-        if (state.data.id === oldState.data.id) {
-          WorkflowManager.update(state.data);
-        }
-      },
-    },
-  );
+  });
 
-  use = this.state.use.bind(this.state);
-  set = this.state.set.bind(this.state);
+  state = new WorkflowState();
+
+  use = this.store.use.bind(this.store);
+  set = this.store.set.bind(this.store);
+
+  nodes() {
+    return this.store.current.nodes;
+  }
+
+  edges() {
+    return this.store.current.edges;
+  }
 
   /* 全局工作流实例,用来在编辑器中使用 */
   static instance = new Workflow();
@@ -98,39 +48,53 @@ export class Workflow {
   /** 注册工作流，创建一个新的id，并保存到WorkflowManager中 */
   register() {
     const id = gen.id();
-    this.state.set((state) => {
-      return {
-        ...state,
-        data: { ...state.data, id },
-      };
-    });
-    WorkflowManager.create(this.state.current.data);
+    this.store.set({ id });
+    WorkflowManager.create(this.store.current);
     return id;
   }
 
   /** 更新节点数据 */
-  public updateNode(nodeId: string, data: any) {
-    this.state.set((state) => {
-      if (!state.data) return state;
-
-      const node = state.data.nodes[nodeId];
+  public updateNode<T extends NodeConfig>(
+    nodeId: string,
+    data: Partial<WorkflowNode<T>>,
+  ) {
+    this.store.set((state) => {
+      if (!state) return state;
+      const node = state.nodes[nodeId];
       if (!node) return state;
-
-      const updatedNode = {
-        ...node,
-        data: {
-          ...node.data,
-          ...data,
-        },
-      };
-
       return {
         ...state,
-        data: {
-          ...state.data,
-          nodes: {
-            ...state.data.nodes,
-            [nodeId]: updatedNode,
+        nodes: {
+          ...state.nodes,
+          [nodeId]: {
+            ...node,
+            ...data,
+          },
+        },
+      };
+    });
+  }
+
+  public updateNodeData<T extends NodeConfig>(
+    nodeId: string,
+    selector: Partial<T> | ((data: T) => Partial<T>),
+  ) {
+    this.store.set((state) => {
+      if (!state) return state;
+      const node = state.nodes[nodeId];
+      if (!node) return state;
+      return {
+        ...state,
+        nodes: {
+          ...state.nodes,
+          [nodeId]: {
+            ...node,
+            data: {
+              ...node.data,
+              ...(typeof selector === "function"
+                ? selector(node.data as T)
+                : selector),
+            },
           },
         },
       };
@@ -142,37 +106,18 @@ export class Workflow {
     nodeId: string,
     position: { x: number; y: number },
   ) {
-    this.state.set((state) => {
-      if (!state.data) return state;
-
-      const node = state.data.nodes[nodeId];
-      if (!node) return state;
-
-      return {
-        ...state,
-        data: {
-          ...state.data,
-          nodes: {
-            ...state.data.nodes,
-            [nodeId]: {
-              ...state.data.nodes[nodeId],
-              position,
-            },
-          },
-        },
-      };
-    });
+    this.updateNode(nodeId, { position });
   }
 
   /** 添加节点 */
-  public addNode(type: NodeType, position: { x: number; y: number }) {
+  public addNode(
+    type: NodeType,
+    position: { x: number; y: number },
+  ): WorkflowNode {
     const baseData = {
       type,
       name: type,
-      inputs: {},
-      outputs: {},
     };
-
     let nodeData: NodeConfig;
     switch (type) {
       case "start":
@@ -204,6 +149,8 @@ export class Workflow {
         nodeData = {
           ...baseData,
           conditions: [],
+          inputs: {},
+          outputs: {},
         } as BranchNodeConfig;
         break;
       default:
@@ -218,42 +165,30 @@ export class Workflow {
       data: nodeData,
     };
 
-    this.state.set((state) => {
-      if (!state.data) return state;
+    this.store.set((state) => {
+      if (!state) return state;
       return {
         ...state,
-        data: {
-          ...state.data,
-          nodes: {
-            ...state.data.nodes,
-            [newNode.id]: newNode,
-          },
-        },
-        nodeStates: {
-          ...state.nodeStates,
-          [newNode.id]: {
-            status: "pending",
-            inputs: {},
-            outputs: {},
-          },
+        nodes: {
+          ...state.nodes,
+          [newNode.id]: newNode,
         },
       };
     });
+    this.state.initNodeStates(newNode.id);
+    return newNode;
   }
 
   /** 添加边 */
   public addEdge(edge: any) {
-    this.state.set((state) => {
-      if (!state.data) return state;
+    this.store.set((state) => {
+      if (!state) return state;
 
       return {
         ...state,
-        data: {
-          ...state.data,
-          edges: {
-            ...state.data.edges,
-            [edge.id]: edge,
-          },
+        edges: {
+          ...state.edges,
+          [edge.id]: edge,
         },
       };
     });
@@ -261,36 +196,20 @@ export class Workflow {
 
   /** 删除节点 */
   public removeNode(nodeId: string) {
-    this.state.set((state) => {
-      if (!state.data) return state;
-
-      const { [nodeId]: _, ...remainingNodes } = state.data.nodes;
-      const { [nodeId]: __, ...remainingNodeStates } = state.nodeStates;
+    this.store.set((state) => {
+      if (!state) return state;
+      const { [nodeId]: _, ...remainingNodes } = state.nodes;
       return {
         ...state,
-        data: {
-          ...state.data,
-          nodes: remainingNodes,
-        },
-        nodeStates: remainingNodeStates,
+        nodes: remainingNodes,
       };
     });
+    this.state.removeNodeState(nodeId);
   }
 
   /** 删除边 */
   public removeEdge(edgeId: string) {
-    this.state.set((state) => {
-      if (!state.data) return state;
-
-      const { [edgeId]: _, ...remainingEdges } = state.data.edges;
-      return {
-        ...state,
-        data: {
-          ...state.data,
-          edges: remainingEdges,
-        },
-      };
-    });
+    this.store.delete(edgeId);
   }
 
   /** 创建工作流实例 */
@@ -313,60 +232,32 @@ export class Workflow {
       : INITIAL_WORKFLOW;
 
     // 设置工作流数据和初始状态
-    this.state.set(
-      {
-        data: workflow,
-        nodeStates: {},
-        executedNodes: new Set(),
-        isExecuting: false,
-      },
-      { replace: true },
-    );
+    this.store.set(workflow, { replace: true });
 
     /* 初始化节点状态 */
     this.initNodeStates();
     return this;
   }
 
-  /** 更新节点状态 */
-  private updateNodeState(nodeId: string, update: Partial<NodeState>) {
-    this.state.set((state) => ({
-      ...state,
-      nodeStates: {
-        ...state.nodeStates,
-        [nodeId]: {
-          ...state.nodeStates[nodeId],
-          ...update,
-          outputs: {
-            ...state.nodeStates[nodeId]?.outputs,
-            ...(update.outputs || {}),
-          },
-        },
-      },
-    }));
-  }
-
   /** 初始化节点状态 */
   private initNodeStates() {
+    this.state = new WorkflowState();
     const graphExecutor = new GraphExecutor(
       {
-        nodes: this.state.current.data.nodes,
-        edges: this.state.current.data.edges,
+        nodes: this.store.current.nodes,
+        edges: this.store.current.edges,
       },
       new NodeExecutor((nodeId: string, update: Partial<NodeState>) =>
-        this.updateNodeState(nodeId, update),
+        this.state.updateNodeState(nodeId, update),
       ),
-      (nodeId) => this.state.current.nodeStates[nodeId],
+      (nodeId) => this.state.current[nodeId],
       (nodeId) => {
-        this.state.set((state) => ({
-          ...state,
-          executedNodes: new Set([...state.executedNodes, nodeId]),
-        }));
+        this.state.setExecutedNodes(nodeId);
       },
     );
 
     const nodeStates = graphExecutor.initializeNodeStates();
-    this.state.set((state) => ({
+    this.store.set((state) => ({
       ...state,
       nodeStates,
     }));
@@ -375,7 +266,7 @@ export class Workflow {
   /* 执行工作流 */
   public async execute(): Promise<NodeResult> {
     try {
-      this.state.set((state) => ({
+      this.store.set((state) => ({
         ...state,
         executedNodes: new Set(),
         isExecuting: true,
@@ -383,44 +274,28 @@ export class Workflow {
 
       const graphExecutor = new GraphExecutor(
         {
-          nodes: this.state.current.data.nodes,
-          edges: this.state.current.data.edges,
+          nodes: this.store.current.nodes,
+          edges: this.store.current.edges,
         },
         new NodeExecutor((nodeId: string, update: Partial<NodeState>) => {
-          this.state.set((state) => ({
-            ...state,
-            nodeStates: {
-              ...state.nodeStates,
-              [nodeId]: {
-                ...state.nodeStates[nodeId],
-                ...update,
-                outputs: {
-                  ...state.nodeStates[nodeId]?.outputs,
-                  ...(update.outputs || {}),
-                },
-              },
-            },
-          }));
+          this.state.updateNodeState(nodeId, update);
         }),
-        (nodeId) => this.state.current.nodeStates[nodeId],
+        (nodeId) => this.state.current[nodeId],
         (nodeId) => {
-          this.state.set((state) => ({
-            ...state,
-            executedNodes: new Set([...state.executedNodes, nodeId]),
-          }));
+          this.state.setExecutedNodes(nodeId);
         },
       );
 
       const result = await graphExecutor.execute();
 
-      this.state.set((state) => ({
+      this.store.set((state) => ({
         ...state,
         isExecuting: false,
       }));
 
       return result;
     } catch (error) {
-      this.state.set((state) => ({
+      this.store.set((state) => ({
         ...state,
         isExecuting: false,
       }));

@@ -7,30 +7,18 @@ import CodeMirror from "@uiw/react-codemirror";
 import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
+import { useFlow } from "../context/FlowContext";
 import { CodeNodeConfig } from "../types/nodes";
-import { Workflow } from "../execute/Workflow";
 import { NodePortal } from "./NodePortal";
 
 const CodeNodeComponent = (props: NodeProps<CodeNodeConfig>) => {
   const [open, setOpen] = useState(false);
-  const workflow = Workflow.instance;
+  const { updateNodeData } = useFlow();
   const handleChange = useCallback(
     (value: string) => {
-      workflow.set((state) => ({
-        ...state,
-        data: {
-          ...state.data,
-          nodes: {
-            ...state.data.nodes,
-            [props.id]: {
-              ...state.data.nodes[props.id],
-              data: { ...state.data.nodes[props.id].data, code: value },
-            },
-          },
-        },
-      }));
+      updateNodeData<CodeNodeConfig>(props.id, { code: value });
     },
-    [workflow, props.id],
+    [updateNodeData, props.id],
   );
   return (
     <NodePortal {...props} left={1} right={1} variant="code" title="代码">

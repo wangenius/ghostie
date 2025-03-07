@@ -23,7 +23,7 @@ interface CustomControlsProps {
   className?: string;
 }
 
-export const CustomControls = ({
+export const FlowControls = ({
   position = "bottom-center",
   showZoom = true,
   showMaximize = false,

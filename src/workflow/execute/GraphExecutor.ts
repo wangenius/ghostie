@@ -43,7 +43,7 @@ export class GraphExecutor {
     const inputs: Record<string, Record<string, any>> = {};
 
     if (nodeId === "start") {
-      return this.graphData.nodes[nodeId].data.inputs;
+      return this.graphData.nodes[nodeId].data;
     }
 
     // 获取所有前置节点

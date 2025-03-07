@@ -148,11 +148,6 @@ option {
   -webkit-app-region: no-drag;
 }
 
-/* 隐藏 react-flow 的 attribution */
-.react-flow__attribution {
-  display: none !important;
-}
-
 /* 代码编辑器 */
 .cm-scroller {
   height: 100% !important;

@@ -9,14 +9,13 @@ import { Workflow } from "../execute/Workflow";
 
 const PanelNodeComponent = (props: NodeProps<PanelNodeConfig>) => {
   const workflow = Workflow.instance;
-  const workflowState = workflow.use();
-  const nodeState = workflowState.nodeStates[props.id];
+  const workflowState = workflow.state.use((selector) => selector[props.id]);
 
   const renderOutputs = useMemo(() => {
-    if (nodeState?.status === "completed") {
+    if (workflowState?.status === "completed") {
       return (
         <div className="space-y-2">
-          {Object.entries(nodeState?.outputs || {}).map(([key, value]) => (
+          {Object.entries(workflowState?.outputs || {}).map(([key, value]) => (
             <div key={key} className="space-y-1 nowheel overflow-auto">
               <div className="text-xs font-medium text-gray-400">{key}</div>
               {typeof value === "object" ? (
@@ -30,25 +29,25 @@ const PanelNodeComponent = (props: NodeProps<PanelNodeConfig>) => {
       );
     }
     return null;
-  }, [nodeState]);
+  }, [workflowState]);
 
   const renderError = useMemo(() => {
-    if (nodeState?.status === "failed") {
+    if (workflowState?.status === "failed") {
       return (
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-red-500">
             <TbCircleX className="h-4 w-4" />
             <span className="text-sm">执行失败</span>
           </div>
-          <div className="pl-6 text-xs text-red-500">{nodeState?.error}</div>
+          <div className="pl-6 text-xs text-red-500">
+            {workflowState?.error}
+          </div>
         </div>
       );
     }
     return null;
-  }, [nodeState?.status, nodeState?.error]);
-  if (!nodeState) {
-    return null;
-  }
+  }, [workflowState?.status, workflowState?.error]);
+
   return (
     <NodePortal {...props} left={1} right={1} variant="panel" title="展示面板">
       <motion.div

@@ -8,51 +8,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { debounce } from "lodash";
-import {
-  memo,
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { cn } from "@/lib/utils";
+import { cmd } from "@/utils/shell";
+import { motion } from "framer-motion";
+import { memo, Suspense, useCallback, useState } from "react";
 import {
   TbBook,
   TbLoader2,
-  TbPencil,
-  TbPlayerPlay,
   TbMaximize,
   TbMinimize,
+  TbPencil,
+  TbPlayerPlay,
 } from "react-icons/tb";
-import { motion } from "framer-motion";
 import ReactFlow, {
   Background,
-  NodeChange,
   ReactFlowProvider,
   SelectionMode,
-  useReactFlow,
-  Viewport,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { DragToolbar } from "./components/DragToolbar";
-import { CustomControls } from "./components/CustomControls";
-import { edgeTypes, NODE_TYPES, nodeTypes } from "./types/nodes";
-import { useEdges } from "./hooks/useEdges";
-import { SchedulerManager } from "./scheduler/SchedulerManager";
-import { NodeType, StartNodeConfig } from "./types/nodes";
+import { FlowControls } from "./components/FlowControls";
 import { Workflow } from "./execute/Workflow";
-import { cmd } from "@/utils/shell";
-import { cn } from "@/lib/utils";
-type FrequencyType = "cron";
+import { SchedulerManager } from "./scheduler/SchedulerManager";
+import { edgeTypes, nodeTypes, StartNodeConfig } from "./types/nodes";
+import { FlowProvider, useFlow } from "./context/FlowContext";
 
-interface FrequencyConfig {
-  type: FrequencyType;
-  cronExpression?: string;
-}
-
-/* 工作流表单组件 */
+/* 工作流表单组件
+ *
+ */
 export const WorkflowInfo = memo(
   ({
     isFullscreen,
@@ -62,59 +45,17 @@ export const WorkflowInfo = memo(
     onToggleFullscreen: () => void;
   }) => {
     const workflow = Workflow.instance;
-    const workflowState = workflow.use();
-    const scheduler = SchedulerManager.use();
+    const workflowData = workflow.use();
+    const { bool } = workflow.state.useIsExecuting();
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
-    const [editName, setEditName] = useState("");
-    const [editDescription, setEditDescription] = useState("");
-    const [scheduleEnabled, setScheduleEnabled] = useState(false);
-    const [frequency, setFrequency] = useState<FrequencyConfig>({
-      type: "cron",
-    });
-
-    // 打开编辑抽屉时初始化数据
-    const handleOpenEdit = useCallback(() => {
-      setEditName(workflowState?.data.name || "");
-      setEditDescription(workflowState?.data.description || "");
-
-      // 获取当前定时任务状态
-      const currentSchedule = scheduler[workflowState?.data.id];
-      setScheduleEnabled(currentSchedule?.enabled || false);
-
-      // 解析现有的 cron 表达式
-      if (currentSchedule?.schedules?.[0]) {
-        setFrequency({
-          type: "cron",
-          cronExpression: currentSchedule.schedules[0],
-        });
-      } else {
-        // 如果没有现有的定时任务，设置默认值
-        setFrequency({
-          type: "cron",
-          cronExpression: "0 0 * * * ?",
-        });
-      }
-
-      setIsEditDrawerOpen(true);
-    }, [
-      workflowState?.data.name,
-      workflowState?.data.description,
-      scheduler,
-      workflowState?.data.id,
-    ]);
+    const scheduler = SchedulerManager.use(
+      (selector) => selector[workflowData?.id],
+    );
 
     // 处理名称变更
     const handleNameChange = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newName = e.target.value;
-        setEditName(newName);
-        workflow.set((state) => ({
-          ...state,
-          data: {
-            ...state.data,
-            name: newName,
-          },
-        }));
+        workflow.set({ name: e.target.value });
       },
       [workflow],
     );
@@ -122,15 +63,7 @@ export const WorkflowInfo = memo(
     // 处理描述变更
     const handleDescriptionChange = useCallback(
       (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const newDescription = e.target.value;
-        setEditDescription(newDescription);
-        workflow.set((state) => ({
-          ...state,
-          data: {
-            ...state.data,
-            description: newDescription,
-          },
-        }));
+        workflow.set({ description: e.target.value });
       },
       [workflow],
     );
@@ -138,39 +71,29 @@ export const WorkflowInfo = memo(
     // 处理定时启用状态变更
     const handleScheduleEnabledChange = useCallback(
       (checked: boolean) => {
-        setScheduleEnabled(checked);
         if (checked) {
           // 确保 frequency 已经初始化
-          if (!frequency.cronExpression) {
-            setFrequency({
-              type: "cron",
-              cronExpression: "0 0 * * * ?",
-            });
+          if (!scheduler?.schedules?.[0]) {
+            SchedulerManager.schedule(workflowData?.id, "0 0 * * * ?");
           }
           // 使用当前的 frequency 配置更新定时任务
           SchedulerManager.schedule(
-            workflowState?.data.id,
-            frequency.cronExpression || "0 0 * * * ?",
+            workflowData?.id,
+            scheduler?.schedules?.[0] || "0 0 * * * ?",
           );
         } else {
-          SchedulerManager.unschedule(workflowState?.data.id);
+          SchedulerManager.unschedule(workflowData?.id);
         }
       },
-      [workflowState?.data.id, frequency.cronExpression],
+      [workflowData?.id, scheduler?.schedules?.[0]],
     );
 
     // 处理 cron 表达式变更
     const handleCronExpressionChange = useCallback(
       (newExpression: string) => {
-        setFrequency((prev) => ({
-          ...prev,
-          cronExpression: newExpression,
-        }));
-        if (scheduleEnabled) {
-          SchedulerManager.schedule(workflowState?.data.id, newExpression);
-        }
+        SchedulerManager.schedule(workflowData?.id, newExpression);
       },
-      [scheduleEnabled, workflowState?.data.id],
+      [workflowData?.id],
     );
     // 处理执行测试
     const handleExecuteTest = useCallback(async () => {
@@ -187,7 +110,7 @@ export const WorkflowInfo = memo(
       <div className="flex flex-col">
         <div className="flex items-center justify-between">
           <h3 className="text-2xl font-semibold truncate">
-            {workflowState?.data.name || "未命名工作流"}
+            {workflowData?.name || "未命名工作流"}
           </h3>
 
           <div className="flex items-center gap-2">
@@ -204,7 +127,7 @@ export const WorkflowInfo = memo(
                 </>
               )}
             </Button>
-            <Button onClick={handleOpenEdit} variant="ghost">
+            <Button onClick={() => setIsEditDrawerOpen(true)} variant="ghost">
               <TbPencil className="w-4 h-4" />
               编辑
             </Button>
@@ -221,10 +144,10 @@ export const WorkflowInfo = memo(
             </Button>
             <Button
               onClick={handleExecuteTest}
-              disabled={workflowState?.isExecuting}
+              disabled={bool}
               variant="primary"
             >
-              {workflowState?.isExecuting ? (
+              {bool ? (
                 <span className="flex items-center gap-2">
                   <TbLoader2 className="w-4 h-4 animate-spin" />
                   执行中...
@@ -247,7 +170,7 @@ export const WorkflowInfo = memo(
           className="w-[380px]"
           title={
             <Input
-              value={editName}
+              value={workflowData?.name}
               variant="title"
               className="p-0 m-0 rounded-none "
               onChange={handleNameChange}
@@ -262,7 +185,7 @@ export const WorkflowInfo = memo(
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Textarea
-                        value={editDescription}
+                        value={workflowData?.description}
                         onChange={handleDescriptionChange}
                         placeholder="输入工作流描述"
                         className="min-h-[100px] resize-none"
@@ -273,15 +196,15 @@ export const WorkflowInfo = memo(
                       <div className="flex items-center justify-between">
                         <label className="text-sm">Cron表达式</label>
                         <Switch
-                          checked={scheduleEnabled}
+                          checked={scheduler?.enabled}
                           onCheckedChange={handleScheduleEnabledChange}
                         />
                       </div>
-                      {scheduleEnabled && (
+                      {scheduler?.enabled && (
                         <div className="space-y-4">
                           <div className="space-y-2">
                             <CronInput
-                              value={frequency.cronExpression || ""}
+                              value={scheduler?.schedules?.[0] || ""}
                               onChange={handleCronExpressionChange}
                             />
                           </div>
@@ -304,123 +227,22 @@ export const WorkflowInfo = memo(
 /* 工作流图组件 */
 const WorkflowGraph = memo(() => {
   const workflow = Workflow.instance;
-  const workflowState = workflow.use();
-  const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { screenToFlowPosition } = useReactFlow();
-  const { onEdgesChange, onConnect } = useEdges();
-
-  if (!workflowState.data.id) {
+  const viewport = workflow.use((selector) => selector.viewport);
+  const id = workflow.use((selector) => selector.id);
+  const {
+    onDragOver,
+    onDrop,
+    reactFlowWrapper,
+    onMoveEnd,
+    onNodesChange,
+    nodes,
+    onEdgesChange,
+    onConnect,
+    edges,
+  } = useFlow();
+  if (!id) {
     throw Promise.reject(new Error("工作流 ID 不存在"));
   }
-
-  useEffect(() => {
-    console.log(workflowState.data.nodes);
-  }, [workflowState.data.nodes]);
-
-  // 使用 useMemo 缓存节点和边的数据
-  const nodes = Object.values(workflowState.data.nodes);
-  const edges = Object.values(workflowState.data.edges);
-
-  // 使用 useCallback 和 debounce 优化节点位置更新
-  const updateNodePosition = useCallback(
-    debounce((id: string, position: { x: number; y: number }) => {
-      requestAnimationFrame(() => {
-        workflow.updateNodePosition(id, position);
-      });
-    }, 8),
-    [workflow],
-  );
-
-  const onNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      const positionChanges: {
-        id: string;
-        position: { x: number; y: number };
-      }[] = [];
-
-      changes.forEach((change) => {
-        if (change.type === "position" && change.position) {
-          positionChanges.push({ id: change.id, position: change.position });
-        } else if (change.type === "remove") {
-          if (change.id === "start" || change.id === "end") {
-            return;
-          }
-          workflow.removeNode(change.id);
-        } else if (change.type === "select") {
-          workflow.set((state) => ({
-            ...state,
-            data: {
-              ...state.data,
-              nodes: {
-                ...state.data.nodes,
-                [change.id]: {
-                  ...state.data.nodes[change.id],
-                  selected: change.selected,
-                },
-              },
-            },
-          }));
-        }
-      });
-
-      // 批量更新位置
-      if (positionChanges.length > 0) {
-        positionChanges.forEach(({ id, position }) => {
-          updateNodePosition(id, position);
-        });
-      }
-    },
-    [workflow, updateNodePosition],
-  );
-
-  // 使用 debounce 优化视口更新
-  const onMoveEnd = useMemo(
-    () =>
-      debounce((_: any, viewport: Viewport) => {
-        workflow.set((state) => ({
-          ...state,
-          data: {
-            ...state.data,
-            viewport: {
-              x: viewport.x,
-              y: viewport.y,
-              zoom: viewport.zoom,
-            },
-          },
-        }));
-      }, 100),
-    [workflow],
-  );
-
-  const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  }, []);
-
-  const onDrop = useCallback(
-    (event: React.DragEvent<HTMLDivElement>) => {
-      event.preventDefault();
-
-      const type = event.dataTransfer.getData("application/reactflow");
-
-      if (!NODE_TYPES[type as NodeType]) {
-        return;
-      }
-
-      if (typeof type === "string" && reactFlowWrapper.current) {
-        const position = screenToFlowPosition({
-          x: event.clientX,
-          y: event.clientY,
-        });
-
-        workflow.addNode(type as NodeType, {
-          x: position.x,
-          y: position.y,
-        });
-      }
-    },
-    [screenToFlowPosition, workflow],
-  );
 
   return (
     <div
@@ -428,7 +250,7 @@ const WorkflowGraph = memo(() => {
       className="w-full h-full relative rounded-lg border focus-within:border-primary/40 overflow-hidden"
     >
       <ReactFlow
-        key={workflowState.data.id}
+        key={id}
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
@@ -438,10 +260,10 @@ const WorkflowGraph = memo(() => {
         onDrop={onDrop}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        defaultViewport={workflowState.data?.viewport}
+        defaultViewport={viewport}
         minZoom={0.1}
         maxZoom={10}
-        panOnDrag={[0, 1, 2]}
+        panOnDrag={[1, 2]}
         selectionMode={SelectionMode.Partial}
         onMoveEnd={onMoveEnd}
         className="w-full h-full bg-background"
@@ -450,27 +272,23 @@ const WorkflowGraph = memo(() => {
         deleteKeyCode={["Backspace", "Delete"]}
         multiSelectionKeyCode={["Control", "Meta"]}
         panActivationKeyCode="Space"
-        snapToGrid={true}
-        snapGrid={[25, 25]}
         elevateNodesOnSelect={true}
         defaultEdgeOptions={{
           type: "default",
           animated: false,
         }}
+        autoPanOnConnect={true}
         proOptions={{ hideAttribution: true }}
         nodeOrigin={[0.5, 0.5]}
         fitViewOptions={{ padding: 0.2 }}
         autoPanOnNodeDrag={true}
+        selectionOnDrag={true}
+        connectOnClick
       >
         <Background gap={25} />
-        <CustomControls
-          position="bottom-center"
-          showZoom
-          showFitView
-          showReset
-        />
+        <FlowControls position="bottom-center" showZoom showFitView showReset />
+        <DragToolbar position="left" />
       </ReactFlow>
-      <DragToolbar position="left" />
     </div>
   );
 });
@@ -503,7 +321,7 @@ const ParamInputDialog = ({
 
   // 处理参数确认
   const handleParamConfirm = useCallback(() => {
-    workflow.updateNode("start", {
+    workflow.state.updateNodeState("start", {
       inputs: paramValues,
     });
     close();
@@ -577,7 +395,7 @@ const ParamInputDialog = ({
 
   // 渲染所有参数输入
   const renderParamInputs = useCallback(() => {
-    const startNode = workflowState?.data.nodes["start"];
+    const startNode = workflowState?.nodes["start"];
     if (!startNode) return null;
 
     const parameters = (startNode.data as StartNodeConfig).parameters;
@@ -595,7 +413,7 @@ const ParamInputDialog = ({
         })}
       </div>
     );
-  }, [workflowState?.data.nodes, renderParamInput]);
+  }, [workflowState?.nodes, renderParamInput]);
 
   return (
     <div className="space-y-4">
@@ -656,7 +474,9 @@ export const WorkflowEditor = () => {
           })}
         >
           <ReactFlowProvider>
-            <WorkflowGraph />
+            <FlowProvider>
+              <WorkflowGraph />
+            </FlowProvider>
           </ReactFlowProvider>
         </motion.div>
       </motion.div>

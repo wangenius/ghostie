@@ -18,12 +18,11 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { nanoid } from "nanoid";
-import { memo, useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NodeProps } from "reactflow";
+import { useFlow } from "../context/FlowContext";
 import { StartNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
-import { Workflow } from "../execute/Workflow";
-
 // 定义一个更易于编辑的参数格式
 interface EditableProperty {
   id: string;
@@ -200,8 +199,8 @@ const editableToToolParams = (
 };
 
 const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
-  const workflow = Workflow.instance;
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { updateNodeData } = useFlow();
 
   // 将ToolParameters转换为可编辑格式
   const [editableParams, setEditableParams] = useState<EditableProperty[]>(
@@ -212,24 +211,12 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
     setEditableParams(toolParamsToEditable(props.data.parameters));
   }, [props.data.parameters]);
 
-  // 更新工作流节点数据
-  const updateNodeData = useCallback(
-    (newData: Partial<StartNodeConfig>) => {
-      if (!workflow) return;
-      workflow.updateNode(props.id, {
-        ...props.data,
-        ...newData,
-      });
-    },
-    [workflow, props.id, props.data],
-  );
-
   // 处理抽屉关闭时保存参数
   const handleDrawerOpenChange = useCallback(
     (open: boolean) => {
       if (!open) {
         // 抽屉关闭时保存参数
-        updateNodeData({
+        updateNodeData<StartNodeConfig>(props.id, {
           parameters: editableToToolParams(editableParams),
         });
       }

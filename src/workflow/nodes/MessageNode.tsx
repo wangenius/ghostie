@@ -2,36 +2,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
+import { useFlow } from "../context/FlowContext";
 import { MessageNodeConfig } from "../types/nodes";
-import { Workflow } from "../execute/Workflow";
 import { NodePortal } from "./NodePortal";
 
 const MessageNodeComponent = (props: NodeProps<MessageNodeConfig>) => {
   const [message, setMessage] = useState(props.data.message);
-  const workflow = Workflow.instance;
+  const { updateNodeData } = useFlow();
 
   const handleSystemChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newValue = e.target.value;
       setMessage(newValue);
-      workflow.set((s) => ({
-        ...s,
-        data: {
-          ...s.data,
-          nodes: {
-            ...s.data.nodes,
-            [props.id]: {
-              ...s.data.nodes[props.id],
-              data: {
-                ...s.data.nodes[props.id].data,
-                message: newValue,
-              },
-            },
-          },
-        },
-      }));
+      updateNodeData<MessageNodeConfig>(props.id, {
+        message: newValue,
+      });
     },
-    [workflow, props.id],
+    [updateNodeData, props.id],
   );
 
   return (

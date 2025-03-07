@@ -17,14 +17,15 @@ import {
   TbDots,
   TbLoader2,
   TbNumber,
-  TbX,
   TbProgressBolt,
+  TbX,
 } from "react-icons/tb";
 import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
 import { toast } from "sonner";
 import CustomHandle from "../components/CustomHandle";
-import { NODE_TYPES, NodeType } from "../types/nodes";
+import { useFlow } from "../context/FlowContext";
 import { Workflow } from "../execute/Workflow";
+import { NODE_TYPES, NodeType } from "../types/nodes";
 
 type NodeVariant = NodeType;
 
@@ -49,13 +50,14 @@ const NodePortalComponent = ({
 }: BaseNodeProps) => {
   const updateNodeInternals = useUpdateNodeInternals();
   const workflow = Workflow.instance;
-  const workflowState = workflow.use();
+  const workflowState = workflow.state.use();
+  const { onNodesChange } = useFlow();
 
   useEffect(() => {
     updateNodeInternals(id);
   }, [id, data, left, right, updateNodeInternals]);
 
-  const state = workflowState.nodeStates[id];
+  const state = workflowState[id];
 
   const handleCopyParameter = useCallback((nodeId: string) => {
     navigator.clipboard.writeText(nodeId);
@@ -72,8 +74,8 @@ const NodePortalComponent = ({
   }, []);
 
   const handleDeleteNode = useCallback(() => {
-    workflow.removeNode(id);
-  }, [workflow, id]);
+    onNodesChange([{ type: "remove", id }]);
+  }, [id, onNodesChange]);
 
   // 使用 useMemo 缓存节点样式
   const nodeClassName = useMemo(
@@ -104,9 +106,7 @@ const NodePortalComponent = ({
   }, []);
 
   const Icon = NODE_TYPES[variant].icon;
-  if (!state) {
-    return null;
-  }
+
   return (
     <div
       onClick={handleNodeClick}
@@ -134,12 +134,12 @@ const NodePortalComponent = ({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {state.status === "running" && (
+          {state?.status === "running" && (
             <div className="flex items-center gap-1">
               <TbLoader2 className="animate-spin rounded-full text-blue-500" />
             </div>
           )}
-          {state.status === "completed" && (
+          {state?.status === "completed" && (
             <Popover>
               <PopoverTrigger asChild>
                 <div className="flex items-center gap-1 cursor-pointer hover:opacity-80">
@@ -156,7 +156,7 @@ const NodePortalComponent = ({
               </PopoverContent>
             </Popover>
           )}
-          {state.status === "failed" && (
+          {state?.status === "failed" && (
             <Popover>
               <PopoverTrigger asChild>
                 <div className="flex items-center gap-1 cursor-pointer hover:opacity-80">

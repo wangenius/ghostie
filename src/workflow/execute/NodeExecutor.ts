@@ -4,7 +4,6 @@ import { ChatModel } from "@/model/ChatModel";
 import { ModelManager } from "@/model/ModelManager";
 import { PluginManager } from "@/plugin/PluginManager";
 import { cmd } from "@/utils/shell";
-import { ExpressionEvaluator } from "../ExpressionEvaluator";
 import {
   BotNodeConfig,
   BranchNodeConfig,
@@ -256,14 +255,11 @@ export class NodeExecutor {
     node: WorkflowNode,
     inputs: Record<string, any>,
   ): Promise<NodeResult> {
-    const branchConfig = node.data as BranchNodeConfig;
-    const evaluator = new ExpressionEvaluator();
-    const matchedCondition = branchConfig.conditions.find((condition) =>
-      evaluator.evaluate(condition.expression, inputs),
-    );
+    const data = node.data as BranchNodeConfig;
+    console.log("branch node", data);
     return {
       success: true,
-      data: matchedCondition || branchConfig.conditions[0],
+      data: inputs,
     };
   }
 

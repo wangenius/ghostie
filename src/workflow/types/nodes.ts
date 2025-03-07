@@ -199,10 +199,6 @@ export interface BaseNodeConfig {
   type: NodeType;
   /* 基础节点名称 */
   name: string;
-  /* 基础节点输入 */
-  inputs: Record<string, any>;
-  /* 基础节点输出 */
-  outputs: Record<string, any>;
   /* 基础节点参数 */
   args?: Record<string, any>;
 }
@@ -282,3 +278,43 @@ export type NodeConfig =
   | CodeNodeConfig
   | IteratorNodeConfig
   | MessageNodeConfig;
+
+/* 初始化节点 */
+const initialNodes: Record<string, WorkflowNode> = {
+  start: {
+    id: "start",
+    type: "start",
+    name: "开始",
+    data: {
+      type: "start",
+      name: "开始",
+    },
+    position: { x: 0, y: 0 },
+  },
+  end: {
+    id: "end",
+    type: "end",
+    name: "结束",
+    data: {
+      type: "end",
+      name: "结束",
+    },
+    position: { x: 850, y: 0 },
+  },
+};
+const initialEdges: Record<string, WorkflowEdge> = {};
+
+export const INITIAL_WORKFLOW: WorkflowProps = {
+  id: "",
+  name: "",
+  description: "",
+  createdAt: "",
+  updatedAt: "",
+  nodes: initialNodes,
+  edges: initialEdges,
+  viewport: {
+    x: 0,
+    y: 0,
+    zoom: 1,
+  },
+};

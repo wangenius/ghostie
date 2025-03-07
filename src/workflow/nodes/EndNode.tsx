@@ -1,16 +1,15 @@
+import JsonViewer from "@/components/custom/JsonViewer";
 import { motion } from "framer-motion";
+import { memo, useMemo } from "react";
 import { TbCircleX } from "react-icons/tb";
 import { NodeProps } from "reactflow";
+import { Workflow } from "../execute/Workflow";
 import { EndNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
-import JsonViewer from "@/components/custom/JsonViewer";
-import { Workflow } from "../execute/Workflow";
-import { memo, useMemo } from "react";
 
 const EndNodeComponent = (props: NodeProps<EndNodeConfig>) => {
   const workflow = Workflow.instance;
-  const workflowState = workflow.use();
-  const nodeState = workflowState.nodeStates[props.id];
+  const nodeState = workflow.state.use((selector) => selector[props.id]);
 
   const renderOutputs = useMemo(() => {
     if (nodeState?.status === "completed") {
@@ -46,9 +45,6 @@ const EndNodeComponent = (props: NodeProps<EndNodeConfig>) => {
     }
     return null;
   }, [nodeState?.status, nodeState?.error]);
-  if (!nodeState) {
-    return null;
-  }
 
   return (
     <NodePortal {...props} left={1} right={0} variant="end" title="结束">

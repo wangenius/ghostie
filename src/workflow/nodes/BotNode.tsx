@@ -4,59 +4,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
+import { useFlow } from "../context/FlowContext";
 import { BotNodeConfig } from "../types/nodes";
-import { Workflow } from "../execute/Workflow";
 import { NodePortal } from "./NodePortal";
-
 const BotNodeComponent = (props: NodeProps<BotNodeConfig>) => {
   const bots = BotManager.use();
   const [prompt, setPrompt] = useState(props.data.prompt);
-  const workflow = Workflow.instance;
+  const { updateNodeData } = useFlow();
 
   const handleBotChange = useCallback(
     (value: string) => {
-      workflow.set((state) => ({
-        ...state,
-        data: {
-          ...state.data,
-          nodes: {
-            ...state.data.nodes,
-            [props.id]: {
-              ...state.data.nodes[props.id],
-              data: {
-                ...state.data.nodes[props.id].data,
-                bot: value,
-              },
-            },
-          },
-        },
-      }));
+      updateNodeData<BotNodeConfig>(props.id, { bot: value });
     },
-    [workflow, props.id],
+    [updateNodeData, props.id],
   );
 
   const handlePromptChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const newValue = e.target.value;
-      setPrompt(newValue);
-      workflow.set((s) => ({
-        ...s,
-        data: {
-          ...s.data,
-          nodes: {
-            ...s.data.nodes,
-            [props.id]: {
-              ...s.data.nodes[props.id],
-              data: {
-                ...s.data.nodes[props.id].data,
-                prompt: newValue,
-              },
-            },
-          },
-        },
-      }));
+      setPrompt(e.target.value);
+      updateNodeData<BotNodeConfig>(props.id, { prompt: e.target.value });
     },
-    [workflow, props.id],
+    [updateNodeData, props.id],
   );
 
   return (
