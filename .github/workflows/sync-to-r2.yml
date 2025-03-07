@@ -60,6 +60,7 @@ jobs:
           aws configure set aws_access_key_id ${{ env.R2_ACCESS_KEY_ID }}
           aws configure set aws_secret_access_key ${{ env.R2_SECRET_ACCESS_KEY }}
           aws configure set default.region auto
+          aws configure set s3.endpoint-url https://releases.wangenius.com
 
       - name: Download and upload release asset
         run: |
@@ -75,5 +76,4 @@ jobs:
           curl -L -H "Accept: application/octet-stream" -o "downloads/$NAME" "$URL"
 
           echo "Uploading $NAME to R2..."
-          aws s3 cp "downloads/$NAME" "s3://product/ghostie.exe" \
-            --endpoint-url https://releases.wangenius.com
+          aws s3 cp "downloads/$NAME" "s3://product/ghostie.exe"
