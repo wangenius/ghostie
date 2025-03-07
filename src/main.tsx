@@ -5,7 +5,6 @@ import App from "./App";
 import { WorkflowManager } from "./workflow/WorkflowManager";
 import { SchedulerManager } from "./workflow/scheduler/SchedulerManager";
 
-/* 渲染 */
 const element = document.getElementById("root") as HTMLElement;
 createRoot(element).render(<App />);
 // 初始化工作流和调度器
