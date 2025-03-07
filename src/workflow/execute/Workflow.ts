@@ -48,7 +48,14 @@ export class Workflow {
 
   /** 初始化工作流 */
   constructor() {
-    this.executor = new WorkflowExecutor(INITIAL_WORKFLOW);
+    this.executor = new WorkflowExecutor(INITIAL_WORKFLOW, (edgeId) => {
+      this.store.set((state) => ({
+        ...state,
+        edges: Object.fromEntries(
+          Object.entries(state.edges).filter(([id]) => id !== edgeId),
+        ),
+      }));
+    });
   }
 
   /** 初始化工作流 */
@@ -62,7 +69,14 @@ export class Workflow {
     this.store.set(workflow, { replace: true });
 
     // 重新创建执行器实例，使用最新的工作流数据
-    this.executor = new WorkflowExecutor(this.store.current);
+    this.executor = new WorkflowExecutor(this.store.current, (edgeId) => {
+      this.store.set((state) => ({
+        ...state,
+        edges: Object.fromEntries(
+          Object.entries(state.edges).filter(([id]) => id !== edgeId),
+        ),
+      }));
+    });
     return this;
   }
 

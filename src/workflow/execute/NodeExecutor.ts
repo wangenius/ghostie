@@ -140,13 +140,13 @@ export class NodeExecutor {
     console.error("创建错误返回对象", error);
     this.updateNodeState({
       status: "failed",
-      error: error instanceof Error ? error.message : String(error),
+      error: error instanceof Error ? error.message : JSON.stringify(error),
       endTime: new Date().toISOString(),
     });
     return {
       success: false,
       data: null,
-      error: error instanceof Error ? error.message : String(error),
+      error: error instanceof Error ? error.message : JSON.stringify(error),
     };
   }
 }

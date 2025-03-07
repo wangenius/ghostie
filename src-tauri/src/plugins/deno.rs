@@ -272,8 +272,9 @@ impl DenoRuntime {
             ));
         }
 
-        // 临时文件
-        let temp_file = PLUGINS_DIR.join("temp.ts");
+        // 使用随机生成的文件名
+        let temp_filename = format!("temp_{}.ts", generate_id());
+        let temp_file = PLUGINS_DIR.join(&temp_filename);
         fs::write(&temp_file, script)?;
         // cmd
         let mut cmd = Command::new("deno");
@@ -284,7 +285,9 @@ impl DenoRuntime {
         }
 
         let output = cmd.output()?;
-        fs::remove_file(temp_file)?;
+
+        // 确保在获取输出后删除临时文件
+        let _ = fs::remove_file(&temp_file);
 
         if output.status.success() {
             Ok(String::from_utf8_lossy(&output.stdout).to_string())

@@ -12,9 +12,14 @@ export class WorkflowExecutor {
   private graph: Map<string, Set<string>> = new Map();
   private inDegree: Map<string, number> = new Map();
   private predecessors: Map<string, Set<string>> = new Map();
+  private onDeleteEdge?: (edgeId: string) => void;
 
-  constructor(workflowData: WorkflowProps) {
+  constructor(
+    workflowData: WorkflowProps,
+    onDeleteEdge?: (edgeId: string) => void,
+  ) {
     this.workflowData = workflowData;
+    this.onDeleteEdge = onDeleteEdge;
     this.buildGraph();
     const nodeStates = this.initializeNodeStates();
     this.store.set(nodeStates);
@@ -31,7 +36,14 @@ export class WorkflowExecutor {
     });
 
     // 建立连接关系
-    Object.values(edges).forEach((edge) => {
+    Object.entries(edges).forEach(([edgeId, edge]) => {
+      // 检查边的两端节点是否都存在
+      if (!nodes[edge.source] || !nodes[edge.target]) {
+        // 如果有一端节点不存在，调用删除边的回调
+        this.onDeleteEdge?.(edgeId);
+        return;
+      }
+
       this.graph.get(edge.source)?.add(edge.target);
       this.inDegree.set(edge.target, (this.inDegree.get(edge.target) || 0) + 1);
       this.predecessors.get(edge.target)?.add(edge.source);

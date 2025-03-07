@@ -52,6 +52,8 @@ export const WorkflowInfo = memo(
       (selector) => selector[workflowData?.id],
     );
 
+    console.log(workflowData);
+
     // 处理名称变更
     const handleNameChange = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
