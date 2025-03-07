@@ -13,7 +13,7 @@ hero:
       link: /tutorials/start
     - theme: alt
       text: 下载
-      link: https://releases.wangenius.com/product/ghostie.exe
+      link: https://releases.wangenius.com/ghostie.exe
 features:
   - icon: 🚀
     title: 便捷易用
