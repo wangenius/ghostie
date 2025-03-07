@@ -59,7 +59,8 @@
     ],
     "publisher": "wangenius",
     "icon": [
-      "icons/icon.png"
+      "icons/icon.png",
+      "icons/icon.ico"
     ]
   },
   "plugins": {
