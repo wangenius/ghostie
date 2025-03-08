@@ -32,7 +32,7 @@ const IteratorNodeComponent = (props: NodeProps<IteratorNodeConfig>) => {
         placeholder="迭代对象"
       />
       <DrawerSelector
-        panelTitle="选择迭代对象"
+        panelTitle="选择迭代工作流"
         value={[props.data.action]}
         items={Object.values(workflows)
           .map((workflow) => {

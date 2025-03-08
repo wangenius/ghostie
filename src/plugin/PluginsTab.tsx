@@ -4,6 +4,8 @@ import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
 import { Button } from "@/components/ui/button";
 import { tags as t } from "@lezer/highlight";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 import {
   DropdownMenu,
@@ -18,6 +20,8 @@ import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 import {
   TbBook,
   TbDatabaseCog,
+  TbMaximize,
+  TbMinimize,
   TbPlug,
   TbPlus,
   TbTestPipe,
@@ -57,6 +61,7 @@ export function PluginsTab() {
   const [isTestDrawerOpen, setIsTestDrawerOpen] = useState(false);
   /* 测试结果 */
   const [result, setResult] = useState<any>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // 处理测试工具变化
   const handleTestToolChange = (value: string) => {
@@ -210,6 +215,10 @@ export function PluginsTab() {
     setContent("");
   };
 
+  const handleToggleFullscreen = useCallback(() => {
+    setIsFullscreen(!isFullscreen);
+  }, [isFullscreen]);
+
   return (
     <PreferenceLayout>
       <PreferenceList
@@ -266,110 +275,141 @@ export function PluginsTab() {
         emptyText="暂无插件，点击上方按钮添加新的插件"
         EmptyIcon={TbPlus}
       />
-      <PreferenceBody
-        emptyText="请选择一个插件或点击添加按钮创建新插件"
-        EmptyIcon={TbPlug}
-        isEmpty={!selectedPlugin && !content}
-        className="rounded-xl"
-        header={
-          <>
-            <h3 className="text-2xl font-semibold">
-              {selectedPlugin?.name || "未命名插件"}
-            </h3>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => {
-                  cmd.invoke("open_url", {
-                    url: "https://ghostie.wangenius.com/tutorials/plugin",
-                  });
-                }}
-                variant="ghost"
-              >
-                <TbBook className="w-4 h-4" />
-                开发文档
-              </Button>
-              <Button
-                onClick={() => setIsTestDrawerOpen(true)}
-                variant="ghost"
-                className="gap-2"
-              >
-                <TbTestPipe className="w-4 h-4" />
-                测试
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleUpdate}
-                disabled={!content || isSubmitting}
-              >
-                <TbUpload className="w-4 h-4" />
-                {isSubmitting
-                  ? selectedPlugin
-                    ? "更新中..."
-                    : "创建中..."
-                  : selectedPlugin
-                  ? "更新"
-                  : "创建"}
-              </Button>
-            </div>
-          </>
-        }
+      <motion.div
+        layout
+        className={cn("flex flex-1 flex-col h-full overflow-hidden", {
+          "fixed inset-0 top-12 z-50 bg-background h-auto": isFullscreen,
+        })}
+        initial={false}
+        animate={{
+          scale: isFullscreen ? 1 : 1,
+          opacity: 1,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 30,
+        }}
       >
-        <CodeMirror
-          className="h-full overflow-y-auto"
-          value={content}
-          theme={githubDarkInit({
-            settings: {
-              fontSize: 16,
-              background: "#292d3e",
-            },
-            styles: [
-              {
-                tag: t.keyword,
-                color: "#bd66d8",
-              },
-              {
-                tag: t.variableName,
-                color: "#8aa9f9",
-              },
-              {
-                tag: t.string,
-                color: "#ffffbbbb",
-              },
-              {
-                tag: t.number,
-                color: "#ae81ff",
-              },
-
-              {
-                tag: t.comment,
-                color: "#ffffff88",
-              },
-
-              {
-                tag: t.className,
-                color: "#66d9ef",
-              },
-            ],
+        <PreferenceBody
+          emptyText="请选择一个插件或点击添加按钮创建新插件"
+          EmptyIcon={TbPlug}
+          isEmpty={!selectedPlugin && !content}
+          className={cn("rounded-xl flex-1", {
+            "mb-4": isFullscreen,
           })}
-          extensions={[javascript({ typescript: true })]}
-          onChange={setContent}
-          placeholder={`编写你的插件代码, 参考开发文档`}
-          basicSetup={{
-            lineNumbers: false,
-            highlightActiveLineGutter: true,
-            highlightSpecialChars: true,
-            foldGutter: false,
-            drawSelection: true,
-            dropCursor: true,
-            allowMultipleSelections: true,
-            indentOnInput: true,
-            syntaxHighlighting: true,
-            autocompletion: true,
-            lintKeymap: true,
-          }}
-        />
-      </PreferenceBody>
-
+          header={
+            <div className="flex items-center justify-between w-full">
+              <h3 className="text-2xl font-semibold">
+                {selectedPlugin?.name || "未命名插件"}
+              </h3>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => {
+                    cmd.invoke("open_url", {
+                      url: "https://ghostie.wangenius.com/tutorials/plugin",
+                    });
+                  }}
+                  variant="ghost"
+                >
+                  <TbBook className="w-4 h-4" />
+                  开发文档
+                </Button>
+                <Button onClick={handleToggleFullscreen} variant="ghost">
+                  {isFullscreen ? (
+                    <>
+                      <TbMinimize className="w-4 h-4" />
+                      退出全屏
+                    </>
+                  ) : (
+                    <>
+                      <TbMaximize className="w-4 h-4" />
+                      全屏
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => setIsTestDrawerOpen(true)}
+                  variant="ghost"
+                  className="gap-2"
+                >
+                  <TbTestPipe className="w-4 h-4" />
+                  测试
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleUpdate}
+                  disabled={!content || isSubmitting}
+                >
+                  <TbUpload className="w-4 h-4" />
+                  {isSubmitting
+                    ? selectedPlugin
+                      ? "更新中..."
+                      : "创建中..."
+                    : selectedPlugin
+                    ? "更新"
+                    : "创建"}
+                </Button>
+              </div>
+            </div>
+          }
+        >
+          <CodeMirror
+            className={cn("h-full overflow-y-auto", {
+              "h-auto": isFullscreen,
+            })}
+            value={content}
+            theme={githubDarkInit({
+              settings: {
+                fontSize: 16,
+                background: "#292d3e",
+              },
+              styles: [
+                {
+                  tag: t.keyword,
+                  color: "#bd66d8",
+                },
+                {
+                  tag: t.variableName,
+                  color: "#8aa9f9",
+                },
+                {
+                  tag: t.string,
+                  color: "#ffffbbbb",
+                },
+                {
+                  tag: t.number,
+                  color: "#ae81ff",
+                },
+                {
+                  tag: t.comment,
+                  color: "#ffffff88",
+                },
+                {
+                  tag: t.className,
+                  color: "#66d9ef",
+                },
+              ],
+            })}
+            extensions={[javascript({ typescript: true })]}
+            onChange={setContent}
+            placeholder={`编写你的插件代码, 参考开发文档`}
+            basicSetup={{
+              lineNumbers: false,
+              highlightActiveLineGutter: true,
+              highlightSpecialChars: true,
+              foldGutter: false,
+              drawSelection: true,
+              dropCursor: true,
+              allowMultipleSelections: true,
+              indentOnInput: true,
+              syntaxHighlighting: true,
+              autocompletion: true,
+              lintKeymap: true,
+            }}
+          />
+        </PreferenceBody>
+      </motion.div>
       <TestDrawer
         open={isTestDrawerOpen}
         onOpenChange={setIsTestDrawerOpen}
