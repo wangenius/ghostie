@@ -268,7 +268,6 @@ const WorkflowGraph = memo(() => {
         selectionMode={SelectionMode.Partial}
         onMoveEnd={onMoveEnd}
         className="w-full h-full bg-background"
-        fitView
         elementsSelectable
         deleteKeyCode={["Backspace", "Delete"]}
         multiSelectionKeyCode={["Control", "Meta"]}

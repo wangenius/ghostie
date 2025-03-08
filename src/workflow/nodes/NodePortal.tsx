@@ -11,11 +11,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import React, { memo, useCallback, useEffect, useMemo } from "react";
 import {
   TbCheck,
   TbCircleDashed,
-  TbCircleDottedLetterI,
   TbDots,
   TbLoader2,
   TbNumber,
@@ -28,7 +28,6 @@ import CustomHandle from "../components/CustomHandle";
 import { useFlow } from "../context/FlowContext";
 import { Workflow } from "../execute/Workflow";
 import { NODE_TYPES, NodeType } from "../types/nodes";
-import { motion } from "framer-motion";
 
 type NodeVariant = NodeType;
 

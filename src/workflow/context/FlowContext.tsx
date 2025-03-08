@@ -94,6 +94,7 @@ export const FlowProvider = ({ children }: { children: React.ReactNode }) => {
 
   const onMoveEnd = useCallback(
     (_: any, viewport: Viewport) => {
+      console.log("onMoveEnd", viewport);
       workflow.set((state) => ({
         ...state,
         viewport: {

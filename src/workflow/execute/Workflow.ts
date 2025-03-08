@@ -32,6 +32,8 @@ export class Workflow {
     return this.store.current.id;
   }
 
+  current = this.store.current;
+
   /* 全局工作流实例,用来在编辑器中使用 */
   static instance = new Workflow();
 
