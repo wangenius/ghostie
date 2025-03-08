@@ -7,8 +7,8 @@ import {
   useState,
   ReactNode,
   ChangeEventHandler,
-} from 'react';
-import { cn } from '@/lib/utils';
+} from "react";
+import { cn } from "@/lib/utils";
 
 export interface CustomTextAreaRef {
   focus: () => void;
@@ -18,10 +18,10 @@ export interface CustomTextAreaRef {
 
 export type TextAreaProps = Omit<
   TextareaHTMLAttributes<HTMLTextAreaElement>,
-  'onChange' | 'onValueChange'
+  "onChange" | "onValueChange"
 > & {
   onChange?: ChangeEventHandler<HTMLTextAreaElement> | undefined;
-  variant?: 'secondary' | 'ghost' | 'dust';
+  variant?: "secondary" | "ghost" | "dust";
   footer?: ReactNode;
 };
 
@@ -41,7 +41,7 @@ export const Textarea = forwardRef<CustomTextAreaRef, TextAreaProps>(
       ...rest
     } = props;
 
-    const [internalValue, setInternalValue] = useState(defaultValue || '');
+    const [internalValue, setInternalValue] = useState(defaultValue || "");
 
     const isControlled = controlledValue !== undefined;
     const value = isControlled ? controlledValue : internalValue;
@@ -82,7 +82,7 @@ export const Textarea = forwardRef<CustomTextAreaRef, TextAreaProps>(
         blur: () => internalRef.current?.blur(),
         dom: internalRef.current,
       }),
-      []
+      [],
     );
 
     return (
@@ -90,21 +90,21 @@ export const Textarea = forwardRef<CustomTextAreaRef, TextAreaProps>(
         <textarea
           ref={internalRef}
           value={value}
-          onChange={e => {
+          onChange={(e) => {
             if (!isControlled) {
               setInternalValue(e.target.value);
             }
             onChange?.(e);
           }}
           className={cn(
-            'flex w-full rounded-md px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none bg-muted disabled:cursor-not-allowed disabled:opacity-50',
-            rest.variant === 'secondary' &&
-            'bg-muted outline-none focus-visible:outline-none border-none focus-visible:ring-0',
-            rest.variant === 'ghost' &&
-            'p-1 m-0 text-base border-none outline-none focus:outline-none h-auto block focus:border-none bg-transparent hover:bg-transparent active:bg-transparent focus-visible:ring-offset-0 focus:bg-transparent focus-visible:outline-none focus-visible:ring-0',
-            rest.variant === 'dust' &&
-            'p-1 m-0 text-base border-none outline-none focus:outline-none h-auto block focus:border-none bg-foreground/5 hover:bg-foreground/10 active:bg-foreground/10 focus-visible:ring-offset-0 focus:bg-foreground/10 focus-visible:outline-none focus-visible:ring-0',
-            className
+            "flex w-full rounded-md px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none bg-muted disabled:cursor-not-allowed disabled:opacity-50",
+            rest.variant === "secondary" &&
+              "bg-muted outline-none focus-visible:outline-none border-none focus-visible:ring-0",
+            rest.variant === "ghost" &&
+              "p-1 m-0 text-base border-none outline-none focus:outline-none h-auto block focus:border-none bg-transparent hover:bg-transparent active:bg-transparent focus-visible:ring-offset-0 focus:bg-transparent focus-visible:outline-none focus-visible:ring-0",
+            rest.variant === "dust" &&
+              "p-1 m-0 text-base border-none outline-none focus:outline-none h-auto block focus:border-none bg-foreground/5 hover:bg-foreground/10 active:bg-foreground/10 focus-visible:ring-offset-0 focus:bg-foreground/10 focus-visible:outline-none focus-visible:ring-0",
+            className,
           )}
           style={{
             ...style,
@@ -122,7 +122,7 @@ export const Textarea = forwardRef<CustomTextAreaRef, TextAreaProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
-Textarea.displayName = 'TextArea';
+Textarea.displayName = "TextArea";

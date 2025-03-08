@@ -1,7 +1,7 @@
 import { ToolParameters } from "@/common/types/plugin";
+import { SwitchNode } from "@/workflow/nodes/SwitchNode";
 import { CustomEdge } from "@workflow/components/CustomEdge";
 import { BotNode } from "@workflow/nodes/BotNode";
-import { BranchNode } from "@workflow/nodes/BranchNode";
 import { ChatNode } from "@workflow/nodes/ChatNode";
 import { CodeNode } from "@workflow/nodes/CodeNode";
 import { EndNode } from "@workflow/nodes/EndNode";
@@ -12,7 +12,6 @@ import { PluginNode } from "@workflow/nodes/PluginNode";
 import { StartNode } from "@workflow/nodes/StartNode";
 import {
   TbArrowIteration,
-  TbArrowsSplit,
   TbBellRinging2,
   TbCode,
   TbFlag,
@@ -20,6 +19,7 @@ import {
   TbMessage,
   TbPlayerPlay,
   TbPlug,
+  TbSwitch,
   TbWallpaper,
 } from "react-icons/tb";
 import { MarkerType, Node } from "reactflow";
@@ -37,7 +37,7 @@ export const nodeTypes = {
   /* 插件节点，用于执行插件任务 */
   plugin: PluginNode,
   /* 分支节点，用于根据条件执行不同的任务 */
-  branch: BranchNode,
+  switch: SwitchNode,
   /* 面板节点，用于显示面板 */
   panel: PanelNode,
   /* 迭代器节点，用于迭代执行任务 */
@@ -82,9 +82,9 @@ export const NODE_TYPES: Record<
     icon: TbPlug,
     variant: "bg-amber-50 border-amber-200",
   },
-  branch: {
-    label: "分支",
-    icon: TbArrowsSplit,
+  switch: {
+    label: "开关",
+    icon: TbSwitch,
     variant: "bg-orange-50 border-orange-200",
     preview: true,
   },
@@ -267,12 +267,11 @@ export interface PluginNodeConfig extends BaseNodeConfig {
   args?: Record<string, any>;
 }
 
-export interface BranchNodeConfig extends BaseNodeConfig {
-  type: "branch";
-  conditions: Array<{
-    expression: string;
-    label: string;
-  }>;
+export interface SwitchNodeConfig extends BaseNodeConfig {
+  /* 开关节点类型 */
+  type: "switch";
+  /* 条件 */
+  condition: string;
 }
 
 export type NodeConfig =
@@ -281,7 +280,7 @@ export type NodeConfig =
   | ChatNodeConfig
   | BotNodeConfig
   | PluginNodeConfig
-  | BranchNodeConfig
+  | SwitchNodeConfig
   | CodeNodeConfig
   | IteratorNodeConfig
   | MessageNodeConfig;

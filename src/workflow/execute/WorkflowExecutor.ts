@@ -148,12 +148,9 @@ export class WorkflowExecutor {
             if (nodeState?.status === "skipped") {
               executed.add(nodeId);
               this.executedNode.set(new Set(executed));
-
               this.processNextNodes(nodeId, queue, executed);
               return;
             }
-
-            console.log("正在执行节点", node);
 
             try {
               const nodeInputs =
@@ -193,6 +190,8 @@ export class WorkflowExecutor {
 
       this.isExecuting.set({ bool: false });
 
+      console.log("工作流执行结果", this.store.current);
+
       return this.result;
     } catch (error) {
       console.error("工作流执行出错:", error);
@@ -214,18 +213,35 @@ export class WorkflowExecutor {
       const newDegree = this.inDegree.get(nextId)! - 1;
       this.inDegree.set(nextId, newDegree);
 
-      const allPredecessorsCompleted = Array.from(
-        this.predecessors.get(nextId) || [],
-      ).every((predId) => {
+      const predecessors = Array.from(this.predecessors.get(nextId) || []);
+
+      // 检查所有前置节点的状态
+      const allSkipped =
+        predecessors.length > 0 &&
+        predecessors.every(
+          (predId) => this.store.current[predId]?.status === "skipped",
+        );
+
+      // 检查是否所有前置节点都是 completed 或 skipped
+      const allCompletedOrSkipped = predecessors.every((predId) => {
         const status = this.store.current[predId]?.status;
         return status === "completed" || status === "skipped";
       });
 
-      if (
-        newDegree === 0 &&
-        allPredecessorsCompleted &&
-        !executed.has(nextId)
-      ) {
+      // 如果所有前置节点都是 skipped，当前节点也标记为 skipped
+      if (allSkipped) {
+        this.updateNodeState(nextId, {
+          status: "skipped",
+          outputs: {},
+        });
+        executed.add(nextId);
+        this.executedNode.set(new Set(executed));
+        // 继续处理下一个节点
+        this.processNextNodes(nextId, queue, executed);
+        return;
+      }
+
+      if (newDegree === 0 && allCompletedOrSkipped && !executed.has(nextId)) {
         queue.push(nextId);
       }
     });
@@ -239,7 +255,6 @@ export class WorkflowExecutor {
         inputs: {},
         outputs: {},
         status: "pending",
-        error: undefined,
         type: node.type,
       };
     });

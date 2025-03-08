@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 import React, { memo, useCallback, useEffect, useMemo } from "react";
 import {
   TbCheck,
+  TbCircleDashed,
+  TbCircleDottedLetterI,
   TbDots,
   TbLoader2,
   TbNumber,
@@ -137,18 +139,23 @@ const NodePortalComponent = ({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {state?.status === "running" && (
-            <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon">
               <TbLoader2 className="animate-spin rounded-full text-blue-500" />
-            </div>
+            </Button>
+          )}
+          {state?.status === "skipped" && (
+            <Button variant="ghost" size="icon">
+              <TbCircleDashed className="rounded-full text-muted-foreground" />
+            </Button>
           )}
           {state?.status === "completed" && (
             <Popover>
               <PopoverTrigger asChild>
-                <div className="flex items-center gap-1 cursor-pointer hover:opacity-80">
+                <Button variant="ghost" size="icon">
                   <TbCheck className="rounded-full text-green-500" />
-                </div>
+                </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80" align="end">
                 <div className="space-y-2">
@@ -165,9 +172,9 @@ const NodePortalComponent = ({
           {state?.status === "failed" && (
             <Popover>
               <PopoverTrigger asChild>
-                <div className="flex items-center gap-1 cursor-pointer hover:opacity-80">
+                <Button variant="ghost" size="icon">
                   <TbX className="rounded-full text-red-500" />
-                </div>
+                </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80" align="end">
                 <div className="space-y-2">
