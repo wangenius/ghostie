@@ -72,28 +72,26 @@ export const DragToolbar = ({
         className,
       )}
     >
-      {Object.entries(NODE_TYPES)
-        .filter(([type]) => type !== "start" && type !== "end")
-        .map(([type, content]) => (
-          <Button
-            key={type}
-            variant="ghost"
-            size="icon"
-            className={cn("h-8 w-8 relative", content.preview && "opacity-80")}
-            title={
-              content.preview ? `${content.label} (预览功能)` : content.label
-            }
-            draggable
-            onDragStart={(e) => onDragStart(e, type as NodeType)}
-          >
-            <content.icon className="h-4 w-4" />
-            {content.preview && (
-              <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full w-3 h-3 flex items-center justify-center">
-                <TbProgressBolt className="h-3 w-3 text-yellow-900" />
-              </div>
-            )}
-          </Button>
-        ))}
+      {Object.entries(NODE_TYPES).map(([type, content]) => (
+        <Button
+          key={type}
+          variant="ghost"
+          size="icon"
+          className={cn("h-8 w-8 relative", content.preview && "opacity-80")}
+          title={
+            content.preview ? `${content.label} (预览功能)` : content.label
+          }
+          draggable
+          onDragStart={(e) => onDragStart(e, type as NodeType)}
+        >
+          <content.icon className="h-4 w-4" />
+          {content.preview && (
+            <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full w-3 h-3 flex items-center justify-center">
+              <TbProgressBolt className="h-3 w-3 text-yellow-900" />
+            </div>
+          )}
+        </Button>
+      ))}
     </div>
   );
 };

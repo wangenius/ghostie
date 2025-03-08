@@ -217,8 +217,6 @@ ${this.context.generate_context_info()}
         },
       );
 
-      console.log(this.model.historyMessage.list);
-
       return this.model.historyMessage.list[
         this.model.historyMessage.list.length - 1
       ];

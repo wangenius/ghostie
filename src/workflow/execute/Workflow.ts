@@ -28,6 +28,10 @@ export class Workflow {
     return this.store.current.edges;
   }
 
+  id() {
+    return this.store.current.id;
+  }
+
   /* 全局工作流实例,用来在编辑器中使用 */
   static instance = new Workflow();
 
@@ -87,6 +91,7 @@ export class Workflow {
       this.executor.isExecuting.set({ bool: true });
       this.executor.reset(this.store.current);
       const result = await this.executor.execute(inputs);
+
       this.executor.isExecuting.set({ bool: false });
       return result;
     } catch (error) {

@@ -1,5 +1,4 @@
 import JsonViewer from "@/components/custom/JsonViewer";
-import { motion } from "framer-motion";
 import { memo, useMemo } from "react";
 import { TbCircleX } from "react-icons/tb";
 import { NodeProps } from "reactflow";
@@ -51,15 +50,8 @@ const PanelNodeComponent = (props: NodeProps<PanelNodeConfig>) => {
 
   return (
     <NodePortal {...props} left={1} right={1} variant="panel" title="展示面板">
-      <motion.div
-        className="flex flex-col gap-2"
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-      >
-        {renderOutputs}
-        {renderError}
-      </motion.div>
+      {renderOutputs}
+      {renderError}
     </NodePortal>
   );
 };
@@ -74,7 +66,6 @@ export class PanelNodeExecutor extends NodeExecutor {
         startTime: new Date().toISOString(),
         inputs,
       });
-      console.log("执行完成", inputs);
 
       this.updateNodeState({
         status: "completed",

@@ -26,6 +26,7 @@ import CustomHandle from "../components/CustomHandle";
 import { useFlow } from "../context/FlowContext";
 import { Workflow } from "../execute/Workflow";
 import { NODE_TYPES, NodeType } from "../types/nodes";
+import { motion } from "framer-motion";
 
 type NodeVariant = NodeType;
 
@@ -59,9 +60,7 @@ const NodePortalComponent = ({
 
   const state = workflowState[id];
 
-  useEffect(() => {
-    console.log(workflowState);
-  }, [workflowState]);
+  useEffect(() => {}, [workflowState]);
 
   const handleCopyParameter = useCallback((nodeId: string) => {
     navigator.clipboard.writeText(nodeId);
@@ -117,6 +116,7 @@ const NodePortalComponent = ({
       onDoubleClick={handleNodeDoubleClick}
       className={nodeClassName}
       onContextMenu={handleContextMenu}
+      key={workflow.id + id}
     >
       <div className="flex items-center justify-between h-8 px-1">
         <div className="text-sm font-bold flex-1 flex items-center gap-1">
@@ -154,7 +154,9 @@ const NodePortalComponent = ({
                 <div className="space-y-2">
                   <div className="text-sm font-medium">执行结果</div>
                   <div className="text-sm bg-green-50 border border-green-200 rounded p-2 max-h-[300px] overflow-y-auto">
-                    {JSON.stringify(state.outputs.result)}
+                    {typeof state.outputs.result === "object"
+                      ? JSON.stringify(state.outputs.result)
+                      : state.outputs.result || JSON.stringify(state.outputs)}
                   </div>
                 </div>
               </PopoverContent>
@@ -200,10 +202,15 @@ const NodePortalComponent = ({
         </div>
       </div>
 
-      {/* 内容区域 */}
-      <div className={cn("relative z-10 nopan nodrag cursor-default p-0")}>
+      <motion.div
+        className="relative z-10 nopan nodrag cursor-default flex flex-col gap-3 p-1"
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
         {children}
-      </div>
+      </motion.div>
+
       {/* 左侧连接点 */}
       {Array.from({ length: left || 0 }).map((_, index) => (
         <CustomHandle

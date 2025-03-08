@@ -13,16 +13,16 @@ order: 4
 
 ### 引用
 
-所有的接口引用都使用 <span v-pre>{{inputs.节点 ID}}</span> 来引用。在任何输入字符串的地方可采用这种方式来引用。（包括代码节点）
+所有的接口引用都使用 <span v-pre>{{inputs.节点 ID.result}}</span> 来引用。在任何输入字符串的地方可采用这种方式来引用。（包括代码节点）
 
 ```
-{{inputs.start.query.name}} - 引用start节点的query参数的name属性
+{{inputs.start.result.query.name}} - 引用start节点的result参数的query属性中的name属性
 {{inputs.XXXXX.result.data.name}} - 引用XXXXX节点的result参数的data属性中的name属性
 ```
 
 1. inputs 表示该引用来自输入端点
 2. 第二位表示连接 input 端口的某个节点的 ID
-3. 第三位以后表示该节点 outputs 中的 JSON 对象的嵌套属性名。
+3. 第三位表示该节点 outputs 中的 JSON 对象的嵌套属性名。 一般根为 result , 如果获取不到，可以通过 panel 节点来查看。
 
 ### 代码节点
 

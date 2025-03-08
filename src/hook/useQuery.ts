@@ -28,8 +28,6 @@ export function useQuery<T = string>(key: string): QueryState<T> {
     };
   }, [key]);
 
-  console.log(value);
-
   return {
     value,
     isLoading,

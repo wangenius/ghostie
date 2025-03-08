@@ -18,6 +18,7 @@ import {
   TbFlag,
   TbGhost3,
   TbMessage,
+  TbPlayerPlay,
   TbPlug,
   TbWallpaper,
 } from "react-icons/tb";
@@ -57,7 +58,7 @@ export const NODE_TYPES: Record<
 > = {
   start: {
     label: "开始",
-    icon: TbFlag,
+    icon: TbPlayerPlay,
     variant: "bg-slate-50 border-slate-200",
   },
   end: { label: "结束", icon: TbFlag, variant: "bg-red-50 border-red-200" },
@@ -117,11 +118,14 @@ export type WorkflowNode<
 > = Node<T, U> & {
   /* 节点名称 */
   name: string;
+  /* 节点类型 */
+  type: NodeType;
 };
 /* 节点状态 */
 export interface NodeState {
   inputs: Record<string, any>;
   outputs: Record<string, any>;
+  type: NodeType;
   status: "pending" | "running" | "completed" | "failed" | "skipped";
   error?: string;
   startTime?: string;
@@ -210,7 +214,8 @@ export interface StartNodeConfig extends BaseNodeConfig {
 
 export interface EndNodeConfig extends BaseNodeConfig {
   type: "end";
-  result?: string;
+  /* 结束节点内容 */
+  content?: string;
 }
 
 export interface MessageNodeConfig extends BaseNodeConfig {
@@ -245,6 +250,8 @@ export interface IteratorNodeConfig extends BaseNodeConfig {
   target: string;
   /* 最大迭代次数 */
   max: number;
+  /* 迭代对象类型 */
+  action: string;
 }
 
 export interface CodeNodeConfig extends BaseNodeConfig {
@@ -279,39 +286,14 @@ export type NodeConfig =
   | IteratorNodeConfig
   | MessageNodeConfig;
 
-/* 初始化节点 */
-const initialNodes: Record<string, WorkflowNode> = {
-  start: {
-    id: "start",
-    type: "start",
-    name: "开始",
-    data: {
-      type: "start",
-      name: "开始",
-    },
-    position: { x: 0, y: 0 },
-  },
-  end: {
-    id: "end",
-    type: "end",
-    name: "结束",
-    data: {
-      type: "end",
-      name: "结束",
-    },
-    position: { x: 850, y: 0 },
-  },
-};
-const initialEdges: Record<string, WorkflowEdge> = {};
-
 export const INITIAL_WORKFLOW: WorkflowProps = {
   id: "",
   name: "",
   description: "",
   createdAt: "",
   updatedAt: "",
-  nodes: initialNodes,
-  edges: initialEdges,
+  nodes: {},
+  edges: {},
   viewport: {
     x: 0,
     y: 0,

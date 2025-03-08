@@ -196,7 +196,6 @@ export function PluginsTab() {
       });
       setResult(result);
     } catch (error) {
-      console.log(error);
       cmd.message("请打开调试窗口查看错误信息", "测试失败", "warning");
     } finally {
       setIsSubmitting(false);

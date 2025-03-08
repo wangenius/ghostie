@@ -1,14 +1,13 @@
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Input } from "@/components/ui/input";
 import { PluginManager } from "@/plugin/PluginManager";
-import { motion } from "framer-motion";
-import { memo, useCallback, useMemo, useState, useEffect } from "react";
+import { cmd } from "@/utils/shell";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
-import { PluginNodeConfig, NodeState, WorkflowNode } from "../types/nodes";
-import { NodePortal } from "./NodePortal";
 import { NodeExecutor } from "../execute/NodeExecutor";
-import { cmd } from "@/utils/shell";
+import { NodeState, PluginNodeConfig, WorkflowNode } from "../types/nodes";
+import { NodePortal } from "./NodePortal";
 
 const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
   const plugins = PluginManager.use();
@@ -33,7 +32,7 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
   const handlePluginChange = useCallback(
     (value: string) => {
       const [plugin, tool] = value.split("::");
-      console.log(plugin, tool);
+
       updateNodeData<PluginNodeConfig>(props.id, {
         plugin,
         tool,
@@ -97,35 +96,28 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
 
   return (
     <NodePortal {...props} left={1} right={1} variant="plugin" title="插件">
-      <motion.div
-        className="flex flex-col gap-3 p-1"
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-      >
-        <DrawerSelector
-          panelTitle="选择插件"
-          value={[props.data.plugin + "::" + props.data.tool]}
-          items={Object.values(plugins)
-            .map((plugin) => {
-              return plugin.tools.map((tool) => ({
-                label: tool.name,
-                value: plugin.id + "::" + tool.name,
-                description: tool.description,
-                type: plugin.name,
-              }));
-            })
-            .flat()}
-          onSelect={(value) => handlePluginChange(value[0])}
-        />
+      <DrawerSelector
+        panelTitle="选择插件"
+        value={[props.data.plugin + "::" + props.data.tool]}
+        items={Object.values(plugins)
+          .map((plugin) => {
+            return plugin.tools.map((tool) => ({
+              label: tool.name,
+              value: plugin.id + "::" + tool.name,
+              description: tool.description,
+              type: plugin.name,
+            }));
+          })
+          .flat()}
+        onSelect={(value) => handlePluginChange(value[0])}
+      />
 
-        {plugins[props.data.plugin] && (
-          <div className="flex flex-col gap-2">
-            <div className="text-xs font-medium">参数设置</div>
-            {parameterItems}
-          </div>
-        )}
-      </motion.div>
+      {plugins[props.data.plugin] && (
+        <div className="flex flex-col gap-2">
+          <div className="text-xs font-medium">参数设置</div>
+          {parameterItems}
+        </div>
+      )}
     </NodePortal>
   );
 };

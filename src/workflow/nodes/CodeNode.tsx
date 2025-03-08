@@ -4,13 +4,12 @@ import { javascript } from "@codemirror/lang-javascript";
 import { tags as t } from "@lezer/highlight";
 import { githubDarkInit } from "@uiw/codemirror-theme-github";
 import CodeMirror from "@uiw/react-codemirror";
-import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
+import { NodeExecutor } from "../execute/NodeExecutor";
 import { CodeNodeConfig, NodeState, WorkflowNode } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
-import { NodeExecutor } from "../execute/NodeExecutor";
 
 const CodeNodeComponent = (props: NodeProps<CodeNodeConfig>) => {
   const [open, setOpen] = useState(false);
@@ -23,24 +22,17 @@ const CodeNodeComponent = (props: NodeProps<CodeNodeConfig>) => {
   );
   return (
     <NodePortal {...props} left={1} right={1} variant="code" title="代码">
-      <motion.div
-        className="flex flex-col gap-3 p-1"
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
+      <div className="flex-none bg-muted-foreground/10 p-3 rounded-lg">
+        <p className="text-xs text-muted-foreground">
+          与【插件】不同，代码节点运行不支持本地操作。代码节点用来执行数据处理操作，过滤，排序。
+        </p>
+      </div>
+      <Button
+        className="bg-muted-foreground/10 hover:bg-muted-foreground/20 h-8"
+        onClick={() => setOpen(true)}
       >
-        <div className="flex-none bg-muted-foreground/10 p-3 rounded-lg">
-          <p className="text-xs text-muted-foreground">
-            与【插件】不同，代码节点运行不支持本地操作。代码节点用来执行数据处理操作，过滤，排序。
-          </p>
-        </div>
-        <Button
-          className="bg-muted-foreground/10 hover:bg-muted-foreground/20 h-8"
-          onClick={() => setOpen(true)}
-        >
-          编辑代码
-        </Button>
-      </motion.div>
+        编辑代码
+      </Button>
 
       <Drawer
         open={open}

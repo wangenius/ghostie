@@ -93,24 +93,20 @@ class SchedulerManager {
 
       // 如果延迟小于0，说明已经错过了执行时间，立即执行
       if (delay <= 0) {
-        console.log(`任务[${id}]已错过执行时间，立即执行`);
         await this.executeWorkflow(id);
         // 执行完后，安排下一次执行
         this.scheduleNextRun(id, cronExpr);
         return;
       }
 
-      console.log(`任务[${id}]将在 ${nextRun.toLocaleString()} 执行`);
       const timer = setTimeout(async () => {
         // 再次检查任务是否还存在且启用
         const currentTask = this.store.current[id];
         if (!currentTask || !currentTask.enabled) {
-          console.log(`任务[${id}]已禁用或不存在，清除定时器`);
           this.clearTimers(id);
           return;
         }
 
-        console.log(`开始执行任务[${id}]`);
         await this.executeWorkflow(id);
         // 执行完后，安排下一次执行
         this.scheduleNextRun(id, cronExpr);
@@ -141,7 +137,6 @@ class SchedulerManager {
     // 检查任务是否还存在且启用
     const task = this.store.current[id];
     if (!task || !task.enabled) {
-      console.log(`任务[${id}]不存在或已禁用，清除定时器`);
       this.clearTimers(id);
       return;
     }
@@ -157,7 +152,6 @@ class SchedulerManager {
         },
       }));
 
-      console.log(`开始执行任务[${id}]`);
       const result = await WorkflowManager.executeWorkflow(id);
       console.log(
         `执行工作流[${id}]结果:时间：${new Date().toLocaleString()} ${JSON.stringify(
@@ -178,7 +172,6 @@ class SchedulerManager {
           error: undefined,
         },
       }));
-      console.log(`任务[${id}]执行成功`);
     } catch (error) {
       console.error(`执行任务[${id}]失败:`, error);
 
@@ -199,7 +192,6 @@ class SchedulerManager {
       // 检查工作流是否存在
       const workflow = WorkflowManager.get(id);
       if (!workflow) {
-        console.log(`工作流[${id}]不存在，无法设置定时任务`);
         return false;
       }
 
@@ -212,7 +204,6 @@ class SchedulerManager {
         .filter((expr) => expr !== "");
 
       if (schedules.length === 0) {
-        console.log(`工作流[${id}]没有有效的定时表达式`);
         return false;
       }
 
@@ -222,13 +213,11 @@ class SchedulerManager {
           CronExpressionParser.parse(expr);
           return true;
         } catch (error) {
-          console.log(`工作流[${id}]的定时表达式无效: ${expr}`);
           return false;
         }
       });
 
       if (validSchedules.length === 0) {
-        console.log(`工作流[${id}]没有有效的定时表达式`);
         return false;
       }
 
@@ -249,11 +238,9 @@ class SchedulerManager {
 
       // 为每个 cron 表达式创建定时器
       validSchedules.forEach((cronExpr) => {
-        console.log(`为工作流[${id}]设置定时任务: ${cronExpr}`);
         this.scheduleNextRun(id, cronExpr);
       });
 
-      console.log(`工作流[${id}]的定时任务设置成功`);
       return true;
     } catch (error) {
       console.error(`设置工作流[${id}]的定时任务失败:`, error);
@@ -268,7 +255,6 @@ class SchedulerManager {
       this.clearTimers(id);
       // 从存储中移除任务
       this.store.delete(id);
-      console.log(`已清理工作流[${id}]的定时任务`);
     }
   }
 
@@ -288,7 +274,6 @@ class SchedulerManager {
 
       // 获取所有任务
       const tasks = Object.entries(this.store.current);
-      console.log("开始初始化定时任务...");
 
       // 并行初始化定时任务
       await Promise.all(
@@ -296,20 +281,17 @@ class SchedulerManager {
           try {
             // 检查工作流是否存在
             const workflow = await WorkflowManager.get(id);
-            console.log(workflow);
+
             if (!workflow) {
-              console.log(`工作流[${id}]不存在，清理定时任务`);
               await this.unschedule(id);
               return;
             }
 
             if (!task.enabled) {
-              console.log(`工作流[${id}]的定时任务未启用，跳过初始化`);
               return;
             }
 
             if (!task.schedules || task.schedules.length === 0) {
-              console.log(`工作流[${id}]没有定时表达式，清理定时任务`);
               await this.unschedule(id);
               return;
             }
@@ -320,27 +302,23 @@ class SchedulerManager {
                 CronExpressionParser.parse(expr);
                 return true;
               } catch (error) {
-                console.log(`工作流[${id}]的定时表达式无效: ${expr}`);
                 return false;
               }
             });
 
             if (validSchedules.length === 0) {
-              console.log(`工作流[${id}]没有有效的定时表达式，清理定时任务`);
               await this.unschedule(id);
               return;
             }
 
             // 重新调度任务
             await this.schedule(id, validSchedules.join("\n"));
-            console.log(`工作流[${id}]的定时任务初始化成功`);
           } catch (error) {
             console.error(`初始化工作流[${id}]的定时任务失败:`, error);
             await this.unschedule(id);
           }
         }),
       );
-      console.log("定时任务初始化完成");
     } catch (error) {
       console.error("初始化定时任务失败:", error);
     }

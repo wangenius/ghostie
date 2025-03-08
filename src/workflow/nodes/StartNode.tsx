@@ -721,12 +721,12 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
       >
         <div
           onClick={() => setDrawerOpen(true)}
-          className="rounded-md p-1 transition-all duration-200 cursor-pointer"
+          className="rounded-md transition-all duration-200 cursor-pointer bg-muted-foreground/5 hover:bg-muted-foreground/10 text-xs p-2"
         >
           {editableParams.length === 0 ? (
-            <Button className="text-center text-sm text-gray-500 w-full">
+            <div className="text-center text-gray-500 w-full">
               无参数，点击设置添加
-            </Button>
+            </div>
           ) : (
             <div className="space-y-1">
               {editableParams.map((param) => (
@@ -781,7 +781,9 @@ export class StartNodeExecutor extends NodeExecutor {
 
       this.updateNodeState({
         status: "completed",
-        outputs: result.data,
+        outputs: {
+          result: result.data,
+        },
         endTime: new Date().toISOString(),
       });
 

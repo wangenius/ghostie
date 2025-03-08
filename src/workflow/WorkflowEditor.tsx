@@ -28,10 +28,11 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import { DragToolbar } from "./components/DragToolbar";
 import { FlowControls } from "./components/FlowControls";
+import { FlowProvider, useFlow } from "./context/FlowContext";
+import { ParamHistory } from "./execute/ParamHistory";
 import { Workflow } from "./execute/Workflow";
 import { SchedulerManager } from "./scheduler/SchedulerManager";
 import { edgeTypes, nodeTypes, StartNodeConfig } from "./types/nodes";
-import { FlowProvider, useFlow } from "./context/FlowContext";
 
 /* 工作流表单组件
  *
@@ -51,8 +52,6 @@ export const WorkflowInfo = memo(
     const scheduler = SchedulerManager.use(
       (selector) => selector[workflowData?.id],
     );
-
-    console.log(workflowData);
 
     // 处理名称变更
     const handleNameChange = useCallback(
@@ -304,6 +303,7 @@ const ParamInputDialog = ({
 }) => {
   const workflowState = workflow.use();
   const [paramValues, setParamValues] = useState<Record<string, any>>({});
+  const history = ParamHistory.use((state) => state[workflowState?.id] || []);
 
   // 处理参数值变更
   const handleParamValueChange = useCallback((path: string[], value: any) => {
@@ -323,9 +323,12 @@ const ParamInputDialog = ({
 
   // 处理参数确认
   const handleParamConfirm = useCallback(() => {
+    if (workflowState?.id) {
+      ParamHistory.addHistory(workflowState.id, paramValues);
+    }
     close();
     workflow.execute(paramValues);
-  }, [workflow, paramValues, close]);
+  }, [workflow, paramValues, close, workflowState?.id]);
 
   // 渲染单个参数输入项
   const renderParamInput = useCallback(
@@ -354,7 +357,7 @@ const ParamInputDialog = ({
                   subName,
                   subProp as ToolProperty,
                   currentPath,
-                  false, // 对象内部的必填项在 ToolParameters 中定义
+                  false,
                 ),
               )}
             </div>
@@ -363,9 +366,17 @@ const ParamInputDialog = ({
       }
 
       if (property.type === "array" && property.items) {
-        // TODO: 数组类型的处理可以在这里添加
         return null;
       }
+
+      // 获取该字段的历史值
+      const fieldHistory = history
+        .map((item) => ({
+          timestamp: item.timestamp,
+          value: currentPath.reduce((obj, key) => obj?.[key], item.values),
+        }))
+        .filter((item) => item.value !== undefined)
+        .slice(0, 3); // 只显示最近3条记录
 
       return (
         <div key={name} className="space-y-2">
@@ -386,15 +397,33 @@ const ParamInputDialog = ({
               )
             }
           />
+          {fieldHistory.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-1">
+              {fieldHistory.map((item) => (
+                <button
+                  key={item.timestamp}
+                  onClick={() =>
+                    handleParamValueChange(currentPath, item.value)
+                  }
+                  className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80 transition-colors"
+                  title={new Date(item.timestamp).toLocaleString()}
+                >
+                  {String(item.value)}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       );
     },
-    [paramValues, handleParamValueChange],
+    [paramValues, handleParamValueChange, history],
   );
 
   // 渲染所有参数输入
   const renderParamInputs = useCallback(() => {
-    const startNode = workflowState?.nodes["start"];
+    const startNode = Object.values(workflowState?.nodes || {}).find(
+      (node) => node.type === "start",
+    );
     if (!startNode) return null;
 
     const parameters = (startNode.data as StartNodeConfig).parameters;
@@ -412,12 +441,24 @@ const ParamInputDialog = ({
         })}
       </div>
     );
-  }, [workflowState?.nodes, renderParamInput]);
+  }, [workflowState?.nodes, renderParamInput, workflowState?.id]);
 
   return (
     <div className="space-y-4">
       {renderParamInputs()}
       <div className="flex justify-end gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs text-destructive"
+          onClick={() => {
+            if (workflowState?.id) {
+              ParamHistory.clearHistory(workflowState.id);
+            }
+          }}
+        >
+          清除历史记录
+        </Button>
         <Button variant="outline" onClick={close}>
           取消
         </Button>

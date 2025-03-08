@@ -1,6 +1,5 @@
 import { Textarea } from "@/components/ui/textarea";
 import { cmd } from "@/utils/shell";
-import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
@@ -25,22 +24,15 @@ const MessageNodeComponent = (props: NodeProps<MessageNodeConfig>) => {
 
   return (
     <NodePortal {...props} left={1} right={1} variant="message" title="消息">
-      <motion.div
-        className="flex flex-col gap-3 p-1"
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-      >
-        <div className="space-y-1.5">
-          <Textarea
-            variant="dust"
-            className="text-xs min-h-[80px] transition-colors resize-none p-2"
-            value={message}
-            onChange={handleSystemChange}
-            placeholder="输入消息内容..."
-          />
-        </div>
-      </motion.div>
+      <div className="space-y-1.5">
+        <Textarea
+          variant="dust"
+          className="text-xs min-h-[80px] transition-colors resize-none p-2"
+          value={message}
+          onChange={handleSystemChange}
+          placeholder="输入消息内容..."
+        />
+      </div>
     </NodePortal>
   );
 };

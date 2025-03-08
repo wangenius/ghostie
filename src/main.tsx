@@ -14,7 +14,6 @@ const initManagers = async () => {
     await WorkflowManager.init();
     // 初始化定时任务
     await SchedulerManager.initScheduledTasks();
-    console.log("工作流和调度器初始化完成");
   } catch (error) {
     console.error("初始化失败:", error);
   }

@@ -13,6 +13,11 @@ export class WorkflowExecutor {
   private inDegree: Map<string, number> = new Map();
   private predecessors: Map<string, Set<string>> = new Map();
   private onDeleteEdge?: (edgeId: string) => void;
+  private result: NodeResult = {
+    success: false,
+    data: null,
+    error: undefined,
+  };
 
   constructor(
     workflowData: WorkflowProps,
@@ -21,6 +26,11 @@ export class WorkflowExecutor {
     this.workflowData = workflowData;
     this.onDeleteEdge = onDeleteEdge;
     this.buildGraph();
+    this.result = {
+      success: false,
+      data: null,
+      error: undefined,
+    };
     const nodeStates = this.initializeNodeStates();
     this.store.set(nodeStates);
   }
@@ -58,6 +68,11 @@ export class WorkflowExecutor {
     this.buildGraph();
     const nodeStates = this.initializeNodeStates();
     this.store.set(nodeStates);
+    this.result = {
+      success: false,
+      data: null,
+      error: undefined,
+    };
   }
 
   get current() {
@@ -80,7 +95,7 @@ export class WorkflowExecutor {
   }
 
   private getNodeInputs(nodeId: string): Record<string, any> {
-    if (nodeId === "start") {
+    if (this.workflowData.nodes[nodeId]?.type === "start") {
       return this.workflowData.nodes[nodeId]?.data || {};
     }
 
@@ -104,13 +119,16 @@ export class WorkflowExecutor {
 
   public async execute(inputs?: Record<string, any>): Promise<NodeResult> {
     try {
-      if (!this.workflowData.nodes["start"]) {
+      const startNode = Object.values(this.workflowData.nodes).find(
+        (node) => node.type === "start",
+      );
+      if (!startNode) {
         throw new Error("工作流中缺少开始节点");
       }
 
       this.isExecuting.set({ bool: true });
 
-      const queue: string[] = ["start"];
+      const queue: string[] = [startNode.id];
       const executed = new Set<string>();
 
       while (queue.length > 0) {
@@ -126,6 +144,7 @@ export class WorkflowExecutor {
             }
 
             const nodeState = this.store.current[nodeId];
+
             if (nodeState?.status === "skipped") {
               executed.add(nodeId);
               this.executedNode.set(new Set(executed));
@@ -134,16 +153,24 @@ export class WorkflowExecutor {
               return;
             }
 
+            console.log("正在执行节点", node);
+
             try {
               const nodeInputs =
-                nodeId === "start" ? inputs || {} : this.getNodeInputs(nodeId);
+                node.type === "start"
+                  ? inputs || {}
+                  : this.getNodeInputs(nodeId);
+
               const executor = NodeExecutor.create(node, (update) => {
                 this.updateNodeState(node.id, update);
               });
 
               const result = await executor.execute(nodeInputs);
 
-              console.log("result", nodeId, result);
+              if (node.type === "end") {
+                this.result = result;
+                console.log("工作流执行结果", this.result);
+              }
 
               if (result.success) {
                 executed.add(nodeId);
@@ -164,13 +191,9 @@ export class WorkflowExecutor {
         );
       }
 
-      const endState = this.store.current["end"];
       this.isExecuting.set({ bool: false });
 
-      return {
-        success: true,
-        data: endState?.outputs || {},
-      };
+      return this.result;
     } catch (error) {
       console.error("工作流执行出错:", error);
       this.isExecuting.set({ bool: false });
@@ -190,17 +213,6 @@ export class WorkflowExecutor {
     this.graph.get(nodeId)?.forEach((nextId) => {
       const newDegree = this.inDegree.get(nextId)! - 1;
       this.inDegree.set(nextId, newDegree);
-
-      if (nextId === "end") {
-        const endNode = this.workflowData.nodes[nextId];
-        if (endNode) {
-          const executor = NodeExecutor.create(endNode, (update) =>
-            this.updateNodeState(endNode.id, update),
-          );
-          executor.execute(this.getNodeInputs(nextId));
-        }
-        return;
-      }
 
       const allPredecessorsCompleted = Array.from(
         this.predecessors.get(nextId) || [],
@@ -222,27 +234,23 @@ export class WorkflowExecutor {
   public initializeNodeStates(): Record<string, NodeState> {
     const nodeStates: Record<string, NodeState> = {};
 
-    Object.keys(this.workflowData.nodes).forEach((nodeId) => {
+    Object.entries(this.workflowData.nodes).forEach(([nodeId, node]) => {
       nodeStates[nodeId] = {
         inputs: {},
         outputs: {},
         status: "pending",
         error: undefined,
+        type: node.type,
       };
     });
 
-    // 特殊处理start节点
-    nodeStates["start"].status = "pending";
-
     // 检查是否应该被标记为skipped
-    Object.keys(this.workflowData.nodes).forEach((nodeId) => {
-      if (nodeId === "start") return;
-
+    Object.entries(this.workflowData.nodes).forEach(([nodeId, node]) => {
       const prevNodes = this.predecessors.get(nodeId) || new Set();
 
       if (
-        prevNodes.size === 0 ||
-        (nodeId !== "end" &&
+        node.type !== "start" && // 确保start节点不会被标记为skipped
+        (prevNodes.size === 0 ||
           Array.from(prevNodes).every(
             (prevId) => nodeStates[prevId]?.status === "skipped",
           ))
