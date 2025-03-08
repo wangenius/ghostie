@@ -31,8 +31,8 @@ export class ChatManager {
       ...state,
       updateInput: (input: string) => this.state.set({ currentInput: input }),
       setLoading: (loading: boolean) => this.state.set({ isLoading: loading }),
-      startChat: (bot: BotProps) => {
-        const newBot = new Bot(bot);
+      startChat: async (bot: BotProps) => {
+        const newBot = await Bot.get(bot.id);
         this.state.set({
           isActive: true,
           currentBot: newBot,

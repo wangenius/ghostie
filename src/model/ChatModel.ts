@@ -87,27 +87,29 @@ export class ChatModel {
     return this;
   }
 
-  public setWorkflows(workflows: string[]): this {
+  public async setWorkflows(workflows: string[]): Promise<this> {
     if (workflows.length) {
+      console.log(workflows);
       /* 获取工作流 */
-      WorkflowManager.current.then((flows) => {
-        workflows.forEach((workflow) => {
-          const flow = flows[workflow];
-          if (!flow) return;
-          if (!this.workflows) {
-            this.workflows = [];
-          }
-          /* 将工作流变成工具 */
-          this.workflows?.push({
-            type: "function",
-            function: {
-              name: `executeFlow_${flow.id}`,
-              description: flow.description,
-              parameters:
-                (flow.nodes["start"]?.data as StartNodeConfig).parameters ||
-                null,
-            },
-          });
+      const flows = await WorkflowManager.current;
+      workflows.forEach((workflow) => {
+        const flow = flows[workflow];
+        if (!flow) return;
+        if (!this.workflows) {
+          this.workflows = [];
+        }
+        const startNode = Object.values(flow.nodes).find(
+          (node) => node.type === "start",
+        );
+        if (!startNode) return;
+        /* 将工作流变成工具 */
+        this.workflows?.push({
+          type: "function",
+          function: {
+            name: `executeFlow_${flow.id}`,
+            description: flow.description,
+            parameters: (startNode.data as StartNodeConfig).parameters || null,
+          },
         });
       });
     }
@@ -326,6 +328,7 @@ export class ChatModel {
         requestBody.tools = [...(requestBody.tools || []), ...this.workflows];
       }
 
+      console.log(requestBody);
       // 监听流式响应事件
       const unlistenStream = await cmd.listen(
         `chat-stream-${this.currentRequestId}`,

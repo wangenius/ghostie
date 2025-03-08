@@ -1,4 +1,5 @@
 import { BotProps } from "@/common/types/bot";
+import { Message, MessageType } from "@/common/types/model";
 import { ToolProps } from "@/common/types/plugin";
 import { PluginManager } from "@/plugin/PluginManager";
 import { ChatModel } from "../model/ChatModel";
@@ -6,8 +7,6 @@ import { ModelManager } from "../model/ModelManager";
 import { SettingsManager } from "../settings/SettingsManager";
 import { BotManager } from "./BotManger";
 import { Context } from "./Context";
-import { Message } from "@/common/types/model";
-import { MessageType } from "@/common/types/model";
 
 /* 工具名称分隔符 */
 export const TOOL_NAME_SPLIT = "-";
@@ -48,7 +47,7 @@ export class Bot implements Omit<BotProps, "model"> {
   /* 机器人运行状态 */
   private isRunning: boolean = false;
   /* 机器人配置 */
-  constructor(config: BotProps = defaultBot) {
+  private constructor(config: BotProps = defaultBot) {
     /* 机器人ID */
     this.id = config.id;
     /* 机器人名称 */
@@ -77,24 +76,28 @@ export class Bot implements Omit<BotProps, "model"> {
         return config.tools.includes(tool.name);
       });
 
+    console.log(config.workflows);
+
     this.model = new ChatModel(model)
       .setBot(config.id)
       .setTemperature(config.temperature)
       .setTools(tools)
-      .setKnowledge(config.knowledges || [])
-      .setWorkflows(config.workflows || [])
-      .system(config.system);
+      .setKnowledge(config.knowledges || []);
+
     this.tools = config.tools || [];
     this.context = new Context();
   }
 
   /* 获取机器人 */
-  public static get(id: string) {
+  public static async get(id: string) {
     const bot = BotManager.get(id);
     if (!bot) {
       return new Bot();
     }
-    return new Bot(bot);
+    const instance = new Bot(bot);
+    instance.model.system(bot.system);
+    await instance.model.setWorkflows(bot.workflows || []);
+    return instance;
   }
 
   /* 机器人对话 */

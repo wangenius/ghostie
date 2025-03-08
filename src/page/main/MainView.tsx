@@ -122,7 +122,7 @@ export function MainView() {
           /* 记录使用历史 */
           BotManager.recordUsage(selectedBot.id);
           /* 开始聊天 */
-          const bot = startChat(selectedBot);
+          const bot = await startChat(selectedBot);
           /* 设置加载状态 */
           setLoading(true);
           try {

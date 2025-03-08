@@ -88,7 +88,7 @@ export class BotNodeExecutor extends NodeExecutor {
         inputs,
       );
 
-      const botResult = await new Bot(bot).chat(parsedPrompt);
+      const botResult = await (await Bot.get(bot.id)).chat(parsedPrompt);
       if (!botResult || !botResult.content) {
         throw new Error("机器人响应为空");
       }
