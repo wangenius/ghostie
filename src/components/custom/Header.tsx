@@ -12,7 +12,7 @@ export const Header = ({
   extra?: React.ReactNode;
 }) => {
   return (
-    <div className="flex select-none draggable justify-between items-center p-3">
+    <div className="flex select-none draggable justify-between items-center p-3 h-12">
       <span className="text-xs pl-2 text-muted-foreground">
         <img src="/icon.png" className="w-6 h-6" />
       </span>

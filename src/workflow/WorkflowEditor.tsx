@@ -156,7 +156,7 @@ export const WorkflowInfo = memo(
               ) : (
                 <span className="flex items-center gap-2">
                   <TbPlayerPlay className="w-4 h-4" />
-                  执行测试
+                  测试
                 </span>
               )}
             </Button>
@@ -479,7 +479,7 @@ export const WorkflowEditor = () => {
       <motion.div
         layout
         className={cn("flex flex-col h-full", {
-          "fixed inset-0 z-50 bg-background": isFullscreen,
+          "fixed inset-0 top-12 z-50 bg-background": isFullscreen,
           "relative w-full": !isFullscreen,
         })}
         initial={false}
