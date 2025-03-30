@@ -30,9 +30,9 @@ const BotNodeComponent = (props: NodeProps<BotNodeConfig>) => {
   );
 
   return (
-    <NodePortal {...props} left={1} right={1} variant="bot" title="机器人">
+    <NodePortal {...props} left={1} right={1} variant="bot" title="Bot">
       <DrawerSelector
-        panelTitle="选择机器人"
+        panelTitle="Select Bot"
         value={[props.data.bot]}
         items={Object.values(bots).map((bot) => {
           return {
@@ -50,7 +50,7 @@ const BotNodeComponent = (props: NodeProps<BotNodeConfig>) => {
         className="text-xs min-h-[80px] transition-colors resize-none p-2"
         value={prompt}
         onChange={handlePromptChange}
-        placeholder="输入内容..."
+        placeholder="Enter content..."
       />
     </NodePortal>
   );
@@ -75,12 +75,12 @@ export class BotNodeExecutor extends NodeExecutor {
 
       const botConfig = this.node.data as BotNodeConfig;
       if (!botConfig.bot) {
-        throw new Error("未配置机器人");
+        throw new Error("Bot not configured");
       }
 
       const bot = BotManager.get(botConfig.bot);
       if (!bot) {
-        throw new Error(`未找到机器人: ${botConfig.bot}`);
+        throw new Error(`Bot not found: ${botConfig.bot}`);
       }
 
       const parsedPrompt = this.parseTextFromInputs(
@@ -90,7 +90,7 @@ export class BotNodeExecutor extends NodeExecutor {
 
       const botResult = await (await Bot.get(bot.id)).chat(parsedPrompt);
       if (!botResult || !botResult.content) {
-        throw new Error("机器人响应为空");
+        throw new Error("Bot response is empty");
       }
 
       this.updateNodeState({

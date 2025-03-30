@@ -2,12 +2,10 @@ import { LogicalSize, Window } from "@tauri-apps/api/window";
 import { Echo } from "echo-state";
 import { Fragment, ReactNode } from "react";
 
-const PageStore = new Echo<{ page: string; data: Record<string, any> }>(
-  { page: "main", data: {} },
-  {
-    name: "page",
-  },
-);
+const PageStore = new Echo<{ page: string; data: Record<string, any> }>({
+  page: "main",
+  data: {},
+}).localStorage({ name: "page" });
 
 export const Page = ({
   name,

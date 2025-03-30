@@ -78,9 +78,7 @@ export const DragToolbar = ({
           variant="ghost"
           size="icon"
           className={cn("h-8 w-8 relative", content.preview && "opacity-80")}
-          title={
-            content.preview ? `${content.label} (预览功能)` : content.label
-          }
+          title={content.preview ? `${content.label} (Preview)` : content.label}
           draggable
           onDragStart={(e) => onDragStart(e, type as NodeType)}
         >

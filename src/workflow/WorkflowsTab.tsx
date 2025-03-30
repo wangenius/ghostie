@@ -45,14 +45,14 @@ export default function WorkflowsTab() {
             variant="outline"
           >
             <PiStorefrontDuotone className="w-4 h-4" />
-            工作流仓库
+            Workflows Market
           </Button>
         }
         right={
           <>
             <Button className="flex-1" onClick={handleCreateWorkflow}>
               <TbPlus className="w-4 h-4 mr-2" />
-              新建工作流
+              New Workflow
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -64,23 +64,21 @@ export default function WorkflowsTab() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => {}}>
                   <TbUpload className="w-4 h-4 mr-2" />
-                  <span>导入</span>
+                  <span>Import</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {}}>
                   <TbDownload className="w-4 h-4 mr-2" />
-                  <span>导出</span>
+                  <span>Export</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </>
         }
-        tips="工作流支持:
-            通过可视化编排的方式创建和管理自动化工作流。支持多种节点类型和条件分支。
-          "
+        tips="Workflows supported: Create and manage automated workflows through visual orchestration. Supports multiple node types and conditional branches."
         items={Object.entries(workflows).map(([id, workflow]) => ({
           id,
-          title: workflow.name || "未命名工作流",
-          description: workflow.description || "暂无描述",
+          title: workflow.name || "Unnamed Workflow",
+          description: workflow.description || "No description",
           onClick: () => handleWorkflowSelect(id),
           actived: selectedWorkflow === id,
           onRemove: () => {
@@ -94,7 +92,7 @@ export default function WorkflowsTab() {
 
       {/* 右侧编辑器区域 */}
       <PreferenceBody
-        emptyText="请选择一个工作流或点击新建按钮创建工作流"
+        emptyText="Please select a workflow or click the new button to create a workflow"
         EmptyIcon={TbShape3}
         isEmpty={!selectedWorkflow}
       >

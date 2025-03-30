@@ -22,11 +22,10 @@ interface Schedule {
 }
 
 class SchedulerManager {
-  private static store = new Echo<Record<Schedule["id"], Schedule>>(
-    {},
+  private static store = new Echo<Record<Schedule["id"], Schedule>>({}).indexed(
     {
+      database: "scheduler",
       name: "scheduler",
-      storage: "indexedDB",
     },
   );
 

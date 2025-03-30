@@ -99,7 +99,7 @@ export const WorkflowInfo = memo(
     // 处理执行测试
     const handleExecuteTest = useCallback(async () => {
       dialog({
-        title: "请输入参数",
+        title: "Please enter parameters",
         className: "w-[480px]",
         content: (close) => (
           <ParamInputDialog close={close} workflow={workflow} />
@@ -111,7 +111,7 @@ export const WorkflowInfo = memo(
       <div className="flex flex-col">
         <div className="flex items-center justify-between">
           <h3 className="text-2xl font-semibold truncate">
-            {workflowData?.name || "未命名工作流"}
+            {workflowData?.name || "Unnamed Workflow"}
           </h3>
 
           <div className="flex items-center gap-2">
@@ -119,18 +119,18 @@ export const WorkflowInfo = memo(
               {isFullscreen ? (
                 <>
                   <TbMinimize className="w-4 h-4" />
-                  退出全屏
+                  Exit Fullscreen
                 </>
               ) : (
                 <>
                   <TbMaximize className="w-4 h-4" />
-                  全屏
+                  Fullscreen
                 </>
               )}
             </Button>
             <Button onClick={() => setIsEditDrawerOpen(true)} variant="ghost">
               <TbPencil className="w-4 h-4" />
-              编辑
+              Edit
             </Button>
             <Button
               onClick={() => {
@@ -141,7 +141,7 @@ export const WorkflowInfo = memo(
               variant="ghost"
             >
               <TbBook className="w-4 h-4" />
-              开发文档
+              Documentation
             </Button>
             <Button
               onClick={handleExecuteTest}
@@ -151,12 +151,12 @@ export const WorkflowInfo = memo(
               {bool ? (
                 <span className="flex items-center gap-2">
                   <TbLoader2 className="w-4 h-4 animate-spin" />
-                  执行中...
+                  Executing...
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
                   <TbPlayerPlay className="w-4 h-4" />
-                  测试
+                  Test
                 </span>
               )}
             </Button>
@@ -175,7 +175,7 @@ export const WorkflowInfo = memo(
               variant="title"
               className="p-0 m-0 rounded-none "
               onChange={handleNameChange}
-              placeholder="输入工作流名称"
+              placeholder="Enter workflow name"
             />
           }
         >
@@ -188,14 +188,14 @@ export const WorkflowInfo = memo(
                       <Textarea
                         value={workflowData?.description}
                         onChange={handleDescriptionChange}
-                        placeholder="输入工作流描述"
+                        placeholder="Enter workflow description"
                         className="min-h-[100px] resize-none"
                       />
                     </div>
                     <div className="space-y-4 pt-4">
-                      <h4 className="font-bold">定时设置</h4>
+                      <h4 className="font-bold">Schedule Settings</h4>
                       <div className="flex items-center justify-between">
-                        <label className="text-sm">Cron表达式</label>
+                        <label className="text-sm">Cron Expression</label>
                         <Switch
                           checked={scheduler?.enabled}
                           onCheckedChange={handleScheduleEnabledChange}
@@ -456,12 +456,12 @@ const ParamInputDialog = ({
             }
           }}
         >
-          清除历史记录
+          Clear History
         </Button>
         <Button variant="outline" onClick={close}>
-          取消
+          Cancel
         </Button>
-        <Button onClick={handleParamConfirm}>确认</Button>
+        <Button onClick={handleParamConfirm}>Confirm</Button>
       </div>
     </div>
   );

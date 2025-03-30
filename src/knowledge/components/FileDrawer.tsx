@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { TbChevronRight, TbFileText } from "react-icons/tb";
-import type { KnowledgeFile } from "@/knowledge/KnowledgeStore";
+import type { KnowledgeFile } from "@/knowledge/Knowledge";
 
 interface FileDrawerProps {
   open: boolean;
@@ -24,7 +24,7 @@ export function FileDrawer({ open, onOpenChange, file }: FileDrawerProps) {
             <TbFileText className="w-4 h-4" />
             <span>{file?.file_type}</span>
             <Badge variant="outline" className="bg-background/50">
-              {file?.chunks.length} 个知识块
+              {file?.chunks.length} knowledge blocks
             </Badge>
           </div>
         </div>
@@ -52,12 +52,12 @@ export function FileDrawer({ open, onOpenChange, file }: FileDrawerProps) {
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               {chunk.metadata.paragraph_number && (
                                 <span className="bg-muted/50 px-2 py-0.5 rounded">
-                                  段落 #{chunk.metadata.paragraph_number}
+                                  Paragraph #{chunk.metadata.paragraph_number}
                                 </span>
                               )}
                               {chunk.metadata.source_page && (
                                 <span className="bg-muted/50 px-2 py-0.5 rounded">
-                                  页 {chunk.metadata.source_page}
+                                  Page {chunk.metadata.source_page}
                                 </span>
                               )}
                             </div>
@@ -75,9 +75,10 @@ export function FileDrawer({ open, onOpenChange, file }: FileDrawerProps) {
                 <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center">
                   <TbFileText className="w-8 h-8 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold">请选择文件</h3>
+                <h3 className="text-xl font-semibold">Please select a file</h3>
                 <p className="text-sm text-muted-foreground">
-                  从文件列表中选择一个文件以查看知识块列表
+                  Select a file from the file list to view the knowledge block
+                  list
                 </p>
               </div>
             </div>

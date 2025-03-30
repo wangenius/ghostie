@@ -17,11 +17,11 @@ const SwitchNodeComponent = (props: NodeProps<SwitchNodeConfig>) => {
     });
   };
   return (
-    <NodePortal {...props} left={1} right={1} variant="switch" title="开关">
+    <NodePortal {...props} left={1} right={1} variant="switch" title="Switch">
       <Textarea
         variant="dust"
         className="text-xs h-16 resize-none p-2"
-        placeholder="请输入条件"
+        placeholder="Enter condition"
         value={condition}
         onChange={handleConditionChange}
       />
@@ -42,7 +42,7 @@ export class SwitchNodeExecutor extends NodeExecutor {
 
       const switchConfig = this.node.data as SwitchNodeConfig;
       if (!switchConfig.condition) {
-        throw new Error("条件内容为空");
+        throw new Error("Condition content is empty");
       }
 
       const context = {

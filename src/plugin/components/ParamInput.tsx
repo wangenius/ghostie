@@ -68,7 +68,9 @@ export function ParamInput({
             onChange={(e) =>
               onChange(e.target.value.split(",").filter(Boolean))
             }
-            placeholder={property.description || "输入数组值，用逗号分隔"}
+            placeholder={
+              property.description || "Input array values, separated by commas"
+            }
           />
         </div>
       );
@@ -81,11 +83,11 @@ export function ParamInput({
             onValueChange={(v) => onChange(v === "true")}
           >
             <SelectTrigger>
-              <SelectValue placeholder="选择布尔值" />
+              <SelectValue placeholder="Select Boolean Value" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="true">是</SelectItem>
-              <SelectItem value="false">否</SelectItem>
+              <SelectItem value="true">Yes</SelectItem>
+              <SelectItem value="false">No</SelectItem>
             </SelectContent>
           </Select>
         </div>

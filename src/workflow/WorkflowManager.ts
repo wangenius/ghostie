@@ -9,11 +9,10 @@ export class WorkflowManager {
   /* 工作流持久化存储 */
   private static store = new Echo<Record<WorkflowProps["id"], WorkflowProps>>(
     {},
-    {
-      name: "workflows",
-      storage: "indexedDB",
-    },
-  );
+  ).indexed({
+    database: "workflows",
+    name: "workflows",
+  });
 
   /* 工作流状态使用 */
   static use = WorkflowManager.store.use.bind(WorkflowManager.store);

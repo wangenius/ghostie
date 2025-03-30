@@ -21,7 +21,13 @@ const IteratorNodeComponent = (props: NodeProps<IteratorNodeConfig>) => {
     updateNodeData(props.id, { action: value });
   };
   return (
-    <NodePortal {...props} left={1} right={1} variant="iterator" title="迭代器">
+    <NodePortal
+      {...props}
+      left={1}
+      right={1}
+      variant="iterator"
+      title="Iterator"
+    >
       <Input
         variant="dust"
         className="text-xs transition-colors resize-none p-2"
@@ -29,16 +35,16 @@ const IteratorNodeComponent = (props: NodeProps<IteratorNodeConfig>) => {
         onChange={(e) => {
           handleTargetChange(e.target.value);
         }}
-        placeholder="迭代对象"
+        placeholder="Iteration Object"
       />
       <DrawerSelector
-        panelTitle="选择迭代工作流"
+        panelTitle="Select Iteration Workflow"
         value={[props.data.action]}
         items={Object.values(workflows)
           .map((workflow) => {
             if (workflow.id !== id) {
               return {
-                label: workflow.name || "未命名",
+                label: workflow.name || "Unnamed",
                 value: workflow.id,
                 description: workflow.description,
               };
@@ -78,7 +84,7 @@ export class IteratorNodeExecutor extends NodeExecutor {
       return {
         success: false,
         data: {},
-        error: "迭代对象格式错误",
+        error: "Iteration object format error",
       };
     }
 
@@ -87,7 +93,7 @@ export class IteratorNodeExecutor extends NodeExecutor {
       return {
         success: false,
         data: {},
-        error: "迭代对象必须是数组或对象",
+        error: "Iteration object must be an array or object",
       };
     }
 
@@ -101,7 +107,7 @@ export class IteratorNodeExecutor extends NodeExecutor {
         return {
           success: false,
           data: {},
-          error: "迭代项必须是对象类型",
+          error: "Iteration item must be an object type",
         };
       }
       const result = await (

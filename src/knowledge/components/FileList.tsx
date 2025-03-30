@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { KnowledgeFile } from "@/knowledge/KnowledgeStore";
+import type { KnowledgeFile } from "@/knowledge/Knowledge";
 import { cn } from "@/lib/utils";
 import { TbFileText, TbSearch, TbTrash } from "react-icons/tb";
 
@@ -28,7 +28,7 @@ export function FileList({
           <TbSearch className="absolute left-5 top-2.5 h-4 text-muted-foreground" />
           <Input
             className="w-[280px] pl-9"
-            placeholder="输入关键词进行语义搜索..."
+            placeholder="Enter keywords for semantic search..."
             value={searchQuery}
             onChange={(e) => onSearchQueryChange(e.target.value)}
             onKeyDown={(e) => {
@@ -62,7 +62,7 @@ export function FileList({
                       {file.file_type}
                     </Badge>
                     <Badge variant="outline" className="bg-background/50">
-                      {file.chunks.length} 块
+                      {file.chunks.length} knowledge blocks
                     </Badge>
                   </div>
                 </div>

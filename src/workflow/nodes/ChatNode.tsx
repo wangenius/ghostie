@@ -42,9 +42,9 @@ const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
   );
 
   return (
-    <NodePortal {...props} left={1} right={1} variant="chat" title="对话">
+    <NodePortal {...props} left={1} right={1} variant="chat" title="Chat">
       <DrawerSelector
-        panelTitle="选择模型"
+        panelTitle="Select Model"
         value={[props.data.model]}
         items={Object.values(models).map((model) => {
           return {
@@ -57,25 +57,27 @@ const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
       />
 
       <div className="space-y-1.5">
-        <Label className="text-xs font-medium text-gray-600">系统提示词</Label>
+        <Label className="text-xs font-medium text-gray-600">
+          System Prompt
+        </Label>
         <Textarea
           variant="dust"
           className="text-xs min-h-[80px] transition-colors resize-none p-2"
           value={system}
           data-id={`${props.id}-system`}
           onChange={handleSystemChange}
-          placeholder="输入系统提示词，可以从其他节点复制输入参数..."
+          placeholder="Enter system prompt, you can copy input parameters from other nodes..."
         />
 
         <Label className="text-xs font-medium text-gray-600 mt-3">
-          用户提示词
+          User Prompt
         </Label>
         <Textarea
           variant="dust"
           className="text-xs min-h-[80px] transition-colors resize-none p-2"
           value={user}
           onChange={handleUserChange}
-          placeholder="输入用户提示词，可以从其他节点复制输入参数..."
+          placeholder="Enter user prompt, you can copy input parameters from other nodes..."
         />
       </div>
     </NodePortal>
@@ -94,7 +96,7 @@ export class ChatNodeExecutor extends NodeExecutor {
 
       const chatConfig = this.node.data as ChatNodeConfig;
       if (!chatConfig.model) {
-        throw new Error("未配置聊天模型");
+        throw new Error("Chat model not configured");
       }
 
       const parsedSystem = this.parseTextFromInputs(
@@ -108,7 +110,7 @@ export class ChatNodeExecutor extends NodeExecutor {
 
       const model = ModelManager.get(chatConfig.model);
       if (!model) {
-        throw new Error(`未找到模型: ${chatConfig.model}`);
+        throw new Error(`Model not found: ${chatConfig.model}`);
       }
 
       const res = await new ChatModel(model)
@@ -116,7 +118,7 @@ export class ChatNodeExecutor extends NodeExecutor {
         .stream(parsedUser);
 
       if (!res?.body) {
-        throw new Error("聊天响应为空");
+        throw new Error("Chat response is empty");
       }
 
       this.updateNodeState({

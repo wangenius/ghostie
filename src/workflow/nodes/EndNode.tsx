@@ -18,13 +18,13 @@ const EndNodeComponent = (props: NodeProps<EndNodeConfig>) => {
   };
 
   return (
-    <NodePortal {...props} left={1} right={0} variant="end" title="结束">
+    <NodePortal {...props} left={1} right={0} variant="end" title="End">
       <Textarea
         variant="dust"
         className="text-xs min-h-[80px] transition-colors resize-none p-2"
         value={content}
         onChange={handleSystemChange}
-        placeholder="输入内容..."
+        placeholder="Enter content..."
       />
     </NodePortal>
   );

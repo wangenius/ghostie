@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use ghostie::plugins::{chat, deno, knowledge};
+use ghostie::plugins::{chat, deno};
 use ghostie::utils;
 use tauri::{
     menu::{Menu, MenuItem},
@@ -41,7 +41,6 @@ async fn main() {
                 })
                 .build(),
         )
-        .manage(knowledge::KnowledgeState::new())
         .setup(|app| {
             // 设置全局 AppHandle
             deno::set_app_handle(app.handle().clone());
@@ -124,12 +123,6 @@ async fn main() {
             utils::window::open_config_dir,
             utils::update::check_update,
             utils::update::install_update,
-            knowledge::get_aliyun_api_key,
-            knowledge::save_aliyun_api_key,
-            knowledge::upload_knowledge_file,
-            knowledge::get_knowledge_list,
-            knowledge::delete_knowledge,
-            knowledge::search_knowledge,
             deno::plugin_import,
             deno::plugins_list,
             deno::plugin_get,

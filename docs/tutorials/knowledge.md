@@ -1,23 +1,23 @@
 ---
-title: 知识库
+title: Knowledge Base
 order: 5
 ---
 
-# 知识库
+# Knowledge Base
 
-## 什么是知识库
+## What is a Knowledge Base
 
-知识库是 Ghostie 中的一个重要组成部分，使用嵌入式向量数据库来存储知识。
+The knowledge base is an important component in Ghostie, using an embedded vector database to store knowledge.
 
-目前支持上传 Word、TXT、PDF 等格式。
+Currently, it supports uploading formats such as Word, TXT, PDF, etc.
 
-## 如何使用知识库
+## How to Use the Knowledge Base
 
-1. 设置向量模型
-2. 添加知识库
-3. Agent 绑定知识
-4. 对话
+1. Set up the vector model
+2. Add knowledge base
+3. Bind knowledge to an Agent
+4. Start conversation
 
-## 知识库开发
+## Knowledge Base Development
 
-直接导入自己的知识库文件即可。
+Simply import your own knowledge base files.

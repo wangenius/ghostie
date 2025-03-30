@@ -1,4 +1,4 @@
-import { ModelType } from "@/common/types/model";
+import { ModelType } from "@/model/types/model";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -59,15 +59,15 @@ function SettingItem({
 function ThemeSettings() {
   const settings = SettingsManager.use();
   const themes = [
-    { name: "light", label: "浅色" },
-    { name: "dark", label: "深色" },
+    { name: "light", label: "Light" },
+    { name: "dark", label: "Dark" },
   ];
 
   return (
     <SettingItem
       icon={<TbPalette className="w-[18px] h-[18px]" />}
-      title="主题设置"
-      description={`当前主题: ${settings.theme.label}`}
+      title="Theme Settings"
+      description={`Current theme: ${settings.theme.label}`}
       action={
         <div className="flex gap-1">
           {themes.map((theme) => (
@@ -91,16 +91,16 @@ function ThemeSettings() {
 function FontSettings() {
   const settings = SettingsManager.use();
   const fonts = [
-    { name: "siyuan", label: "思源" },
-    { name: "harmony", label: "鸿蒙" },
-    { name: "default", label: "默认" },
+    { name: "siyuan", label: "siyuan" },
+    { name: "harmony", label: "harmony" },
+    { name: "default", label: "default" },
   ];
 
   return (
     <SettingItem
       icon={<TbTypography className="w-[18px] h-[18px]" />}
-      title="字体设置"
-      description={`当前字体: ${settings.font.label}`}
+      title="Font Settings"
+      description={`Current font: ${settings.font.label}`}
       action={
         <div className="flex gap-1">
           {fonts.map((font) => (
@@ -131,7 +131,7 @@ function UpdateSettings() {
       }
       return hasUpdate;
     } catch (error) {
-      console.error("更新检查失败:", error);
+      console.error("Update check failed:", error);
       return false;
     }
   };
@@ -141,7 +141,10 @@ function UpdateSettings() {
     try {
       const hasUpdate = await checkForUpdates();
       if (!hasUpdate) {
-        await cmd.message(`已是最新版本${PACKAGE_VERSION}`, "确认");
+        await cmd.message(
+          `Already the latest version ${PACKAGE_VERSION}`,
+          "Confirm",
+        );
       }
     } finally {
       setChecking(false);
@@ -155,8 +158,8 @@ function UpdateSettings() {
           className={`w-[18px] h-[18px] ${checking ? "animate-spin" : ""}`}
         />
       }
-      title="检查更新"
-      description={`当前版本: ${PACKAGE_VERSION}`}
+      title="Check Updates"
+      description={`Current version: ${PACKAGE_VERSION}`}
       action={
         <Button
           onClick={checkUpdate}
@@ -164,7 +167,7 @@ function UpdateSettings() {
           variant="primary"
           size="sm"
         >
-          {checking ? "检查中..." : "检查更新"}
+          {checking ? "Checking..." : "Check Updates"}
         </Button>
       }
     />
@@ -175,14 +178,14 @@ function ConfigDirSettings() {
   return (
     <SettingItem
       icon={<TbFolder className="w-[18px] h-[18px]" />}
-      title="本地配置文件目录"
+      title="Local Configuration File Directory"
       action={
         <Button
           onClick={() => cmd.invoke("open_config_dir")}
           variant="ghost"
           size="sm"
         >
-          打开目录
+          Open Directory
         </Button>
       }
     />
@@ -197,7 +200,7 @@ function ReactMaxIterationsSettings() {
       icon={<TbArrowIteration className="w-[18px] h-[18px]" />}
       title="ReActMaxIterations"
       titleClassName="font-bold"
-      description={`Agent任务最大迭代次数，当前：${settings.reActMaxIterations}`}
+      description={`Agent task maximum iterations, current: ${settings.reActMaxIterations}`}
       action={
         <Slider
           value={[settings.reActMaxIterations]}
@@ -222,7 +225,7 @@ function MaxHistorySettings() {
       icon={<TbHistory className="w-[18px] h-[18px]" />}
       title="MaxHistoryMessageNumber"
       titleClassName="w-full"
-      description={`对话的最大上下文消息数量，当前：${settings.maxHistory}`}
+      description={`Maximum number of context messages in the conversation, current: ${settings.maxHistory}`}
       action={
         <Slider
           value={[settings.maxHistory]}
@@ -247,8 +250,8 @@ function KnowledgeModelSettings() {
     <>
       <SettingItem
         icon={<TbDatabase className="w-[18px] h-[18px]" />}
-        title="知识库解析模型"
-        description="用来解析文本的模型，推荐异步批处理模型"
+        title="Knowledge Content Model"
+        description="Model used to parse text, recommended for asynchronous batch processing model"
         action={
           <Select
             value={knowledge.contentModel}
@@ -260,7 +263,7 @@ function KnowledgeModelSettings() {
             }}
           >
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="选择模型" />
+              <SelectValue placeholder="Select Model" />
             </SelectTrigger>
             <SelectContent>
               {Object.values(models)
@@ -276,8 +279,8 @@ function KnowledgeModelSettings() {
       />
       <SettingItem
         icon={<TbDatabase className="w-[18px] h-[18px]" />}
-        title="知识库搜索模型"
-        description="用来向量化搜索词条的模型，推荐同步模型"
+        title="Knowledge Search Model"
+        description="Model used to vectorize search terms, recommended for synchronous model"
         action={
           <Select
             value={knowledge.searchModel}
@@ -289,7 +292,7 @@ function KnowledgeModelSettings() {
             }}
           >
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="选择模型" />
+              <SelectValue placeholder="Select Model" />
             </SelectTrigger>
             <SelectContent>
               {Object.values(models)
@@ -314,8 +317,8 @@ function KnowledgeThresholdSettings() {
     <>
       <SettingItem
         icon={<TbDatabase className="w-[18px] h-[18px]" />}
-        title="相似度阈值"
-        description={`当前: ${(knowledge.threshold * 100).toFixed(0)}%`}
+        title="Similarity Threshold"
+        description={`Current: ${(knowledge.threshold * 100).toFixed(0)}%`}
         action={
           <Slider
             value={[knowledge.threshold]}
@@ -331,8 +334,8 @@ function KnowledgeThresholdSettings() {
       />
       <SettingItem
         icon={<TbDatabase className="w-[18px] h-[18px]" />}
-        title="结果数量"
-        description={`当前: ${knowledge.limit}`}
+        title="Result Number"
+        description={`Current: ${knowledge.limit}`}
         action={
           <Slider
             value={[knowledge.limit]}
@@ -353,7 +356,7 @@ function KnowledgeThresholdSettings() {
 export function GeneralSettingsPage() {
   return (
     <div className="space-y-2 max-w-screen-lg mx-auto px-4 h-full overflow-y-auto">
-      <h3 className="text-lg font-bold">系统</h3>
+      <h3 className="text-lg font-bold">System</h3>
       <ThemeSettings />
       <FontSettings />
       <UpdateSettings />
@@ -361,7 +364,7 @@ export function GeneralSettingsPage() {
       <ConfigDirSettings />
       <MaxHistorySettings />
       <ReactMaxIterationsSettings />
-      <h3 className="text-lg font-bold pt-6">知识库</h3>
+      <h3 className="text-lg font-bold pt-6">Knowledge</h3>
       <KnowledgeModelSettings />
       <KnowledgeThresholdSettings />
     </div>

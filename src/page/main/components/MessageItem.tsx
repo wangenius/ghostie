@@ -1,4 +1,4 @@
-import { Message } from "@/common/types/model";
+import { Message } from "@/model/types/model";
 import { CodeBlock, iconVariants } from "@/components/custom/CodeBlock";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -20,8 +20,8 @@ export function MessageItem({ message }: MessageItemProps) {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
 
-  // 如果是隐藏的用户消息或function:result消息,则不渲染
-  if (message.type === "user:hidden" || message.type === "function:result") {
+  // 如果是隐藏的用户消息或tool:result消息,则不渲染
+  if (message.type === "user:hidden" || message.type === "tool:result") {
     return null;
   }
 
@@ -34,7 +34,7 @@ export function MessageItem({ message }: MessageItemProps) {
         return "bg-muted/50 opacity-60";
       case "assistant:tool":
         return "bg-purple-50 dark:bg-purple-950/30 text-sm";
-      case "function:result":
+      case "tool:result":
         return "bg-gray-50 dark:bg-gray-900/50 font-mono text-sm";
       case "assistant:error":
         return "bg-red-50 dark:bg-red-900/50 font-mono text-sm";

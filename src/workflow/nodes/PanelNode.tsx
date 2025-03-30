@@ -37,7 +37,7 @@ const PanelNodeComponent = (props: NodeProps<PanelNodeConfig>) => {
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-red-500">
             <TbCircleX className="h-4 w-4" />
-            <span className="text-sm">执行失败</span>
+            <span className="text-sm">Execution Failed</span>
           </div>
           <div className="pl-6 text-xs text-red-500">
             {workflowState?.error}
@@ -49,7 +49,7 @@ const PanelNodeComponent = (props: NodeProps<PanelNodeConfig>) => {
   }, [workflowState?.status, workflowState?.error]);
 
   return (
-    <NodePortal {...props} left={1} right={1} variant="panel" title="展示面板">
+    <NodePortal {...props} left={1} right={1} variant="panel" title="Panel">
       {renderOutputs}
       {renderError}
     </NodePortal>

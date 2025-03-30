@@ -1,49 +1,49 @@
 ---
-title: 工作流开发
+title: Workflow Development
 order: 4
 ---
 
-# 工作流
+# Workflow
 
-## 什么是工作流
+## What is a Workflow
 
-工作流是 Ghostie 中的一个重要组成部分，使用工作流来实现复杂流程。
+Workflow is an important component in Ghostie, used to implement complex processes.
 
-## 开发
+## Development
 
-### 引用
+### References
 
-所有的接口引用都使用 <span v-pre>{{inputs.节点 ID.result}}</span> 来引用。在任何输入字符串的地方可采用这种方式来引用。（包括代码节点）
+All interface references use <span v-pre>{{inputs.node ID.result}}</span> for referencing. This reference method can be used anywhere input strings are required (including code nodes).
 
 ```
-{{inputs.start.result.query.name}} - 引用start节点的result参数的query属性中的name属性
-{{inputs.XXXXX.result.data.name}} - 引用XXXXX节点的result参数的data属性中的name属性
+{{inputs.start.result.query.name}} - Reference the name property in the query property of the start node's result parameter
+{{inputs.XXXXX.result.data.name}} - Reference the name property in the data property of the XXXXX node's result parameter
 ```
 
-1. inputs 表示该引用来自输入端点
-2. 第二位表示连接 input 端口的某个节点的 ID
-3. 第三位表示该节点 outputs 中的 JSON 对象的嵌套属性名。 一般根为 result , 如果获取不到，可以通过 panel 节点来查看。
+1. inputs indicates that the reference comes from an input endpoint
+2. The second position represents the ID of a node connecting to the input port
+3. The third position represents the nested property name of the JSON object in the node's outputs. The root is usually result, if it can't be retrieved, you can use a panel node to view it.
 
-### 代码节点
+### Code Node
 
-代码节点使用 javascript 来编写。
-代码参考：
+Code nodes use JavaScript for writing.
+Code reference:
 
 ```js
-// 在工作流节点中的代码可以这样写：
+// You can write code in a workflow node like this:
 const sum = inputs.start.query.number1 + inputs.xxxxx.result.number2;
-console.log("计算结果:", sum);
+console.log("Calculation result:", sum);
 return sum;
 ```
 
-1. 直接在代码中使用 inputs 来获取输入端点的数据
-2. 支持使用 console.log 来输出日志
-3. 最终须要调用 return 来返回结果。
+1. Use inputs directly in the code to get data from the input endpoints
+2. Support for using console.log to output logs
+3. Finally, you must call return to return the result.
 
-### 其他节点
+### Other Nodes
 
-其他节点，如：chat、bot、plugin、branch、iterator、code、panel 等，都是直接使用输入端点的数据。
+Other nodes, such as: chat, bot, plugin, branch, iterator, code, panel, etc., all directly use data from input endpoints.
 
-bot，plugin，chat 等节点输入一般用 result 包裹结果。所以需要使用 <span v-pre>{{inputs.节点 ID.result}}</span> 来引用。
+For nodes like bot, plugin, chat, etc., the input is generally wrapped with result. So you need to use <span v-pre>{{inputs.node ID.result}}</span> to reference it.
 
-如果不确定，可以使用 panel 节点来查看某个节点的输出端点的数据。
+If you're not sure, you can use a panel node to view the output endpoint data of a certain node.

@@ -21,28 +21,30 @@ const CodeNodeComponent = (props: NodeProps<CodeNodeConfig>) => {
     [updateNodeData, props.id],
   );
   return (
-    <NodePortal {...props} left={1} right={1} variant="code" title="代码">
+    <NodePortal {...props} left={1} right={1} variant="code" title="Code">
       <div className="flex-none bg-muted-foreground/10 p-3 rounded-lg">
         <p className="text-xs text-muted-foreground">
-          与【插件】不同，代码节点运行不支持本地操作。代码节点用来执行数据处理操作，过滤，排序。
+          Unlike [Plugins], code nodes do not support local operations. Code
+          nodes are used to perform data processing operations, filtering,
+          sorting, etc.
         </p>
       </div>
       <Button
         className="bg-muted-foreground/10 hover:bg-muted-foreground/20 h-8"
         onClick={() => setOpen(true)}
       >
-        编辑代码
+        Edit Code
       </Button>
 
       <Drawer
         open={open}
         onOpenChange={setOpen}
-        title="编辑代码"
+        title="Edit Code"
         className="w-[600px]"
         description={
           <div className="flex-none bg-muted-foreground/10 p-3 rounded-lg mx-3">
             <p className="text-xs text-muted-foreground">
-              使用inputs作为输入。
+              Use inputs as input.
             </p>
           </div>
         }
@@ -87,7 +89,7 @@ const CodeNodeComponent = (props: NodeProps<CodeNodeConfig>) => {
             })}
             extensions={[javascript()]}
             onChange={handleChange}
-            placeholder={`编写你的代码，使用javascript`}
+            placeholder={`Write your code, use javascript`}
             basicSetup={{
               lineNumbers: false,
               highlightActiveLineGutter: true,
@@ -127,7 +129,7 @@ export class CodeNodeExecutor extends NodeExecutor {
 
       const codeConfig = this.node.data as CodeNodeConfig;
       if (!codeConfig.code) {
-        throw new Error("代码内容为空");
+        throw new Error("Code content is empty");
       }
 
       const context = {

@@ -12,12 +12,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  KnowledgeStore,
-  type Knowledge as KnowledgeType,
+  Knowledge,
+  KnowledgeMeta,
+  KnowledgeProps,
   type SearchResult,
-} from "@/knowledge/KnowledgeStore";
+} from "@/knowledge/Knowledge";
 import { cmd } from "@utils/shell";
-import { useState } from "react";
+import { Echo } from "echo-state";
+import { useEffect, useState } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { TbDatabasePlus, TbDownload, TbUpload } from "react-icons/tb";
 import { FileDrawer } from "./components/FileDrawer";
@@ -25,27 +27,39 @@ import { FileList } from "./components/FileList";
 import { SearchResults } from "./components/SearchResults";
 import { KnowledgeCreator } from "./KnowledgeCreator";
 
+const instance = new Echo<KnowledgeProps | null>(null).indexed({
+  database: Knowledge.database,
+  name: "",
+});
+
 export function KnowledgeTab() {
-  const documents = KnowledgeStore.use();
-  const [selectedDoc, setSelectedDoc] = useState<KnowledgeType | undefined>();
+  const { list: documents } = Knowledge.useList();
+  const [selectedDoc, setSelectedDoc] = useState<KnowledgeMeta | undefined>(
+    undefined,
+  );
   const [selectedFile, setSelectedFile] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const knowledge = instance.use();
+
+  useEffect(() => {
+    console.log(knowledge);
+  }, [knowledge]);
 
   const handleDelete = async (id: string) => {
     const answer = await cmd.confirm(
-      `确定要删除知识库 "${documents[id].name}" 吗？`,
+      `Are you sure you want to delete the knowledge base "${documents[id].name}"?`,
     );
     if (answer) {
       try {
-        KnowledgeStore.delete(id);
+        Knowledge.delete(id);
         if (selectedDoc?.id === id) {
           setSelectedDoc(undefined);
         }
       } catch (error) {
-        console.error("删除失败", error);
+        console.error("Delete failed", error);
       }
     }
   };
@@ -55,9 +69,9 @@ export function KnowledgeTab() {
       const result = await cmd.invoke<{ path: string; content: string }>(
         "open_file",
         {
-          title: "选择知识库配置文件",
+          title: "Select Knowledge Base Configuration File",
           filters: {
-            知识库配置: ["json"],
+            "Knowledge Base Configuration": ["json"],
           },
         },
       );
@@ -67,8 +81,11 @@ export function KnowledgeTab() {
         await cmd.message("成功导入知识库配置", "导入成功");
       }
     } catch (error) {
-      console.error("导入知识库失败:", error);
-      await cmd.message(`导入知识库失败: ${error}`, "导入失败");
+      console.error("Import knowledge base failed:", error);
+      await cmd.message(
+        `Import knowledge base failed: ${error}`,
+        "Import failed",
+      );
     }
   };
 
@@ -78,7 +95,7 @@ export function KnowledgeTab() {
       const result = await cmd.invoke<boolean>("save_file", {
         title: "保存知识库配置",
         filters: {
-          知识库配置: ["json"],
+          "Knowledge Base Configuration": ["json"],
         },
         defaultName: "knowledge.json",
         content: "",
@@ -88,8 +105,11 @@ export function KnowledgeTab() {
         await cmd.message("成功导出知识库配置", "导出成功");
       }
     } catch (error) {
-      console.error("导出知识库失败:", error);
-      await cmd.message(`导出知识库失败: ${error}`, "导出失败");
+      console.error("Export knowledge base failed:", error);
+      await cmd.message(
+        `Export knowledge base failed: ${error}`,
+        "Export failed",
+      );
     }
   };
 
@@ -98,12 +118,12 @@ export function KnowledgeTab() {
 
     setSearchLoading(true);
     try {
-      const results = await KnowledgeStore.search(searchQuery);
+      const results = await Knowledge.search(searchQuery);
       setSearchResults(results);
       setSelectedFile(null);
     } catch (error) {
-      console.error("语义搜索失败:", error);
-      await cmd.message(`语义搜索失败: ${error}`, "搜索失败");
+      console.error("Semantic search failed:", error);
+      await cmd.message(`Semantic search failed: ${error}`, "Search failed");
     } finally {
       setSearchLoading(false);
     }
@@ -115,7 +135,7 @@ export function KnowledgeTab() {
         left={
           <Button className="flex-1" onClick={() => KnowledgeCreator.open()}>
             <TbDatabasePlus className="w-4 h-4" />
-            新建知识库
+            New Knowledge Base
           </Button>
         }
         right={
@@ -129,31 +149,34 @@ export function KnowledgeTab() {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={handleImport}>
                 <TbUpload className="w-4 h-4 mr-2" />
-                <span>导入</span>
+                <span>Import</span>
               </DropdownMenuItem>
 
               <DropdownMenuItem onClick={handleExport}>
                 <TbDownload className="w-4 h-4 mr-2" />
-                <span>导出</span>
+                <span>Export</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         }
-        tips="知识库支持: 可以通过导入文件来创建知识库。请参考开发文档了解更多信息。"
+        tips="Knowledge base supported: You can create a knowledge base by importing a file. Please refer to the development documentation for more information."
         items={Object.entries(documents).map(([id, doc]) => ({
           id,
-          title: doc.name || "未命名知识库",
-          description: doc.description?.slice(0, 50) || "暂无描述",
-          onClick: () => setSelectedDoc(doc),
+          title: doc.name || "Unnamed Knowledge Base",
+          description: doc.description?.slice(0, 50) || "No description",
+          onClick: () => {
+            setSelectedDoc(doc);
+            instance.switch(id);
+          },
           actived: selectedDoc?.id === id,
           onRemove: () => handleDelete(id),
         }))}
-        emptyText="暂无知识库，点击上方按钮创建新的知识库"
+        emptyText="No knowledge base, click the button above to create a new knowledge base"
         EmptyIcon={TbDatabasePlus}
       />
 
       <PreferenceBody
-        emptyText="暂无知识库，点击上方按钮创建新的知识库"
+        emptyText="No knowledge base, click the button above to create a new knowledge base"
         EmptyIcon={TbDatabasePlus}
         isEmpty={!selectedDoc}
       >
@@ -169,7 +192,13 @@ export function KnowledgeTab() {
                     value={selectedDoc?.name}
                     onChange={(e) => {
                       const newDoc = { ...selectedDoc, name: e.target.value };
-                      KnowledgeStore.setName(selectedDoc.id, e.target.value);
+                      instance.set((prev) => ({
+                        ...prev,
+                        meta: {
+                          ...prev!.meta,
+                          name: e.target.value,
+                        },
+                      }));
                       setSelectedDoc(newDoc);
                     }}
                   />
@@ -178,15 +207,15 @@ export function KnowledgeTab() {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Badge variant="outline" className="bg-background/50">
-                      {selectedDoc?.files.length} 个文件
+                      {knowledge?.files.length} files
                     </Badge>
                     <span>·</span>
                     <span>
-                      {selectedDoc?.files.reduce(
+                      {knowledge?.files.reduce(
                         (acc, file) => acc + file.chunks.length,
                         0,
                       )}
-                      个知识块
+                      knowledge blocks
                     </span>
                   </div>
                 </div>
@@ -195,18 +224,16 @@ export function KnowledgeTab() {
               <div>
                 <Textarea
                   className="mt-3 text-sm text-muted-foreground resize-none border-none focus-visible:ring-0"
-                  placeholder="添加知识库描述..."
+                  placeholder="Add knowledge base description..."
                   value={selectedDoc?.description}
                   onChange={(e) => {
-                    const newDoc = {
-                      ...selectedDoc,
-                      description: e.target.value,
-                    };
-                    KnowledgeStore.setDescription(
-                      selectedDoc.id,
-                      e.target.value,
-                    );
-                    setSelectedDoc(newDoc);
+                    instance.set((prev) => ({
+                      ...prev!,
+                      meta: {
+                        ...prev!.meta,
+                        description: e.target.value,
+                      },
+                    }));
                   }}
                 />
               </div>
@@ -219,7 +246,7 @@ export function KnowledgeTab() {
               />
             ) : (
               <FileList
-                files={selectedDoc?.files || []}
+                files={knowledge?.files || []}
                 onSelectFile={(index) => {
                   setSelectedFile(index);
                   setIsDrawerOpen(true);
@@ -236,7 +263,7 @@ export function KnowledgeTab() {
       <FileDrawer
         open={isDrawerOpen}
         onOpenChange={setIsDrawerOpen}
-        file={selectedDoc?.files[selectedFile ?? -1]}
+        file={knowledge?.files[selectedFile ?? -1]}
       />
     </PreferenceLayout>
   );

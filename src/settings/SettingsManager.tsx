@@ -17,25 +17,20 @@ interface SettingsProps {
 
 /* 设置管理 */
 export class SettingsManager {
-  private static store = new Echo<SettingsProps>(
-    {
-      theme: { name: "light", label: "浅色" },
-      font: { name: "siyuan", label: "思源" },
-      language: "zh-CN",
-      reActMaxIterations: 10,
-      sortType: "default",
-      maxHistory: 30,
-      knowledge: {
-        threshold: 0.6,
-        limit: 10,
-        contentModel: "",
-        searchModel: "",
-      },
+  private static store = new Echo<SettingsProps>({
+    theme: { name: "light", label: "浅色" },
+    font: { name: "siyuan", label: "思源" },
+    language: "zh-CN",
+    reActMaxIterations: 10,
+    sortType: "default",
+    maxHistory: 30,
+    knowledge: {
+      threshold: 0.6,
+      limit: 10,
+      contentModel: "",
+      searchModel: "",
     },
-    {
-      name: "settings",
-    },
-  );
+  }).localStorage({ name: "settings" });
 
   static use = this.store.use.bind(this.store);
 

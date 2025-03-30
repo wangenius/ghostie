@@ -5,12 +5,9 @@ import { Echo } from "echo-state";
 /** 机器人管理器, 用于管理机器人 */
 export class BotManager {
   /* 所有的机器人在这里存储 */
-  static store = new Echo<Record<string, BotProps>>(
-    {},
-    {
-      name: "bots",
-    },
-  );
+  static store = new Echo<Record<string, BotProps>>({}).localStorage({
+    name: "bots",
+  });
 
   /* 使用机器人管理器的hook方法 */
   static use = BotManager.store.use.bind(BotManager.store);
@@ -73,7 +70,7 @@ export class BotManager {
 
   /** 导入助手配置
    * @param jsonStr JSON字符串
-   * @throws 如果JSON格式不正确或助手配置无效
+   * @throws If the JSON format is incorrect or the assistant configuration is invalid
    */
   static import(jsonStr: string) {
     try {
@@ -83,7 +80,7 @@ export class BotManager {
       });
     } catch (error) {
       if (error instanceof SyntaxError) {
-        throw new Error("JSON格式不正确");
+        throw new Error("JSON format is incorrect");
       }
       throw error;
     }

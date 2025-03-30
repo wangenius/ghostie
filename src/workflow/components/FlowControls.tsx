@@ -69,7 +69,7 @@ export const FlowControls = ({
             size="icon"
             className="h-8 w-8"
             onClick={onZoomOut}
-            title="缩小"
+            title="Zoom Out"
           >
             <TbMinus className="h-4 w-4" />
           </Button>
@@ -78,7 +78,7 @@ export const FlowControls = ({
             size="icon"
             className="h-8 w-8"
             onClick={onZoomIn}
-            title="放大"
+            title="Zoom In"
           >
             <TbPlus className="h-4 w-4" />
           </Button>
@@ -90,7 +90,7 @@ export const FlowControls = ({
           size="icon"
           className="h-8 w-8"
           onClick={onFitView}
-          title="适应视图"
+          title="Fit View"
         >
           <TbArrowsMaximize className="h-4 w-4" />
         </Button>
@@ -101,7 +101,7 @@ export const FlowControls = ({
           size="icon"
           className="h-8 w-8"
           onClick={onMaximize}
-          title="窗口最大化"
+          title="Maximize Window"
         >
           <TbWindowMaximize className="h-4 w-4" />
         </Button>

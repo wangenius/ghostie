@@ -10,13 +10,10 @@ export interface ParamHistoryState {
 }
 
 export class ParamHistory {
-  private static store = new Echo<ParamHistoryState>(
-    {},
-    {
-      name: "workflow_params_history",
-      storage: "indexedDB",
-    },
-  );
+  private static store = new Echo<ParamHistoryState>({}).indexed({
+    database: "workflow_params_history",
+    name: "workflow_params_history",
+  });
 
   static use = ParamHistory.store.use.bind(ParamHistory.store);
 

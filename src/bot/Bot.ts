@@ -1,5 +1,5 @@
 import { BotProps } from "@/common/types/bot";
-import { Message, MessageType } from "@/common/types/model";
+import { Message, MessageType } from "@/model/types/model";
 import { ToolProps } from "@/common/types/plugin";
 import { PluginManager } from "@/plugin/PluginManager";
 import { ChatModel } from "../model/ChatModel";
@@ -133,7 +133,7 @@ export class Bot implements Omit<BotProps, "model"> {
         {
           user: MessageType.USER_INPUT,
           assistant: MessageType.ASSISTANT_REPLY,
-          function: MessageType.FUNCTION_RESULT,
+          function: MessageType.TOOL_RESULT,
         },
       );
 
@@ -155,7 +155,7 @@ ${this.context.generate_context_info()}`,
           {
             user: MessageType.USER_HIDDEN,
             assistant: MessageType.ASSISTANT_REPLY,
-            function: MessageType.FUNCTION_RESULT,
+            function: MessageType.TOOL_RESULT,
           },
         );
 
@@ -169,7 +169,7 @@ ${stepResponse.body}`,
           {
             user: MessageType.USER_HIDDEN,
             assistant: MessageType.ASSISTANT_PROCESS,
-            function: MessageType.FUNCTION_RESULT,
+            function: MessageType.TOOL_RESULT,
           },
         );
 
@@ -216,7 +216,7 @@ ${this.context.generate_context_info()}
         {
           user: MessageType.USER_HIDDEN,
           assistant: MessageType.ASSISTANT_REPLY,
-          function: MessageType.FUNCTION_RESULT,
+          function: MessageType.TOOL_RESULT,
         },
       );
 
@@ -238,7 +238,7 @@ ${this.context.generate_context_info()}
         {
           user: MessageType.USER_HIDDEN,
           assistant: MessageType.ASSISTANT_ERROR,
-          function: MessageType.FUNCTION_RESULT,
+          function: MessageType.TOOL_RESULT,
         },
       );
 
@@ -265,7 +265,7 @@ ${this.context.generate_context_info()}
           user:
             iterations === 1 ? MessageType.USER_INPUT : MessageType.USER_HIDDEN,
           assistant: MessageType.ASSISTANT_REPLY,
-          function: MessageType.FUNCTION_RESULT,
+          function: MessageType.TOOL_RESULT,
         });
 
         // 如果没有工具调用，说明对话可以结束
@@ -286,7 +286,7 @@ ${this.context.generate_context_info()}
           {
             user: MessageType.USER_HIDDEN,
             assistant: MessageType.ASSISTANT_REPLY,
-            function: MessageType.FUNCTION_RESULT,
+            function: MessageType.TOOL_RESULT,
           },
         );
       }

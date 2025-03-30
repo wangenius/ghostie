@@ -55,10 +55,10 @@ export function TestDrawer({
               {isSubmitting ? (
                 <span className="flex items-center gap-1.5">
                   <TbLoader2 className="w-3.5 h-3.5 animate-spin" />
-                  测试运行中...
+                  Testing...
                 </span>
               ) : (
-                "运行测试"
+                "Run Test"
               )}
             </Button>
           </div>
@@ -80,14 +80,14 @@ export function TestDrawer({
                 description: tool.description,
               })) || []
             }
-            placeholder="选择工具"
+            placeholder="Select Tool"
           />
 
           {testTool && (
             <div className="bg-muted/30 rounded-lg p-3">
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                测试参数配置
+                Test Parameter Configuration
               </h4>
               <div className="space-y-3">
                 {parameters &&
@@ -116,7 +116,7 @@ export function TestDrawer({
             <div className="bg-muted/30 rounded-lg p-3">
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                测试结果
+                Test Result
               </h4>
               <JsonViewer data={result} />
             </div>

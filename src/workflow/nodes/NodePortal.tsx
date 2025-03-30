@@ -65,7 +65,7 @@ const NodePortalComponent = ({
 
   const handleCopyParameter = useCallback((nodeId: string) => {
     navigator.clipboard.writeText(nodeId);
-    toast.success("节点ID已复制到剪贴板");
+    toast.success("Node ID copied to clipboard");
   }, []);
 
   const handleNodeClick = useCallback((e: React.MouseEvent) => {
@@ -134,7 +134,7 @@ const NodePortalComponent = ({
               <div className="w-4 h-4 flex items-center justify-center">
                 <TbProgressBolt className="h-4 w-4 text-yellow-900" />
               </div>
-              <span className="text-xs text-yellow-900">预览</span>
+              <span className="text-xs text-yellow-900">Preview</span>
             </div>
           )}
         </div>
@@ -158,7 +158,7 @@ const NodePortalComponent = ({
               </PopoverTrigger>
               <PopoverContent className="w-80" align="end">
                 <div className="space-y-2">
-                  <div className="text-sm font-medium">执行结果</div>
+                  <div className="text-sm font-medium">Execution Result</div>
                   <div className="text-sm bg-green-50 border border-green-200 rounded p-2 max-h-[300px] overflow-y-auto">
                     {typeof state.outputs.result === "object"
                       ? JSON.stringify(state.outputs.result)
@@ -177,7 +177,7 @@ const NodePortalComponent = ({
               </PopoverTrigger>
               <PopoverContent className="w-80" align="end">
                 <div className="space-y-2">
-                  <div className="text-sm font-medium">错误信息</div>
+                  <div className="text-sm font-medium">Error Information</div>
                   <div className="text-sm bg-red-50 border border-red-200 rounded p-2 text-red-600">
                     {state.error}
                   </div>
@@ -200,7 +200,7 @@ const NodePortalComponent = ({
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleDeleteNode}>
                   <TbX className="h-4 w-4" />
-                  删除
+                  Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

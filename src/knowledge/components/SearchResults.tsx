@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { TbChevronLeft } from "react-icons/tb";
-import type { SearchResult } from "@/knowledge/KnowledgeStore";
+import type { SearchResult } from "@/knowledge/Knowledge";
 
 interface SearchResultsProps {
   results: SearchResult[];
@@ -15,7 +15,7 @@ export function SearchResults({ results, onClearSearch }: SearchResultsProps) {
       <div className="flex items-center justify-between pl-2">
         <Button variant="ghost" size="sm" onClick={onClearSearch}>
           <TbChevronLeft className="w-4 h-4" />
-          返回文件列表
+          Back to file list
         </Button>
       </div>
 
@@ -28,7 +28,7 @@ export function SearchResults({ results, onClearSearch }: SearchResultsProps) {
                   {result.document_name}
                 </Badge>
                 <Badge className="bg-primary/10 text-primary">
-                  相似度: {(result.similarity * 100).toFixed(1)}%
+                  Similarity: {(result.similarity * 100).toFixed(1)}%
                 </Badge>
               </div>
               <p className="text-sm leading-relaxed">{result.content}</p>

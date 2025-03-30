@@ -1,4 +1,4 @@
-import { Message } from "@/common/types/model";
+import { Message } from "@/model/types/model";
 import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

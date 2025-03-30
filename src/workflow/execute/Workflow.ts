@@ -6,14 +6,7 @@ import { WorkflowExecutor } from "./WorkflowExecutor";
 
 /* 工作流类 */
 export class Workflow {
-  /* 该实例的状态存储 */
-  private store = new Echo<WorkflowProps>(INITIAL_WORKFLOW, {
-    onChange: (state, oldState) => {
-      if (state.id === oldState.id) {
-        WorkflowManager.update(state);
-      }
-    },
-  });
+  private store = new Echo<WorkflowProps>(INITIAL_WORKFLOW);
 
   executor: WorkflowExecutor;
 

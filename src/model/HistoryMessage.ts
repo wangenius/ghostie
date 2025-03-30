@@ -1,8 +1,8 @@
 /** 消息管理类
  * 负责管理所有的消息历史记录
  */
+import { Message, MessagePrototype, MessageType } from "@/model/types/model";
 import { gen } from "@/utils/generator";
-import { Message, MessagePrototype, MessageType } from "@common/types/model";
 import { Echo } from "echo-state";
 import { SettingsManager } from "../settings/SettingsManager";
 
@@ -18,15 +18,12 @@ export interface ChatHistoryItem {
   list: Message[];
 }
 
-/** 全部聊天的历史记录存档
- */
 export const ChatHistory = new Echo<Record<string, ChatHistoryItem>>(
   {},
-  {
-    name: "history",
-    storage: "indexedDB",
-  },
-);
+).indexed({
+  database: "history",
+  name: "chat",
+});
 
 /** 消息历史记录类
  * 负责管理单个聊天的历史记录
@@ -42,15 +39,10 @@ export class HistoryMessage implements ChatHistoryItem {
   list: Message[];
 
   /** 当前使用的消息历史记录 */
-  static current = new Echo<{ id: string; bot?: string }>(
-    {
-      id: "",
-      bot: "",
-    },
-    {
-      name: "current:history",
-    },
-  );
+  static current = new Echo<{ id: string; bot?: string }>({
+    id: "",
+    bot: "",
+  }).localStorage({ name: "current:history" });
 
   /** 创建一个消息历史记录，id会生成一个新的，即历史记录中会出现一个新的内容 */
   private constructor(history: ChatHistoryItem) {

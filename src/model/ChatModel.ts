@@ -13,10 +13,10 @@ import {
   MessageType,
   ToolCallReply,
   ToolRequestBody,
-} from "@common/types/model";
+} from "@/model/types/model";
 import { TOOL_NAME_SPLIT } from "../bot/Bot";
 import { HistoryMessage } from "./HistoryMessage";
-import { KnowledgeStore } from "../knowledge/KnowledgeStore";
+import { Knowledge } from "../knowledge/Knowledge";
 import { WorkflowManager } from "@/workflow/WorkflowManager";
 import { StartNodeConfig } from "@/workflow/types/nodes";
 import { Workflow } from "@/workflow/execute/Workflow";
@@ -118,7 +118,7 @@ export class ChatModel {
   public setKnowledge(docs: string[]): this {
     if (docs.length) {
       /* 获取知识库 */
-      const knowledges = KnowledgeStore.docs();
+      const knowledges = Knowledge.getList();
 
       /* 将知识库变成工具 */
       docs.forEach((knowledge) => {
@@ -196,7 +196,7 @@ export class ChatModel {
         };
       }
       /* 搜索知识库 */
-      const knowledgeDoc = await KnowledgeStore.search(query, [knowledge]);
+      const knowledgeDoc = await Knowledge.search(query, [knowledge]);
       return {
         name: tool_call.function.name,
         arguments: tool_call.function.arguments,
@@ -262,7 +262,7 @@ export class ChatModel {
     config: RequestConfig = {
       user: MessageType.USER_INPUT,
       assistant: MessageType.ASSISTANT_REPLY,
-      function: MessageType.FUNCTION_RESULT,
+      function: MessageType.TOOL_RESULT,
     },
   ): Promise<ChatModelResponse<string>> {
     // 如果有正在进行的请求，先停止它
@@ -316,6 +316,7 @@ export class ChatModel {
         parallel_tool_calls: true,
         temperature: this.temperature,
       };
+
       if (this.tools?.length) {
         requestBody.tools = this.tools;
       }
@@ -335,6 +336,8 @@ export class ChatModel {
         (event) => {
           const delta = event.payload.choices[0]?.delta;
           const delta_tool_call = delta?.tool_calls?.[0] as ToolCallReply;
+
+          console.log(delta);
 
           if (delta?.content) {
             content += delta.content;

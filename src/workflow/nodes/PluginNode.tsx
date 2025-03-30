@@ -83,7 +83,7 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
           onChange={(e) =>
             handleParameterChange(key, e.target.value, prop.type)
           }
-          placeholder={`输入${key}...`}
+          placeholder={`Enter ${key}...`}
         />
       </div>
     ));
@@ -95,9 +95,9 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
   ]);
 
   return (
-    <NodePortal {...props} left={1} right={1} variant="plugin" title="插件">
+    <NodePortal {...props} left={1} right={1} variant="plugin" title="Plugin">
       <DrawerSelector
-        panelTitle="选择插件"
+        panelTitle="Select Plugin"
         value={[props.data.plugin + "::" + props.data.tool]}
         items={Object.values(plugins)
           .map((plugin) => {
@@ -114,7 +114,7 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
 
       {plugins[props.data.plugin] && (
         <div className="flex flex-col gap-2">
-          <div className="text-xs font-medium">参数设置</div>
+          <div className="text-xs font-medium">Parameter Settings</div>
           {parameterItems}
         </div>
       )}
@@ -141,17 +141,17 @@ export class PluginNodeExecutor extends NodeExecutor {
 
       const pluginConfig = this.node.data as PluginNodeConfig;
       if (!pluginConfig.plugin) {
-        throw new Error("未配置插件");
+        throw new Error("Plugin not configured");
       }
 
       const plugin = PluginManager.get(pluginConfig.plugin);
       if (!plugin) {
-        throw new Error(`插件不存在: ${pluginConfig.plugin}`);
+        throw new Error(`Plugin not found: ${pluginConfig.plugin}`);
       }
 
       const tool = plugin.tools.find((t) => t.name === pluginConfig.tool);
       if (!tool) {
-        throw new Error(`工具不存在: ${pluginConfig.tool}`);
+        throw new Error(`Tool not found: ${pluginConfig.tool}`);
       }
 
       const processedArgs = Object.entries(pluginConfig.args || {}).reduce(
@@ -172,7 +172,7 @@ export class PluginNodeExecutor extends NodeExecutor {
       });
 
       if (!pluginResult) {
-        throw new Error("插件执行结果为空");
+        throw new Error("Plugin execution result is empty");
       }
 
       this.updateNodeState({

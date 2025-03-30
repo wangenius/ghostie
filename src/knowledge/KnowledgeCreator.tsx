@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { KnowledgeStore } from "@/knowledge/KnowledgeStore";
+import { Knowledge } from "@/knowledge/Knowledge";
 import { cmd } from "@/utils/shell";
 import { useState } from "react";
 import {
@@ -59,7 +59,7 @@ export const KnowledgeCreator = ({ close }: { close: () => void }) => {
     try {
       /* 选择文件 */
       const filePaths = await cmd.invoke<FileMetadata[]>("open_files_path", {
-        title: "选择文档",
+        title: "Select documents",
         filters: {
           文本文件: ["txt", "md", "markdown", "docx", "doc", "pdf"],
         },
@@ -69,7 +69,7 @@ export const KnowledgeCreator = ({ close }: { close: () => void }) => {
         setSelectedFiles((prev) => [...prev, ...filePaths]);
       }
     } catch (error) {
-      console.error("选择文件失败", error);
+      console.error("Select file failed", error);
     }
   };
 
@@ -77,9 +77,9 @@ export const KnowledgeCreator = ({ close }: { close: () => void }) => {
     try {
       setLoading(true);
       setUploadProgress(0);
-      setUploadStatus("准备上传...");
+      setUploadStatus("Preparing to upload...");
 
-      await KnowledgeStore.add(selectedFiles, {
+      await Knowledge.add(selectedFiles, {
         /* 知识库名称 */
         name: knowledgeName,
         /* 描述 */
@@ -95,7 +95,7 @@ export const KnowledgeCreator = ({ close }: { close: () => void }) => {
       setKnowledgeName("");
       close();
     } catch (error) {
-      console.error("文件上传失败", error);
+      console.error("File upload failed", error);
     } finally {
       setLoading(false);
       setUploadProgress(0);
@@ -126,7 +126,7 @@ export const KnowledgeCreator = ({ close }: { close: () => void }) => {
             </div>
             {currentFile && (
               <p className="text-sm text-muted-foreground">
-                当前文件: {currentFile}
+                Current file: {currentFile}
               </p>
             )}
           </div>
@@ -136,14 +136,14 @@ export const KnowledgeCreator = ({ close }: { close: () => void }) => {
           autoFocus
           variant="title"
           className="m-0 px-1 py-0 rounded-none"
-          placeholder="知识库名称"
+          placeholder="Knowledge base name"
           value={knowledgeName}
           onChange={(e) => setKnowledgeName(e.target.value)}
         />
 
         <div>
           <Textarea
-            placeholder="知识库描述"
+            placeholder="Knowledge base description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="h-[72px] resize-none"
@@ -154,13 +154,13 @@ export const KnowledgeCreator = ({ close }: { close: () => void }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               {selectedFiles.length > 0 &&
-                `已选择 ${selectedFiles.length} 个文件`}
+                `Selected ${selectedFiles.length} files`}
             </div>
 
             {selectedFiles.length > 0 && (
               <Button variant="ghost" onClick={handleFileSelect}>
                 <TbUpload className="w-4 h-4 mr-2" />
-                添加文件
+                Add files
               </Button>
             )}
           </div>
@@ -176,9 +176,11 @@ export const KnowledgeCreator = ({ close }: { close: () => void }) => {
                     <TbUpload className="w-8 h-8 text-primary" />
                   </div>
                   <div className="space-y-2 max-w-[380px]">
-                    <h3 className="font-semibold text-lg">点击选择文件</h3>
+                    <h3 className="font-semibold text-lg">
+                      Click to select files
+                    </h3>
                     <p className="text-sm text-muted-foreground">
-                      支持 Txt、PDF、Word、Markdown 等多种格式
+                      Supports Txt, PDF, Word, Markdown, etc.
                     </p>
                   </div>
                 </div>
@@ -237,7 +239,7 @@ export const KnowledgeCreator = ({ close }: { close: () => void }) => {
           ) : (
             <TbCheck className="w-4 h-4" />
           )}
-          {loading ? "上传中..." : "确认创建"}
+          {loading ? "Uploading..." : "Confirm creation"}
         </Button>
       </div>
     </div>
@@ -246,7 +248,7 @@ export const KnowledgeCreator = ({ close }: { close: () => void }) => {
 
 KnowledgeCreator.open = () => {
   dialog({
-    title: "知识库创建",
+    title: "Knowledge Base Creation",
     content: (close) => <KnowledgeCreator close={close} />,
     width: 900,
     height: 600,

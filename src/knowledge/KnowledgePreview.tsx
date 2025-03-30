@@ -7,10 +7,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@/hook/useQuery";
-import { KnowledgeStore, type SearchResult } from "@/knowledge/KnowledgeStore";
+import { Knowledge, type SearchResult } from "@/knowledge/Knowledge";
 import { cn } from "@/lib/utils";
 import { cmd } from "@/utils/shell";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TbChevronRight, TbFileText, TbSearch } from "react-icons/tb";
 
 export const KnowledgePreview = () => {
@@ -18,7 +18,7 @@ export const KnowledgePreview = () => {
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-background to-muted/30">
       <Header
-        title="知识库预览"
+        title="Knowledge Base Preview"
         close={() => {
           setValue("");
           cmd.close();
@@ -31,14 +31,18 @@ export const KnowledgePreview = () => {
   );
 };
 
+const instance = new Knowledge("");
+
 const KnowledgeContent = ({ id }: { id: string }) => {
   const [selectedFile, setSelectedFile] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const previewDocument = instance.use();
 
-  const docs = KnowledgeStore.use();
-  const previewDocument = docs[id || ""];
+  useEffect(() => {
+    instance.switch(id);
+  }, [id]);
 
   if (!id) {
     return (
@@ -47,9 +51,9 @@ const KnowledgeContent = ({ id }: { id: string }) => {
           <div className="w-16 h-16 mx-auto bg-muted/10 rounded-2xl flex items-center justify-center">
             <TbFileText className="w-8 h-8 text-muted-foreground" />
           </div>
-          <h3 className="text-xl font-semibold">请选择文档</h3>
+          <h3 className="text-xl font-semibold">Please select a document</h3>
           <p className="text-sm text-muted-foreground">
-            从知识库列表中选择一个文档以查看详情
+            Select a document from the knowledge base list to view details
           </p>
         </div>
       </div>
@@ -63,9 +67,9 @@ const KnowledgeContent = ({ id }: { id: string }) => {
           <div className="w-16 h-16 mx-auto bg-destructive/10 rounded-2xl flex items-center justify-center">
             <TbFileText className="w-8 h-8 text-destructive" />
           </div>
-          <h3 className="text-xl font-semibold">未找到文档</h3>
+          <h3 className="text-xl font-semibold">Document not found</h3>
           <p className="text-sm text-muted-foreground">
-            请确认文档 ID 是否正确
+            Please confirm that the document ID is correct
           </p>
         </div>
       </div>
@@ -76,10 +80,10 @@ const KnowledgeContent = ({ id }: { id: string }) => {
     if (!searchQuery.trim()) return;
     setSearchLoading(true);
     try {
-      const results = await KnowledgeStore.search(searchQuery);
+      const results = await Knowledge.search(searchQuery);
       setSearchResults(results);
     } catch (error) {
-      console.error("搜索失败", error);
+      console.error("Search failed", error);
     } finally {
       setSearchLoading(false);
     }
@@ -93,22 +97,19 @@ const KnowledgeContent = ({ id }: { id: string }) => {
             <Input
               className="text-2xl font-bold pl-0"
               variant="title"
-              value={previewDocument?.name}
+              value={previewDocument?.meta.name}
               onChange={(e) => {
-                KnowledgeStore.setName(previewDocument?.id, e.target.value);
+                instance.setName(e.target.value);
               }}
             />
 
             <div>
               <Textarea
                 className="min-h-[80px] resize-none"
-                placeholder="添加知识库描述..."
-                value={previewDocument?.description}
+                placeholder="Add knowledge base description..."
+                value={previewDocument?.meta.description}
                 onChange={(e) => {
-                  KnowledgeStore.setDescription(
-                    previewDocument?.id,
-                    e.target.value,
-                  );
+                  instance.setDescription(e.target.value);
                 }}
               />
             </div>
@@ -117,7 +118,7 @@ const KnowledgeContent = ({ id }: { id: string }) => {
               <TbSearch className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 className="pl-9"
-                placeholder="输入关键词进行语义搜索..."
+                placeholder="Enter keywords for semantic search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
@@ -135,9 +136,9 @@ const KnowledgeContent = ({ id }: { id: string }) => {
             <div className="flex-1 overflow-y-auto">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">文件列表</h3>
+                  <h3 className="text-lg font-semibold">File List</h3>
                   <Badge variant="outline" className="bg-background/50">
-                    {previewDocument.files.length} 个文件
+                    {previewDocument.files.length} files
                   </Badge>
                 </div>
 
@@ -177,13 +178,13 @@ const KnowledgeContent = ({ id }: { id: string }) => {
           {searchResults.length > 0 ? (
             <div className="h-full flex flex-col">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">搜索结果</h2>
+                <h2 className="text-lg font-semibold">Search Results</h2>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setSearchResults([])}
                 >
-                  返回文档内容
+                  Back to document content
                 </Button>
               </div>
               <div className="flex-1 overflow-y-auto">
@@ -196,7 +197,7 @@ const KnowledgeContent = ({ id }: { id: string }) => {
                             {result.document_name}
                           </Badge>
                           <Badge className="bg-primary/10 text-primary">
-                            相似度: {(result.similarity * 100).toFixed(1)}%
+                            Similarity: {(result.similarity * 100).toFixed(1)}%
                           </Badge>
                         </div>
                         <p className="text-sm leading-relaxed">
@@ -224,7 +225,8 @@ const KnowledgeContent = ({ id }: { id: string }) => {
                     </div>
                   </div>
                   <Badge variant="outline" className="bg-background/50">
-                    {previewDocument.files[selectedFile].chunks.length} 个知识块
+                    {previewDocument.files[selectedFile].chunks.length}{" "}
+                    knowledge blocks
                   </Badge>
                 </div>
               </div>
@@ -249,12 +251,13 @@ const KnowledgeContent = ({ id }: { id: string }) => {
                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                   {chunk.metadata.paragraph_number && (
                                     <span className="bg-muted/50 px-2 py-0.5 rounded">
-                                      段落 #{chunk.metadata.paragraph_number}
+                                      Paragraph #
+                                      {chunk.metadata.paragraph_number}
                                     </span>
                                   )}
                                   {chunk.metadata.source_page && (
                                     <span className="bg-muted/50 px-2 py-0.5 rounded">
-                                      页 {chunk.metadata.source_page}
+                                      Page {chunk.metadata.source_page}
                                     </span>
                                   )}
                                 </div>
@@ -274,9 +277,10 @@ const KnowledgeContent = ({ id }: { id: string }) => {
                 <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center">
                   <TbFileText className="w-8 h-8 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold">请选择文件</h3>
+                <h3 className="text-xl font-semibold">Please select a file</h3>
                 <p className="text-sm text-muted-foreground">
-                  从左侧列表中选择一个文件以查看知识块列表
+                  Select a file from the left list to view the knowledge block
+                  list
                 </p>
               </div>
             </div>

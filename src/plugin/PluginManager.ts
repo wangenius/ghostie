@@ -3,12 +3,10 @@ import { PluginProps } from "@/common/types/plugin";
 
 export class PluginManager {
   /* 插件列表 */
-  static store = new Echo<Record<string, PluginProps>>(
-    {},
-    {
-      name: "plugins",
-    },
-  );
+  static store = new Echo<Record<string, PluginProps>>({}).indexed({
+    database: "plugins",
+    name: "plugins",
+  });
 
   static get current() {
     return this.store.current;

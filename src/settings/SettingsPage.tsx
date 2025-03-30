@@ -23,25 +23,20 @@ import { GeneralSettingsPage } from "./GeneralSettingsPage";
 import ShortcutsTab from "./ShortcutsTab";
 
 const SETTINGS_NAV_ITEMS = [
-  { id: "general", label: "通用", icon: TbSettings },
-  { id: "models", label: "大模型", icon: TbBox },
-  { id: "bots", label: "机器人", icon: TbGhost3 },
-  { id: "plugins", label: "插件库", icon: TbFileFunction },
-  { id: "workflows", label: "工作流", icon: TbShape3 },
-  { id: "knowledge", label: "知识库", icon: TbDatabase },
-  { id: "shortcuts", label: "快捷键", icon: TbKeyboard },
+  { id: "general", label: "General", icon: TbSettings },
+  { id: "models", label: "Models", icon: TbBox },
+  { id: "bots", label: "Bots", icon: TbGhost3 },
+  { id: "plugins", label: "Plugins", icon: TbFileFunction },
+  { id: "workflows", label: "Workflows", icon: TbShape3 },
+  { id: "knowledge", label: "Knowledge", icon: TbDatabase },
+  { id: "shortcuts", label: "Shortcuts", icon: TbKeyboard },
 ] as const;
 
 type SettingsTab = (typeof SETTINGS_NAV_ITEMS)[number]["id"];
 
-const SettingsNav = new Echo<{ activeTab: SettingsTab }>(
-  {
-    activeTab: SETTINGS_NAV_ITEMS[0].id,
-  },
-  {
-    name: "settings-nav",
-  },
-);
+const SettingsNav = new Echo<{ activeTab: SettingsTab }>({
+  activeTab: SETTINGS_NAV_ITEMS[0].id,
+}).localStorage({ name: "settings-nav" });
 
 export function SettingsPage() {
   const { activeTab } = SettingsNav.use();
@@ -80,7 +75,7 @@ export function SettingsPage() {
       />
       {/* 标题栏 */}
       <Header
-        title="设置"
+        title="Settings"
         close={() => {
           Page.to("main");
         }}

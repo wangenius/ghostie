@@ -83,6 +83,8 @@ pub async fn chat_stream<R: Runtime>(
         .await
         .map_err(|e| e.to_string())?;
 
+    println!("response: {:#?}", response);
+
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().await.map_err(|e| e.to_string())?;
@@ -116,6 +118,8 @@ pub async fn chat_stream<R: Runtime>(
                                         if !line.starts_with("data: ") || line.contains("[DONE]") {
                                             continue;
                                         }
+
+                                        println!("line: {}", line);
 
                                         let json_str = &line[6..];
                                         if let Ok(json) = serde_json::from_str::<serde_json::Value>(json_str) {

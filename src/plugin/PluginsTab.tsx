@@ -37,8 +37,8 @@ import CodeMirror from "@uiw/react-codemirror";
 import { toast } from "sonner";
 // 默认插件属性
 const defaultPluginProps: Partial<PluginProps> = {
-  name: "新插件",
-  description: "请添加插件描述",
+  name: "New Plugin",
+  description: "Please add plugin description",
   version: "1.0.0",
   tools: [],
 };
@@ -79,7 +79,7 @@ export function PluginsTab() {
       PluginManager.set(plugins);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      cmd.message(`加载插件列表失败: ${message}`, "error");
+      cmd.message(`load plugins error: ${message}`, "error");
     }
   }, []);
 
@@ -102,14 +102,14 @@ export function PluginsTab() {
         setTestTool(""); // 重置选中的测试工具
       }
     } catch (error) {
-      console.error("加载插件失败:", error);
-      cmd.message("加载插件失败", "error");
+      console.error("load plugin error:", error);
+      cmd.message("load plugin error", "error");
     }
   }, []);
 
   const handleRemovePlugin = async (id: string) => {
     try {
-      const confirm = await cmd.confirm("确定删除插件吗？");
+      const confirm = await cmd.confirm("Are you sure to delete the plugin?");
       if (!confirm) return;
       await cmd.invoke("plugin_remove", { id });
       PluginManager.delete(id);
@@ -118,8 +118,8 @@ export function PluginsTab() {
         setContent("");
       }
     } catch (error) {
-      console.error("删除插件失败:", error);
-      cmd.message("删除插件失败", "error");
+      console.error("delete plugin error:", error);
+      cmd.message("delete plugin error", "error");
     }
   };
 
@@ -129,8 +129,8 @@ export function PluginsTab() {
       const result = await cmd.invoke<{ path: string; content: string }>(
         "open_file",
         {
-          title: "选择 TypeScript 插件文件",
-          filters: { TypeScript文件: ["ts"] },
+          title: "Select TypeScript Plugin File",
+          filters: { TypeScriptFile: ["ts"] },
         },
       );
 
@@ -141,10 +141,10 @@ export function PluginsTab() {
       });
 
       await loadPlugins();
-      cmd.message(`成功导入插件: ${pluginInfo.name}`, "success");
+      cmd.message(`success import plugin: ${pluginInfo.name}`, "success");
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      cmd.message(`导入插件失败: ${message}`, "error");
+      cmd.message(`import plugin error: ${message}`, "error");
     }
   }, [loadPlugins]);
 
@@ -166,7 +166,7 @@ export function PluginsTab() {
           [result.id]: result,
         });
         setSelectedPlugin(result);
-        cmd.message("创建成功", "success");
+        cmd.message("success create plugin", "success");
       } else {
         // 更新现有插件
         const result = await cmd.invoke<PluginProps>("plugin_update", {
@@ -179,11 +179,11 @@ export function PluginsTab() {
           });
           setSelectedPlugin(result);
         }
-        cmd.message("更新成功", "success");
+        cmd.message("success update plugin", "success");
       }
     } catch (error) {
       console.error(error);
-      toast.error(JSON.stringify(error || { error: "未知错误" }));
+      toast.error(JSON.stringify(error || { error: "unknown error" }));
     } finally {
       setIsSubmitting(false);
     }
@@ -202,7 +202,7 @@ export function PluginsTab() {
       setResult(result);
     } catch (error) {
       console.error(error);
-      cmd.message("请打开调试窗口查看错误信息", "测试失败", "warning");
+      cmd.message("test plugin error", "warning");
     } finally {
       setIsSubmitting(false);
     }
@@ -241,7 +241,7 @@ export function PluginsTab() {
             {" "}
             <Button className="flex-1" onClick={handleAdd}>
               <TbPlus className="w-4 h-4" />
-              <span>添加插件</span>
+              <span>Add Plugin</span>
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -253,27 +253,27 @@ export function PluginsTab() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => EnvEditor.open()}>
                   <TbDatabaseCog className="w-4 h-4 mr-2" />
-                  <span>环境变量</span>
+                  <span>Environment Variables</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleImportPlugin}>
                   <TbUpload className="w-4 h-4 mr-2" />
-                  <span>导入 TypeScript 插件</span>
+                  <span>Import TypeScript Plugin</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </>
         }
-        tips="插件支持: 可以通过编写 TypeScript 插件来扩展功能。请参考开发文档了解更多信息。"
+        tips="Plugin supported: You can extend the function by writing a TypeScript plugin. Please refer to the development documentation for more information."
         items={Object.values(plugins).map((plugin) => ({
           id: plugin.id,
-          title: plugin.name || "未命名插件",
-          description: plugin.description || "暂无描述",
+          title: plugin.name || "Unnamed Plugin",
+          description: plugin.description || "No description",
           onClick: () => loadPluginContent(plugin.id),
           actived: selectedPlugin?.id === plugin.id,
           onRemove: () => handleRemovePlugin(plugin.id),
         }))}
-        emptyText="暂无插件，点击上方按钮添加新的插件"
+        emptyText="No plugins, click the button above to add a new plugin"
         EmptyIcon={TbPlus}
       />
       <motion.div
@@ -293,7 +293,7 @@ export function PluginsTab() {
         }}
       >
         <PreferenceBody
-          emptyText="请选择一个插件或点击添加按钮创建新插件"
+          emptyText="Please select a plugin or click the add button to create a new plugin"
           EmptyIcon={TbPlug}
           isEmpty={!selectedPlugin && !content}
           className={cn("rounded-xl flex-1", {
@@ -301,8 +301,8 @@ export function PluginsTab() {
           })}
           header={
             <div className="flex items-center justify-between w-full">
-              <h3 className="text-2xl font-semibold">
-                {selectedPlugin?.name || "未命名插件"}
+              <h3 className="text-base font-semibold">
+                {selectedPlugin?.name || "Unnamed Plugin"}
               </h3>
               <div className="flex items-center gap-2">
                 <Button
@@ -314,18 +314,18 @@ export function PluginsTab() {
                   variant="ghost"
                 >
                   <TbBook className="w-4 h-4" />
-                  开发文档
+                  Documentation
                 </Button>
                 <Button onClick={handleToggleFullscreen} variant="ghost">
                   {isFullscreen ? (
                     <>
                       <TbMinimize className="w-4 h-4" />
-                      退出全屏
+                      Exit Fullscreen
                     </>
                   ) : (
                     <>
                       <TbMaximize className="w-4 h-4" />
-                      全屏
+                      Fullscreen
                     </>
                   )}
                 </Button>
@@ -335,7 +335,7 @@ export function PluginsTab() {
                   className="gap-2"
                 >
                   <TbTestPipe className="w-4 h-4" />
-                  测试
+                  Test
                 </Button>
                 <Button
                   variant="primary"
@@ -345,11 +345,11 @@ export function PluginsTab() {
                   <TbUpload className="w-4 h-4" />
                   {isSubmitting
                     ? selectedPlugin
-                      ? "更新中..."
-                      : "创建中..."
+                      ? "Updating..."
+                      : "Creating..."
                     : selectedPlugin
-                    ? "更新"
-                    : "创建"}
+                    ? "Update"
+                    : "Create"}
                 </Button>
               </div>
             </div>
@@ -394,7 +394,7 @@ export function PluginsTab() {
             })}
             extensions={[javascript({ typescript: true })]}
             onChange={setContent}
-            placeholder={`编写你的插件代码, 参考开发文档`}
+            placeholder={`Write your plugin code, refer to the development documentation`}
             basicSetup={{
               lineNumbers: false,
               highlightActiveLineGutter: true,

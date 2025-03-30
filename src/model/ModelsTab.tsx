@@ -4,7 +4,7 @@ import { cmd } from "@utils/shell";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { TbBox, TbDownload, TbPlus, TbUpload } from "react-icons/tb";
 
-import { Model, ModelType, ModelTypeList } from "@/common/types/model";
+import { Model, ModelType, ModelTypeList } from "@/model/types/model";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
@@ -28,7 +28,7 @@ export function ModelsTab() {
       try {
         ModelManager.update(selectedModel.id, selectedModel);
       } catch (error) {
-        console.error("更新模型失败:", error);
+        console.error("update model error:", error);
       }
     }
   }, [selectedModel]);
@@ -44,13 +44,13 @@ export function ModelsTab() {
       });
       setSelectedModel(newModel);
     } catch (error) {
-      console.error("添加模型失败:", error);
+      console.error("add model error:", error);
     }
   };
 
   const handleDeleteModel = async (id: string) => {
     const answer = await cmd.confirm(
-      `确定要删除模型 "${models[id].name}" 吗？`,
+      `Are you sure you want to delete the model "${models[id].name}"?`,
     );
     if (answer) {
       try {
@@ -59,7 +59,7 @@ export function ModelsTab() {
           setSelectedModel(undefined);
         }
       } catch (error) {
-        console.error("删除模型失败:", error);
+        console.error("delete model error:", error);
       }
     }
   };
@@ -69,7 +69,7 @@ export function ModelsTab() {
       const result = await cmd.invoke<{ path: string; content: string }>(
         "open_file",
         {
-          title: "选择模型配置文件",
+          title: "Select Model Configuration File",
           filters: {
             模型配置: ["json"],
           },
@@ -78,11 +78,14 @@ export function ModelsTab() {
 
       if (result) {
         ModelManager.import(result.content);
-        await cmd.message("成功导入模型配置", "导入成功");
+        await cmd.message(
+          "Successfully imported model configuration",
+          "import success",
+        );
       }
     } catch (error) {
-      console.error("导入模型失败:", error);
-      await cmd.message(`导入模型失败: ${error}`, "导入失败");
+      console.error("import model error:", error);
+      await cmd.message(`import model error: ${error}`, "import failed");
     }
   };
 
@@ -90,7 +93,7 @@ export function ModelsTab() {
     try {
       const modelsJson = ModelManager.export();
       const result = await cmd.invoke<boolean>("save_file", {
-        title: "保存模型配置",
+        title: "Save Model Configuration",
         filters: {
           模型配置: ["json"],
         },
@@ -99,11 +102,14 @@ export function ModelsTab() {
       });
 
       if (result) {
-        await cmd.message("成功导出模型配置", "导出成功");
+        await cmd.message(
+          "Successfully exported model configuration",
+          "export success",
+        );
       }
     } catch (error) {
-      console.error("导出模型失败:", error);
-      await cmd.message(`导出模型失败: ${error}`, "导出失败");
+      console.error("export model error:", error);
+      await cmd.message(`export model error: ${error}`, "export failed");
     }
   };
 
@@ -115,7 +121,7 @@ export function ModelsTab() {
           <>
             <Button variant="ghost" onClick={handleCreateModel}>
               <TbPlus className="w-4 h-4" />
-              添加模型
+              Add Model
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -131,24 +137,24 @@ export function ModelsTab() {
               <DropdownMenuContent align="end" className="min-w-[160px]">
                 <DropdownMenuItem onClick={handleImport} className="gap-2">
                   <TbUpload className="w-4 h-4" />
-                  <span>导入配置</span>
+                  <span>Import Configuration</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuItem onClick={handleExport} className="gap-2">
                   <TbDownload className="w-4 h-4" />
-                  <span>导出配置</span>
+                  <span>Export Configuration</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </>
         }
-        tips="模型支持: 阿里千问, deepseek, ChatGPT等gpt接口的模型。智谱或Claude等模型请等待更新。或者欢迎提交PR。"
+        tips="Model supported: Ali Qianwen, Deepseek, ChatGPT, etc. Zhipu or Claude models please wait for updates. Or welcome to submit PR."
         items={Object.values(models).map((model) => ({
           id: model.id,
           title: (
             <span className="flex">
               <span className="font-bold text-sm truncate">
-                {model.name || "未命名模型"}
+                {model.name || "Unnamed Model"}
               </span>
               {model.type && (
                 <small
@@ -162,18 +168,18 @@ export function ModelsTab() {
               )}
             </span>
           ),
-          description: model.model || "暂无描述",
+          description: model.model || "No description",
           onClick: () => setSelectedModel(model),
           actived: selectedModel?.id === model.id,
           onRemove: () => handleDeleteModel(model.id),
         }))}
-        emptyText="暂无模型，点击上方按钮添加新的模型"
+        emptyText="No model, click the button above to add a new model"
         EmptyIcon={TbPlus}
       />
 
       {/* 右侧编辑区域 */}
       <PreferenceBody
-        emptyText="请选择一个模型或点击添加按钮创建新模型"
+        emptyText="Please select a model or click the add button to create a new model"
         isEmpty={!selectedModel}
         EmptyIcon={TbBox}
         className="px-8 py-6"
@@ -208,13 +214,13 @@ const ModelItem = memo(
             onChange={(e) =>
               setSelectedModel({ ...model, name: e.target.value })
             }
-            placeholder="为你的模型配置起个名字"
+            placeholder="Give your model a name"
             className="w-full text-2xl font-medium"
           />
 
           <div className="space-y-6">
             <DrawerSelector
-              title="模型类型"
+              title="Model Type"
               value={[model.type]}
               items={Object.entries(ModelTypeList).map(([key, value]) => ({
                 label: value,
@@ -226,7 +232,9 @@ const ModelItem = memo(
             />
 
             <div className="space-y-3 bg-muted/40 p-4 rounded-lg">
-              <h3 className="text-lg font-medium tracking-tight">API 配置</h3>
+              <h3 className="text-lg font-medium tracking-tight">
+                API Configuration
+              </h3>
               <div className="space-y-3">
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-muted-foreground">
@@ -245,7 +253,7 @@ const ModelItem = memo(
                     className="font-mono h-10"
                   />
                   <p className="text-xs text-muted-foreground">
-                    例如：gpt-3.5-turbo
+                    For example: gpt-3.5-turbo
                   </p>
                 </div>
 
@@ -271,7 +279,7 @@ const ModelItem = memo(
                     className="font-mono h-10"
                   />
                   <p className="text-xs text-muted-foreground">
-                    例如：https://api.openai.com/v1/chat/completions
+                    For example: https://api.openai.com/v1/chat/completions
                   </p>
                 </div>
 
@@ -293,7 +301,7 @@ const ModelItem = memo(
                           : undefined,
                       )
                     }
-                    placeholder="如需更新 API Key 请输入新的值"
+                    placeholder="If you need to update the API Key, please enter a new value"
                     className="font-mono h-10"
                   />
                 </div>

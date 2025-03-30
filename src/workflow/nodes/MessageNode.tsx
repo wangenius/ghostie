@@ -49,7 +49,7 @@ export class MessageNodeExecutor extends NodeExecutor {
       );
 
       if (!message) {
-        throw new Error("消息内容为空");
+        throw new Error("Message content is empty");
       }
 
       await cmd.notify(message);
@@ -66,7 +66,7 @@ export class MessageNodeExecutor extends NodeExecutor {
         },
       };
     } catch (error) {
-      console.error("消息节点执行失败", error);
+      console.error("Message node execution failed", error);
       return this.createErrorResult(error);
     }
   }

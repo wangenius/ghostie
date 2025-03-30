@@ -24,7 +24,7 @@ export function PreferenceBody({
         ) : (
           <PiEmpty className="w-12 h-12 text-muted-foreground/50" />
         )}
-        <p className="text-center">{emptyText || "暂无数据"}</p>
+        <p className="text-center">{emptyText || "No data"}</p>
       </div>
     );
   }

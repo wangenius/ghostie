@@ -481,7 +481,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
       return (
         <div className="ml-4 mt-2 space-y-3 border-l-2 border-gray-200 pl-4">
           <div className="space-y-2">
-            <Label className="text-xs text-gray-500">数组项类型</Label>
+            <Label className="text-xs text-gray-500"> Array Item Type</Label>
             <Select
               value={itemType}
               onValueChange={(value: ToolPropertyType) =>
@@ -492,17 +492,19 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
                 <SelectValue placeholder="选择类型" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="string">字符串</SelectItem>
-                <SelectItem value="number">数字</SelectItem>
-                <SelectItem value="boolean">布尔值</SelectItem>
-                <SelectItem value="object">对象</SelectItem>
+                <SelectItem value="string">String</SelectItem>
+                <SelectItem value="number">Number</SelectItem>
+                <SelectItem value="boolean">Boolean</SelectItem>
+                <SelectItem value="object">Object</SelectItem>
               </SelectContent>
             </Select>
 
             {/* 如果数组项是对象类型，渲染对象属性编辑器 */}
             {itemType === "object" && param.items && (
               <div className="mt-2">
-                <Label className="text-xs text-gray-500">数组项属性</Label>
+                <Label className="text-xs text-gray-500">
+                  Array Item Properties
+                </Label>
                 {renderObjectPropertiesRef.current?.({
                   ...param.items,
                   id: `${param.id}_item`,
@@ -535,7 +537,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
               onClick={() => addObjectProperty(currentPath)}
             >
               <PlusCircle className="mr-1 h-3.5 w-3.5" />
-              添加属性
+              Add Property
             </Button>
           </div>
 
@@ -570,7 +572,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">类型</Label>
+                      <Label className="text-xs text-gray-500">Type</Label>
                       <Select
                         value={prop.type}
                         onValueChange={(value: ToolPropertyType) =>
@@ -583,20 +585,22 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
                           <SelectValue placeholder="选择类型" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="string">字符串</SelectItem>
-                          <SelectItem value="number">数字</SelectItem>
-                          <SelectItem value="boolean">布尔值</SelectItem>
-                          <SelectItem value="array">数组</SelectItem>
-                          <SelectItem value="object">对象</SelectItem>
+                          <SelectItem value="string">String</SelectItem>
+                          <SelectItem value="number">Number</SelectItem>
+                          <SelectItem value="boolean">Boolean</SelectItem>
+                          <SelectItem value="array">Array</SelectItem>
+                          <SelectItem value="object">Object</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">描述</Label>
+                      <Label className="text-xs text-gray-500">
+                        Description
+                      </Label>
                       <Input
                         className="h-7 text-xs bg-white"
-                        placeholder="描述"
+                        placeholder="Description"
                         value={prop.description || ""}
                         onChange={(e) =>
                           updateObjectProperty(currentPath, propId, {
@@ -725,7 +729,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
         >
           {editableParams.length === 0 ? (
             <div className="text-center text-gray-500 w-full">
-              无参数，点击设置添加
+              No parameters, click to set
             </div>
           ) : (
             <div className="space-y-1">
@@ -748,11 +752,11 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
         onOpenChange={handleDrawerOpenChange}
         title={
           <span className="flex items-center justify-between">
-            <h3 className="font-bold">节点配置</h3>
+            <h3 className="font-bold">Node Configuration</h3>
             <div className="flex items-center justify-end">
               <Button onClick={addParam}>
                 <PlusCircle className="mr-2 h-4 w-4" />
-                添加参数
+                Add Parameter
               </Button>
             </div>
           </span>

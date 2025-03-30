@@ -1,20 +1,20 @@
 ---
-title: 快速入门 Ghost
+title: Ghost Quick Start
 order: 1
 ---
 
-# 快速入门 Ghost
+# Ghost Quick Start
 
-## 安装
+## Installation
 
-1. github 下载: [Ghostie](https://github.com/wangenius/ghostie/releases)
+1. Download from GitHub: [Ghostie](https://github.com/wangenius/ghostie/releases)
 
-2. qq 群下载：[1027160649](https://qm.qq.com/q/FdFbIt1pT2)
+2. Download from QQ group: [1027160649](https://qm.qq.com/q/FdFbIt1pT2)
 
 ![qq](/qq.jpg)
 
-## 使用
+## Usage
 
-1. 添加模型
-2. 添加助手
-3. 开始聊天
+1. Add model
+2. Add assistant
+3. Start chatting

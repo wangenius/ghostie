@@ -1,16 +1,16 @@
-# 助手开发
+# Assistant Development
 
-助手、Agent、机器人在 Ghostie 中含义相同。
+Assistant, Agent, and Bot mean the same thing in Ghostie.
 
-## 助手支持
+## Assistant Support
 
-1. 基础的 ChatModel 调用，支持多轮对话
-2. 一个助手可建立多个对话流程
-3. 助手支持 ReAct 等 Agent 模式，未来 Agent 模式支持用户自行开发
-4. 助手支持功能插件调用
-5. 助手支持工作流调用
-6. 助手支持知识库调用
+1. Basic ChatModel calls, supporting multi-turn conversations
+2. One assistant can establish multiple conversation flows
+3. Assistants support Agent modes like ReAct, and in the future, users will be able to develop their own Agent modes
+4. Assistants support functional plugin calls
+5. Assistants support workflow calls
+6. Assistants support knowledge base calls
 
-## 助手开发
+## Assistant Development
 
-直接在助手设置中设置即可。
+Simply configure in the assistant settings.

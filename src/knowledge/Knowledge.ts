@@ -1,4 +1,4 @@
-import { Model } from "@/common/types/model";
+import { Model } from "@/model/types/model";
 import { FileMetadata } from "@/knowledge/KnowledgeCreator";
 import { cmd } from "@/utils/shell";
 import { Echo } from "echo-state";
@@ -46,7 +46,13 @@ export interface KnowledgeFile {
 }
 
 /* 知识库 */
-export interface Knowledge {
+export interface KnowledgeProps {
+  meta: KnowledgeMeta;
+  /* 知识库文件 */
+  files: KnowledgeFile[];
+}
+
+export interface KnowledgeMeta {
   /* 知识库ID */
   id: string;
   /* 知识库名称 */
@@ -56,7 +62,6 @@ export interface Knowledge {
   /* 知识库版本 */
   version: string;
   /* 知识库文件 */
-  files: KnowledgeFile[];
   /* 创建时间 */
   created_at: number;
   /* 更新时间 */
@@ -96,21 +101,39 @@ export interface ProgressCallback {
 const CHUNK_SIZE = 425;
 const KNOWLEDGE_VERSION = "1.0.0";
 
-export class KnowledgeStore {
-  private static store = new Echo<Record<string, Knowledge>>(
-    {},
-    {
-      name: "knowledge",
-      storage: "indexedDB",
-    },
-  );
+export class Knowledge {
+  private store = new Echo<KnowledgeProps | null>(null);
+  private static list = new Echo<{
+    knowledge: string;
+    list: Record<string, KnowledgeMeta>;
+  }>({
+    knowledge: "",
+    list: {},
+  }).localStorage({
+    name: "knowledge_list",
+  });
+  static useList = this.list.use.bind(this.list);
+  static database = "knowledge";
+  use = this.store.use.bind(this.store);
 
-  static use = this.store.use.bind(this.store);
-
-  static docs() {
-    return this.store.current;
+  constructor(id: string) {
+    this.store = new Echo<KnowledgeProps | null>(null).indexed({
+      database: Knowledge.database,
+      name: id,
+    });
   }
 
+  async docs() {
+    return this.store.getCurrent();
+  }
+
+  static getList() {
+    return Knowledge.list.current.list;
+  }
+
+  switch(id: string) {
+    this.store.switch(id);
+  }
   // 计算余弦相似度
   private static cosineSimilarity(a: number[], b: number[]): number {
     const dotProduct = a.reduce((sum, val, i) => sum + val * b[i], 0);
@@ -130,7 +153,7 @@ export class KnowledgeStore {
     model: Model,
   ): Promise<number[]> {
     if (!model) {
-      throw new Error("未配置模型");
+      throw new Error("Model not configured");
     }
     const response = await fetch(model.api_url, {
       method: "POST",
@@ -155,21 +178,57 @@ export class KnowledgeStore {
     return data.data[0].embedding;
   }
 
-  static setDescription(id: string, description: string) {
+  setDescription(description: string) {
     this.store.set((prev) => ({
       ...prev,
-      [id]: { ...prev[id], description },
+      description,
     }));
+    Knowledge.list.set((prev) => {
+      const id = this.store.current?.meta.id;
+      if (!id) {
+        return prev;
+      }
+      return {
+        ...prev,
+        list: {
+          ...prev.list,
+          [id]: {
+            ...prev.list[id],
+            description,
+          },
+        },
+      };
+    });
   }
 
-  static setName(id: string, name: string) {
+  setName(name: string) {
     this.store.set((prev) => ({
       ...prev,
-      [id]: { ...prev[id], name },
+      name,
     }));
+    Knowledge.list.set((prev) => {
+      const id = this.store.current?.meta.id;
+      if (!id) {
+        return prev;
+      }
+      return {
+        ...prev,
+        list: {
+          ...prev.list,
+          [id]: {
+            ...prev.list[id],
+            name,
+          },
+        },
+      };
+    });
   }
 
-  // 添加知识库
+  /** 添加知识库
+   * @param filePaths 文件路径
+   * @param options 选项
+   * @returns 知识库
+   */
   static async add(
     filePaths: FileMetadata[],
     options?: {
@@ -177,10 +236,10 @@ export class KnowledgeStore {
       description?: string;
       onProgress?: (progress: ProgressCallback) => void;
     },
-  ): Promise<Knowledge> {
+  ) {
     const model = SettingsManager.current.knowledge.contentModel;
     if (!model) {
-      throw new Error("模型配置出错");
+      throw new Error("Model configuration error");
     }
 
     const processedFiles: KnowledgeFile[] = [];
@@ -194,7 +253,7 @@ export class KnowledgeStore {
     // 读取所有文件
     onProgress?.({
       progress: 0,
-      status: "正在读取文件...",
+      status: "Reading files...",
     });
 
     const files = await Promise.all(
@@ -205,7 +264,7 @@ export class KnowledgeStore {
         currentStep++;
         onProgress?.({
           progress: (currentStep / totalSteps) * 100,
-          status: "正在读取文件...",
+          status: "Reading files...",
           currentFile: file.path.split("\\").pop(),
         });
         return { path: file.path, content };
@@ -219,7 +278,7 @@ export class KnowledgeStore {
 
       onProgress?.({
         progress: ((currentStep + fileIndex) / totalSteps) * 100,
-        status: "正在处理文件内容...",
+        status: "Processing file content...",
         currentFile: fileName,
       });
 
@@ -229,7 +288,7 @@ export class KnowledgeStore {
 
       const model_ = ModelManager.get(model);
       if (!model_) {
-        throw new Error("模型配置出错");
+        throw new Error("Model configuration error");
       }
 
       for (let i = 0; i < chunks.length; i++) {
@@ -250,7 +309,7 @@ export class KnowledgeStore {
           progress:
             ((currentStep + fileIndex + (i + 1) / totalChunks) / totalSteps) *
             100,
-          status: "正在生成文本向量...",
+          status: "Generating text vectors...",
           currentFile: fileName,
         });
       }
@@ -266,27 +325,49 @@ export class KnowledgeStore {
       });
     }
 
-    const knowledge: Knowledge = {
-      id: gen.id(),
+    const id = gen.id();
+
+    const knowledge = new Echo<KnowledgeProps | null>(null).indexed({
+      database: Knowledge.database,
+      name: id,
+    });
+
+    await knowledge.ready();
+
+    const meta: KnowledgeMeta = {
+      id,
       name:
         options?.name ||
         processedFiles[0]?.name ||
-        `知识库_${new Date().toISOString().split("T")[0]}`,
+        `Knowledge_${new Date().toISOString().split("T")[0]}`,
       description: options?.description || "",
       version: KNOWLEDGE_VERSION,
-      files: processedFiles,
       created_at: now,
       updated_at: now,
     };
 
-    this.store.set((prev) => ({
-      ...prev,
-      [knowledge.id]: knowledge,
-    }));
+    knowledge.set({
+      meta,
+      files: processedFiles,
+    });
+
+    Knowledge.list.set((prev) => {
+      const id = meta.id;
+      if (!id) {
+        return prev;
+      }
+      return {
+        ...prev,
+        list: {
+          ...prev.list,
+          [id]: meta,
+        },
+      };
+    });
 
     onProgress?.({
       progress: 100,
-      status: "处理完成",
+      status: "Processing completed",
     });
 
     return knowledge;
@@ -294,7 +375,19 @@ export class KnowledgeStore {
 
   // 删除知识库
   static delete(id: string): void {
-    this.store.delete(id);
+    new Echo<Knowledge | null>(null)
+      .indexed({
+        database: this.database,
+        name: id,
+      })
+      .discard();
+    this.list.set((prev) => {
+      const { [id]: _, ...rest } = prev.list;
+      return {
+        ...prev,
+        list: rest,
+      };
+    });
   }
 
   /** 搜索知识库
@@ -309,23 +402,28 @@ export class KnowledgeStore {
     /* 获取模型 */
     const model = SettingsManager.current.knowledge.searchModel;
     if (!model) {
-      throw new Error("模型配置出错");
+      throw new Error("Model configuration error");
     }
     const model_ = ModelManager.get(model);
     if (!model_) {
-      throw new Error("模型配置出错");
+      throw new Error("Model configuration error");
     }
     /* 获取查询向量 */
     const queryEmbedding = await this.textToEmbedding(query, model_);
     const results: SearchResult[] = [];
 
     /* 搜索所有知识库 */
-    for (const doc of Object.values(this.store.current)) {
+    for (const doc of Object.values(this.list.current.list)) {
       /* 如果指定了知识库ID，则只搜索指定知识库, 否则搜索所有知识库 */
       if (knowledgeIds.length > 0 && !knowledgeIds.includes(doc.id)) {
         continue;
       }
-      for (const file of doc.files) {
+      const knowledge = new Echo<KnowledgeProps | null>(null).indexed({
+        database: this.database,
+        name: doc.id,
+      });
+
+      for (const file of (await knowledge.getCurrent())?.files || []) {
         for (const chunk of file.chunks) {
           const similarity = this.cosineSimilarity(
             queryEmbedding,
@@ -335,7 +433,7 @@ export class KnowledgeStore {
             results.push({
               content: chunk.content,
               similarity,
-              document_name: `${doc.name}/${file.name}`,
+              document_name: `${knowledge.current?.meta.name}/${file.name}`,
               document_id: doc.id,
             });
           }
