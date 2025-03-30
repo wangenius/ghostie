@@ -334,7 +334,9 @@ export class ChatModel {
       const unlistenStream = await cmd.listen(
         `chat-stream-${this.currentRequestId}`,
         (event) => {
-          const delta = event.payload.choices[0]?.delta;
+          const payload = JSON.parse(event.payload.replace("data: ", ""));
+          const delta = payload.choices[0]?.delta;
+
           const delta_tool_call = delta?.tool_calls?.[0] as ToolCallReply;
 
           console.log(delta);

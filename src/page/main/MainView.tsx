@@ -21,9 +21,12 @@ import {
   TbArrowBigLeft,
   TbClockDown,
   TbDots,
+  TbFileUpload,
   TbHeartDown,
   TbHistory,
   TbLoader2,
+  TbPaperclip,
+  TbPhotoUp,
   TbSettings,
   TbSortDescending2,
 } from "react-icons/tb";
@@ -307,78 +310,97 @@ const Header = memo(function Header({
             onChange={handleInputChange}
             onKeyDown={onKeyDown}
             className="text-[13px]"
-            placeholder={"点击此处输入内容"}
+            placeholder={"Type here..."}
           />
         </div>
-        {!isActive && (
-          <div className="">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-xs">
-                  {sortType === "default" && (
-                    <TbSortDescending2 className="w-4 h-4 mr-0.5" />
-                  )}
-                  {sortType === "mostUsed" && (
-                    <TbHeartDown className="w-4 h-4 mr-0.5" />
-                  )}
-                  {sortType === "recentUsed" && (
-                    <TbClockDown className="w-4 h-4 mr-0.5" />
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuRadioGroup
-                  value={sortType}
-                  onValueChange={(value) =>
-                    SettingsManager.setSortType(value as SortType)
-                  }
-                >
-                  <DropdownMenuRadioItem value="default">
-                    默认排序
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="mostUsed">
-                    使用次数
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="recentUsed">
-                    最近使用
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )}
-        {isActive && (
-          <Button onClick={handleActionClick} size="icon">
-            {isLoading ? (
-              <TbLoader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <TbArrowBigLeft className="h-4 w-4" />
-            )}
-          </Button>
-        )}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="ghost">
-              <TbDots className="h-4 w-4" />
+        <div className="flex items-center gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-xs">
+                <TbPaperclip className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>
+                <TbFileUpload className="w-4 h-4" />
+                File
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <TbPhotoUp className="w-4 h-4" />
+                Image
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {!isActive && (
+            <div className="">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-xs">
+                    {sortType === "default" && (
+                      <TbSortDescending2 className="w-4 h-4 mr-0.5" />
+                    )}
+                    {sortType === "mostUsed" && (
+                      <TbHeartDown className="w-4 h-4 mr-0.5" />
+                    )}
+                    {sortType === "recentUsed" && (
+                      <TbClockDown className="w-4 h-4 mr-0.5" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuRadioGroup
+                    value={sortType}
+                    onValueChange={(value) =>
+                      SettingsManager.setSortType(value as SortType)
+                    }
+                  >
+                    <DropdownMenuRadioItem value="default">
+                      Default
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="mostUsed">
+                      Most Used
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="recentUsed">
+                      Recent Used
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+          {isActive && (
+            <Button onClick={handleActionClick} size="icon">
+              {isLoading ? (
+                <TbLoader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <TbArrowBigLeft className="h-4 w-4" />
+              )}
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              className="flex items-center gap-2"
-              onClick={handleHistoryClick}
-            >
-              <TbHistory className="h-4 w-4" />
-              历史记录
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="flex items-center gap-2"
-              onClick={handleSettingsClick}
-            >
-              <TbSettings className="h-4 w-4" />
-              设置
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="ghost">
+                <TbDots className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="flex items-center gap-2"
+                onClick={handleHistoryClick}
+              >
+                <TbHistory className="h-4 w-4" />
+                History
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="flex items-center gap-2"
+                onClick={handleSettingsClick}
+              >
+                <TbSettings className="h-4 w-4" />
+                Settings
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </div>
   );

@@ -29,6 +29,7 @@
     "core:window:allow-is-maximizable",
     "core:window:allow-set-min-size",
     "core:window:allow-set-size",
+    "core:window:allow-set-max-size",
     "core:window:allow-set-resizable",
     "updater:default",
     "autostart:allow-enable",
@@ -39,7 +40,6 @@
     "opener:default",
     "opener:allow-open-url",
     "opener:allow-reveal-item-in-dir",
-    "opener:allow-default-urls",
-    "notification:default"
+    "opener:allow-default-urls"
   ]
 }

@@ -2,29 +2,29 @@
 layout: home
 hero:
   name: Ghostie
-  text: 轻量级桌面Agent平台
-  tagline: 简单、灵活、高效的Agent开发和生态平台
+  text: Lightweight Desktop Agent Platform
+  tagline: Simple, Flexible, Efficient Agent Development and Ecosystem Platform
   image:
     src: /icon.png
     alt: Ghostie Logo
   actions:
     - theme: brand
-      text: 快速开始
+      text: Get Started
       link: /tutorials/start
     - theme: alt
-      text: 下载
+      text: Download
       link: https://releases.wangenius.com/ghostie.exe
 features:
   - icon: 🚀
-    title: 便捷易用
-    details: 任何时间，任何地点，快速唤醒Ghostie，迅速指挥Agent行动
+    title: Convenient and Easy to Use
+    details: Summon Ghostie anytime, anywhere, quickly commanding agents to take action
   - icon: 🎉
-    title: 界面友好
-    details: 轻量级应用大小，现代化设计语言，流畅的动画效果，深色模式支持，带来极致用户体验
+    title: User-Friendly Interface
+    details: Lightweight application size, modern design language, smooth animations, dark mode support, bringing ultimate user experience
   - icon: 🎨
-    title: 简单开发
-    details: 简单易上手的可视化开发界面，轻松创建、管理Agent和工作流
+    title: Simple Development
+    details: Easy-to-use visual development interface for creating and managing agents and workflows
   - icon: 🛠️
-    title: 自由扩展
-    details: 自由的插件生态，支持自定义代码节点，完整的桌面权限，助您打造专属工作流
+    title: Free Extension
+    details: Free plugin ecosystem, supporting custom code nodes, complete desktop permissions, helping you create personalized workflows
 ---

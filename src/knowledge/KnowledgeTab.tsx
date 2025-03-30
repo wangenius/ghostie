@@ -14,11 +14,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Knowledge,
   KnowledgeMeta,
-  KnowledgeProps,
   type SearchResult,
 } from "@/knowledge/Knowledge";
 import { cmd } from "@utils/shell";
-import { Echo } from "echo-state";
 import { useEffect, useState } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { TbDatabasePlus, TbDownload, TbUpload } from "react-icons/tb";
@@ -27,10 +25,7 @@ import { FileList } from "./components/FileList";
 import { SearchResults } from "./components/SearchResults";
 import { KnowledgeCreator } from "./KnowledgeCreator";
 
-const instance = new Echo<KnowledgeProps | null>(null).indexed({
-  database: Knowledge.database,
-  name: "",
-});
+const instance = new Knowledge("");
 
 export function KnowledgeTab() {
   const { list: documents } = Knowledge.useList();
@@ -42,7 +37,7 @@ export function KnowledgeTab() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const knowledge = instance.use();
+  const knowledge = instance.store.use();
 
   useEffect(() => {
     console.log(knowledge);
@@ -166,7 +161,7 @@ export function KnowledgeTab() {
           description: doc.description?.slice(0, 50) || "No description",
           onClick: () => {
             setSelectedDoc(doc);
-            instance.switch(id);
+            instance.store.switch(id);
           },
           actived: selectedDoc?.id === id,
           onRemove: () => handleDelete(id),
@@ -191,15 +186,11 @@ export function KnowledgeTab() {
                     className="text-xl font-semibold pl-0 border-none focus-visible:ring-0 w-[320px] p-0 m-0 rounded-none"
                     value={selectedDoc?.name}
                     onChange={(e) => {
-                      const newDoc = { ...selectedDoc, name: e.target.value };
-                      instance.set((prev) => ({
-                        ...prev,
-                        meta: {
-                          ...prev!.meta,
-                          name: e.target.value,
-                        },
-                      }));
-                      setSelectedDoc(newDoc);
+                      setSelectedDoc({
+                        ...selectedDoc,
+                        name: e.target.value,
+                      });
+                      instance.setName(e.target.value);
                     }}
                   />
                 </div>
@@ -207,11 +198,11 @@ export function KnowledgeTab() {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Badge variant="outline" className="bg-background/50">
-                      {knowledge?.files.length} files
+                      {knowledge?.files?.length} files
                     </Badge>
                     <span>·</span>
                     <span>
-                      {knowledge?.files.reduce(
+                      {knowledge?.files?.reduce(
                         (acc, file) => acc + file.chunks.length,
                         0,
                       )}
@@ -225,15 +216,9 @@ export function KnowledgeTab() {
                 <Textarea
                   className="mt-3 text-sm text-muted-foreground resize-none border-none focus-visible:ring-0"
                   placeholder="Add knowledge base description..."
-                  value={selectedDoc?.description}
+                  defaultValue={selectedDoc?.description}
                   onChange={(e) => {
-                    instance.set((prev) => ({
-                      ...prev!,
-                      meta: {
-                        ...prev!.meta,
-                        description: e.target.value,
-                      },
-                    }));
+                    instance.setDescription(e.target.value);
                   }}
                 />
               </div>
@@ -263,7 +248,7 @@ export function KnowledgeTab() {
       <FileDrawer
         open={isDrawerOpen}
         onOpenChange={setIsDrawerOpen}
-        file={knowledge?.files[selectedFile ?? -1]}
+        file={knowledge?.files?.[selectedFile ?? -1]}
       />
     </PreferenceLayout>
   );

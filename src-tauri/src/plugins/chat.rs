@@ -83,7 +83,7 @@ pub async fn chat_stream<R: Runtime>(
         .await
         .map_err(|e| e.to_string())?;
 
-    println!("response: {:#?}", response);
+    println!("request_body: {:#?}", request_body);
 
     if !response.status().is_success() {
         let status = response.status();
@@ -115,18 +115,9 @@ pub async fn chat_stream<R: Runtime>(
                                     let lines: Vec<&str> = text.split('\n').collect();
 
                                     for line in lines {
-                                        if !line.starts_with("data: ") || line.contains("[DONE]") {
-                                            continue;
-                                        }
-
-                                        println!("line: {}", line);
-
-                                        let json_str = &line[6..];
-                                        if let Ok(json) = serde_json::from_str::<serde_json::Value>(json_str) {
-                                            if let Err(e) = window_clone.emit(&format!("chat-stream-{}", request_id), json) {
+                                        if let Err(e) = window_clone.emit(&format!("chat-stream-{}", request_id), line) {
                                                 eprintln!("Failed to emit event: {}", e);
                                             }
-                                        }
                                     }
                                 }
                                 Err(e) => {

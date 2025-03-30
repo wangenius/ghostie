@@ -79,8 +79,8 @@ export class HistoryMessage implements ChatHistoryItem {
    * @param id 消息历史记录ID
    * @returns 消息历史记录, 如果id不存在, 则创建一个默认的消息历史记录
    */
-  static getHistory(id: string): HistoryMessage {
-    const history = ChatHistory.current[id];
+  static async getHistory(id: string): Promise<HistoryMessage> {
+    const history = (await ChatHistory.getCurrent())?.[id];
     if (!history) {
       throw new Error("History not found");
     }

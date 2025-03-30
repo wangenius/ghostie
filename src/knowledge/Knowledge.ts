@@ -102,7 +102,7 @@ const CHUNK_SIZE = 425;
 const KNOWLEDGE_VERSION = "1.0.0";
 
 export class Knowledge {
-  private store = new Echo<KnowledgeProps | null>(null);
+  store = new Echo<KnowledgeProps | null>(null);
   private static list = new Echo<{
     knowledge: string;
     list: Record<string, KnowledgeMeta>;
@@ -178,16 +178,18 @@ export class Knowledge {
     return data.data[0].embedding;
   }
 
-  setDescription(description: string) {
+  async setDescription(description: string) {
     this.store.set((prev) => ({
       ...prev,
       description,
     }));
+
+    const id = (await this.store.getCurrent())?.meta.id;
+    if (!id) {
+      return;
+    }
+
     Knowledge.list.set((prev) => {
-      const id = this.store.current?.meta.id;
-      if (!id) {
-        return prev;
-      }
       return {
         ...prev,
         list: {
@@ -201,16 +203,16 @@ export class Knowledge {
     });
   }
 
-  setName(name: string) {
+  async setName(name: string) {
+    const id = (await this.store.getCurrent())?.meta.id;
+    if (!id) {
+      return;
+    }
     this.store.set((prev) => ({
       ...prev,
       name,
     }));
     Knowledge.list.set((prev) => {
-      const id = this.store.current?.meta.id;
-      if (!id) {
-        return prev;
-      }
       return {
         ...prev,
         list: {
