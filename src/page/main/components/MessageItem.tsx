@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import {
+  TbBrain,
   TbCopy,
   TbExclamationCircle,
   TbLoader,
@@ -19,6 +20,7 @@ interface MessageItemProps {
 export function MessageItem({ message }: MessageItemProps) {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
+  const [showReasoning, setShowReasoning] = useState(true);
 
   // 如果是隐藏的用户消息或tool:result消息,则不渲染
   if (message.type === "user:hidden" || message.type === "tool:result") {
@@ -38,6 +40,8 @@ export function MessageItem({ message }: MessageItemProps) {
         return "bg-gray-50 dark:bg-gray-900/50 font-mono text-sm";
       case "assistant:error":
         return "bg-red-50 dark:bg-red-900/50 font-mono text-sm";
+      case "assistant:reasoning":
+        return "bg-gray-200 dark:bg-gray-900/70 font-maple text-sm";
       default:
         return isUser ? "bg-background" : "bg-muted";
     }
@@ -94,6 +98,26 @@ export function MessageItem({ message }: MessageItemProps) {
             {message.type === "user:input" && (
               <div className="flex items-center gap-2">
                 <span>{message.content}</span>
+              </div>
+            )}
+            {message.type === "assistant:reasoning" && (
+              <div className="gap-2">
+                <div
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowReasoning((prev) => !prev);
+                  }}
+                  className="flex items-center gap-2 p-1"
+                >
+                  <TbBrain className="h-4 w-4" />
+                  <span>推理</span>
+                </div>
+                {showReasoning && (
+                  <div className="text-xs text-muted-foreground">
+                    {message.content}
+                  </div>
+                )}
               </div>
             )}
             {(message.type === "assistant:reply" ||

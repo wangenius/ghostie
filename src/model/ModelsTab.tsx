@@ -15,7 +15,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { ModelProvider } from "@/model/ModelManager";
+import { SettingsManager } from "@/settings/SettingsManager";
 import { getColor } from "@/utils/color";
 import { memo, useState } from "react";
 
@@ -24,6 +26,7 @@ export function ModelsTab() {
   const [isAddModelDrawerOpen, setIsAddModelDrawerOpen] = useState(false);
   // 获取所有已注册的模型提供商
   const providers = ModelManager.getProviders();
+  const { theme } = SettingsManager.use();
 
   const handleImport = async () => {
     try {
@@ -108,27 +111,31 @@ export function ModelsTab() {
         items={Object.values(providers).map((provider) => ({
           id: provider.name,
           title: (
-            <span className="flex">
-              <span className="font-bold text-sm truncate">
-                {provider.name || "未命名模型"}
-              </span>
-              {provider.name ? (
-                <small
-                  className="ml-2 text-[10px] text-muted bg-primary/80 px-2 rounded-xl"
-                  style={{
-                    backgroundColor: getColor(provider.name),
-                  }}
-                >
-                  {provider.name}
-                </small>
-              ) : (
-                <small className="ml-2 text-[10px] text-muted bg-gray-500/80 px-2 rounded-xl">
-                  base model
-                </small>
+            <div className="flex items-center justify-between gap-2">
+              {provider.icon && (
+                <img
+                  src={`/${provider.icon}`}
+                  className={cn(
+                    "w-7 h-7 p-1 rounded-lg",
+                    theme.name === "dark" ? "bg-white" : "",
+                  )}
+                  alt={provider.name}
+                />
               )}
-            </span>
+              <div className="flex justify-between flex-1 gap-1">
+                <span className="font-bold text-sm truncate">
+                  {provider.name || "未命名模型"}
+                </span>
+              </div>
+            </div>
           ),
-          description: "no description",
+          description: (
+            <div className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
+                {Object.keys(provider.models).length} models
+              </span>
+            </div>
+          ),
           onClick: () => setSelectedModel(provider),
           actived: selectedModel?.name === provider.name,
           onRemove: () => {},
@@ -145,11 +152,7 @@ export function ModelsTab() {
         EmptyIcon={TbBox}
       >
         {selectedModel && (
-          <ModelItem
-            model={selectedModel}
-            setSelectedModel={setSelectedModel}
-            providers={providers}
-          />
+          <ModelItem model={selectedModel} providers={providers} />
         )}
       </PreferenceBody>
 
@@ -205,11 +208,9 @@ export function ModelsTab() {
 const ModelItem = memo(
   ({
     model,
-    setSelectedModel,
     providers,
   }: {
     model: ModelProvider;
-    setSelectedModel: (model: ModelProvider | undefined) => void;
     providers: Record<string, ModelProvider>;
   }) => {
     // 获取当前提供商支持的模型列表
@@ -224,17 +225,17 @@ const ModelItem = memo(
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto p-2 space-y-3">
           <div className="flex items-center gap-2">
-            <Input
-              type="text"
-              variant="title"
-              spellCheck={false}
-              value={model?.name || ""}
-              onChange={(e) =>
-                setSelectedModel({ ...model, name: e.target.value })
-              }
-              placeholder="give your model a name"
-              className="w-full text-2xl font-medium"
+            <img
+              src={`/${providers[model.name]?.icon}`}
+              className="w-12 h-12 p-1 rounded-lg"
+              alt={providers[model.name]?.name || model.name}
             />
+
+            <h1 className="text-2xl font-medium flex-1">
+              {model.name
+                ? providers[model.name]?.name || model.name
+                : "base model"}
+            </h1>
 
             <span className="text-xs flex-none bg-primary/10 px-2 py-0.5 rounded-full">
               {model.name

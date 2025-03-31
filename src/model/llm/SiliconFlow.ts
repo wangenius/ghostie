@@ -1,14 +1,13 @@
-import { ModelInfo } from "@common/types/agent";
 import { ChatModel } from "../ChatModel";
 import { ChatModelRequestBody } from "@/model/types/model";
 import { ModelManager, ModelProvider } from "../ModelManager";
 
 export class SiliconFlow extends ChatModel {
-  constructor(config?: Partial<ModelInfo>) {
+  constructor(model: string) {
     const api_key = ModelManager.getApiKey(SiliconFlowProvider.name);
     // 设置默认API URL
     const configWithDefaults = {
-      ...config,
+      model,
       api_key,
       api_url: "https://api.siliconflow.cn/v1/chat/completions",
     };
@@ -31,7 +30,8 @@ export class SiliconFlow extends ChatModel {
 // 注册硅流提供商
 const SiliconFlowProvider: ModelProvider = {
   name: "硅流",
-  description: "硅流 (SiliconFlow AI)",
+  description: "硅流",
+  icon: "siliconcloud-color.svg",
   models: {
     "abab-5.5-chat": {
       name: "abab-5.5-chat",
@@ -64,7 +64,7 @@ const SiliconFlowProvider: ModelProvider = {
       description: "ABAB-Coding - 专为代码生成和理解优化",
     },
   },
-  create: () => new SiliconFlow(),
+  create: (model_name: string) => new SiliconFlow(model_name),
 };
 
 // 注册到ChatModel

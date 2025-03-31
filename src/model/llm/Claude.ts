@@ -1,13 +1,14 @@
 import { ChatModelRequestBody, ToolCallReply } from "@/model/types/model";
-import { ModelInfo } from "@common/types/agent";
 import { ChatModel } from "../ChatModel";
 import { ModelManager, ModelProvider } from "../ModelManager";
 
 export class Claude extends ChatModel {
-  constructor(config?: Partial<ModelInfo>) {
+  constructor(model: string) {
+    const api_key = ModelManager.getApiKey(ClaudeProvider.name);
     const configWithDefaults = {
-      ...config,
-      api_url: config?.api_url || "https://api.anthropic.com/v1/messages",
+      model,
+      api_key,
+      api_url: "https://api.anthropic.com/v1/messages",
     };
 
     super(configWithDefaults);
@@ -83,6 +84,7 @@ export class Claude extends ChatModel {
 const ClaudeProvider: ModelProvider = {
   name: "Claude",
   description: "Anthropic Claude (基于宪章的AI助手)",
+  icon: "claude-color.svg",
   models: {
     "claude-3-opus-20240229": {
       name: "claude-3-opus-20240229",
@@ -125,7 +127,7 @@ const ClaudeProvider: ModelProvider = {
       description: "Claude 3.5 Sonnet - 最新一代Claude模型，性能显著提升",
     },
   },
-  create: () => new Claude(),
+  create: (model_name: string) => new Claude(model_name),
 };
 
 // 注册到ChatModel

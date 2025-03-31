@@ -44,6 +44,8 @@ export enum MessageType {
   ASSISTANT_ERROR = "assistant:error",
   /** 工具执行结果消息 - 工具函数执行后的结果 */
   TOOL_RESULT = "tool:result",
+  /** 助手推理消息 - 助手推理后的消息 */
+  ASSISTANT_REASONING = "assistant:reasoning",
 }
 
 /** 消息原型 */

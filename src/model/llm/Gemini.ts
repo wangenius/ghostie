@@ -1,14 +1,13 @@
-import { ModelInfo } from "@common/types/agent";
 import { ChatModel } from "../ChatModel";
 import { ChatModelRequestBody, ToolCallReply } from "@/model/types/model";
 import { ModelManager, ModelProvider } from "../ModelManager";
 
 export class Gemini extends ChatModel {
-  constructor(config?: Partial<ModelInfo>) {
+  constructor(model: string) {
     const api_key = ModelManager.getApiKey(GeminiProvider.name);
     // 设置默认API URL
     const configWithDefaults = {
-      ...config,
+      model,
       api_key,
       api_url: "https://generativelanguage.googleapis.com/v1beta/models",
     };
@@ -95,7 +94,8 @@ export class Gemini extends ChatModel {
 // 注册Gemini提供商
 const GeminiProvider: ModelProvider = {
   name: "Gemini",
-  description: "Google Gemini (谷歌最新AI模型)",
+  description: "Google Gemini",
+  icon: "gemini-color.svg",
   models: {
     "gemini-1.5-pro": {
       name: "gemini-1.5-pro",
@@ -138,7 +138,7 @@ const GeminiProvider: ModelProvider = {
       description: "Gemini Pro Vision - 专注图像理解的模型",
     },
   },
-  create: () => new Gemini(),
+  create: (model_name: string) => new Gemini(model_name),
 };
 
 // 注册到ChatModel

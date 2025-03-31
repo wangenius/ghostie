@@ -1,9 +1,8 @@
 import { BotProps } from "@/common/types/bot";
-import { Message, MessageType } from "@/model/types/model";
 import { ToolProps } from "@/common/types/plugin";
+import { Message, MessageType } from "@/model/types/model";
 import { PluginManager } from "@/plugin/PluginManager";
 import { ChatModel } from "../model/ChatModel";
-import { ModelManager } from "../model/ModelManager";
 import { SettingsManager } from "../settings/SettingsManager";
 import { BotManager } from "./BotManger";
 import { Context } from "./Context";
@@ -58,9 +57,6 @@ export class Bot implements Omit<BotProps, "model"> {
     this.temperature = config.temperature;
     /* 机器人模式 */
     this.mode = config.mode;
-    /* 机器人模型 */
-    const model = ModelManager.get(config.model);
-
     // 解析工具字符串，格式为 "tool_name-plugin_name"
     const tools: ToolProps[] = Object.values(PluginManager.current)
       .flatMap((plugin) =>
@@ -76,9 +72,7 @@ export class Bot implements Omit<BotProps, "model"> {
         return config.tools.includes(tool.name);
       });
 
-    console.log(config.workflows);
-
-    this.model = new ChatModel(model)
+    this.model = ChatModel.create(config.model)
       .setBot(config.id)
       .setTemperature(config.temperature)
       .setTools(tools)

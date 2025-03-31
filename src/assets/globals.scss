@@ -41,6 +41,7 @@
     --warning: 25 100% 50%;
     --danger: 120 50% 50%;
     --info: 25 100% 50%;
+    --maple: "maple";
   }
 
   [data-theme="dark"] {
@@ -64,6 +65,7 @@
     --destructive-foreground: 210 40% 98%;
     --ring: 216 34% 17%;
     --radius: 0.5rem;
+    --maple: "maple";
   }
 
   * {

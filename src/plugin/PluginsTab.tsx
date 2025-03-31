@@ -3,9 +3,9 @@ import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { tags as t } from "@lezer/highlight";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
 
 import {
   DropdownMenu,
@@ -29,8 +29,10 @@ import {
 } from "react-icons/tb";
 import { EnvEditor } from "./EnvEditor";
 import { PluginManager } from "./PluginManager";
+import { PluginsMarket } from "./components/PluginsMarket";
 import { TestDrawer } from "./components/TestDrawer";
 
+import { dialog } from "@/components/custom/DialogModal";
 import { javascript } from "@codemirror/lang-javascript";
 import { githubDarkInit } from "@uiw/codemirror-theme-github";
 import CodeMirror from "@uiw/react-codemirror";
@@ -226,14 +228,15 @@ export function PluginsTab() {
         left={
           <Button
             onClick={() => {
-              cmd.invoke("open_url", {
-                url: "https://ghostie.wangenius.com/resources/plugins",
+              dialog({
+                title: "Plugins Market",
+                content: <PluginsMarket />,
               });
             }}
             variant="outline"
           >
             <PiStorefrontDuotone className="w-4 h-4" />
-            插件仓库
+            Plugins Market
           </Button>
         }
         right={

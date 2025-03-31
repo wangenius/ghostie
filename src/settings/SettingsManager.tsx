@@ -1,5 +1,12 @@
 import { Echo } from "echo-state";
 
+// 新增：定义代理设置接口
+interface ProxySettingsConfig {
+  enabled: boolean;
+  host: string;
+  port: string; // 使用字符串以便于Input组件处理
+}
+
 interface SettingsProps {
   theme: { name: string; label: string };
   font: { name: string; label: string };
@@ -13,13 +20,14 @@ interface SettingsProps {
     contentModel: string;
     searchModel: string;
   };
+  proxy: ProxySettingsConfig; // 新增：代理设置字段
 }
 
 /* 设置管理 */
 export class SettingsManager {
   private static store = new Echo<SettingsProps>({
     theme: { name: "light", label: "浅色" },
-    font: { name: "siyuan", label: "思源" },
+    font: { name: "maple", label: "思源" },
     language: "zh-CN",
     reActMaxIterations: 10,
     sortType: "default",
@@ -29,6 +37,12 @@ export class SettingsManager {
       limit: 10,
       contentModel: "",
       searchModel: "",
+    },
+    // 新增：代理默认设置
+    proxy: {
+      enabled: false,
+      host: "127.0.0.1",
+      port: "1080",
     },
   }).localStorage({ name: "settings" });
 
@@ -83,5 +97,13 @@ export class SettingsManager {
 
   public static setMaxHistory(maxHistory: number) {
     this.store.set((prev) => ({ ...prev, maxHistory }));
+  }
+
+  // 新增：更新代理设置的方法
+  public static setProxy(proxyConfig: Partial<ProxySettingsConfig>) {
+    this.store.set((prev) => ({
+      ...prev,
+      proxy: { ...prev.proxy, ...proxyConfig },
+    }));
   }
 }

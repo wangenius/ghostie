@@ -75,6 +75,7 @@ export default {
       fontFamily: {
         sans: ["var(--font-sans)"],
         font: ["var(--font-font)"],
+        maple: ["var(--font-maple)"],
       },
       keyframes: {
         "accordion-down": {

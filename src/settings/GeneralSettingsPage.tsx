@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -7,16 +8,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { ModelManager } from "@/model/ModelManager";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { cmd } from "@/utils/shell";
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import {
   TbArrowIteration,
   TbDatabase,
   TbFolder,
   TbHistory,
+  TbNetwork,
   TbPalette,
   TbRotate,
   TbTypography,
@@ -90,7 +93,8 @@ function ThemeSettings() {
 function FontSettings() {
   const settings = SettingsManager.use();
   const fonts = [
-    { name: "siyuan", label: "siyuan" },
+    { name: "maple", label: "maple" },
+    { name: "mono", label: "jetbrains" },
     { name: "harmony", label: "harmony" },
     { name: "default", label: "default" },
   ];
@@ -191,6 +195,73 @@ function ConfigDirSettings() {
   );
 }
 
+function ProxySettings() {
+  const settings = SettingsManager.use();
+  const [host, setHost] = useState(settings.proxy.host);
+  const [port, setPort] = useState(settings.proxy.port);
+
+  useEffect(() => {
+    setHost(settings.proxy.host);
+    setPort(settings.proxy.port);
+  }, [settings.proxy.host, settings.proxy.port]);
+
+  const handleHostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setHost(e.target.value);
+  };
+
+  const handlePortChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPort(e.target.value);
+  };
+
+  const updateGlobalSettings = () => {
+    SettingsManager.setProxy({ host, port });
+  };
+
+  const handleEnabledChange = (checked: boolean) => {
+    SettingsManager.setProxy({ enabled: checked });
+  };
+
+  return (
+    <SettingItem
+      icon={<TbNetwork className="w-[18px] h-[18px]" />}
+      title="SOCKS5 Proxy"
+      description={
+        settings.proxy.enabled
+          ? `Enabled: ${settings.proxy.host}:${settings.proxy.port}`
+          : "Disabled"
+      }
+      action={
+        <div className="flex items-center gap-2">
+          <Input
+            type="text"
+            placeholder="Host (e.g., 127.0.0.1)"
+            value={host}
+            onChange={handleHostChange}
+            onBlur={updateGlobalSettings}
+            className="w-32 h-8 text-xs"
+            disabled={!settings.proxy.enabled}
+          />
+          <Input
+            type="text"
+            placeholder="Port (e.g., 1080)"
+            value={port}
+            onChange={handlePortChange}
+            onBlur={updateGlobalSettings}
+            className="w-20 h-8 text-xs"
+            disabled={!settings.proxy.enabled}
+          />
+          <Switch
+            checked={settings.proxy.enabled}
+            disabled={true}
+            title="Proxy is not supported in the current version"
+            onCheckedChange={handleEnabledChange}
+          />
+        </div>
+      }
+    />
+  );
+}
+
 function ReactMaxIterationsSettings() {
   const settings = SettingsManager.use();
 
@@ -243,7 +314,6 @@ function MaxHistorySettings() {
 
 function KnowledgeModelSettings() {
   const { knowledge } = SettingsManager.use();
-  const models = ModelManager.use();
 
   return (
     <>
@@ -255,10 +325,7 @@ function KnowledgeModelSettings() {
           <Select
             value={knowledge.contentModel}
             onValueChange={(value) => {
-              const model = models[value];
-              if (model) {
-                SettingsManager.setKnowledge({ contentModel: value });
-              }
+              SettingsManager.setKnowledge({ contentModel: value });
             }}
           >
             <SelectTrigger className="w-[180px]">
@@ -290,10 +357,7 @@ function KnowledgeModelSettings() {
           <Select
             value={knowledge.searchModel}
             onValueChange={(value) => {
-              const model = models[value];
-              if (model) {
-                SettingsManager.setKnowledge({ searchModel: value });
-              }
+              SettingsManager.setKnowledge({ searchModel: value });
             }}
           >
             <SelectTrigger className="w-[180px]">
@@ -371,6 +435,7 @@ export function GeneralSettingsPage() {
       <ThemeSettings />
       <FontSettings />
       <UpdateSettings />
+      <ProxySettings />
       <h3 className="text-lg font-bold pt-6">ChatAgent</h3>
       <ConfigDirSettings />
       <MaxHistorySettings />

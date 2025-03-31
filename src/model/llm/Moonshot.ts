@@ -1,14 +1,13 @@
-import { ModelInfo } from "@common/types/agent";
 import { ChatModel } from "../ChatModel";
 import { ChatModelRequestBody } from "@/model/types/model";
 import { ModelManager, ModelProvider } from "../ModelManager";
 
 export class Moonshot extends ChatModel {
-  constructor(config?: Partial<ModelInfo>) {
+  constructor(model: string) {
     const api_key = ModelManager.getApiKey(MoonshotProvider.name);
     // 设置默认API URL
     const configWithDefaults = {
-      ...config,
+      model,
       api_key,
       api_url: "https://api.moonshot.cn/v1/chat/completions",
     };
@@ -31,7 +30,8 @@ export class Moonshot extends ChatModel {
 // 注册Moonshot提供商
 const MoonshotProvider: ModelProvider = {
   name: "Moonshot",
-  description: "月之暗面 (Moonshot AI)",
+  description: "月之暗面",
+  icon: "moonshot.svg",
   models: {
     "moonshot-v1-32k": {
       name: "moonshot-v1-32k",
@@ -74,7 +74,7 @@ const MoonshotProvider: ModelProvider = {
       description: "Moonshot V1 (8K) - 标准版本，适合一般任务",
     },
   },
-  create: () => new Moonshot(),
+  create: (model_name: string) => new Moonshot(model_name),
 };
 
 // 注册到ChatModel

@@ -4,7 +4,6 @@
 import { ToolProps } from "@/common/types/plugin";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
-import { ModelInfo } from "@common/types/agent";
 import {
   ChatModelRequestBody,
   ChatModelResponse,
@@ -20,6 +19,7 @@ import { Knowledge } from "../knowledge/Knowledge";
 import { WorkflowManager } from "@/workflow/WorkflowManager";
 import { StartNodeConfig } from "@/workflow/types/nodes";
 import { Workflow } from "@/workflow/execute/Workflow";
+import { ModelManager } from "./ModelManager";
 
 /** 请求配置 */
 interface RequestConfig {
@@ -55,10 +55,19 @@ export class ChatModel {
   /** 构造函数
    * @param config 模型配置
    */
-  constructor(config?: Partial<ModelInfo>) {
-    this.api_key = config?.api_key || "";
-    this.api_url = config?.api_url || "";
-    this.model = config?.model || "";
+  constructor(config: { api_key: string; api_url: string; model: string }) {
+    this.api_key = config.api_key;
+    this.api_url = config.api_url;
+    this.model = config.model;
+  }
+
+  static create(modelwithprovider: string) {
+    const [provider_name, model_name] = modelwithprovider.split(":");
+    const provider = ModelManager.get(provider_name);
+    if (!provider) {
+      throw new Error(`Provider ${provider_name} not found`);
+    }
+    return provider.create(model_name);
   }
 
   setBot(bot: string): this {
@@ -206,6 +215,8 @@ export class ChatModel {
       const data = JSON.parse(payload.replace("data: ", ""));
       const delta = data.choices?.[0]?.delta;
 
+      console.log(data);
+
       // 提取内容
       const content = delta?.content;
 
@@ -216,7 +227,7 @@ export class ChatModel {
       }
 
       // 提取推理内容（如果有）
-      const reasoner = delta?.reasoning;
+      const reasoner = delta?.reasoning_content;
 
       return {
         content,
@@ -224,7 +235,6 @@ export class ChatModel {
         tool_call,
       };
     } catch (error) {
-      console.error("Error parsing response body:", error);
       return {};
     }
   }
@@ -383,10 +393,12 @@ export class ChatModel {
       requestBody = this.prepareRequestBody(requestBody);
 
       console.log(requestBody);
+      let reasonerContent = "";
       // 监听流式响应事件
       const unlistenStream = await cmd.listen(
         `chat-stream-${this.currentRequestId}`,
         (event) => {
+          if (!event.payload) return;
           // 解析原始响应数据
           const {
             content: deltaContent,
@@ -394,9 +406,19 @@ export class ChatModel {
             tool_call,
           } = this.parseResponseBody(event.payload);
 
-          console.log({ deltaContent, reasoner, tool_call });
-
           if (deltaContent) {
+            if (reasonerContent) {
+              reasonerContent = "";
+              this.historyMessage.push([
+                {
+                  role: "assistant",
+                  content: "",
+                  type: MessageType.ASSISTANT_PENDING,
+                  created_at: Date.now(),
+                },
+              ]);
+            }
+
             content += deltaContent;
             this.historyMessage.updateLastMessage({
               content,
@@ -423,8 +445,11 @@ export class ChatModel {
 
           // 如果有推理内容，可以在这里处理
           if (reasoner) {
-            // 根据需要处理推理内容
-            console.log("Reasoning:", reasoner);
+            reasonerContent += reasoner;
+            this.historyMessage.updateLastMessage({
+              content: reasonerContent,
+              type: MessageType.ASSISTANT_REASONING,
+            });
           }
         },
       );
@@ -486,7 +511,11 @@ export class ChatModel {
       };
     } catch (error) {
       this.currentRequestId = undefined;
-      throw error;
+
+      return {
+        body: String(error),
+        stop: () => this.stop(),
+      };
     }
   }
 

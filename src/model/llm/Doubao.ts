@@ -1,14 +1,13 @@
 import { ChatModelRequestBody } from "@/model/types/model";
-import { ModelInfo } from "@common/types/agent";
 import { ChatModel } from "../ChatModel";
 import { ModelManager, ModelProvider } from "../ModelManager";
 
 export class Doubao extends ChatModel {
-  constructor(config?: Partial<ModelInfo>) {
+  constructor(model: string) {
     const api_key = ModelManager.getApiKey(DoubaoProvider.name);
     // 设置默认API URL
     const configWithDefaults = {
-      ...config,
+      model,
       api_key,
       api_url: "https://api.doubao.com/v1/chat/completions",
     };
@@ -34,6 +33,7 @@ export class Doubao extends ChatModel {
 const DoubaoProvider: ModelProvider = {
   name: "豆包",
   description: "豆包 (智谱AI大语言模型)",
+  icon: "doubao-color.svg",
   models: {
     "doubao-pro": {
       name: "doubao-pro",
@@ -66,7 +66,7 @@ const DoubaoProvider: ModelProvider = {
       description: "豆包8B - 小参数模型，适合简单对话",
     },
   },
-  create: () => new Doubao(),
+  create: (model_name: string) => new Doubao(model_name),
 };
 
 // 注册到ChatModel

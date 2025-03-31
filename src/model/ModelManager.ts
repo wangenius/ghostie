@@ -31,7 +31,7 @@ export interface ModelProvider {
   /** 支持的模型列表 */
   models: Record<string, ModelCapability>;
   /** 创建模型 */
-  create: () => ChatModel;
+  create: (model_name: string) => ChatModel;
 }
 
 /** 模型管理器, 用于管理模型 */

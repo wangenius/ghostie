@@ -1,14 +1,13 @@
-import { ModelInfo } from "@common/types/agent";
 import { ChatModel } from "../ChatModel";
 import { ChatModelRequestBody } from "@/model/types/model";
 import { ModelManager, ModelProvider } from "../ModelManager";
 
 export class Deepseek extends ChatModel {
-  constructor(config?: Partial<ModelInfo>) {
+  constructor(model: string) {
     const api_key = ModelManager.getApiKey(DeepseekProvider.name);
     // 设置默认API URL
     const configWithDefaults = {
-      ...config,
+      model,
       api_key,
       api_url: "https://api.deepseek.com/v1/chat/completions",
     };
@@ -32,6 +31,7 @@ export class Deepseek extends ChatModel {
 const DeepseekProvider: ModelProvider = {
   name: "Deepseek",
   description: "Deepseek (深度求索大模型)",
+  icon: "deepseek-color.svg",
   models: {
     "deepseek-chat": {
       name: "deepseek-chat",
@@ -74,7 +74,7 @@ const DeepseekProvider: ModelProvider = {
       description: "Deepseek Math - 数学推理专用模型",
     },
   },
-  create: () => new Deepseek(),
+  create: (model_name: string) => new Deepseek(model_name),
 };
 
 // 注册到ChatModel

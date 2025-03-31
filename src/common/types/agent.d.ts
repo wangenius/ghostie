@@ -1,6 +1,6 @@
-import { TaskConfig } from './task';
-import { StepConfig, StepRetryConfig } from './task';
-import { ToolFunctionInfo } from '@/model/Tool';
+import { TaskConfig } from "./task";
+import { StepConfig, StepRetryConfig } from "./task";
+import { ToolFunctionInfo } from "@/model/Tool";
 
 /* Agent配置 */
 export interface AgentFlowConfig extends TaskConfig {
@@ -23,15 +23,6 @@ export interface AgentStepConfig extends StepConfig {
   json: boolean;
   /* 是否启用stream模式 */
   stream: boolean;
-}
-/* 模型配置 */
-export interface ModelInfo {
-  /* 模型api_key */
-  api_key: string;
-  /* 模型api_url */
-  api_url: string;
-  /* 模型名称 */
-  model: string;
 }
 
 /* LLM配置 */
@@ -79,7 +70,7 @@ export interface TaskPlan {
   id: string;
   description: string;
   steps: TaskStep[];
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  status: "pending" | "in_progress" | "completed" | "failed";
 }
 
 /* 任务步骤接口 */

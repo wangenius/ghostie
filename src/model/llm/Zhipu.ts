@@ -1,14 +1,13 @@
 import { ChatModelRequestBody } from "@/model/types/model";
-import { ModelInfo } from "@common/types/agent";
 import { ChatModel } from "../ChatModel";
 import { ModelManager, ModelProvider } from "../ModelManager";
 
 export class Zhipu extends ChatModel {
-  constructor(config?: Partial<ModelInfo>) {
+  constructor(model: string) {
     const api_key = ModelManager.getApiKey(ZhipuProvider.name);
     // 设置默认API URL
     const configWithDefaults = {
-      ...config,
+      model,
       api_key,
       api_url: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
     };
@@ -33,7 +32,8 @@ export class Zhipu extends ChatModel {
 // 注册智谱提供商
 const ZhipuProvider: ModelProvider = {
   name: "智谱",
-  description: "智谱AI (ChatGLM大模型)",
+  description: "智谱AI",
+  icon: "zhipu-color.svg",
   models: {
     "glm-4": {
       name: "glm-4",
@@ -76,7 +76,7 @@ const ZhipuProvider: ModelProvider = {
       description: "CogView-3 - 文生图模型",
     },
   },
-  create: () => new Zhipu(),
+  create: (model_name: string) => new Zhipu(model_name),
 };
 
 // 注册到ChatModel

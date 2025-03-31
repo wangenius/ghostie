@@ -1,14 +1,13 @@
-import { ModelInfo } from "@common/types/agent";
 import { ChatModel } from "../ChatModel";
 import { ChatModelRequestBody, ToolCallReply } from "@/model/types/model";
 import { ModelManager, ModelProvider } from "../ModelManager";
 
 export class Hunyuan extends ChatModel {
-  constructor(config?: Partial<ModelInfo>) {
+  constructor(model: string) {
     const api_key = ModelManager.getApiKey(HunyuanProvider.name);
     // 设置默认API URL
     const configWithDefaults = {
-      ...config,
+      model,
       api_key,
       api_url: "https://hunyuan.tencentcloudapi.com/",
     };
@@ -86,7 +85,8 @@ export class Hunyuan extends ChatModel {
 // 注册混元提供商
 const HunyuanProvider: ModelProvider = {
   name: "混元",
-  description: "腾讯混元 (Hunyuan 大模型)",
+  description: "腾讯混元",
+  icon: "hunyuan-color.svg",
   models: {
     "hunyuan-lite": {
       name: "hunyuan-lite",
@@ -129,7 +129,7 @@ const HunyuanProvider: ModelProvider = {
       description: "混元Turbo - 高速版本，针对实时场景优化",
     },
   },
-  create: () => new Hunyuan(),
+  create: (model_name: string) => new Hunyuan(model_name),
 };
 
 // 注册到ChatModel

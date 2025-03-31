@@ -68,3 +68,12 @@ export interface PluginProps {
   /* 工具列表 */
   tools: ToolProps[];
 }
+
+export interface PluginMarketProps extends PluginProps {
+  /* 插件创建时间 */
+  created_at: string;
+  /* 插件更新时间 */
+  updated_at: string;
+  /* 插件内容 */
+  content: string;
+}

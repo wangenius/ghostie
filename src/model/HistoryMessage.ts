@@ -142,7 +142,10 @@ export class HistoryMessage implements ChatHistoryItem {
     processedMessages = processedMessages.slice(firstNonToolIndex);
 
     return [this.system, ...processedMessages]
-      .filter((msg) => msg.type !== "assistant:error")
+      .filter(
+        (msg) =>
+          msg.type !== "assistant:error" && msg.type !== "assistant:reasoning",
+      )
       .map((msg) => {
         const result: Record<string, any> = {
           role: msg.role,

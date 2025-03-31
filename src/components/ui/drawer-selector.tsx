@@ -212,7 +212,7 @@ export function DrawerSelector({
         open={open}
         onOpenChange={setOpen}
         title={
-          <span className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold">{panelTitle || title}</h3>
             <div>
               {multiple && selectedItems.length > 0 && (
@@ -225,7 +225,7 @@ export function DrawerSelector({
                 </Button>
               )}
             </div>
-          </span>
+          </div>
         }
       >
         {items.length === 0 ? (

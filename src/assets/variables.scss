@@ -4,8 +4,8 @@
 }
 
 @font-face {
-  font-family: "siyuan";
-  src: url("SourceHanSerifCN-Medium.otf") format("opentype");
+  font-family: "maple";
+  src: url("MapleMono-NF-CN-Regular.ttf") format("opentype");
   font-weight: normal;
 }
 
@@ -14,8 +14,8 @@
   src: url("HarmonyOS_Sans_SC_Regular.ttf") format("opentype");
 }
 
-[data-font="siyuan"] * {
-  font-family: "siyuan";
+[data-font="maple"] * {
+  font-family: "maple";
 }
 
 [data-font="harmony"] * {
