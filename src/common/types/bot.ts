@@ -12,17 +12,17 @@ export interface BotProps {
   /* 系统提示 */
   system: string;
   /* 默认文字模型id */
-  model: string;
+  model?: string;
   /* 工具 */
-  tools: string[];
+  tools?: string[];
   /* 知识库 */
   knowledges?: string[];
   /* 工作流 */
   workflows?: string[];
   /* 温度 */
-  temperature: number;
+  temperature?: number;
   /* Agent模式 */
-  mode: "ReAct" | "Execute";
+  mode?: "ReAct" | "Execute";
   /* 置顶 */
   pinned?: boolean;
   /* 使用次数 */
@@ -45,4 +45,20 @@ export interface BotProps {
   image_model?: {
     id: string;
   };
+}
+
+export interface BotMarketProps {
+  id: string;
+  /* 助手名称 */
+  name: string;
+  /* 助手创建时间 */
+  inserted_at: string;
+  /* 助手更新时间 */
+  updated_at: string;
+  /* 助手作者 */
+  author?: string;
+  /* 助手系统提示 */
+  system: string;
+  /* 助手描述 */
+  description: string;
 }

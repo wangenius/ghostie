@@ -54,9 +54,9 @@ export class Bot implements Omit<BotProps, "model"> {
     /* 机器人系统提示 */
     this.system = config.system;
     /* 机器人温度 */
-    this.temperature = config.temperature;
+    this.temperature = config.temperature || 1;
     /* 机器人模式 */
-    this.mode = config.mode;
+    this.mode = config.mode || "ReAct";
     // 解析工具字符串，格式为 "tool_name-plugin_name"
     const tools: ToolProps[] = Object.values(PluginManager.current)
       .flatMap((plugin) =>
@@ -69,12 +69,12 @@ export class Bot implements Omit<BotProps, "model"> {
         })),
       )
       .filter((tool) => {
-        return config.tools.includes(tool.name);
+        return config.tools?.includes(tool.name);
       });
 
-    this.model = ChatModel.create(config.model)
+    this.model = ChatModel.create(config.model || "")
       .setBot(config.id)
-      .setTemperature(config.temperature)
+      .setTemperature(config.temperature || 1)
       .setTools(tools)
       .setKnowledge(config.knowledges || []);
 

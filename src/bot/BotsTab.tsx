@@ -27,6 +27,9 @@ import { getColor } from "@/utils/color";
 import { WorkflowManager } from "@/workflow/WorkflowManager";
 import { WorkflowProps } from "@/workflow/types/nodes";
 import { useCallback, useEffect, useState } from "react";
+import { dialog } from "@/components/custom/DialogModal";
+import { BotsMarket } from "./components/BotsMarket";
+import { BotUpload } from "./components/BotUpload";
 
 /** 机器人列表 */
 export function BotsTab() {
@@ -79,7 +82,7 @@ export function BotsTab() {
         {
           title: "Select Assistant Configuration File",
           filters: {
-            助手配置: ["json"],
+            "Assistant Configuration": ["json"],
           },
         },
       );
@@ -103,7 +106,7 @@ export function BotsTab() {
       const result = await cmd.invoke<boolean>("save_file", {
         title: "Save Assistant Configuration",
         filters: {
-          助手配置: ["json"],
+          "Assistant Configuration": ["json"],
         },
         defaultName: "bots.json",
         content: botsJson,
@@ -128,8 +131,10 @@ export function BotsTab() {
         left={
           <Button
             onClick={() => {
-              cmd.invoke("open_url", {
-                url: "https://ghostie.wangenius.com/resources/bots",
+              dialog({
+                title: "Bots Market",
+                content: <BotsMarket />,
+                className: "max-w-3xl",
               });
             }}
             variant="outline"
@@ -152,6 +157,19 @@ export function BotsTab() {
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    dialog({
+                      closeIconHide: true,
+                      title: "Upload Bot",
+                      content: <BotUpload />,
+                    });
+                  }}
+                >
+                  <TbUpload className="w-4 h-4 mr-2" />
+                  <span>Upload Bot</span>
+                </DropdownMenuItem>
+
                 <DropdownMenuItem onClick={handleImport}>
                   <TbUpload className="w-4 h-4 mr-2" />
                   <span>Import</span>
@@ -293,7 +311,7 @@ const BotItem = ({
                 </span>
               </div>
               <Slider
-                value={[bot.temperature]}
+                value={[bot.temperature || 0]}
                 min={0}
                 max={2}
                 step={0.1}
@@ -324,7 +342,7 @@ const BotItem = ({
             <div className="space-y-4">
               <DrawerSelector
                 title="Select Plugin"
-                value={bot.tools}
+                value={bot.tools || []}
                 items={Object.values(plugins).flatMap((plugin: PluginProps) =>
                   plugin.tools.map((tool: ToolProps) => ({
                     label: tool.name,

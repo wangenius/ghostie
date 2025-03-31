@@ -17,6 +17,8 @@ export class BotManager {
     const id = gen.id();
     BotManager.store.set({
       [id]: {
+        temperature: 0.5,
+        mode: "ReAct",
         ...bot,
         id,
       },
