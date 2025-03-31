@@ -8,7 +8,6 @@ import { TbDownload, TbPlus, TbRobot, TbUpload } from "react-icons/tb";
 import { defaultBot, TOOL_NAME_SPLIT } from "@/bot/Bot";
 import { BotManager } from "@/bot/BotManger";
 import { BotProps } from "@/common/types/bot";
-import { ModelType } from "@/model/types/model";
 import { PluginProps, ToolProps } from "@/common/types/plugin";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
@@ -210,8 +209,6 @@ const BotItem = ({
   setBot: (bot: BotProps | undefined) => void;
 }) => {
   const [plugins, setPlugins] = useState<Record<string, PluginProps>>({});
-
-  const models = ModelManager.use();
   const { list } = Knowledge.useList();
   const workflows = WorkflowManager.use();
 
@@ -223,17 +220,6 @@ const BotItem = ({
   useEffect(() => {
     loadPlugins();
   }, [loadPlugins]);
-
-  // 转换模型数据为选择器项目
-  const getModelItems = (type: ModelType) => {
-    return Object.values(models)
-      .filter((model) => model.type === type)
-      .map((model) => ({
-        label: model.name,
-        value: model.id,
-        description: model.model,
-      }));
-  };
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -277,7 +263,21 @@ const BotItem = ({
             <DrawerSelector
               title="Text Model"
               value={bot.model ? [bot.model] : []}
-              items={getModelItems(ModelType.TEXT)}
+              items={Object.values(ModelManager.getProviders()).flatMap(
+                (provider) => {
+                  const key = ModelManager.getApiKey(provider.name);
+                  if (!key) return [];
+                  const models = provider.models;
+                  return Object.values(models).map((model) => {
+                    return {
+                      label: model.name,
+                      value: `${provider.name}:${model.name}`,
+                      type: provider.name,
+                      description: `${model.description} (${key})`,
+                    };
+                  });
+                },
+              )}
               onSelect={([value]) =>
                 setBot(bot ? { ...bot, model: value } : undefined)
               }

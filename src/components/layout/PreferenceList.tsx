@@ -11,6 +11,7 @@ interface SettingsListItemProps {
   onClick: (id: string) => void;
   actived: boolean;
   onRemove: () => void;
+  noRemove?: boolean;
 }
 interface SettingsListProps {
   left?: React.ReactNode;
@@ -67,6 +68,7 @@ export function SettingsListItem({
   onClick,
   actived,
   onRemove,
+  noRemove,
 }: SettingsListItemProps) {
   return (
     <div
@@ -86,18 +88,20 @@ export function SettingsListItem({
           </div>
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onRemove();
-          }}
-        >
-          <TbTrash className="w-4 h-4" />
-        </Button>
+        {!noRemove && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onRemove();
+            }}
+          >
+            <TbTrash className="w-4 h-4" />
+          </Button>
+        )}
       </div>
     </div>
   );

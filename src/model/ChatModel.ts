@@ -34,23 +34,23 @@ interface RequestConfig {
 /** Chat模型, 用于与模型进行交互 */
 export class ChatModel {
   /** 模型 */
-  private model: string;
+  protected model: string;
   /** API密钥 */
-  private api_key: string;
+  protected api_key: string;
   /** API URL */
-  private api_url: string;
+  protected api_url: string;
   /** 消息历史 */
   public historyMessage: HistoryMessage = HistoryMessage.create();
   /** 工具 */
-  private tools: ToolRequestBody | undefined;
+  protected tools: ToolRequestBody | undefined;
   /** 知识 */
-  private knowledges: ToolRequestBody | undefined;
+  protected knowledges: ToolRequestBody | undefined;
   /** 工作流 */
-  private workflows: ToolRequestBody | undefined;
+  protected workflows: ToolRequestBody | undefined;
   /** 当前请求ID */
-  private currentRequestId: string | undefined;
+  protected currentRequestId: string | undefined;
   /** 温度 */
-  private temperature: number = 1;
+  protected temperature: number = 1;
 
   /** 构造函数
    * @param config 模型配置
@@ -179,7 +179,57 @@ export class ChatModel {
     return this;
   }
 
-  private async tool_call(
+  /**
+   * 准备请求体，允许子类重写以添加特定参数
+   * @param body 基础请求体
+   * @returns 处理后的请求体
+   */
+  protected prepareRequestBody(
+    body: ChatModelRequestBody,
+  ): ChatModelRequestBody {
+    // 默认实现直接返回原始请求体
+    return body;
+  }
+
+  /**
+   * 解析响应体，处理不同提供商的响应格式差异
+   * @param payload 原始响应数据字符串
+   * @returns 解析后的内容、推理和工具调用
+   */
+  protected parseResponseBody(payload: string): {
+    content?: string;
+    reasoner?: string;
+    tool_call?: ToolCallReply;
+  } {
+    try {
+      // 默认OpenAI格式解析
+      const data = JSON.parse(payload.replace("data: ", ""));
+      const delta = data.choices?.[0]?.delta;
+
+      // 提取内容
+      const content = delta?.content;
+
+      // 提取工具调用
+      let tool_call;
+      if (delta?.tool_calls?.[0]) {
+        tool_call = delta.tool_calls[0] as ToolCallReply;
+      }
+
+      // 提取推理内容（如果有）
+      const reasoner = delta?.reasoning;
+
+      return {
+        content,
+        reasoner,
+        tool_call,
+      };
+    } catch (error) {
+      console.error("Error parsing response body:", error);
+      return {};
+    }
+  }
+
+  protected async tool_call(
     tool_call: ToolCallReply,
   ): Promise<FunctionCallResult | undefined> {
     if (!tool_call) return;
@@ -309,7 +359,7 @@ export class ChatModel {
       }
 
       /* 创建请求体 */
-      const requestBody: ChatModelRequestBody = {
+      let requestBody: ChatModelRequestBody = {
         model: this.model,
         messages,
         stream: true,
@@ -329,41 +379,52 @@ export class ChatModel {
         requestBody.tools = [...(requestBody.tools || []), ...this.workflows];
       }
 
+      // 允许子类修改请求体
+      requestBody = this.prepareRequestBody(requestBody);
+
       console.log(requestBody);
       // 监听流式响应事件
       const unlistenStream = await cmd.listen(
         `chat-stream-${this.currentRequestId}`,
         (event) => {
-          const payload = JSON.parse(event.payload.replace("data: ", ""));
-          const delta = payload.choices[0]?.delta;
+          // 解析原始响应数据
+          const {
+            content: deltaContent,
+            reasoner,
+            tool_call,
+          } = this.parseResponseBody(event.payload);
 
-          const delta_tool_call = delta?.tool_calls?.[0] as ToolCallReply;
+          console.log({ deltaContent, reasoner, tool_call });
 
-          console.log(delta);
-
-          if (delta?.content) {
-            content += delta.content;
+          if (deltaContent) {
+            content += deltaContent;
             this.historyMessage.updateLastMessage({
               content,
               type: config.assistant,
             });
           }
 
-          if (delta_tool_call) {
-            if (delta_tool_call.id) {
-              tool_calls[delta_tool_call.index] = {
-                ...delta_tool_call,
+          if (tool_call) {
+            if (tool_call.id) {
+              tool_calls[tool_call.index] = {
+                ...tool_call,
                 function: {
-                  ...delta_tool_call.function,
-                  arguments: delta_tool_call.function.arguments || "",
+                  ...tool_call.function,
+                  arguments: tool_call.function.arguments || "",
                 },
               };
-            } else if (delta_tool_call.function.arguments) {
+            } else if (tool_call.function.arguments) {
               if (tool_calls[tool_calls.length - 1]) {
                 tool_calls[tool_calls.length - 1].function.arguments +=
-                  delta_tool_call.function.arguments;
+                  tool_call.function.arguments;
               }
             }
+          }
+
+          // 如果有推理内容，可以在这里处理
+          if (reasoner) {
+            // 根据需要处理推理内容
+            console.log("Reasoning:", reasoner);
           }
         },
       );

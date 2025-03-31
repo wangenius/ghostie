@@ -48,7 +48,7 @@ export function BotItem({ bot, isSelected, onClick }: BotItemProps) {
           isSelected ? "opacity-100" : "opacity-0"
         }`}
       >
-        {model?.model}
+        {model?.name}
       </div>
       <div className="flex-1"></div>
       <div className="flex items-center gap-2 text-xs text-muted-foreground">

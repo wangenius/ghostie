@@ -1,10 +1,10 @@
-import { Model } from "@/model/types/model";
+import { Provider } from "@/model/types/model";
 import { TbBox, TbPencil, TbTrash } from "react-icons/tb";
 import { Button } from "../ui/button";
 
 interface ModelItemProps {
   id: string;
-  model: Model;
+  model: Provider;
   onEdit: (name: string) => void;
   onDelete: (name: string) => void;
 }

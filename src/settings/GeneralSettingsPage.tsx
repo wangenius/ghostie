@@ -1,4 +1,3 @@
-import { ModelType } from "@/model/types/model";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -258,7 +257,7 @@ function KnowledgeModelSettings() {
             onValueChange={(value) => {
               const model = models[value];
               if (model) {
-                SettingsManager.setKnowledge({ contentModel: model.id });
+                SettingsManager.setKnowledge({ contentModel: value });
               }
             }}
           >
@@ -266,13 +265,19 @@ function KnowledgeModelSettings() {
               <SelectValue placeholder="Select Model" />
             </SelectTrigger>
             <SelectContent>
-              {Object.values(models)
-                .filter((model) => model.type === ModelType.EMBEDDING)
-                .map((model) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    {model.name}
-                  </SelectItem>
-                ))}
+              {Object.values(ModelManager.getProviders()).map((provider) => {
+                const models = provider.models;
+                return Object.values(models)
+                  .filter((model) => model.type === "embedding")
+                  .map((model) => (
+                    <SelectItem
+                      key={model.name}
+                      value={`${provider.name}:${model.name}`}
+                    >
+                      {model.name}
+                    </SelectItem>
+                  ));
+              })}
             </SelectContent>
           </Select>
         }
@@ -287,7 +292,7 @@ function KnowledgeModelSettings() {
             onValueChange={(value) => {
               const model = models[value];
               if (model) {
-                SettingsManager.setKnowledge({ searchModel: model.id });
+                SettingsManager.setKnowledge({ searchModel: value });
               }
             }}
           >
@@ -295,13 +300,19 @@ function KnowledgeModelSettings() {
               <SelectValue placeholder="Select Model" />
             </SelectTrigger>
             <SelectContent>
-              {Object.values(models)
-                .filter((model) => model.type === ModelType.EMBEDDING)
-                .map((model) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    {model.name}
-                  </SelectItem>
-                ))}
+              {Object.values(ModelManager.getProviders()).map((provider) => {
+                const models = provider.models;
+                return Object.values(models)
+                  .filter((model) => model.type === "embedding")
+                  .map((model) => (
+                    <SelectItem
+                      key={model.name}
+                      value={`${provider.name}:${model.name}`}
+                    >
+                      {model.name}
+                    </SelectItem>
+                  ));
+              })}
             </SelectContent>
           </Select>
         }

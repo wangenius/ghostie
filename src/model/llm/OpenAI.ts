@@ -1,5 +1,3 @@
-import { ModelInfo } from "@common/types/agent";
-import { ChatModel } from "../ChatModel";
 import {
   ChatModelRequestBody,
   ChatModelResponse,
@@ -9,7 +7,10 @@ import {
 } from "@/model/types/model";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
+import { ModelInfo } from "@common/types/agent";
+import { ChatModel } from "../ChatModel";
 import { ModelManager, ModelProvider } from "../ModelManager";
+
 /** 请求配置 */
 interface RequestConfig {
   /** 用户消息类型 */
@@ -20,41 +21,33 @@ interface RequestConfig {
   function: MessageType;
 }
 
-export class Tongyi extends ChatModel {
+export class OpenAI extends ChatModel {
   constructor(config?: Partial<ModelInfo>) {
-    const api_key = ModelManager.getApiKey(TongyiProvider.name);
+    const api_key = ModelManager.getApiKey(OpenAIProvider.name);
     // 设置默认API URL
     const configWithDefaults = {
       ...config,
       api_key,
-      api_url:
-        "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation",
+      api_url: "https://api.openai.com/v1/chat/completions",
     };
     super(configWithDefaults);
   }
 
   /**
-   * 创建符合通义规范的请求体
+   * 创建符合OpenAI规范的请求体
    * @param body 基础请求体
    * @returns 处理后的请求体
    */
   protected prepareRequestBody(
     body: ChatModelRequestBody,
   ): ChatModelRequestBody {
-    // 通义特有的请求体处理，例如添加特定参数或调整请求结构
-    // 当前版本暂时保持相似的格式，仅作为示例
-    const tongyiBody = { ...body };
-
-    // 可能需要调整工具格式
-    if (tongyiBody.tools) {
-      // 根据通义API的工具格式进行调整
-    }
-
-    return tongyiBody;
+    // OpenAI特有的请求体处理，例如添加特定参数
+    // 当前OpenAI使用通用的请求体格式，所以没有特殊处理
+    return body;
   }
 
   /** 流式生成
-   * @param prompt 提示词，如果为空，则使用历史消息
+   * @param prompt 提示词，如果为空，则使用历史消息，因为可能存在assistant的消息
    * @param config 单独配置生成消息的显示类型
    * @returns 流式生成结果
    */
@@ -109,12 +102,12 @@ export class Tongyi extends ChatModel {
         ]);
       }
 
-      /* 创建请求体 - 通义模型请求体可能与OpenAI有差异 */
+      /* 创建请求体 */
       const requestBody: ChatModelRequestBody = {
         model: this.model,
         messages,
         stream: true,
-        parallel_tool_calls: true, // 通义可能不支持此参数
+        parallel_tool_calls: true,
         temperature: this.temperature,
       };
 
@@ -136,17 +129,14 @@ export class Tongyi extends ChatModel {
         `chat-stream-${this.currentRequestId}`,
         (event) => {
           const payload = JSON.parse(event.payload.replace("data: ", ""));
-          // 通义模型的响应格式可能不同
-          const delta = payload.choices?.[0]?.delta || payload.output?.text;
+          const delta = payload.choices[0]?.delta;
 
-          // 通义模型的工具调用格式可能不同，需要适配
           const delta_tool_call = delta?.tool_calls?.[0] as ToolCallReply;
 
           console.log(delta);
 
-          if (delta?.content || (typeof delta === "string" && delta)) {
-            const deltaContent = delta?.content || delta;
-            content += deltaContent;
+          if (delta?.content) {
+            content += delta.content;
             this.historyMessage.updateLastMessage({
               content,
               type: config.assistant,
@@ -190,10 +180,6 @@ export class Tongyi extends ChatModel {
         apiKey: this.api_key,
         requestId: this.currentRequestId,
         requestBody,
-        // 可能需要额外的通义请求头
-        headers: {
-          "Content-Type": "application/json",
-        },
       });
 
       // 清理事件监听器
@@ -238,54 +224,54 @@ export class Tongyi extends ChatModel {
   }
 }
 
-// 注册通义提供商
-const TongyiProvider: ModelProvider = {
-  name: "通义",
-  description: "阿里通义千问大模型 (Qwen系列)",
+// 注册OpenAI提供商
+const OpenAIProvider: ModelProvider = {
+  name: "OpenAI",
+  description: "OpenAI API (GPT-3.5, GPT-4)",
   models: {
-    "qwen-turbo": {
-      name: "qwen-turbo",
+    "gpt-3.5-turbo": {
+      name: "gpt-3.5-turbo",
       type: "text",
       supportJson: true,
       supportStream: true,
       supportToolCalls: true,
       supportReasoner: false,
-      contextWindow: 6000,
-      description: "通义千问-Turbo - 入门级模型，适合一般任务",
+      contextWindow: 16000,
+      description: "GPT-3.5 Turbo - 快速且经济的模型",
     },
-    "qwen-plus": {
-      name: "qwen-plus",
+    "gpt-4": {
+      name: "gpt-4",
       type: "text",
       supportJson: true,
       supportStream: true,
       supportToolCalls: true,
-      supportReasoner: false,
+      supportReasoner: true,
       contextWindow: 8000,
-      description: "通义千问-Plus - 性能均衡的模型，适合大部分场景",
+      description: "GPT-4 - 更强的大语言模型，能够理解并生成自然语言或代码",
     },
-    "qwen-max": {
-      name: "qwen-max",
+    "gpt-4-turbo": {
+      name: "gpt-4-turbo",
       type: "text",
       supportJson: true,
       supportStream: true,
       supportToolCalls: true,
       supportReasoner: true,
-      contextWindow: 30000,
-      description: "通义千问-Max - 高性能模型，适合复杂任务",
+      contextWindow: 128000,
+      description: "GPT-4 Turbo - 比GPT-4更快且性能略高的模型",
     },
-    "qwen-max-longcontext": {
-      name: "qwen-max-longcontext",
+    "gpt-4o": {
+      name: "gpt-4o",
       type: "text",
       supportJson: true,
       supportStream: true,
       supportToolCalls: true,
       supportReasoner: true,
-      contextWindow: 100000,
-      description: "通义千问-Max长上下文 - 支持超大上下文的高性能模型",
+      contextWindow: 128000,
+      description: "GPT-4o - OpenAI最新的全能模型",
     },
   },
-  create: () => new Tongyi(),
+  create: () => new OpenAI(),
 };
 
 // 注册到ChatModel
-ModelManager.registerProvider(TongyiProvider);
+ModelManager.registerProvider(OpenAIProvider);

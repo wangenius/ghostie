@@ -200,14 +200,6 @@ export function KnowledgeTab() {
                     <Badge variant="outline" className="bg-background/50">
                       {knowledge?.files?.length} files
                     </Badge>
-                    <span>·</span>
-                    <span>
-                      {knowledge?.files?.reduce(
-                        (acc, file) => acc + file.chunks.length,
-                        0,
-                      )}
-                      knowledge blocks
-                    </span>
                   </div>
                 </div>
               </div>

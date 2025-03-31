@@ -1,11 +1,11 @@
-import { Model } from "@/model/types/model";
 import { FileMetadata } from "@/knowledge/KnowledgeCreator";
-import { cmd } from "@/utils/shell";
-import { Echo } from "echo-state";
+import { Provider } from "@/model/types/model";
 import { gen } from "@/utils/generator";
+import { cmd } from "@/utils/shell";
 import { splitTextIntoChunks } from "@/utils/text";
-import { SettingsManager } from "../settings/SettingsManager";
+import { Echo } from "echo-state";
 import { ModelManager } from "../model/ModelManager";
+import { SettingsManager } from "../settings/SettingsManager";
 
 /* 文本块元数据 */
 export interface TextChunkMetadata {
@@ -150,7 +150,7 @@ export class Knowledge {
   // 生成文本向量
   private static async textToEmbedding(
     text: string,
-    model: Model,
+    model: Provider,
   ): Promise<number[]> {
     if (!model) {
       throw new Error("Model not configured");
@@ -208,10 +208,18 @@ export class Knowledge {
     if (!id) {
       return;
     }
-    this.store.set((prev) => ({
-      ...prev,
-      name,
-    }));
+    this.store.set((prev) => {
+      if (!prev) {
+        return prev;
+      }
+      return {
+        ...prev,
+        meta: {
+          ...prev.meta,
+          name,
+        },
+      };
+    });
     Knowledge.list.set((prev) => {
       return {
         ...prev,
