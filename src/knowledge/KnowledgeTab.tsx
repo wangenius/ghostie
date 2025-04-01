@@ -18,7 +18,7 @@ import {
 } from "@/knowledge/Knowledge";
 import { cmd } from "@utils/shell";
 import { useEffect, useState } from "react";
-import { PiDotsThreeBold } from "react-icons/pi";
+import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 import { TbDatabasePlus, TbDownload, TbUpload } from "react-icons/tb";
 import { FileDrawer } from "./components/FileDrawer";
 import { FileList } from "./components/FileList";
@@ -128,31 +128,40 @@ export function KnowledgeTab() {
     <PreferenceLayout>
       <PreferenceList
         left={
-          <Button className="flex-1" onClick={() => KnowledgeCreator.open()}>
-            <TbDatabasePlus className="w-4 h-4" />
-            New Knowledge Base
+          <Button
+            onClick={() => KnowledgeCreator.open()}
+            className="bg-muted-foreground/10 hover:bg-muted-foreground/20"
+          >
+            <PiStorefrontDuotone className="w-4 h-4" />
+            Knowledges Market
           </Button>
         }
         right={
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <PiDotsThreeBold className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
+          <>
+            <Button className="flex-1" onClick={() => KnowledgeCreator.open()}>
+              <TbDatabasePlus className="w-4 h-4" />
+              New
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <PiDotsThreeBold className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleImport}>
-                <TbUpload className="w-4 h-4 mr-2" />
-                <span>Import</span>
-              </DropdownMenuItem>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleImport}>
+                  <TbUpload className="w-4 h-4 mr-2" />
+                  <span>Import</span>
+                </DropdownMenuItem>
 
-              <DropdownMenuItem onClick={handleExport}>
-                <TbDownload className="w-4 h-4 mr-2" />
-                <span>Export</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuItem onClick={handleExport}>
+                  <TbDownload className="w-4 h-4 mr-2" />
+                  <span>Export</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
         }
         tips="Knowledge base supported: You can create a knowledge base by importing a file. Please refer to the development documentation for more information."
         items={Object.entries(documents).map(([id, doc]) => ({

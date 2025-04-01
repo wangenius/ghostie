@@ -1,4 +1,5 @@
-import { ToolParameters } from "@/common/types/plugin";
+import { Model } from "@/bot/types/bot";
+import { ToolParameters } from "@/plugin/types/plugin";
 import { SwitchNode } from "@/workflow/nodes/SwitchNode";
 import { CustomEdge } from "@workflow/components/CustomEdge";
 import { BotNode } from "@workflow/nodes/BotNode";
@@ -18,7 +19,7 @@ import {
   TbGhost3,
   TbMessage,
   TbPlayerPlay,
-  TbPlug,
+  TbScript,
   TbSwitch,
   TbWallpaper,
 } from "react-icons/tb";
@@ -57,50 +58,50 @@ export const NODE_TYPES: Record<
   { label: string; icon: React.ElementType; variant: string; preview?: boolean }
 > = {
   start: {
-    label: "开始",
+    label: "start",
     icon: TbPlayerPlay,
     variant: "bg-slate-50 border-slate-200",
   },
-  end: { label: "结束", icon: TbFlag, variant: "bg-red-50 border-red-200" },
+  end: { label: "end", icon: TbFlag, variant: "bg-red-50 border-red-200" },
   chat: {
-    label: "对话",
+    label: "chat",
     icon: TbMessage,
     variant: "bg-blue-50 border-blue-200",
   },
   bot: {
-    label: "助手",
+    label: "bot",
     icon: TbGhost3,
     variant: "bg-violet-50 border-violet-200",
   },
   code: {
-    label: "代码",
+    label: "code",
     icon: TbCode,
     variant: "bg-purple-50 border-purple-200",
   },
   plugin: {
-    label: "插件",
-    icon: TbPlug,
+    label: "plugin",
+    icon: TbScript,
     variant: "bg-amber-50 border-amber-200",
   },
   switch: {
-    label: "开关",
+    label: "switch",
     icon: TbSwitch,
     variant: "bg-orange-50 border-orange-200",
     preview: true,
   },
   iterator: {
-    label: "迭代器",
+    label: "iterator",
     icon: TbArrowIteration,
     variant: "bg-green-50 border-green-200",
     preview: true,
   },
   panel: {
-    label: "面板",
+    label: "panel",
     icon: TbWallpaper,
     variant: "bg-muted border-muted-foreground/20",
   },
   message: {
-    label: "消息",
+    label: "message",
     icon: TbBellRinging2,
     variant: "bg-purple-50 border-purple-200",
   },
@@ -242,7 +243,7 @@ export interface ChatNodeConfig extends BaseNodeConfig {
   system: string;
   user: string;
   temperature: number;
-  model: string;
+  model: Model;
 }
 
 export interface BotNodeConfig extends BaseNodeConfig {

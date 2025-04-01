@@ -1,4 +1,4 @@
-import { PluginProps } from "@/common/types/plugin";
+import { PluginProps } from "@/plugin/types/plugin";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
@@ -26,6 +26,7 @@ import {
   TbPlayerPlay,
   TbPlug,
   TbPlus,
+  TbScriptPlus,
   TbUpload,
 } from "react-icons/tb";
 import { EnvEditor } from "./EnvEditor";
@@ -271,7 +272,7 @@ export function PluginsTab() {
                 content: <PluginsMarket />,
               });
             }}
-            variant="outline"
+            className="bg-muted-foreground/10 hover:bg-muted-foreground/20"
           >
             <PiStorefrontDuotone className="w-4 h-4" />
             Plugins Market
@@ -279,10 +280,9 @@ export function PluginsTab() {
         }
         right={
           <>
-            {" "}
             <Button className="flex-1" onClick={handleAdd}>
-              <TbPlus className="w-4 h-4" />
-              <span>Add Plugin</span>
+              <TbScriptPlus className="w-4 h-4" />
+              New
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

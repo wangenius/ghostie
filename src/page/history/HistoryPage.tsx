@@ -1,9 +1,9 @@
-import { Message } from "@/model/types/model";
+import { Message } from "@/model/types/chatModel";
 import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BotManager } from "@/bot/BotManger";
-import { ChatHistory, HistoryMessage } from "@/model/HistoryMessage";
+import { ChatHistory, HistoryMessage } from "@/model/text/HistoryMessage";
 import { useEffect, useState } from "react";
 import { TbClock, TbMessageCircle, TbTrash } from "react-icons/tb";
 import { MessageItem } from "../main/components/MessageItem";

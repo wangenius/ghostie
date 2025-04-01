@@ -1,4 +1,4 @@
-import { PluginMarketProps, PluginProps } from "@/common/types/plugin";
+import { PluginMarketProps, PluginProps } from "@/plugin/types/plugin";
 import { Button } from "@/components/ui/button";
 import { cmd } from "@/utils/shell";
 import { supabase } from "@/utils/supabase";

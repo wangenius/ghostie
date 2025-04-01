@@ -205,14 +205,13 @@ export class Workflow {
     try {
       /* 开始执行工作流 */
       this.executor.isExecuting.set({ bool: true });
-      this.executor.reset(this.store.current);
+      const workflow = await this.store.getCurrent();
+      this.executor.reset(workflow);
       const result = await this.executor.execute(inputs);
-
       this.executor.isExecuting.set({ bool: false });
       return result;
     } catch (error) {
       this.executor.isExecuting.set({ bool: false });
-
       return {
         success: false,
         data: null,

@@ -33,15 +33,25 @@ export function DrawerSelector({
   items,
   onSelect,
   renderTrigger,
-  placeholder = "未选择",
+  placeholder = "unselected",
   multiple = false,
 }: DrawerSelectorProps) {
   const [open, setOpen] = useState(false);
-  const selectedItems = items.filter((item) => value.includes(item.value));
+
+  // 检查项目是否被选中
+  const isItemSelected = (itemValue: any) => {
+    return value.some((v) =>
+      typeof v === "object"
+        ? JSON.stringify(v) === JSON.stringify(itemValue)
+        : v === itemValue,
+    );
+  };
+
+  const selectedItems = items.filter((item) => isItemSelected(item.value));
 
   // 按 type 对项目进行分组
   const groupedItems = items.reduce((groups, item) => {
-    const type = item.type || "默认";
+    const type = item.type || "default";
     if (!groups[type]) {
       groups[type] = [];
     }
@@ -52,8 +62,16 @@ export function DrawerSelector({
   // 处理选择事件
   const handleSelect = (selectedValue: any) => {
     if (multiple) {
-      const newValues = value.includes(selectedValue)
-        ? value.filter((v) => v !== selectedValue)
+      const newValues = value.some((v) =>
+        typeof v === "object"
+          ? JSON.stringify(v) === JSON.stringify(selectedValue)
+          : v === selectedValue,
+      )
+        ? value.filter((v) =>
+            typeof v === "object"
+              ? JSON.stringify(v) !== JSON.stringify(selectedValue)
+              : v !== selectedValue,
+          )
         : [...value, selectedValue];
       onSelect(newValues);
     } else {
@@ -65,7 +83,11 @@ export function DrawerSelector({
   // 处理单个项目删除
   const handleRemoveItem = (itemValue: any, e: React.MouseEvent) => {
     e.stopPropagation();
-    const newValues = value.filter((v) => v !== itemValue);
+    const newValues = value.filter((v) =>
+      typeof v === "object"
+        ? JSON.stringify(v) !== JSON.stringify(itemValue)
+        : v !== itemValue,
+    );
     onSelect(newValues);
   };
 
@@ -230,7 +252,7 @@ export function DrawerSelector({
       >
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="text-muted-foreground text-sm">暂无可选项</div>
+            <div className="text-muted-foreground text-sm">No options</div>
           </div>
         ) : (
           Object.entries(groupedItems).map(([type, typeItems]) => (
@@ -245,10 +267,10 @@ export function DrawerSelector({
                   className={cn(
                     "w-full flex items-center justify-between p-3 m-0 rounded-lg text-left transition-colors",
                     item.variant === "danger"
-                      ? value.includes(item.value)
+                      ? isItemSelected(item.value)
                         ? "bg-red-100 text-red-700"
                         : "bg-card hover:bg-red-50"
-                      : value.includes(item.value)
+                      : isItemSelected(item.value)
                       ? "bg-accent"
                       : "bg-card hover:bg-accent",
                   )}
@@ -275,7 +297,7 @@ export function DrawerSelector({
                       </div>
                     )}
                   </div>
-                  {value.includes(item.value) && (
+                  {isItemSelected(item.value) && (
                     <TbCheck
                       className={cn(
                         "h-4 w-4 flex-none",

@@ -23,14 +23,14 @@ const MessageNodeComponent = (props: NodeProps<MessageNodeConfig>) => {
   );
 
   return (
-    <NodePortal {...props} left={1} right={1} variant="message" title="消息">
+    <NodePortal {...props} left={1} right={1} variant="message" title="Message">
       <div className="space-y-1.5">
         <Textarea
           variant="dust"
           className="text-xs min-h-[80px] transition-colors resize-none p-2"
           value={message}
           onChange={handleSystemChange}
-          placeholder="输入消息内容..."
+          placeholder="input message content..."
         />
       </div>
     </NodePortal>

@@ -1,11 +1,11 @@
-import { BotProps } from "@/common/types/bot";
-import { ToolProps } from "@/common/types/plugin";
-import { Message, MessageType } from "@/model/types/model";
+import { BotProps } from "@/bot/types/bot";
+import { ToolProps } from "@/plugin/types/plugin";
+import { Message, MessageType } from "@/model/types/chatModel";
 import { PluginManager } from "@/plugin/PluginManager";
-import { ChatModel } from "../model/ChatModel";
+import { ChatModel } from "../model/text/ChatModel";
 import { SettingsManager } from "../settings/SettingsManager";
 import { BotManager } from "./BotManger";
-import { Context } from "./Context";
+import { BotMemory } from "./memory/BotMemory";
 
 /* 工具名称分隔符 */
 export const TOOL_NAME_SPLIT = "-";
@@ -15,7 +15,6 @@ export const defaultBot: BotProps = {
   id: "",
   name: "",
   system: "",
-  model: "",
   tools: [],
   temperature: 0.5,
   mode: "ReAct",
@@ -42,7 +41,7 @@ export class Bot implements Omit<BotProps, "model"> {
   /* 机器人模式 */
   mode: "ReAct" | "Execute";
   /* 机器人上下文 */
-  context: Context;
+  context: BotMemory;
   /* 机器人运行状态 */
   private isRunning: boolean = false;
   /* 机器人配置 */
@@ -72,22 +71,26 @@ export class Bot implements Omit<BotProps, "model"> {
         return config.tools?.includes(tool.name);
       });
 
-    this.model = ChatModel.create(config.model || "")
+    this.model = ChatModel.create(config.model)
       .setBot(config.id)
       .setTemperature(config.temperature || 1)
       .setTools(tools)
       .setKnowledge(config.knowledges || []);
 
     this.tools = config.tools || [];
-    this.context = new Context();
+    this.context = new BotMemory();
   }
 
   /* 获取机器人 */
   public static async get(id: string) {
     const bot = BotManager.get(id);
+
+    console.log(bot);
+
     if (!bot) {
       return new Bot();
     }
+
     const instance = new Bot(bot);
     instance.model.system(bot.system);
     await instance.model.setWorkflows(bot.workflows || []);

@@ -1,5 +1,5 @@
 import { BotManager } from "@/bot/BotManger";
-import { BotProps } from "@/common/types/bot";
+import { BotProps } from "@/bot/types/bot";
 import { LogoIcon } from "@/components/custom/LogoIcon";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ModelManager } from "@/model/ModelManager";
+import { ChatModelManager } from "@/model/text/ChatModelManager";
 import { useState } from "react";
 import { TbDots, TbPin, TbPinnedOff } from "react-icons/tb";
 
@@ -20,7 +20,7 @@ interface BotItemProps {
 
 export function BotItem({ bot, isSelected, onClick }: BotItemProps) {
   const [open, setOpen] = useState(false);
-  const model = ModelManager.get(bot.model);
+  const model = ChatModelManager.getModel(bot.model);
 
   return (
     <div

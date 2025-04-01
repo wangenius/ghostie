@@ -12,7 +12,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { ModelManager } from "@/model/ModelManager";
+import { EmbeddingModelManager } from "@/model/embedding/EmbeddingModelManger";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { cmd } from "@/utils/shell";
 import { ReactNode, useEffect, useState } from "react";
@@ -484,20 +484,19 @@ function KnowledgeModelSettings() {
         description="Model used to parse text, recommended for asynchronous batch processing model"
         action={
           <Select
-            value={knowledge.contentModel}
+            value={knowledge.baseModel}
             onValueChange={(value) => {
-              SettingsManager.setKnowledge({ contentModel: value });
+              SettingsManager.setKnowledge({ baseModel: value });
             }}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select Model" />
             </SelectTrigger>
             <SelectContent>
-              {Object.values(ModelManager.getProviders()).map((provider) => {
-                const models = provider.models;
-                return Object.values(models)
-                  .filter((model) => model.type === "embedding")
-                  .map((model) => (
+              {Object.values(EmbeddingModelManager.getProviders()).map(
+                (provider) => {
+                  const models = provider.models;
+                  return Object.values(models).map((model) => (
                     <SelectItem
                       key={model.name}
                       value={`${provider.name}:${model.name}`}
@@ -505,7 +504,8 @@ function KnowledgeModelSettings() {
                       {model.name}
                     </SelectItem>
                   ));
-              })}
+                },
+              )}
             </SelectContent>
           </Select>
         }
@@ -525,11 +525,10 @@ function KnowledgeModelSettings() {
               <SelectValue placeholder="Select Model" />
             </SelectTrigger>
             <SelectContent>
-              {Object.values(ModelManager.getProviders()).map((provider) => {
-                const models = provider.models;
-                return Object.values(models)
-                  .filter((model) => model.type === "embedding")
-                  .map((model) => (
+              {Object.values(EmbeddingModelManager.getProviders()).map(
+                (provider) => {
+                  const models = provider.models;
+                  return Object.values(models).map((model) => (
                     <SelectItem
                       key={model.name}
                       value={`${provider.name}:${model.name}`}
@@ -537,7 +536,8 @@ function KnowledgeModelSettings() {
                       {model.name}
                     </SelectItem>
                   ));
-              })}
+                },
+              )}
             </SelectContent>
           </Select>
         }

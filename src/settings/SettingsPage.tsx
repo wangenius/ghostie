@@ -6,17 +6,17 @@ import { PiCheck, PiInfo, PiWarning, PiXCircle } from "react-icons/pi";
 import {
   TbBox,
   TbDatabase,
-  TbFileFunction,
   TbGhost3,
   TbKeyboard,
   TbLoader2,
+  TbScript,
   TbSettings,
   TbShape3,
 } from "react-icons/tb";
 import { Toaster } from "sonner";
-import { BotsTab } from "../bot/BotsTab";
+import { BotsTab } from "../bot/ui/BotsTab";
 import { KnowledgeTab } from "../knowledge/KnowledgeTab";
-import { ModelsTab } from "../model/ModelsTab";
+import { ModelsTab } from "../model/ui/ModelsTab";
 import { PluginsTab } from "../plugin/PluginsTab";
 import WorkflowsTab from "../workflow/WorkflowsTab";
 import { GeneralSettingsPage } from "./GeneralSettingsPage";
@@ -26,7 +26,7 @@ const SETTINGS_NAV_ITEMS = [
   { id: "general", label: "General", icon: TbSettings },
   { id: "models", label: "Models", icon: TbBox },
   { id: "bots", label: "Bots", icon: TbGhost3 },
-  { id: "plugins", label: "Plugins", icon: TbFileFunction },
+  { id: "plugins", label: "Plugins", icon: TbScript },
   { id: "workflows", label: "Workflows", icon: TbShape3 },
   { id: "knowledge", label: "Knowledge", icon: TbDatabase },
   { id: "shortcuts", label: "Shortcuts", icon: TbKeyboard },

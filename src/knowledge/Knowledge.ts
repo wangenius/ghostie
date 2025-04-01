@@ -1,10 +1,9 @@
 import { FileMetadata } from "@/knowledge/KnowledgeCreator";
-import { Provider } from "@/model/types/model";
+import { EmbeddingModelManager } from "@/model/embedding/EmbeddingModelManger";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
 import { splitTextIntoChunks } from "@/utils/text";
 import { Echo } from "echo-state";
-import { ModelManager } from "../model/ModelManager";
 import { SettingsManager } from "../settings/SettingsManager";
 
 /* 文本块元数据 */
@@ -148,35 +147,6 @@ export class Knowledge {
   }
 
   // 生成文本向量
-  private static async textToEmbedding(
-    text: string,
-    model: Provider,
-  ): Promise<number[]> {
-    if (!model) {
-      throw new Error("Model not configured");
-    }
-    const response = await fetch(model.api_url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${model.api_key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: model.model,
-        input: [text],
-        dimension: "1024",
-        encoding_format: "float",
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API 调用失败: ${errorText}`);
-    }
-
-    const data = await response.json();
-    return data.data[0].embedding;
-  }
 
   async setDescription(description: string) {
     this.store.set((prev) => ({
@@ -247,7 +217,7 @@ export class Knowledge {
       onProgress?: (progress: ProgressCallback) => void;
     },
   ) {
-    const model = SettingsManager.current.knowledge.contentModel;
+    const model = SettingsManager.current.knowledge.baseModel;
     if (!model) {
       throw new Error("Model configuration error");
     }
@@ -295,14 +265,12 @@ export class Knowledge {
       const chunks = splitTextIntoChunks(file.content, CHUNK_SIZE);
       const processedChunks: TextChunk[] = [];
       const totalChunks = chunks.length;
-
-      const model_ = ModelManager.get(model);
-      if (!model_) {
-        throw new Error("Model configuration error");
-      }
+      const [provider, modelName] = model.split(":");
+      const embeddingModel =
+        EmbeddingModelManager.get(provider).create(modelName);
 
       for (let i = 0; i < chunks.length; i++) {
-        const embedding = await this.textToEmbedding(chunks[i], model_);
+        const embedding = await embeddingModel.textToEmbedding(chunks[i]);
         processedChunks.push({
           content: chunks[i],
           embedding,
@@ -414,12 +382,12 @@ export class Knowledge {
     if (!model) {
       throw new Error("Model configuration error");
     }
-    const model_ = ModelManager.get(model);
-    if (!model_) {
-      throw new Error("Model configuration error");
-    }
+
     /* 获取查询向量 */
-    const queryEmbedding = await this.textToEmbedding(query, model_);
+    const [provider, modelName] = model.split(":");
+    const embeddingModel =
+      EmbeddingModelManager.get(provider).create(modelName);
+    const queryEmbedding = await embeddingModel.textToEmbedding(query);
     const results: SearchResult[] = [];
 
     /* 搜索所有知识库 */

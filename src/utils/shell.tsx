@@ -2,7 +2,6 @@ import { dialog } from "@/components/custom/DialogModal";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { message } from "@tauri-apps/plugin-dialog";
-/** @Description base method abstract */
 export abstract class cmd {
   /**
    * 运行主进程中的方法

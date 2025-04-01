@@ -2,7 +2,7 @@ import {
   ToolParameters,
   ToolProperty,
   ToolPropertyType,
-} from "@/common/types/plugin";
+} from "@/plugin/types/plugin";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
@@ -48,7 +48,6 @@ const toolParamsToEditable = (params?: ToolParameters): EditableProperty[] => {
       required: params.required?.includes(key) || false,
     };
 
-    // 处理对象属性
     if (prop.properties) {
       editableProp.properties = {};
       Object.entries(prop.properties).forEach(([propKey, propValue]) => {
@@ -60,7 +59,6 @@ const toolParamsToEditable = (params?: ToolParameters): EditableProperty[] => {
           required: false,
         };
 
-        // 递归处理嵌套属性
         if (propValue.properties) {
           const nestedProps: Record<string, EditableProperty> = {};
           Object.entries(propValue.properties).forEach(
@@ -489,7 +487,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
               }
             >
               <SelectTrigger className="h-7 text-xs">
-                <SelectValue placeholder="选择类型" />
+                <SelectValue placeholder="select type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="string">String</SelectItem>
@@ -582,7 +580,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
                         }
                       >
                         <SelectTrigger className="h-7 text-xs">
-                          <SelectValue placeholder="选择类型" />
+                          <SelectValue placeholder="select type" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="string">String</SelectItem>
@@ -640,7 +638,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
             <div className="flex-1 flex items-center gap-2">
               <Input
                 className="font-medium"
-                placeholder="参数名称"
+                placeholder="parameter name"
                 variant="ghost"
                 value={param.name}
                 onMouseDown={(e) => {
@@ -660,7 +658,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
             </div>
             <div className="flex-1">
               <Input
-                placeholder="描述"
+                placeholder="description"
                 value={param.description || ""}
                 onChange={(e) =>
                   updateParam(param.id, { description: e.target.value })
@@ -676,20 +674,20 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="选择类型" />
+                    <SelectValue placeholder="select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="string">字符串</SelectItem>
-                    <SelectItem value="number">数字</SelectItem>
-                    <SelectItem value="boolean">布尔值</SelectItem>
-                    <SelectItem value="array">数组</SelectItem>
-                    <SelectItem value="object">对象</SelectItem>
+                    <SelectItem value="string">String</SelectItem>
+                    <SelectItem value="number">Number</SelectItem>
+                    <SelectItem value="boolean">Boolean</SelectItem>
+                    <SelectItem value="array">Array</SelectItem>
+                    <SelectItem value="object">Object</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="flex items-center space-x-2">
-                <Label>必填</Label>
+                <Label>Required</Label>
                 <Switch
                   checked={param.required}
                   onCheckedChange={(checked) =>
@@ -721,7 +719,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
         left={0}
         right={1}
         variant="start"
-        title="开始节点"
+        title="Start Node"
       >
         <div
           onClick={() => setDrawerOpen(true)}

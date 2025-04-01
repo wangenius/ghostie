@@ -1,19 +1,25 @@
-import { ToolProperty } from "@/common/types/plugin";
+import { ToolProperty } from "@/plugin/types/plugin";
 import { CronInput } from "@/components/custom/CronInput";
 import { dialog } from "@/components/custom/DialogModal";
 import { LoadingSpin } from "@/components/custom/LoadingSpin";
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { cmd } from "@/utils/shell";
+import { supabase } from "@/utils/supabase";
 import { motion } from "framer-motion";
 import { memo, Suspense, useCallback, useEffect, useState } from "react";
 import {
-  TbBook,
   TbDots,
   TbFileText,
   TbLoader2,
@@ -36,13 +42,6 @@ import { ParamHistory } from "./execute/ParamHistory";
 import { ContextWorkflow, Workflow } from "./execute/Workflow";
 import { SchedulerManager } from "./scheduler/SchedulerManager";
 import { edgeTypes, nodeTypes, StartNodeConfig } from "./types/nodes";
-import { supabase } from "@/utils/supabase";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 /* 工作流表单组件
  *

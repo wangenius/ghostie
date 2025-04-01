@@ -33,8 +33,8 @@ export function PreferenceList({
   return (
     <div className="w-[360px] bg-muted flex flex-col h-full overflow-auto rounded-xl p-2 gap-2 flex-none">
       <div className="flex-none flex justify-between items-center">
-        <div className="flex items-center gap-2">{left}</div>
-        <div className="flex items-center gap-2">{right}</div>
+        <div className="flex items-center gap-1">{left}</div>
+        <div className="flex items-center gap-1">{right}</div>
       </div>
 
       {tips && (

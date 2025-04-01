@@ -1,6 +1,6 @@
 import { Bot } from "@/bot/Bot";
 import { BotManager } from "@/bot/BotManger";
-import { BotProps } from "@/common/types/bot";
+import { BotProps } from "@/bot/types/bot";
 import { LogoIcon } from "@/components/custom/LogoIcon";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,8 +11,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { ChatManager } from "@/model/ChatManager";
-import { ChatHistory } from "@/model/HistoryMessage";
+import { ChatManager } from "@/page/history/ChatManager";
+import { ChatHistory } from "@/model/text/HistoryMessage";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { Page } from "@/utils/PageRouter";
 import { DropdownMenu } from "@radix-ui/react-dropdown-menu";

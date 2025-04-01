@@ -1,4 +1,4 @@
-import { BotProps } from "@/common/types/bot";
+import { BotProps } from "@/bot/types/bot";
 import { gen } from "@/utils/generator";
 import { Echo } from "echo-state";
 

@@ -1,4 +1,4 @@
-import { Message } from "@/model/types/model";
+import { Message } from "@/model/types/chatModel";
 import { CodeBlock, iconVariants } from "@/components/custom/CodeBlock";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

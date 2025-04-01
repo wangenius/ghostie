@@ -41,7 +41,10 @@ export default function WorkflowsTab() {
       {/* 左侧列表 */}
       <PreferenceList
         left={
-          <Button onClick={handleOpenMarket} variant="outline">
+          <Button
+            onClick={handleOpenMarket}
+            className="bg-muted-foreground/10 hover:bg-muted-foreground/20"
+          >
             <PiStorefrontDuotone className="w-4 h-4" />
             Workflows Market
           </Button>
@@ -50,7 +53,7 @@ export default function WorkflowsTab() {
           <>
             <Button className="flex-1" onClick={handleCreateWorkflow}>
               <TbPlus className="w-4 h-4" />
-              New Workflow
+              New
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -1,8 +1,8 @@
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ChatModel } from "@/model/ChatModel";
-import { ModelManager } from "@/model/ModelManager";
+import { ChatModel } from "@/model/text/ChatModel";
+import { ChatModelManager } from "@/model/text/ChatModelManager";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
@@ -17,7 +17,12 @@ const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
 
   const handleModelChange = useCallback(
     (model: string) => {
-      updateNodeData<ChatNodeConfig>(props.id, { model });
+      updateNodeData<ChatNodeConfig>(props.id, {
+        model: {
+          provider: model.split(":")[0],
+          name: model.split(":")[1],
+        },
+      });
     },
     [updateNodeData, props.id],
   );
@@ -45,7 +50,7 @@ const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
       <DrawerSelector
         panelTitle="Select Model"
         value={[props.data.model]}
-        items={Object.values(ModelManager.getProviders()).flatMap(
+        items={Object.values(ChatModelManager.getProviders()).flatMap(
           (provider) => {
             return Object.values(provider.models).map((model) => {
               return {

@@ -17,7 +17,17 @@ interface SettingsProps {
   knowledge: {
     threshold: number;
     limit: number;
-    contentModel: string;
+    /** 基础拆解的模型
+     * 用于将文本拆解为更小的单元，用于后续的搜索和处理
+     * 格式为：provider_name:model_name
+     * for example: alibaba:
+     */
+    baseModel: string;
+    /** 搜索模型
+     * 用于搜索和匹配知识库中的内容
+     * 格式为：provider_name:model_name
+     * for example: alibaba:tongyi
+     */
     searchModel: string;
   };
   proxy: ProxySettingsConfig; // 新增：代理设置字段
@@ -35,7 +45,7 @@ export class SettingsManager {
     knowledge: {
       threshold: 0.6,
       limit: 10,
-      contentModel: "",
+      baseModel: "",
       searchModel: "",
     },
     // 新增：代理默认设置

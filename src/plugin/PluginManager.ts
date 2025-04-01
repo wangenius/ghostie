@@ -1,5 +1,5 @@
 import { Echo } from "echo-state";
-import { PluginProps } from "@/common/types/plugin";
+import { PluginProps } from "@/plugin/types/plugin";
 
 export class PluginManager {
   /* 插件列表 */
