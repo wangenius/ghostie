@@ -10,6 +10,10 @@ export default defineConfig(async () => ({
     PACKAGE_VERSION: JSON.stringify(version),
     SALT_ROUNDS: 10,
     API_KEY: process.env.API_KEY,
+    SUPABASE_URL: JSON.stringify("https://iwuvrfojrkclhcxfcjzy.supabase.co"),
+    SUPABASE_ANON_KEY: JSON.stringify(
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3dXZyZm9qcmtjbGhjeGZjanp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0MTA0NDIsImV4cCI6MjA1ODk4NjQ0Mn0.L_VhFwjH1wO2KyqdUBruc1O0AH78mP-2mIkdQwTyak8",
+    ),
   },
   resolve: {
     alias: {

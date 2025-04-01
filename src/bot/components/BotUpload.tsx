@@ -9,15 +9,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/utils/supabase";
 import { cmd } from "@/utils/shell";
-import { createClient } from "@supabase/supabase-js";
 import { useState } from "react";
 import { TbLoader2, TbUpload } from "react-icons/tb";
-
-const supabase = createClient(
-  "https://iwuvrfojrkclhcxfcjzy.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3dXZyZm9qcmtjbGhjeGZjanp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0MTA0NDIsImV4cCI6MjA1ODk4NjQ0Mn0.L_VhFwjH1wO2KyqdUBruc1O0AH78mP-2mIkdQwTyak8",
-);
 
 export function BotUpload() {
   const [isUploading, setIsUploading] = useState(false);

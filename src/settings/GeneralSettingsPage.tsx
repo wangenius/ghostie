@@ -1,3 +1,5 @@
+import { dialog } from "@/components/custom/DialogModal";
+import { FormContainer, FormInput } from "@/components/custom/FormWrapper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,17 +15,28 @@ import { cn } from "@/lib/utils";
 import { ModelManager } from "@/model/ModelManager";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { cmd } from "@/utils/shell";
-import { ReactNode, useState, useEffect } from "react";
+import { supabase } from "@/utils/supabase";
+import { ReactNode, useEffect, useState } from "react";
 import {
   TbArrowIteration,
   TbDatabase,
   TbFolder,
   TbHistory,
+  TbLoader2,
   TbNetwork,
   TbPalette,
   TbRotate,
   TbTypography,
+  TbUser,
 } from "react-icons/tb";
+
+interface User {
+  id: string;
+  email: string | undefined;
+  user_metadata: {
+    name?: string;
+  };
+}
 
 interface SettingItemProps {
   icon: ReactNode;
@@ -55,6 +68,239 @@ function SettingItem({
       </div>
       {action}
     </div>
+  );
+}
+
+function AuthSettings() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+
+  // 检查当前登录状态
+  useEffect(() => {
+    const checkUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        setUser({
+          id: user.id,
+          email: user.email || undefined,
+          user_metadata: user.user_metadata || {},
+        });
+      }
+    };
+    checkUser();
+
+    // 监听认证状态变化
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email || undefined,
+          user_metadata: session.user.user_metadata || {},
+        });
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // 登出处理
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      cmd.message("logged out", "success");
+    } catch (error) {
+      console.error("logout failed:", error);
+      cmd.message(
+        `logout failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        "error",
+      );
+    }
+  };
+
+  const showLoginDialog = () => {
+    dialog({
+      title: "Login",
+      className: "w-96",
+      content: (close) => (
+        <FormContainer
+          className="w-full"
+          onSubmit={async (data) => {
+            try {
+              setIsLoggingIn(true);
+              const { error } = await supabase.auth.signInWithPassword({
+                email: data.email,
+                password: data.password,
+              });
+
+              if (error) throw error;
+              close();
+              cmd.message("login success", "success");
+            } catch (error) {
+              console.error("login failed:", error);
+              cmd.message(
+                `login failed: ${
+                  error instanceof Error ? error.message : String(error)
+                }`,
+                "error",
+              );
+            } finally {
+              setIsLoggingIn(false);
+            }
+          }}
+        >
+          <div className="space-y-4">
+            <FormInput
+              name="email"
+              type="email"
+              placeholder="please enter email"
+              required
+              autoComplete="false"
+            />
+
+            <FormInput
+              name="password"
+              type="password"
+              placeholder="please enter password"
+              required
+              autoComplete="false"
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <Button type="submit" disabled={isLoggingIn}>
+                {isLoggingIn ? (
+                  <>
+                    <TbLoader2 className="w-4 h-4 animate-spin" />
+                    logging in...
+                  </>
+                ) : (
+                  "login"
+                )}
+              </Button>
+            </div>
+          </div>
+        </FormContainer>
+      ),
+    });
+  };
+
+  const showRegisterDialog = () => {
+    dialog({
+      title: "Register",
+      className: "w-96",
+      content: (close) => (
+        <FormContainer
+          className="w-full"
+          onSubmit={async (data) => {
+            if (data.password !== data.confirmPassword) {
+              cmd.message(
+                "The passwords you entered are inconsistent",
+                "error",
+              );
+              return;
+            }
+            try {
+              setIsRegistering(true);
+              const { error } = await supabase.auth.signUp({
+                email: data.email,
+                password: data.password,
+              });
+
+              if (error) throw error;
+              close();
+              cmd.message(
+                "register success, please check email verification",
+                "success",
+              );
+            } catch (error) {
+              console.error("register failed:", error);
+              cmd.message(
+                `register failed: ${
+                  error instanceof Error ? error.message : String(error)
+                }`,
+                "error",
+              );
+            } finally {
+              setIsRegistering(false);
+            }
+          }}
+        >
+          <div className="space-y-4">
+            <FormInput
+              name="email"
+              type="email"
+              placeholder="please enter email"
+              required
+            />
+            <FormInput
+              name="password"
+              type="password"
+              placeholder="please enter password"
+              required
+            />
+            <FormInput
+              name="confirmPassword"
+              type="password"
+              placeholder="please enter password again"
+              required
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <Button type="submit" disabled={isRegistering}>
+                {isRegistering ? (
+                  <>
+                    <TbLoader2 className="w-4 h-4 animate-spin" />
+                    registering...
+                  </>
+                ) : (
+                  "register"
+                )}
+              </Button>
+            </div>
+          </div>
+        </FormContainer>
+      ),
+    });
+  };
+
+  return (
+    <SettingItem
+      icon={<TbUser className="w-[18px] h-[18px]" />}
+      title="Account Login"
+      description={
+        user
+          ? `Current login: ${user.user_metadata.name || user.email}`
+          : "Not logged in"
+      }
+      action={
+        user ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            disabled={isLoggingIn}
+          >
+            logout
+          </Button>
+        ) : (
+          <div className="flex gap-2">
+            <Button size="sm" onClick={showLoginDialog}>
+              login
+            </Button>
+            <Button size="sm" onClick={showRegisterDialog}>
+              register
+            </Button>
+          </div>
+        )
+      }
+    />
   );
 }
 
@@ -431,7 +677,9 @@ function KnowledgeThresholdSettings() {
 export function GeneralSettingsPage() {
   return (
     <div className="space-y-2 max-w-screen-lg mx-auto px-4 h-full overflow-y-auto">
-      <h3 className="text-lg font-bold">System</h3>
+      <h3 className="text-lg font-bold">账户</h3>
+      <AuthSettings />
+      <h3 className="text-lg font-bold pt-6">系统</h3>
       <ThemeSettings />
       <FontSettings />
       <UpdateSettings />

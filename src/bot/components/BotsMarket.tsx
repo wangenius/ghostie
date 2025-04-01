@@ -1,16 +1,10 @@
 import { BotMarketProps } from "@/common/types/bot";
 import { Button } from "@/components/ui/button";
 import { cmd } from "@/utils/shell";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/utils/supabase";
 import { useEffect, useState } from "react";
 import { TbLoader2 } from "react-icons/tb";
 import { BotManager } from "../BotManger";
-
-// 创建 Supabase 客户端
-const supabase = createClient(
-  "https://iwuvrfojrkclhcxfcjzy.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3dXZyZm9qcmtjbGhjeGZjanp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0MTA0NDIsImV4cCI6MjA1ODk4NjQ0Mn0.L_VhFwjH1wO2KyqdUBruc1O0AH78mP-2mIkdQwTyak8",
-);
 
 export const BotsMarket = () => {
   const [bots, setBots] = useState<BotMarketProps[]>([]);
