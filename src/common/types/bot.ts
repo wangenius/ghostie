@@ -9,6 +9,10 @@ export interface BotProps {
   id: string;
   /* 名称 */
   name: string;
+  /* 描述 */
+  description?: string;
+  /* 头像 */
+  avatar?: string;
   /* 系统提示 */
   system: string;
   /* 默认文字模型id */
@@ -56,7 +60,7 @@ export interface BotMarketProps {
   /* 助手更新时间 */
   updated_at: string;
   /* 助手作者 */
-  author?: string;
+  user_id: string;
   /* 助手系统提示 */
   system: string;
   /* 助手描述 */

@@ -64,7 +64,7 @@ export interface PluginProps {
   /* 插件版本 */
   version: string;
   /* 插件作者 */
-  author?: string;
+  user_id: string;
   /* 工具列表 */
   tools: ToolProps[];
 }

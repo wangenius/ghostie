@@ -18,13 +18,14 @@ import { cmd } from "@/utils/shell";
 import { useCallback, useEffect, useState } from "react";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 import {
-  TbBook,
   TbDatabaseCog,
+  TbDots,
+  TbFileText,
   TbMaximize,
   TbMinimize,
+  TbPlayerPlay,
   TbPlug,
   TbPlus,
-  TbTestPipe,
   TbUpload,
 } from "react-icons/tb";
 import { EnvEditor } from "./EnvEditor";
@@ -33,11 +34,12 @@ import { PluginsMarket } from "./components/PluginsMarket";
 import { TestDrawer } from "./components/TestDrawer";
 
 import { dialog } from "@/components/custom/DialogModal";
+import { supabase } from "@/utils/supabase";
 import { javascript } from "@codemirror/lang-javascript";
 import { githubDarkInit } from "@uiw/codemirror-theme-github";
 import CodeMirror from "@uiw/react-codemirror";
+import { Save } from "lucide-react";
 import { toast } from "sonner";
-import { PluginUpload } from "./components/PluginUpload";
 // 默认插件属性
 const defaultPluginProps: Partial<PluginProps> = {
   name: "New Plugin",
@@ -223,6 +225,41 @@ export function PluginsTab() {
     setIsFullscreen(!isFullscreen);
   }, [isFullscreen]);
 
+  const handleUpload = useCallback(async () => {
+    if (!selectedPlugin) return;
+    dialog.confirm({
+      title: "Upload Plugin",
+      content: "Are you sure to upload this plugin?",
+      onOk: async () => {
+        try {
+          const { error } = await supabase.from("plugins").insert({
+            name: selectedPlugin.name,
+            description: selectedPlugin.description || "",
+            version: selectedPlugin.version || "1.0.0",
+            content: content,
+          });
+
+          if (error) {
+            throw error;
+          }
+
+          cmd.message(
+            "plugin uploaded successfully, waiting for review",
+            "success",
+          );
+        } catch (error) {
+          console.error("failed to upload plugin:", error);
+          cmd.message(
+            `failed to upload plugin: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+            "error",
+          );
+        }
+      },
+    });
+  }, [selectedPlugin, content]);
+
   return (
     <PreferenceLayout>
       <PreferenceList
@@ -260,17 +297,6 @@ export function PluginsTab() {
                   Environment Variables
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    dialog({
-                      closeIconHide: true,
-                      content: <PluginUpload />,
-                    });
-                  }}
-                >
-                  <TbUpload className="w-4 h-4" />
-                  Submit Plugin
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleImportPlugin}>
                   <TbUpload className="w-4 h-4" />
                   Import TypeScript Plugin
@@ -328,44 +354,52 @@ export function PluginsTab() {
                   }}
                   variant="ghost"
                 >
-                  <TbBook className="w-4 h-4" />
+                  <TbFileText className="w-4 h-4" />
                   Documentation
                 </Button>
-                <Button onClick={handleToggleFullscreen} variant="ghost">
+                <Button
+                  onClick={handleToggleFullscreen}
+                  size="icon"
+                  variant="ghost"
+                  title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                >
                   {isFullscreen ? (
-                    <>
-                      <TbMinimize className="w-4 h-4" />
-                      Exit Fullscreen
-                    </>
+                    <TbMinimize className="w-4 h-4" />
                   ) : (
-                    <>
-                      <TbMaximize className="w-4 h-4" />
-                      Fullscreen
-                    </>
+                    <TbMaximize className="w-4 h-4" />
                   )}
                 </Button>
                 <Button
                   onClick={() => setIsTestDrawerOpen(true)}
                   variant="ghost"
-                  className="gap-2"
+                  size="icon"
+                  title="Test Plugin"
                 >
-                  <TbTestPipe className="w-4 h-4" />
-                  Test
+                  <TbPlayerPlay className="w-4 h-4" />
                 </Button>
+
                 <Button
                   variant="primary"
+                  title={isSubmitting ? "Submitting..." : "Submit"}
                   onClick={handleUpdate}
                   disabled={!content || isSubmitting}
                 >
-                  <TbUpload className="w-4 h-4" />
-                  {isSubmitting
-                    ? selectedPlugin
-                      ? "Updating..."
-                      : "Creating..."
-                    : selectedPlugin
-                    ? "Update"
-                    : "Create"}
+                  <Save className="w-4 h-4" />
+                  {isSubmitting ? "Saving..." : "Save"}
                 </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon">
+                      <TbDots className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleUpload}>
+                      <TbUpload className="w-4 h-4" />
+                      Upload to Market
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           }

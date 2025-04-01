@@ -14,11 +14,14 @@ import { motion } from "framer-motion";
 import { memo, Suspense, useCallback, useEffect, useState } from "react";
 import {
   TbBook,
+  TbDots,
+  TbFileText,
   TbLoader2,
   TbMaximize,
   TbMinimize,
   TbPencil,
   TbPlayerPlay,
+  TbUpload,
 } from "react-icons/tb";
 import ReactFlow, {
   Background,
@@ -33,6 +36,13 @@ import { ParamHistory } from "./execute/ParamHistory";
 import { ContextWorkflow, Workflow } from "./execute/Workflow";
 import { SchedulerManager } from "./scheduler/SchedulerManager";
 import { edgeTypes, nodeTypes, StartNodeConfig } from "./types/nodes";
+import { supabase } from "@/utils/supabase";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /* 工作流表单组件
  *
@@ -104,6 +114,40 @@ export const WorkflowInfo = memo(
       });
     }, [ContextWorkflow]);
 
+    const handleUpload = async () => {
+      dialog.confirm({
+        title: "Upload Workflow",
+        content: "Are you sure to upload this workflow?",
+        onOk: async () => {
+          try {
+            // 获取完整的工作流数据
+            const workflow = await Workflow.get(meta.id);
+            const workflowData = await workflow.current();
+
+            // 上传到 Supabase
+            const { error } = await supabase.from("workflows").insert({
+              name: workflowData.meta.name,
+              description: workflowData.meta.description,
+              data: workflowData,
+            });
+
+            if (error) throw error;
+
+            cmd.message("成功上传工作流到市场", "success");
+            close();
+          } catch (error) {
+            console.error("上传工作流失败:", error);
+            cmd.message(
+              `上传工作流失败: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+              "error",
+            );
+          }
+        },
+      });
+    };
+
     return (
       <div className="flex flex-col">
         <div className="flex items-center justify-between">
@@ -112,23 +156,6 @@ export const WorkflowInfo = memo(
           </h3>
 
           <div className="flex items-center gap-2">
-            <Button onClick={onToggleFullscreen} variant="ghost">
-              {isFullscreen ? (
-                <>
-                  <TbMinimize className="w-4 h-4" />
-                  Exit Fullscreen
-                </>
-              ) : (
-                <>
-                  <TbMaximize className="w-4 h-4" />
-                  Fullscreen
-                </>
-              )}
-            </Button>
-            <Button onClick={() => setIsEditDrawerOpen(true)} variant="ghost">
-              <TbPencil className="w-4 h-4" />
-              Edit
-            </Button>
             <Button
               onClick={() => {
                 cmd.invoke("open_url", {
@@ -137,26 +164,55 @@ export const WorkflowInfo = memo(
               }}
               variant="ghost"
             >
-              <TbBook className="w-4 h-4" />
+              <TbFileText className="w-4 h-4" />
               Documentation
             </Button>
             <Button
-              onClick={handleExecuteTest}
-              disabled={bool}
-              variant="primary"
+              onClick={onToggleFullscreen}
+              variant="ghost"
+              size="icon"
+              title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
             >
-              {bool ? (
-                <span className="flex items-center gap-2">
-                  <TbLoader2 className="w-4 h-4 animate-spin" />
-                  Executing...
-                </span>
+              {isFullscreen ? (
+                <TbMinimize className="w-4 h-4" />
               ) : (
-                <span className="flex items-center gap-2">
-                  <TbPlayerPlay className="w-4 h-4" />
-                  Test
-                </span>
+                <TbMaximize className="w-4 h-4" />
               )}
             </Button>
+            <Button
+              onClick={() => setIsEditDrawerOpen(true)}
+              variant="ghost"
+              size="icon"
+              title="Edit"
+            >
+              <TbPencil className="w-4 h-4" />
+            </Button>
+
+            <Button
+              onClick={handleExecuteTest}
+              disabled={bool}
+              size="icon"
+              title="Execute"
+            >
+              {bool ? (
+                <TbLoader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <TbPlayerPlay className="w-4 h-4" />
+              )}
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="ghost">
+                  <TbDots className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleUpload}>
+                  <TbUpload className="w-4 h-4" />
+                  Upload to Market
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -482,9 +538,9 @@ export const WorkflowEditor = () => {
     <Suspense fallback={<LoadingSpin />}>
       <motion.div
         layout
-        className={cn("flex flex-col h-full", {
+        className={cn("flex flex-col overflow-hidden", {
           "fixed inset-0 top-12 z-50 bg-background": isFullscreen,
-          "relative w-full": !isFullscreen,
+          "relative w-full h-full": !isFullscreen,
         })}
         initial={false}
         animate={{

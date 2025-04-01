@@ -15,7 +15,6 @@ import { cn } from "@/lib/utils";
 import { ModelManager } from "@/model/ModelManager";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { cmd } from "@/utils/shell";
-import { supabase } from "@/utils/supabase";
 import { ReactNode, useEffect, useState } from "react";
 import {
   TbArrowIteration,
@@ -29,14 +28,7 @@ import {
   TbTypography,
   TbUser,
 } from "react-icons/tb";
-
-interface User {
-  id: string;
-  email: string | undefined;
-  user_metadata: {
-    name?: string;
-  };
-}
+import { UserMananger } from "./User";
 
 interface SettingItemProps {
   icon: ReactNode;
@@ -72,59 +64,13 @@ function SettingItem({
 }
 
 function AuthSettings() {
-  const [user, setUser] = useState<User | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
-
-  // 检查当前登录状态
-  useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setUser({
-          id: user.id,
-          email: user.email || undefined,
-          user_metadata: user.user_metadata || {},
-        });
-      }
-    };
-    checkUser();
-
-    // 监听认证状态变化
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email || undefined,
-          user_metadata: session.user.user_metadata || {},
-        });
-      } else {
-        setUser(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const user = UserMananger.use();
 
   // 登出处理
   const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      cmd.message("logged out", "success");
-    } catch (error) {
-      console.error("logout failed:", error);
-      cmd.message(
-        `logout failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-        "error",
-      );
-    }
+    await UserMananger.logout();
   };
 
   const showLoginDialog = () => {
@@ -137,22 +83,8 @@ function AuthSettings() {
           onSubmit={async (data) => {
             try {
               setIsLoggingIn(true);
-              const { error } = await supabase.auth.signInWithPassword({
-                email: data.email,
-                password: data.password,
-              });
-
-              if (error) throw error;
+              await UserMananger.login(data.email, data.password);
               close();
-              cmd.message("login success", "success");
-            } catch (error) {
-              console.error("login failed:", error);
-              cmd.message(
-                `login failed: ${
-                  error instanceof Error ? error.message : String(error)
-                }`,
-                "error",
-              );
             } finally {
               setIsLoggingIn(false);
             }
@@ -209,25 +141,8 @@ function AuthSettings() {
             }
             try {
               setIsRegistering(true);
-              const { error } = await supabase.auth.signUp({
-                email: data.email,
-                password: data.password,
-              });
-
-              if (error) throw error;
+              await UserMananger.register(data.email, data.password);
               close();
-              cmd.message(
-                "register success, please check email verification",
-                "success",
-              );
-            } catch (error) {
-              console.error("register failed:", error);
-              cmd.message(
-                `register failed: ${
-                  error instanceof Error ? error.message : String(error)
-                }`,
-                "error",
-              );
             } finally {
               setIsRegistering(false);
             }
@@ -273,7 +188,7 @@ function AuthSettings() {
   return (
     <SettingItem
       icon={<TbUser className="w-[18px] h-[18px]" />}
-      title="Account Login"
+      title={user ? "Account" : "Not logged in"}
       description={
         user
           ? `Current login: ${user.user_metadata.name || user.email}`

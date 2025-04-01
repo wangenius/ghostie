@@ -9,6 +9,7 @@ import { defaultBot, TOOL_NAME_SPLIT } from "@/bot/Bot";
 import { BotManager } from "@/bot/BotManger";
 import { BotProps } from "@/common/types/bot";
 import { PluginProps, ToolProps } from "@/common/types/plugin";
+import { dialog } from "@/components/custom/DialogModal";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
@@ -24,11 +25,10 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Knowledge, KnowledgeMeta } from "@/knowledge/Knowledge";
 import { getColor } from "@/utils/color";
-import { useCallback, useEffect, useState } from "react";
-import { dialog } from "@/components/custom/DialogModal";
-import { BotsMarket } from "./components/BotsMarket";
-import { BotUpload } from "./components/BotUpload";
+import { supabase } from "@/utils/supabase";
 import { Workflow } from "@/workflow/execute/Workflow";
+import { useCallback, useEffect, useState } from "react";
+import { BotsMarket } from "./BotsMarket";
 /** 机器人列表 */
 export function BotsTab() {
   const bots = BotManager.use();
@@ -155,19 +155,6 @@ export function BotsTab() {
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => {
-                    dialog({
-                      closeIconHide: true,
-                      title: "Upload Bot",
-                      content: <BotUpload />,
-                    });
-                  }}
-                >
-                  <TbUpload className="w-4 h-4 mr-2" />
-                  <span>Upload Bot</span>
-                </DropdownMenuItem>
-
                 <DropdownMenuItem onClick={handleImport}>
                   <TbUpload className="w-4 h-4 mr-2" />
                   <span>Import</span>
@@ -196,7 +183,10 @@ export function BotsTab() {
               </small>
             </span>
           ),
-          description: bot.system?.slice(0, 50) || "No prompt",
+          description:
+            bot.description?.slice(0, 50) ||
+            bot.system?.slice(0, 50) ||
+            "No prompt",
           onClick: () => setSelectedBot(bot),
           actived: selectedBot?.id === id,
           onRemove: () => handleDeleteBot(id),
@@ -237,19 +227,68 @@ const BotItem = ({
     loadPlugins();
   }, [loadPlugins]);
 
+  // 上传机器人
+  const handleUpload = useCallback(async () => {
+    if (!bot.id) return;
+
+    dialog.confirm({
+      title: "Upload Bot",
+      content: "Are you sure you want to upload this bot?",
+      onOk: async () => {
+        try {
+          // 上传到 Supabase
+          const { error } = await supabase.from("bots").insert({
+            name: bot.name,
+            system: bot.system,
+            description: bot.description || bot.system,
+          });
+
+          if (error) throw error;
+
+          cmd.message("Successfully uploaded bot to market", "success");
+          cmd.invoke("close_modal");
+        } catch (error) {
+          console.error("Upload bot failed:", error);
+          cmd.message(
+            `Upload bot failed: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+            "error",
+          );
+        }
+      },
+    });
+  }, [bot]);
+
   return (
     <div className="flex-1 overflow-y-auto">
       {/* 顶部名称栏 */}
-      <div className="sticky top-0 z-10 bg-background flex items-center justify-between px-8">
-        <Input
-          type="text"
-          value={bot?.name || ""}
-          onChange={(e) =>
-            setBot(bot ? { ...bot, name: e.target.value } : undefined)
-          }
-          placeholder="Assistant Name"
-          className="text-xl border-none bg-transparent w-[300px] focus-visible:ring-0"
-        />
+      <div className="sticky top-0 z-10 bg-background flex items-center justify-between px-8 gap-4 overflow-hidden flex-col">
+        <div className="flex items-center justify-between w-full gap-4">
+          <Input
+            type="text"
+            value={bot?.name || ""}
+            onChange={(e) =>
+              setBot(bot ? { ...bot, name: e.target.value } : undefined)
+            }
+            placeholder="Assistant Name"
+            className="text-xl border-none bg-transparent focus-visible:ring-0"
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <PiDotsThreeBold className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleUpload}>
+                <TbUpload className="w-4 h-4 mr-2" />
+                Upload Bot
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <section className="space-y-2 w-full"></section>
       </div>
 
       {/* 主内容区 */}
@@ -271,7 +310,14 @@ const BotItem = ({
               setBot(bot ? { ...bot, mode: value } : undefined)
             }
           />
-
+          <AutoResizeTextarea
+            value={bot.description || ""}
+            onValueChange={(e) =>
+              setBot(bot ? { ...bot, description: e.target.value } : undefined)
+            }
+            className="resize-none"
+            placeholder="Please enter the description..."
+          />
           {/* 模型部分 */}
           <section className="space-y-4">
             <h3 className="text-lg font-medium">Model</h3>

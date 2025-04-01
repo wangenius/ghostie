@@ -10,9 +10,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
-import { TbDownload, TbPlus, TbShape3, TbUpload } from "react-icons/tb";
+import { TbDownload, TbPlus, TbShape3 } from "react-icons/tb";
 import { WorkflowsMarket } from "./components/WorkflowsMarket";
-import { WorkflowUpload } from "./components/WorkflowUpload";
 import { ContextWorkflow, Workflow } from "./execute/Workflow";
 import { WorkflowEditor } from "./WorkflowEditor";
 
@@ -31,17 +30,9 @@ export default function WorkflowsTab() {
 
   const handleOpenMarket = () => {
     dialog({
-      title: "工作流市场",
+      title: "Workflows Market",
       content: <WorkflowsMarket />,
       className: "max-w-3xl",
-    });
-  };
-
-  const handleOpenUpload = () => {
-    dialog({
-      title: "上传工作流",
-      content: (close) => <WorkflowUpload close={close} />,
-      closeIconHide: true,
     });
   };
 
@@ -52,14 +43,14 @@ export default function WorkflowsTab() {
         left={
           <Button onClick={handleOpenMarket} variant="outline">
             <PiStorefrontDuotone className="w-4 h-4" />
-            工作流市场
+            Workflows Market
           </Button>
         }
         right={
           <>
             <Button className="flex-1" onClick={handleCreateWorkflow}>
-              <TbPlus className="w-4 h-4 mr-2" />
-              新建工作流
+              <TbPlus className="w-4 h-4" />
+              New Workflow
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -69,23 +60,19 @@ export default function WorkflowsTab() {
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleOpenUpload}>
-                  <TbUpload className="w-4 h-4 mr-2" />
-                  <span>上传工作流</span>
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {}}>
-                  <TbDownload className="w-4 h-4 mr-2" />
-                  <span>导出工作流</span>
+                  <TbDownload className="w-4 h-4" />
+                  <span>Export Workflow</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </>
         }
-        tips="支持的工作流：通过可视化编排创建和管理自动化工作流。支持多种节点类型和条件分支。"
+        tips="Support workflows: Create and manage automated workflows through visual orchestration. Supports multiple node types and conditional branches."
         items={Object.entries(workflows).map(([id, workflow]) => ({
           id,
-          title: workflow.name || "未命名工作流",
-          description: workflow.description || "无描述",
+          title: workflow.name || "Unnamed Workflow",
+          description: workflow.description || "No description",
           onClick: () => handleWorkflowSelect(id),
           actived: contextWorkflowId === id,
           onRemove: () => {
@@ -99,7 +86,7 @@ export default function WorkflowsTab() {
 
       {/* 右侧编辑器区域 */}
       <PreferenceBody
-        emptyText="请选择一个工作流或点击新建按钮创建工作流"
+        emptyText="Please select a workflow or click the new button to create a workflow"
         EmptyIcon={TbShape3}
         isEmpty={!contextWorkflowId}
       >

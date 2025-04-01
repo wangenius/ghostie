@@ -3,13 +3,16 @@ import { Button } from "@/components/ui/button";
 import { cmd } from "@/utils/shell";
 import { supabase } from "@/utils/supabase";
 import { useEffect, useState } from "react";
-import { TbLoader2 } from "react-icons/tb";
+import { TbLoader2, TbTrash } from "react-icons/tb";
 import { PluginManager } from "../PluginManager";
+import { UserMananger } from "@/settings/User";
 
 export const PluginsMarket = () => {
   const [plugins, setPlugins] = useState<PluginMarketProps[]>([]);
   const [loading, setLoading] = useState(false);
   const [installing, setInstalling] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const user = UserMananger.use();
 
   // 从 Supabase 获取插件列表
   const fetchPlugins = async () => {
@@ -63,6 +66,34 @@ export const PluginsMarket = () => {
     }
   };
 
+  // 删除插件
+  const handleDelete = async (plugin: PluginMarketProps) => {
+    try {
+      setDeleting(plugin.id);
+      const { error } = await supabase
+        .from("plugins")
+        .delete()
+        .eq("id", plugin.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setPlugins(plugins.filter((p) => p.id !== plugin.id));
+      cmd.message(`success delete plugin: ${plugin.name}`, "success");
+    } catch (error) {
+      console.error("failed to delete plugin:", error);
+      cmd.message(
+        `failed to delete plugin: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        "error",
+      );
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   // 初始加载
   useEffect(() => {
     fetchPlugins();
@@ -101,23 +132,39 @@ export const PluginsMarket = () => {
                     {plugin.description}
                   </p>
                   <div className="text-xs text-gray-400 mt-2">
-                    version: {plugin.version} · author: {plugin.author}
+                    version: {plugin.version}
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={() => handleInstall(plugin)}
-                  disabled={installing === plugin.id}
-                >
-                  {installing === plugin.id ? (
-                    <>
-                      <TbLoader2 className="w-4 h-4 mr-1 animate-spin" />
-                      installing
-                    </>
-                  ) : (
-                    "install"
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleInstall(plugin)}
+                    disabled={installing === plugin.id}
+                  >
+                    {installing === plugin.id ? (
+                      <>
+                        <TbLoader2 className="w-4 h-4 mr-1 animate-spin" />
+                        installing
+                      </>
+                    ) : (
+                      "install"
+                    )}
+                  </Button>
+                  {user?.id === plugin.user_id && (
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      onClick={() => handleDelete(plugin)}
+                      disabled={deleting === plugin.id}
+                    >
+                      {deleting === plugin.id ? (
+                        <TbLoader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <TbTrash className="w-4 h-4" />
+                      )}
+                    </Button>
                   )}
-                </Button>
+                </div>
               </div>
             </div>
           ))}

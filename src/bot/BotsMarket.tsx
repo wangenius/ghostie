@@ -3,13 +3,16 @@ import { Button } from "@/components/ui/button";
 import { cmd } from "@/utils/shell";
 import { supabase } from "@/utils/supabase";
 import { useEffect, useState } from "react";
-import { TbLoader2 } from "react-icons/tb";
-import { BotManager } from "../BotManger";
+import { TbLoader2, TbTrash } from "react-icons/tb";
+import { BotManager } from "./BotManger";
+import { UserMananger } from "@/settings/User";
 
 export const BotsMarket = () => {
   const [bots, setBots] = useState<BotMarketProps[]>([]);
   const [loading, setLoading] = useState(false);
   const [installing, setInstalling] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const user = UserMananger.use();
 
   // 从 Supabase 获取机器人列表
   const fetchBots = async () => {
@@ -58,6 +61,31 @@ export const BotsMarket = () => {
     }
   };
 
+  // 删除机器人
+  const handleDelete = async (bot: BotMarketProps) => {
+    try {
+      setDeleting(bot.id);
+      const { error } = await supabase.from("bots").delete().eq("id", bot.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setBots(bots.filter((b) => b.id !== bot.id));
+      cmd.message(`Successfully deleted bot: ${bot.name}`, "success");
+    } catch (error) {
+      console.error("Delete bot failed:", error);
+      cmd.message(
+        `Delete bot failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        "error",
+      );
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   // 初始加载
   useEffect(() => {
     fetchBots();
@@ -96,24 +124,37 @@ export const BotsMarket = () => {
                     {bot.system?.slice(0, 100)}
                     {bot.system?.length > 100 ? "..." : ""}
                   </p>
-                  <div className="text-xs text-gray-400 mt-2">
-                    Author: {bot.author || "Unknown"}
-                  </div>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={() => handleInstall(bot)}
-                  disabled={installing === bot.id}
-                >
-                  {installing === bot.id ? (
-                    <>
-                      <TbLoader2 className="w-4 h-4 mr-1 animate-spin" />
-                      installing...
-                    </>
-                  ) : (
-                    "Install"
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleInstall(bot)}
+                    disabled={installing === bot.id}
+                  >
+                    {installing === bot.id ? (
+                      <>
+                        <TbLoader2 className="w-4 h-4 mr-1 animate-spin" />
+                        Installing...
+                      </>
+                    ) : (
+                      "Install"
+                    )}
+                  </Button>
+                  {user?.id === bot.user_id && (
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      onClick={() => handleDelete(bot)}
+                      disabled={deleting === bot.id}
+                    >
+                      {deleting === bot.id ? (
+                        <TbLoader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <TbTrash className="w-4 h-4" />
+                      )}
+                    </Button>
                   )}
-                </Button>
+                </div>
               </div>
             </div>
           ))}

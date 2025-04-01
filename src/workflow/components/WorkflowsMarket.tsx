@@ -2,8 +2,9 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/utils/supabase";
 import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
-import { TbLoader2 } from "react-icons/tb";
+import { TbLoader2, TbTrash } from "react-icons/tb";
 import { Workflow } from "../execute/Workflow";
+import { UserMananger } from "@/settings/User";
 
 interface WorkflowMarketProps {
   id: string;
@@ -12,13 +13,15 @@ interface WorkflowMarketProps {
   data: any;
   inserted_at: string;
   updated_at: string;
-  author?: string;
+  user_id: string;
 }
 
 export const WorkflowsMarket = () => {
   const [workflows, setWorkflows] = useState<WorkflowMarketProps[]>([]);
   const [loading, setLoading] = useState(false);
   const [installing, setInstalling] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const user = UserMananger.use();
 
   // 从 Supabase 获取工作流列表
   const fetchWorkflows = async () => {
@@ -75,6 +78,34 @@ export const WorkflowsMarket = () => {
     }
   };
 
+  // 删除工作流
+  const handleDelete = async (workflow: WorkflowMarketProps) => {
+    try {
+      setDeleting(workflow.id);
+      const { error } = await supabase
+        .from("workflows")
+        .delete()
+        .eq("id", workflow.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setWorkflows(workflows.filter((w) => w.id !== workflow.id));
+      cmd.message(`成功删除工作流: ${workflow.name}`, "success");
+    } catch (error) {
+      console.error("删除工作流失败:", error);
+      cmd.message(
+        `删除工作流失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        "error",
+      );
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   // 初始加载
   useEffect(() => {
     fetchWorkflows();
@@ -116,23 +147,39 @@ export const WorkflowsMarket = () => {
                     {(workflow.description?.length || 0) > 100 ? "..." : ""}
                   </p>
                   <div className="text-xs text-gray-400 mt-2">
-                    作者: {workflow.author || "未知"}
+                    作者: {workflow.user_id || "未知"}
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={() => handleInstall(workflow)}
-                  disabled={installing === workflow.id}
-                >
-                  {installing === workflow.id ? (
-                    <>
-                      <TbLoader2 className="w-4 h-4 mr-1 animate-spin" />
-                      安装中...
-                    </>
-                  ) : (
-                    "安装"
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleInstall(workflow)}
+                    disabled={installing === workflow.id}
+                  >
+                    {installing === workflow.id ? (
+                      <>
+                        <TbLoader2 className="w-4 h-4 mr-1 animate-spin" />
+                        安装中...
+                      </>
+                    ) : (
+                      "安装"
+                    )}
+                  </Button>
+                  {user?.id === workflow.user_id && (
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      onClick={() => handleDelete(workflow)}
+                      disabled={deleting === workflow.id}
+                    >
+                      {deleting === workflow.id ? (
+                        <TbLoader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <TbTrash className="w-4 h-4" />
+                      )}
+                    </Button>
                   )}
-                </Button>
+                </div>
               </div>
             </div>
           ))}
