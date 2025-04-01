@@ -131,8 +131,8 @@ export interface NodeState {
   startTime?: string;
   endTime?: string;
 }
-/* 工作流 */
-export interface WorkflowProps {
+
+export interface WorkflowMeta {
   /* 工作流ID */
   id: string;
   /* 工作流名称 */
@@ -143,15 +143,22 @@ export interface WorkflowProps {
   createdAt: string;
   /* 更新时间 */
   updatedAt: string;
-  /* 工作流节点 */
-  nodes: Record<string, WorkflowNode>;
-  /* 工作流边 */
-  edges: Record<string, WorkflowEdge>;
-  /* 工作流视图 */
-  viewport: {
-    x: number;
-    y: number;
-    zoom: number;
+}
+
+/* 工作流 */
+export interface WorkflowProps {
+  meta: WorkflowMeta;
+  body: {
+    /* 工作流节点 */
+    nodes: Record<string, WorkflowNode>;
+    /* 工作流边 */
+    edges: Record<string, WorkflowEdge>;
+    /* 工作流视图 */
+    viewport: {
+      x: number;
+      y: number;
+      zoom: number;
+    };
   };
 }
 /* 节点动作，用于记录节点执行历史 */
@@ -286,16 +293,20 @@ export type NodeConfig =
   | MessageNodeConfig;
 
 export const INITIAL_WORKFLOW: WorkflowProps = {
-  id: "",
-  name: "",
-  description: "",
-  createdAt: "",
-  updatedAt: "",
-  nodes: {},
-  edges: {},
-  viewport: {
-    x: 0,
-    y: 0,
-    zoom: 1,
+  meta: {
+    id: "",
+    name: "",
+    description: "",
+    createdAt: "",
+    updatedAt: "",
+  },
+  body: {
+    nodes: {},
+    edges: {},
+    viewport: {
+      x: 0,
+      y: 0,
+      zoom: 1,
+    },
   },
 };

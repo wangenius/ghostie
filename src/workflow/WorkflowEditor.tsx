@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { cmd } from "@/utils/shell";
 import { motion } from "framer-motion";
-import { memo, Suspense, useCallback, useState } from "react";
+import { memo, Suspense, useCallback, useEffect, useState } from "react";
 import {
   TbBook,
   TbLoader2,
@@ -30,7 +30,7 @@ import { DragToolbar } from "./components/DragToolbar";
 import { FlowControls } from "./components/FlowControls";
 import { FlowProvider, useFlow } from "./context/FlowContext";
 import { ParamHistory } from "./execute/ParamHistory";
-import { Workflow } from "./execute/Workflow";
+import { ContextWorkflow, Workflow } from "./execute/Workflow";
 import { SchedulerManager } from "./scheduler/SchedulerManager";
 import { edgeTypes, nodeTypes, StartNodeConfig } from "./types/nodes";
 
@@ -45,28 +45,25 @@ export const WorkflowInfo = memo(
     isFullscreen: boolean;
     onToggleFullscreen: () => void;
   }) => {
-    const workflow = Workflow.instance;
-    const workflowData = workflow.use();
-    const { bool } = workflow.executor.useIsExecuting();
+    const meta = ContextWorkflow.use((selector) => selector.meta);
+    const { bool } = ContextWorkflow.executor.useIsExecuting();
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
-    const scheduler = SchedulerManager.use(
-      (selector) => selector[workflowData?.id],
-    );
+    const scheduler = SchedulerManager.use((selector) => selector[meta.id]);
 
     // 处理名称变更
     const handleNameChange = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
-        workflow.set({ name: e.target.value });
+        ContextWorkflow.updateMeta({ name: e.target.value });
       },
-      [workflow],
+      [ContextWorkflow],
     );
 
     // 处理描述变更
     const handleDescriptionChange = useCallback(
       (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        workflow.set({ description: e.target.value });
+        ContextWorkflow.updateMeta({ description: e.target.value });
       },
-      [workflow],
+      [ContextWorkflow],
     );
 
     // 处理定时启用状态变更
@@ -75,26 +72,26 @@ export const WorkflowInfo = memo(
         if (checked) {
           // 确保 frequency 已经初始化
           if (!scheduler?.schedules?.[0]) {
-            SchedulerManager.schedule(workflowData?.id, "0 0 * * * ?");
+            SchedulerManager.schedule(meta.id, "0 0 * * * ?");
           }
           // 使用当前的 frequency 配置更新定时任务
           SchedulerManager.schedule(
-            workflowData?.id,
+            meta.id,
             scheduler?.schedules?.[0] || "0 0 * * * ?",
           );
         } else {
-          SchedulerManager.unschedule(workflowData?.id);
+          SchedulerManager.unschedule(meta.id);
         }
       },
-      [workflowData?.id, scheduler?.schedules?.[0]],
+      [meta.id, scheduler?.schedules?.[0]],
     );
 
     // 处理 cron 表达式变更
     const handleCronExpressionChange = useCallback(
       (newExpression: string) => {
-        SchedulerManager.schedule(workflowData?.id, newExpression);
+        SchedulerManager.schedule(meta.id, newExpression);
       },
-      [workflowData?.id],
+      [meta.id],
     );
     // 处理执行测试
     const handleExecuteTest = useCallback(async () => {
@@ -102,16 +99,16 @@ export const WorkflowInfo = memo(
         title: "Please enter parameters",
         className: "w-[480px]",
         content: (close) => (
-          <ParamInputDialog close={close} workflow={workflow} />
+          <ParamInputDialog close={close} workflow={ContextWorkflow} />
         ),
       });
-    }, [workflow]);
+    }, [ContextWorkflow]);
 
     return (
       <div className="flex flex-col">
         <div className="flex items-center justify-between">
           <h3 className="text-2xl font-semibold truncate">
-            {workflowData?.name || "Unnamed Workflow"}
+            {meta.name || "Unnamed Workflow"}
           </h3>
 
           <div className="flex items-center gap-2">
@@ -169,9 +166,10 @@ export const WorkflowInfo = memo(
           open={isEditDrawerOpen}
           onOpenChange={setIsEditDrawerOpen}
           className="w-[380px]"
+          key={meta.id}
           title={
             <Input
-              value={workflowData?.name}
+              defaultValue={meta.name}
               variant="title"
               className="p-0 m-0 rounded-none "
               onChange={handleNameChange}
@@ -186,7 +184,7 @@ export const WorkflowInfo = memo(
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Textarea
-                        value={workflowData?.description}
+                        defaultValue={meta.description}
                         onChange={handleDescriptionChange}
                         placeholder="Enter workflow description"
                         className="min-h-[100px] resize-none"
@@ -227,9 +225,8 @@ export const WorkflowInfo = memo(
 
 /* 工作流图组件 */
 const WorkflowGraph = memo(() => {
-  const workflow = Workflow.instance;
-  const viewport = workflow.use((selector) => selector.viewport);
-  const id = workflow.use((selector) => selector.id);
+  const viewport = ContextWorkflow.use((selector) => selector.body.viewport);
+  const workflowData = ContextWorkflow.use();
   const {
     onDragOver,
     onDrop,
@@ -241,7 +238,12 @@ const WorkflowGraph = memo(() => {
     onConnect,
     edges,
   } = useFlow();
-  if (!id) {
+
+  useEffect(() => {
+    console.log(workflowData?.meta.id);
+  }, [workflowData?.meta.id]);
+
+  if (!workflowData?.meta.id) {
     throw Promise.reject(new Error("工作流 ID 不存在"));
   }
 
@@ -251,7 +253,7 @@ const WorkflowGraph = memo(() => {
       className="w-full h-full relative rounded-lg border focus-within:border-primary/40 overflow-hidden"
     >
       <ReactFlow
-        key={id}
+        key={workflowData?.meta.id}
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
@@ -302,7 +304,9 @@ const ParamInputDialog = ({
 }) => {
   const workflowState = workflow.use();
   const [paramValues, setParamValues] = useState<Record<string, any>>({});
-  const history = ParamHistory.use((state) => state[workflowState?.id] || []);
+  const history = ParamHistory.use(
+    (state) => state[workflowState?.meta.id] || [],
+  );
 
   // 处理参数值变更
   const handleParamValueChange = useCallback((path: string[], value: any) => {
@@ -322,12 +326,12 @@ const ParamInputDialog = ({
 
   // 处理参数确认
   const handleParamConfirm = useCallback(() => {
-    if (workflowState?.id) {
-      ParamHistory.addHistory(workflowState.id, paramValues);
+    if (workflowState?.meta.id) {
+      ParamHistory.addHistory(workflowState.meta.id, paramValues);
     }
     close();
     workflow.execute(paramValues);
-  }, [workflow, paramValues, close, workflowState?.id]);
+  }, [workflow, paramValues, close, workflowState?.meta.id]);
 
   // 渲染单个参数输入项
   const renderParamInput = useCallback(
@@ -420,7 +424,7 @@ const ParamInputDialog = ({
 
   // 渲染所有参数输入
   const renderParamInputs = useCallback(() => {
-    const startNode = Object.values(workflowState?.nodes || {}).find(
+    const startNode = Object.values(workflowState?.body.nodes || {}).find(
       (node) => node.type === "start",
     );
     if (!startNode) return null;
@@ -440,7 +444,7 @@ const ParamInputDialog = ({
         })}
       </div>
     );
-  }, [workflowState?.nodes, renderParamInput, workflowState?.id]);
+  }, [workflowState?.body.nodes, renderParamInput, workflowState?.meta.id]);
 
   return (
     <div className="space-y-4">
@@ -451,8 +455,8 @@ const ParamInputDialog = ({
           size="sm"
           className="text-xs text-destructive"
           onClick={() => {
-            if (workflowState?.id) {
-              ParamHistory.clearHistory(workflowState.id);
+            if (workflowState?.meta.id) {
+              ParamHistory.clearHistory(workflowState.meta.id);
             }
           }}
         >

@@ -1,6 +1,6 @@
-import { WorkflowManager } from "../WorkflowManager";
 import { Echo } from "echo-state";
 import { CronExpressionParser } from "cron-parser";
+import { Workflow } from "../execute/Workflow";
 
 interface Schedule {
   /* 任务ID = Workflow.id */
@@ -151,7 +151,8 @@ class SchedulerManager {
         },
       }));
 
-      const result = await WorkflowManager.executeWorkflow(id);
+      const workflow = await Workflow.get(id);
+      const result = await workflow.execute();
       console.log(
         `执行工作流[${id}]结果:时间：${new Date().toLocaleString()} ${JSON.stringify(
           result,
@@ -189,7 +190,7 @@ class SchedulerManager {
   static async schedule(id: string, cronExpressions: string): Promise<boolean> {
     try {
       // 检查工作流是否存在
-      const workflow = WorkflowManager.get(id);
+      const workflow = await Workflow.get(id);
       if (!workflow) {
         return false;
       }
@@ -279,7 +280,7 @@ class SchedulerManager {
         tasks.map(async ([id, task]) => {
           try {
             // 检查工作流是否存在
-            const workflow = await WorkflowManager.get(id);
+            const workflow = await Workflow.get(id);
 
             if (!workflow) {
               await this.unschedule(id);

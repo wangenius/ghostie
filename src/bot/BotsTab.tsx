@@ -24,13 +24,11 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Knowledge, KnowledgeMeta } from "@/knowledge/Knowledge";
 import { getColor } from "@/utils/color";
-import { WorkflowManager } from "@/workflow/WorkflowManager";
-import { WorkflowProps } from "@/workflow/types/nodes";
 import { useCallback, useEffect, useState } from "react";
 import { dialog } from "@/components/custom/DialogModal";
 import { BotsMarket } from "./components/BotsMarket";
 import { BotUpload } from "./components/BotUpload";
-
+import { Workflow } from "@/workflow/execute/Workflow";
 /** 机器人列表 */
 export function BotsTab() {
   const bots = BotManager.use();
@@ -228,7 +226,7 @@ const BotItem = ({
 }) => {
   const [plugins, setPlugins] = useState<Record<string, PluginProps>>({});
   const { list } = Knowledge.useList();
-  const workflows = WorkflowManager.use();
+  const workflows = Workflow.list.use();
 
   const loadPlugins = useCallback(async () => {
     const tools = await cmd.invoke<Record<string, PluginProps>>("plugins_list");
@@ -361,13 +359,11 @@ const BotItem = ({
               <DrawerSelector
                 title="Select Workflow"
                 value={bot.workflows || []}
-                items={Object.values(workflows).map(
-                  (workflow: WorkflowProps) => ({
-                    label: workflow.name,
-                    value: workflow.id,
-                    description: workflow.description,
-                  }),
-                )}
+                items={Object.values(workflows).map((workflow) => ({
+                  label: workflow.name,
+                  value: workflow.id,
+                  description: workflow.description,
+                }))}
                 onSelect={(value) =>
                   setBot(bot ? { ...bot, workflows: value } : undefined)
                 }

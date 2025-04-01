@@ -8,27 +8,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { cmd } from "@/utils/shell";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 import { TbDownload, TbPlus, TbShape3, TbUpload } from "react-icons/tb";
-import { Workflow } from "./execute/Workflow";
+import { ContextWorkflow, Workflow } from "./execute/Workflow";
 import { WorkflowEditor } from "./WorkflowEditor";
-import { WorkflowManager } from "./WorkflowManager";
-import { cmd } from "@/utils/shell";
+
 /* 工作流列表 */
 export default function WorkflowsTab() {
   /* 工作流列表 */
-  const workflows = WorkflowManager.use();
-  const [selectedWorkflow, setSelectedWorkflow] = useState<string | null>(null);
-
+  const workflows = Workflow.list.use();
+  const contextWorkflowId = ContextWorkflow.use((selector) => selector.meta.id);
   const handleWorkflowSelect = (id: string) => {
-    setSelectedWorkflow(id === selectedWorkflow ? null : id);
-    Workflow.instance.init(id);
+    ContextWorkflow.switch(id);
   };
 
   const handleCreateWorkflow = async () => {
-    const workflow = await Workflow.create();
-    workflow.register();
+    await Workflow.create();
   };
 
   return (
@@ -80,11 +76,11 @@ export default function WorkflowsTab() {
           title: workflow.name || "Unnamed Workflow",
           description: workflow.description || "No description",
           onClick: () => handleWorkflowSelect(id),
-          actived: selectedWorkflow === id,
+          actived: contextWorkflowId === id,
           onRemove: () => {
-            WorkflowManager.delete(id);
-            if (selectedWorkflow === id) {
-              setSelectedWorkflow(null);
+            Workflow.delete(id);
+            if (contextWorkflowId === id) {
+              ContextWorkflow.close();
             }
           },
         }))}
@@ -94,7 +90,7 @@ export default function WorkflowsTab() {
       <PreferenceBody
         emptyText="Please select a workflow or click the new button to create a workflow"
         EmptyIcon={TbShape3}
-        isEmpty={!selectedWorkflow}
+        isEmpty={!contextWorkflowId}
       >
         <WorkflowEditor />
       </PreferenceBody>

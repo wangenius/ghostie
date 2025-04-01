@@ -1,11 +1,9 @@
 import { PluginMarketProps, PluginProps } from "@/common/types/plugin";
-import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
 import { cmd } from "@/utils/shell";
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { TbLoader2 } from "react-icons/tb";
-import { PluginUpload } from "./PluginUpload";
 import { PluginManager } from "../PluginManager";
 
 // 创建 Supabase 客户端
@@ -87,17 +85,6 @@ export const PluginsMarket = () => {
             disabled={loading}
           >
             {loading ? "loading..." : "refresh"}
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => {
-              dialog({
-                closeIconHide: true,
-                content: <PluginUpload />,
-              });
-            }}
-          >
-            upload plugin
           </Button>
         </div>
       </div>

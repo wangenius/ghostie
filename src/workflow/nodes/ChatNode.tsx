@@ -11,7 +11,6 @@ import { ChatNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 
 const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
-  const models = ModelManager.use();
   const [system, setSystem] = useState(props.data.system);
   const [user, setUser] = useState(props.data.user);
   const { updateNodeData } = useFlow();
@@ -46,13 +45,17 @@ const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
       <DrawerSelector
         panelTitle="Select Model"
         value={[props.data.model]}
-        items={Object.values(models).map((model) => {
-          return {
-            label: model.name,
-            value: model.id,
-            type: model.type,
-          };
-        })}
+        items={Object.values(ModelManager.getProviders()).flatMap(
+          (provider) => {
+            return Object.values(provider.models).map((model) => {
+              return {
+                label: model.name,
+                value: `${provider.name}:${model.name}`,
+                type: provider.name,
+              };
+            });
+          },
+        )}
         onSelect={(value) => handleModelChange(value[0])}
       />
 
@@ -108,12 +111,7 @@ export class ChatNodeExecutor extends NodeExecutor {
         inputs,
       );
 
-      const model = ModelManager.get(chatConfig.model);
-      if (!model) {
-        throw new Error(`Model not found: ${chatConfig.model}`);
-      }
-
-      const res = await new ChatModel(model)
+      const res = await ChatModel.create(chatConfig.model)
         .system(parsedSystem)
         .stream(parsedUser);
 

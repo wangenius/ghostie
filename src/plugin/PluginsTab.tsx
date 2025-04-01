@@ -37,6 +37,7 @@ import { javascript } from "@codemirror/lang-javascript";
 import { githubDarkInit } from "@uiw/codemirror-theme-github";
 import CodeMirror from "@uiw/react-codemirror";
 import { toast } from "sonner";
+import { PluginUpload } from "./components/PluginUpload";
 // 默认插件属性
 const defaultPluginProps: Partial<PluginProps> = {
   name: "New Plugin",
@@ -255,13 +256,24 @@ export function PluginsTab() {
 
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => EnvEditor.open()}>
-                  <TbDatabaseCog className="w-4 h-4 mr-2" />
-                  <span>Environment Variables</span>
+                  <TbDatabaseCog className="w-4 h-4" />
+                  Environment Variables
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => {
+                    dialog({
+                      closeIconHide: true,
+                      content: <PluginUpload />,
+                    });
+                  }}
+                >
+                  <TbUpload className="w-4 h-4" />
+                  Submit Plugin
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleImportPlugin}>
-                  <TbUpload className="w-4 h-4 mr-2" />
-                  <span>Import TypeScript Plugin</span>
+                  <TbUpload className="w-4 h-4" />
+                  Import TypeScript Plugin
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

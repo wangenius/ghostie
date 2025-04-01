@@ -4,14 +4,13 @@ import { memo, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
 import { NodeExecutor } from "../execute/NodeExecutor";
-import { Workflow } from "../execute/Workflow";
+import { ContextWorkflow, Workflow } from "../execute/Workflow";
 import { IteratorNodeConfig } from "../types/nodes";
-import { WorkflowManager } from "../WorkflowManager";
 import { NodePortal } from "./NodePortal";
 const IteratorNodeComponent = (props: NodeProps<IteratorNodeConfig>) => {
   const [content, setContent] = useState(props.data.target || "");
-  const workflows = WorkflowManager.use();
-  const id = Workflow.instance.use((selector) => selector.id);
+  const workflows = Workflow.list.use();
+  const id = ContextWorkflow.use((selector) => selector.meta.id);
   const { updateNodeData } = useFlow();
   const handleTargetChange = (value: string) => {
     setContent(value);
@@ -67,7 +66,7 @@ export class IteratorNodeExecutor extends NodeExecutor {
       inputs: inputs || {},
     });
     const { target, action } = this.node.data as IteratorNodeConfig;
-    const workflow = await WorkflowManager.get(action);
+    const workflow = await Workflow.get(action);
 
     let content = this.parseTextFromInputs(target, inputs);
     content = `{ "result": ${content} }`;
@@ -111,7 +110,7 @@ export class IteratorNodeExecutor extends NodeExecutor {
         };
       }
       const result = await (
-        await new Workflow().init(workflow?.id)
+        await Workflow.get(await workflow.id())
       ).execute(item);
 
       if (result.success) {

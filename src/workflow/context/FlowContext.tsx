@@ -15,7 +15,7 @@ import {
   useReactFlow,
   Viewport,
 } from "reactflow";
-import { Workflow } from "../execute/Workflow";
+import { ContextWorkflow } from "../execute/Workflow";
 import type { WorkflowEdgeData } from "../types/edges";
 import { EDGE_CONFIG, NODE_TYPES, NodeConfig, NodeType } from "../types/nodes";
 
@@ -41,16 +41,17 @@ interface FlowContextType {
 
 const FlowContext = createContext<FlowContextType | null>(null);
 
+/* 当前工作流上下文 */
 export const FlowProvider = ({ children }: { children: React.ReactNode }) => {
-  const workflow = Workflow.instance;
-  const id = workflow.use((selector) => selector.id);
+  const id = ContextWorkflow.use((selector) => selector.meta.id);
+  const body = ContextWorkflow.use((selector) => selector.body);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<NodeConfig>(
-    Object.values(workflow.nodes()),
+    Object.values(body.nodes),
   );
   const [edges, setEdges, onEdgesChange] = useEdgesState(
-    Object.values(workflow.edges()),
+    Object.values(body.edges),
   );
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -94,22 +95,20 @@ export const FlowProvider = ({ children }: { children: React.ReactNode }) => {
 
   const onMoveEnd = useCallback(
     (_: any, viewport: Viewport) => {
-      console.log("onMoveEnd", viewport);
-      workflow.set((state) => ({
-        ...state,
+      ContextWorkflow.updateBody({
         viewport: {
           x: viewport.x,
           y: viewport.y,
           zoom: viewport.zoom,
         },
-      }));
+      });
     },
-    [workflow],
+    [ContextWorkflow],
   );
 
   const onConnect = useCallback(
     (params: Connection) => {
-      if (!workflow) return;
+      if (!ContextWorkflow) return;
 
       const sourceId = params.sourceHandle || "";
       const targetId = params.targetHandle || "";
@@ -133,17 +132,16 @@ export const FlowProvider = ({ children }: { children: React.ReactNode }) => {
       };
       setEdges((eds) => [...eds, edge]);
     },
-    [workflow],
+    [ContextWorkflow],
   );
 
   useEffect(() => {
-    setNodes(Object.values(workflow.nodes()));
-    setEdges(Object.values(workflow.edges()));
+    setNodes(Object.values(body.nodes));
+    setEdges(Object.values(body.edges));
   }, [id]);
 
   useEffect(() => {
-    workflow.set((state) => ({
-      ...state,
+    ContextWorkflow.updateBody({
       edges: {
         ...edges.reduce((acc, edge) => {
           acc[edge.id] = edge;
@@ -156,8 +154,8 @@ export const FlowProvider = ({ children }: { children: React.ReactNode }) => {
           return acc;
         }, {} as Record<string, any>),
       },
-    }));
-  }, [nodes, edges, workflow]);
+    });
+  }, [nodes, edges, ContextWorkflow]);
 
   const updateNodeData = useCallback(
     <T extends NodeConfig>(

@@ -36,7 +36,7 @@ export class WorkflowExecutor {
   }
 
   private buildGraph() {
-    const { nodes, edges } = this.workflowData;
+    const { nodes, edges } = this.workflowData.body;
 
     // 初始化图结构
     Object.keys(nodes).forEach((nodeId) => {
@@ -95,8 +95,8 @@ export class WorkflowExecutor {
   }
 
   private getNodeInputs(nodeId: string): Record<string, any> {
-    if (this.workflowData.nodes[nodeId]?.type === "start") {
-      return this.workflowData.nodes[nodeId]?.data || {};
+    if (this.workflowData.body.nodes[nodeId]?.type === "start") {
+      return this.workflowData.body.nodes[nodeId]?.data || {};
     }
 
     const inputs: Record<string, any> = {};
@@ -119,7 +119,7 @@ export class WorkflowExecutor {
 
   public async execute(inputs?: Record<string, any>): Promise<NodeResult> {
     try {
-      const startNode = Object.values(this.workflowData.nodes).find(
+      const startNode = Object.values(this.workflowData.body.nodes).find(
         (node) => node.type === "start",
       );
       if (!startNode) {
@@ -138,7 +138,7 @@ export class WorkflowExecutor {
         // 并行执行当前批次的节点
         await Promise.all(
           currentBatch.map(async (nodeId) => {
-            const node = this.workflowData.nodes[nodeId];
+            const node = this.workflowData.body.nodes[nodeId];
             if (!node) {
               throw new Error(`节点不存在: ${nodeId}`);
             }
@@ -250,7 +250,7 @@ export class WorkflowExecutor {
   public initializeNodeStates(): Record<string, NodeState> {
     const nodeStates: Record<string, NodeState> = {};
 
-    Object.entries(this.workflowData.nodes).forEach(([nodeId, node]) => {
+    Object.entries(this.workflowData.body.nodes).forEach(([nodeId, node]) => {
       nodeStates[nodeId] = {
         inputs: {},
         outputs: {},
@@ -260,7 +260,7 @@ export class WorkflowExecutor {
     });
 
     // 检查是否应该被标记为skipped
-    Object.entries(this.workflowData.nodes).forEach(([nodeId, node]) => {
+    Object.entries(this.workflowData.body.nodes).forEach(([nodeId, node]) => {
       const prevNodes = this.predecessors.get(nodeId) || new Set();
 
       if (

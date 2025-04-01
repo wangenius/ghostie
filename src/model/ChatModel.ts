@@ -16,10 +16,10 @@ import {
 import { TOOL_NAME_SPLIT } from "../bot/Bot";
 import { HistoryMessage } from "./HistoryMessage";
 import { Knowledge } from "../knowledge/Knowledge";
-import { WorkflowManager } from "@/workflow/WorkflowManager";
-import { StartNodeConfig } from "@/workflow/types/nodes";
+import { StartNodeConfig, WorkflowProps } from "@/workflow/types/nodes";
 import { Workflow } from "@/workflow/execute/Workflow";
 import { ModelManager } from "./ModelManager";
+import { Echo } from "echo-state";
 
 /** 请求配置 */
 interface RequestConfig {
@@ -61,6 +61,10 @@ export class ChatModel {
     this.model = config.model;
   }
 
+  /** 创建模型
+   * @param modelwithprovider 模型名称 openai:gpt-4
+   * @returns 模型实例
+   */
   static create(modelwithprovider: string) {
     const [provider_name, model_name] = modelwithprovider.split(":");
     const provider = ModelManager.get(provider_name);
@@ -100,14 +104,22 @@ export class ChatModel {
     if (workflows.length) {
       console.log(workflows);
       /* 获取工作流 */
-      const flows = await WorkflowManager.current;
-      workflows.forEach((workflow) => {
+      const flows = await Workflow.list.getCurrent();
+      workflows.forEach(async (workflow) => {
         const flow = flows[workflow];
         if (!flow) return;
         if (!this.workflows) {
           this.workflows = [];
         }
-        const startNode = Object.values(flow.nodes).find(
+
+        const instance = new Echo<WorkflowProps | null>(null).indexed({
+          database: "workflows",
+          name: workflow,
+        });
+
+        const body = await instance.getCurrent();
+
+        const startNode = Object.values(body?.body.nodes || {}).find(
           (node) => node.type === "start",
         );
         if (!startNode) return;
@@ -267,7 +279,7 @@ export class ChatModel {
     /* 工作流工具 */
     if (tool_call.function.name.startsWith("executeFlow_")) {
       const id = tool_call.function.name.split("_")[1];
-      const workflow = await new Workflow().init(id);
+      const workflow = await Workflow.get(id);
       if (!workflow) {
         return {
           name: tool_call.function.name,
