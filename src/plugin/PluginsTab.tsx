@@ -378,7 +378,7 @@ export function PluginsTab() {
             theme={githubDarkInit({
               settings: {
                 fontSize: 16,
-                background: "#292d3e",
+                background: "#101113",
               },
               styles: [
                 {
