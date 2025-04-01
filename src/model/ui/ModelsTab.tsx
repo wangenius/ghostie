@@ -89,8 +89,8 @@ export function ModelsTab() {
           </div>
         }
         right={
-          <div className="text-xs text-muted-foreground">
-            {items.length} models
+          <div className="text-xs text-muted-foreground pr-2">
+            {items.length} providers
           </div>
         }
         items={items.map((provider) => ({

@@ -189,12 +189,12 @@ export function dialog({
 }
 
 dialog.confirm = ({
-  title = "确认",
+  title = "Confirm",
   content,
   onOk,
   variants = "default",
-  okText = "确认",
-  cancelText = "取消",
+  okText = "Confirm",
+  cancelText = "Cancel",
   onCancel,
 }: {
   title?: string;
@@ -213,9 +213,10 @@ dialog.confirm = ({
     | null;
 }) => {
   return dialog({
-    className: "md:max-w-[520px]",
+    className: "md:max-w-[480px]",
     title,
     content,
+    closeIconHide: true,
     footer: (close) => {
       return (
         <div className="flex justify-end gap-2">

@@ -1,9 +1,7 @@
 /** Chat模型
  * 该模型依赖于工具模块。
  */
-import { ToolProps } from "@/plugin/types/plugin";
-import { gen } from "@/utils/generator";
-import { cmd } from "@/utils/shell";
+import { Model } from "@/bot/types/bot";
 import {
   ChatModelRequestBody,
   ChatModelResponse,
@@ -13,14 +11,16 @@ import {
   ToolCallReply,
   ToolRequestBody,
 } from "@/model/types/chatModel";
-import { TOOL_NAME_SPLIT } from "../../bot/Bot";
-import { HistoryMessage } from "./HistoryMessage";
-import { Knowledge } from "../../knowledge/Knowledge";
-import { StartNodeConfig, WorkflowProps } from "@/workflow/types/nodes";
+import { ToolProps } from "@/plugin/types/plugin";
+import { gen } from "@/utils/generator";
+import { cmd } from "@/utils/shell";
 import { Workflow } from "@/workflow/execute/Workflow";
-import { ChatModelManager } from "./ChatModelManager";
+import { StartNodeConfig, WorkflowProps } from "@/workflow/types/nodes";
 import { Echo } from "echo-state";
-import { Model } from "@/bot/types/bot";
+import { TOOL_NAME_SPLIT } from "../../bot/Bot";
+import { Knowledge } from "../../knowledge/Knowledge";
+import { ChatModelManager } from "./ChatModelManager";
+import { HistoryMessage } from "./HistoryMessage";
 
 /** 请求配置 */
 interface RequestConfig {
@@ -259,69 +259,72 @@ export class ChatModel {
   ): Promise<FunctionCallResult | undefined> {
     if (!tool_call) return;
 
-    /* 知识库工具 */
-    if (tool_call.function.name.startsWith("knowledge_")) {
-      const knowledge = tool_call.function.name.split("_")[1];
-      const query = JSON.parse(tool_call.function.arguments || "{}").query;
-      if (!query) {
-        return {
-          name: tool_call.function.name,
-          arguments: tool_call.function.arguments,
-          result: "查询内容query不能为空",
-        };
-      }
-      /* 搜索知识库 */
-      const knowledgeDoc = await Knowledge.search(query, [knowledge]);
-      return {
-        name: tool_call.function.name,
-        arguments: tool_call.function.arguments,
-        result: knowledgeDoc,
-      };
-    }
-
-    /* 工作流工具 */
-    if (tool_call.function.name.startsWith("executeFlow_")) {
-      const id = tool_call.function.name.split("_")[1];
-      const workflow = await Workflow.get(id);
-      if (!workflow) {
-        return {
-          name: tool_call.function.name,
-          arguments: tool_call.function.arguments,
-          result: "工作流不存在",
-        };
-      }
-      const result = await workflow.execute();
-      return {
-        name: tool_call.function.name,
-        arguments: tool_call.function.arguments,
-        result,
-      };
-    }
-
-    /* 解析工具参数 */
-    const toolArgs = JSON.parse(tool_call.function.arguments || "{}");
-
     try {
+      let query;
+      try {
+        query = JSON.parse(tool_call.function.arguments);
+      } catch {
+        throw new Error("工具调用参数错误");
+      }
+
+      if (tool_call.function.name.startsWith("knowledge_")) {
+        const knowledge = tool_call.function.name.split("_")[1];
+        if (!query.query) {
+          return {
+            name: tool_call.function.name,
+            arguments: tool_call.function.arguments,
+            result: "查询内容query不能为空",
+          };
+        }
+        /* 搜索知识库 */
+        const knowledgeDoc = await Knowledge.search(query.query, [knowledge]);
+        return {
+          name: tool_call.function.name,
+          arguments: tool_call.function.arguments,
+          result: knowledgeDoc,
+        };
+      }
+
+      /* 工作流工具 */
+      if (tool_call.function.name.startsWith("executeFlow_")) {
+        const id = tool_call.function.name.split("_")[1];
+        const workflow = await Workflow.get(id);
+        if (!workflow) {
+          return {
+            name: tool_call.function.name,
+            arguments: tool_call.function.arguments,
+            result: "工作流不存在",
+          };
+        }
+        const result = await workflow.execute();
+        return {
+          name: tool_call.function.name,
+          arguments: tool_call.function.arguments,
+          result,
+        };
+      }
+
       /** 执行工具 */
       const toolResultPromise = cmd.invoke("plugin_execute", {
         id: tool_call.function.name.split(TOOL_NAME_SPLIT)[1],
         tool: tool_call.function.name.split(TOOL_NAME_SPLIT)[0],
-        args: toolArgs,
+        args: query,
       });
 
       /* 等待工具执行完成 */
       const toolResult = await toolResultPromise;
 
+      console.log(toolResult);
       /* 返回工具调用结果 */
       return {
         name: tool_call.function.name,
-        arguments: toolArgs,
+        arguments: query,
         result: toolResult,
       };
     } catch (error) {
       return {
         name: tool_call.function.name,
-        arguments: toolArgs,
+        arguments: tool_call.function.arguments,
         result: String(error),
       };
     }
@@ -371,17 +374,16 @@ export class ChatModel {
 
         /* 等待一个微小延迟以确保用户消息被渲染 */
         await new Promise((resolve) => setTimeout(resolve, 10));
-
-        /* 添加助手消息 */
-        this.historyMessage.push([
-          {
-            role: "assistant",
-            content: "",
-            type: MessageType.ASSISTANT_PENDING,
-            created_at: Date.now(),
-          },
-        ]);
       }
+      /* 添加新的消息容器 */
+      this.historyMessage.push([
+        {
+          role: "assistant",
+          content: "",
+          type: MessageType.ASSISTANT_PENDING,
+          created_at: Date.now(),
+        },
+      ]);
 
       /* 创建请求体 */
       let requestBody: ChatModelRequestBody = {

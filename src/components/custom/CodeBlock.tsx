@@ -32,10 +32,15 @@ export const CodeBlock: Components["code"] = ({
   return !isInline ? (
     <div className="relative my-4 code">
       <div className="rounded-xl border bg-[#282c34] overflow-hidden shadow-lg">
-        <div className="flex items-center justify-between px-4 py-2 border-b border-[#393939] bg-[#21252b]">
+        <div className="flex items-center justify-between pl-4 pr-2 py-2 border-b border-[#393939] bg-[#21252b]">
           <span className="text-xs text-zinc-400 font-medium">{match[1]}</span>
 
-          <Button variant="ghost" size="icon" onClick={handleCopy}>
+          <Button
+            variant="ghost"
+            className="hover:bg-muted-foreground/30 hover:text-muted/80"
+            size="icon"
+            onClick={handleCopy}
+          >
             {codeCopied ? (
               <motion.div
                 key="success"

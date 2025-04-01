@@ -1,7 +1,8 @@
-import { Message } from "@/model/types/chatModel";
-import { CodeBlock, iconVariants } from "@/components/custom/CodeBlock";
+import { iconVariants } from "@/components/custom/CodeBlock";
+import { MarkdownRender } from "@/components/Markdown/MarkdownRender";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Message } from "@/model/types/chatModel";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import {
@@ -11,7 +12,6 @@ import {
   TbLoader,
   TbMathFunction,
 } from "react-icons/tb";
-import ReactMarkdown, { Components } from "react-markdown";
 
 interface MessageItemProps {
   message: Message;
@@ -51,26 +51,6 @@ export function MessageItem({ message }: MessageItemProps) {
     navigator.clipboard.writeText(message.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
-  };
-
-  // 添加自定义链接组件
-  const CustomLink: Components["a"] = ({ href, children }) => {
-    const handleClick = (e: React.MouseEvent) => {
-      e.preventDefault();
-      if (href) {
-        window.open(href, "_blank");
-      }
-    };
-
-    return (
-      <a
-        href={href}
-        onClick={handleClick}
-        className="text-primary hover:underline"
-      >
-        {children}
-      </a>
-    );
   };
 
   return (
@@ -122,14 +102,7 @@ export function MessageItem({ message }: MessageItemProps) {
             )}
             {(message.type === "assistant:reply" ||
               message.type === "assistant:tool") && (
-              <ReactMarkdown
-                components={{
-                  code: CodeBlock,
-                  a: CustomLink,
-                }}
-              >
-                {message.content}
-              </ReactMarkdown>
+              <MarkdownRender>{message.content}</MarkdownRender>
             )}
             {message.tool_calls && (
               <span className="flex items-center gap-1 p-2 rounded-md bg-primary/10 text-primary text-xs my-1">

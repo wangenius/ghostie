@@ -94,6 +94,9 @@ export default {
           from: { height: "var(--radix-collapsible-content-height)" },
           to: { height: 0 },
         },
+        "spin-reverse": {
+          to: { transform: "rotate(-360deg)" },
+        },
         "dialog-show": {
           from: {
             opacity: "0",
@@ -138,6 +141,7 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "collapsible-down": "collapsible-down 0.2s ease-out",
         "collapsible-up": "collapsible-up 0.2s ease-out",
+        "spin-reverse": "spin-reverse 1s linear infinite",
         "border-breathing": "border-breathing 3s ease-in-out infinite",
         shimmer: "shimmer 2.5s linear infinite",
         "overlay-show": "overlay-show 150ms cubic-bezier(0.16, 1, 0.3, 1)",

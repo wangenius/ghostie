@@ -21,6 +21,7 @@ import { PluginsTab } from "../plugin/PluginsTab";
 import WorkflowsTab from "../workflow/WorkflowsTab";
 import { GeneralSettingsPage } from "./GeneralSettingsPage";
 import ShortcutsTab from "./ShortcutsTab";
+import { useEffect } from "react";
 
 const SETTINGS_NAV_ITEMS = [
   { id: "general", label: "General", icon: TbSettings },
@@ -58,6 +59,41 @@ export function SettingsPage() {
         return <GeneralSettingsPage />;
     }
   };
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        Page.to("main");
+      }
+      if (e.altKey) {
+        switch (e.key) {
+          case "1":
+            SettingsNav.set({ activeTab: "general" });
+            break;
+          case "2":
+            SettingsNav.set({ activeTab: "models" });
+            break;
+          case "3":
+            SettingsNav.set({ activeTab: "bots" });
+            break;
+          case "4":
+            SettingsNav.set({ activeTab: "plugins" });
+            break;
+          case "5":
+            SettingsNav.set({ activeTab: "workflows" });
+            break;
+          case "6":
+            SettingsNav.set({ activeTab: "knowledge" });
+            break;
+          case "7":
+            SettingsNav.set({ activeTab: "shortcuts" });
+            break;
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   return (
     <div className="flex flex-col h-full bg-background">

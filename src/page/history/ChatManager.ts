@@ -24,6 +24,13 @@ export class ChatManager {
     currentBot: undefined,
   });
 
+  static setCurrentBot(bot: Bot) {
+    this.state.set({ currentBot: bot });
+  }
+  static setActive(active: boolean) {
+    this.state.set({ isActive: active });
+  }
+
   static useChat() {
     const state = this.state.use();
 

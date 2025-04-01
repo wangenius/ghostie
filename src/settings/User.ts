@@ -32,7 +32,6 @@ export class UserMananger {
         password,
       });
       if (error) throw error;
-      cmd.message("login success", "success");
     } catch (error) {
       console.error("login failed:", error);
       cmd.message(
@@ -48,8 +47,7 @@ export class UserMananger {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      this.store.set(null);
-      cmd.message("logged out", "success");
+      this.store.reset();
     } catch (error) {
       console.error("logout failed:", error);
       cmd.message(

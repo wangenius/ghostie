@@ -8,7 +8,6 @@ import {
 } from "@/model/types/chatModel";
 import { gen } from "@/utils/generator";
 import { Echo } from "echo-state";
-import { SettingsManager } from "../../settings/SettingsManager";
 
 /** 聊天历史记录 */
 export interface ChatHistoryItem {
@@ -101,6 +100,11 @@ export class HistoryMessage implements ChatHistoryItem {
     });
   }
 
+  /** 获取聊天记录 */
+  getList(): Message[] {
+    return this.list;
+  }
+
   /** 设置系统提示词 */
   setSystem(system: string): void {
     this.system = {
@@ -128,24 +132,7 @@ export class HistoryMessage implements ChatHistoryItem {
    * @returns 处理后的消息原型数组
    */
   private processMessages(messages: Message[]): MessagePrototype[] {
-    const maxHistory = SettingsManager.getMaxHistory();
-    let processedMessages =
-      maxHistory > 0 ? messages.slice(-maxHistory) : messages;
-
-    // 找到第一个非 tool 相关的消息的索引
-    let firstNonToolIndex = 0;
-    while (
-      firstNonToolIndex < processedMessages.length &&
-      (processedMessages[firstNonToolIndex].tool_calls ||
-        processedMessages[firstNonToolIndex].tool_call_id)
-    ) {
-      firstNonToolIndex++;
-    }
-
-    // 删除开头所有的 tool 相关消息
-    processedMessages = processedMessages.slice(firstNonToolIndex);
-
-    return [this.system, ...processedMessages]
+    return [this.system, ...messages]
       .filter(
         (msg) =>
           msg.type !== "assistant:error" && msg.type !== "assistant:reasoning",

@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 import { TbClock, TbMessageCircle, TbTrash } from "react-icons/tb";
 import { MessageItem } from "../main/components/MessageItem";
 import { Page } from "@/utils/PageRouter";
+import { ChatManager } from "./ChatManager";
+import { Bot } from "@/bot/Bot";
 export const HistoryPage = () => {
   const history = ChatHistory.use();
   const [current, setCurrent] = useState<string>("");
@@ -26,7 +28,7 @@ export const HistoryPage = () => {
   return (
     <div className="flex flex-col h-full">
       <Header
-        title="历史记录"
+        title="History"
         close={() => {
           Page.to("main");
         }}
@@ -42,7 +44,7 @@ export const HistoryPage = () => {
             }}
           >
             <TbTrash className="h-4 w-4" />
-            删除所有
+            delete all
           </Button>
           {Object.entries(history)
             .sort(
@@ -94,7 +96,7 @@ export const HistoryPage = () => {
                 </h3>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <TbMessageCircle className="h-3.5 w-3.5" />
-                  <span>{value.list.length} 条对话</span>
+                  <span>{value.list.length} messages</span>
                 </div>
               </div>
             ))}
@@ -108,7 +110,21 @@ export const HistoryPage = () => {
                 <h2 className="text-lg font-medium">
                   {BotManager.get(selectedHistory.bot || "")?.name}
                 </h2>
-                <Button variant="outline">继续当前对话</Button>
+                <Button
+                  onClick={async () => {
+                    const bot = await Bot.get(selectedHistory.bot || "");
+                    bot.model.historyMessage.setList(selectedHistory.list);
+                    console.log(bot.model.historyMessage.getList());
+                    if (bot) {
+                      ChatManager.setCurrentBot(bot);
+                      Page.to("main");
+                      ChatManager.setActive(true);
+                    }
+                  }}
+                  variant="outline"
+                >
+                  continue
+                </Button>
               </div>
               <div className="space-y-4">
                 <div className="p-4 text-xs rounded-lg bg-primary/10">
