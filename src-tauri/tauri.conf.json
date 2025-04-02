@@ -32,6 +32,7 @@
     "security": {
       "csp": {
         "default-src": "'self' ipc: http://ipc.localhost",
+        "connect-src": "'self' https://*.supabase.co",
         "img-src": "'self' asset: http://asset.localhost",
         "style-src": "'self' 'unsafe-inline'"
       },
