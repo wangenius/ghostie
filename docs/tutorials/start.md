@@ -1,9 +1,9 @@
 ---
-title: Ghost Quick Start
+title: Quick Start
 order: 1
 ---
 
-# Ghost Quick Start
+# Quick Start
 
 ## Installation
 
@@ -11,10 +11,10 @@ order: 1
 
 2. Download from QQ group: [1027160649](https://qm.qq.com/q/FdFbIt1pT2)
 
-![qq](/qq.jpg)
+3. Join our Discord: [Discord Server](https://discord.gg/wh6ATs6t)
 
 ## Usage
 
 1. Add model
-2. Add assistant
+2. Add bot
 3. Start chatting

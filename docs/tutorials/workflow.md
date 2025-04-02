@@ -13,11 +13,13 @@ Workflow is an important component in Ghostie, used to implement complex process
 
 ### References
 
-All interface references use <span v-pre>{{inputs.node ID.result}}</span> for referencing. This reference method can be used anywhere input strings are required (including code nodes).
+All interface references use <span v-pre>`{{inputs.NODE_ID.result}}`</span> for referencing. This reference method can be used anywhere input strings are required (including code nodes).
 
-```
-{{inputs.start.result.query.name}} - Reference the name property in the query property of the start node's result parameter
-{{inputs.XXXXX.result.data.name}} - Reference the name property in the data property of the XXXXX node's result parameter
+```plaintext
+{{inputs.XXXXX.result.data.name}}
+// Reference the name property in the data property of the XXXXX node's result parameter
+// XXXXX is the ID of the node
+// result is the output endpoint of the node
 ```
 
 1. inputs indicates that the reference comes from an input endpoint
@@ -44,6 +46,6 @@ return sum;
 
 Other nodes, such as: chat, bot, plugin, branch, iterator, code, panel, etc., all directly use data from input endpoints.
 
-For nodes like bot, plugin, chat, etc., the input is generally wrapped with result. So you need to use <span v-pre>{{inputs.node ID.result}}</span> to reference it.
+For nodes like bot, plugin, chat, etc., the input is generally wrapped with result. So you need to use <span v-pre>`{{inputs.NODE_ID.result}}`</span> to reference it.
 
 If you're not sure, you can use a panel node to view the output endpoint data of a certain node.

@@ -1,7 +1,7 @@
-import { defineConfig } from "vitepress";
 import fs from "fs";
-import path from "path";
 import matter from "gray-matter";
+import path from "path";
+import { defineConfig } from "vitepress";
 
 interface SidebarItem {
   text: string;
@@ -14,7 +14,6 @@ interface SidebarItem {
 // 生成工作流侧边栏
 function generateWorkflowSidebar(): SidebarItem[] {
   const workflowsDir = path.join(__dirname, "../tutorials");
-  const resourcesDir = path.join(__dirname, "../resources");
 
   function processDirectory(dir: string): SidebarItem[] {
     const items: SidebarItem[] = [];
@@ -74,35 +73,29 @@ function generateWorkflowSidebar(): SidebarItem[] {
   }
 
   const sidebarItems = processDirectory(workflowsDir);
-  const resourcesItems = processDirectory(resourcesDir);
 
   return [
     {
-      text: "教程",
+      text: "tutorials",
       items: sidebarItems,
-    },
-    {
-      text: "资源",
-      items: resourcesItems,
     },
   ];
 }
 
 export default defineConfig({
   title: "Ghostie",
-  description: "Ghostie文档",
+  description: "Ghostie Documentation",
   base: process.env.NODE_ENV === "production" ? "/" : "/ghostie/",
   head: [["link", { rel: "icon", href: "./icon.png" }]],
   cleanUrls: true,
   themeConfig: {
     nav: [
-      { text: "首页", link: "/" },
-      { text: "教程", link: "/tutorials/start" },
+      { text: "Home", link: "/" },
+      { text: "Tutorials", link: "/tutorials/start" },
     ],
     // 根据路径使用不同的侧边栏
     sidebar: {
       "/tutorials/": generateWorkflowSidebar(),
-      "/resources/": generateWorkflowSidebar(),
     },
     socialLinks: [
       { icon: "github", link: "https://github.com/wangenius/ghostie" },

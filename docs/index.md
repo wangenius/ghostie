@@ -14,17 +14,26 @@ hero:
     - theme: alt
       text: Download
       link: https://releases.wangenius.com/ghostie.exe
+    - theme: success
+      text: Discord
+      link: https://discord.gg/wh6ATs6t
 features:
-  - icon: 🚀
-    title: Convenient and Easy to Use
-    details: Summon Ghostie anytime, anywhere, quickly commanding agents to take action
-  - icon: 🎉
-    title: User-Friendly Interface
-    details: Lightweight application size, modern design language, smooth animations, dark mode support, bringing ultimate user experience
-  - icon: 🎨
-    title: Simple Development
-    details: Easy-to-use visual development interface for creating and managing agents and workflows
-  - icon: 🛠️
-    title: Free Extension
-    details: Free plugin ecosystem, supporting custom code nodes, complete desktop permissions, helping you create personalized workflows
+  - icon: 🤖
+    title: AI & Agent System
+    details: Support for multiple AI models, multi-agent collaboration system, intelligent context management, customizable agent personalities and behaviors
+  - icon: 💻
+    title: Desktop Integration
+    details: Full desktop system access and control, local script execution, system-level automation capabilities, native file system integration
+  - icon: 🔌
+    title: Plugin Architecture
+    details: Extensible plugin system, custom plugin development support, plugin marketplace, hot-reload capability, permission management
+  - icon: ⚡
+    title: Workflow Engine
+    details: Visual workflow designer, multi-agent workflow orchestration, conditional branching and loops, error handling and recovery
+  - icon: 📚
+    title: Knowledge Management
+    details: Local knowledge base support, document parsing and indexing, multi-format support, knowledge base search and filtering, knowledge sharing
+  - icon: 🎯
+    title: User Experience
+    details: Quick shortcut activation, modern UI based on Tailwind CSS, automatic updates, cross-platform consistency
 ---
