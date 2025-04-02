@@ -130,6 +130,7 @@ static PLUGIN_CACHE: Lazy<Mutex<Option<HashMap<String, Plugin>>>> = Lazy::new(||
 struct DenoRuntime {
     is_installed: bool,
     base_args: Vec<String>,
+    deno_path: String,
 }
 
 // 运行时实现
@@ -152,6 +153,7 @@ impl DenoRuntime {
                     "--allow-env".to_string(),
                     "--allow-run".to_string(),
                 ],
+                deno_path: "deno".to_string(),
             });
         }
 
@@ -177,9 +179,13 @@ impl DenoRuntime {
         }
 
         // 检查所有可能的路径
+        let mut found_path = String::from("deno");
         let is_found = deno_paths.iter().any(|path| {
             let result = Command::new(path).arg("--version").output().is_ok();
             println!("尝试路径 {}: {}", path, result);
+            if result {
+                found_path = path.clone();
+            }
             result
         });
 
@@ -190,10 +196,10 @@ impl DenoRuntime {
             println!("Deno 未安装，开始安装...");
             // 使用 PowerShell 执行安装脚本
             let install_result = Command::new("powershell")
-                .arg("-ExecutionPolicy")
-                .arg("Bypass")
-                .arg("-File")
-                .arg("scripts/install-deno.ps1")
+                .arg("irm")
+                .arg("https://deno.land/install.ps1")
+                .arg("|")
+                .arg("iex")
                 .output();
 
             match install_result {
@@ -215,6 +221,7 @@ impl DenoRuntime {
                                 "--allow-env".to_string(),
                                 "--allow-run".to_string(),
                             ],
+                            deno_path: "deno".to_string(),
                         });
                     } else {
                         let error_msg = String::from_utf8_lossy(&output.stderr);
@@ -260,12 +267,14 @@ impl DenoRuntime {
                 "--allow-env".to_string(),
                 "--allow-run".to_string(),
             ],
+            deno_path: found_path,
         })
     }
 
     // 执行插件
     async fn execute(&self, script: &str, env_vars: &[EnvVar]) -> std::io::Result<String> {
         if !self.is_installed {
+            println!("Deno 未安装，请先安装 Deno: https://deno.land/#installation");
             return Err(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
                 "Deno 未安装，请先安装 Deno: https://deno.land/#installation",
@@ -277,7 +286,7 @@ impl DenoRuntime {
         let temp_file = PLUGINS_DIR.join(&temp_filename);
         fs::write(&temp_file, script)?;
         // cmd
-        let mut cmd = Command::new("deno");
+        let mut cmd = Command::new(&self.deno_path);
         cmd.args(&self.base_args).arg(&temp_file);
 
         for var in env_vars {
@@ -286,12 +295,16 @@ impl DenoRuntime {
 
         let output = cmd.output()?;
 
+        println!("执行结果: {}", String::from_utf8_lossy(&output.stdout));
+
         // 确保在获取输出后删除临时文件
         let _ = fs::remove_file(&temp_file);
 
         if output.status.success() {
+            println!("执行成功");
             Ok(String::from_utf8_lossy(&output.stdout).to_string())
         } else {
+            println!("执行失败");
             Err(std::io::Error::new(
                 std::io::ErrorKind::Other,
                 String::from_utf8_lossy(&output.stderr).to_string(),
@@ -507,7 +520,16 @@ pub async fn plugin_execute(id: String, tool: String, args: Value) -> Result<Val
 
     /* 环境变量加载 */
     let env_vars = load_env_vars().await?;
-    let output = DENO_RUNTIME.execute(&script, &env_vars).await?;
+    let output = match DENO_RUNTIME.execute(&script, &env_vars).await {
+        Ok(output) => output,
+        Err(e) => {
+            if e.kind() == std::io::ErrorKind::NotFound {
+                println!("{:?}", e);
+                return Err(PluginError::Io("执行函数的Deno环境未安装，当前请手动安装后使用。".to_string()));
+            }
+            return Err(PluginError::Io(e.to_string()));
+        }
+    };
     serde_json::from_str(&output).map_err(|e| PluginError::Json(e.to_string()))
 }
 

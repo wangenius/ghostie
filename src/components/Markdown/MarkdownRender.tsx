@@ -1,6 +1,7 @@
 import ReactMarkdown, { Components } from "react-markdown";
 import { CodeBlock } from "../custom/CodeBlock";
 import { TbExternalLink } from "react-icons/tb";
+import { cmd } from "@/utils/shell";
 
 export const MarkdownRender = ({ children }: { children: string }) => {
   return (
@@ -32,7 +33,9 @@ const CustomLink: Components["a"] = ({ href, children }) => {
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     if (href) {
-      window.open(href, "_blank");
+      cmd.invoke("open_url", {
+        url: href,
+      });
     }
   };
 

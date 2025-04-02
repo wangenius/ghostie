@@ -13,7 +13,7 @@ hero:
       link: /tutorials/start
     - theme: alt
       text: Download
-      link: https://releases.wangenius.com/ghostie.exe
+      link: https://github.com/wangenius/ghostie/releases
     - theme: success
       text: Discord
       link: https://discord.gg/wh6ATs6t

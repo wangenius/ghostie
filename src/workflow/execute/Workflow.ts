@@ -7,7 +7,7 @@ import {
 } from "../types/nodes";
 import { WorkflowExecutor } from "./WorkflowExecutor";
 import { gen } from "@/utils/generator";
-import { SchedulerManager } from "../scheduler/SchedulerManager";
+import { Scheduler } from "../scheduler/Scheduler";
 
 /* 工作流类 */
 export class Workflow {
@@ -189,7 +189,7 @@ export class Workflow {
     const workflow = this.list.current[id];
     if (workflow) {
       // 如果工作流有定时任务，需要先取消
-      await SchedulerManager.unschedule(id);
+      Scheduler.cancel(id);
       Workflow.list.delete(id);
       new Echo<WorkflowProps | null>(null)
         .indexed({

@@ -40,7 +40,7 @@ import { FlowControls } from "./components/FlowControls";
 import { FlowProvider, useFlow } from "./context/FlowContext";
 import { ParamHistory } from "./execute/ParamHistory";
 import { ContextWorkflow, Workflow } from "./execute/Workflow";
-import { SchedulerManager } from "./scheduler/SchedulerManager";
+import { Scheduler } from "./scheduler/Scheduler";
 import { edgeTypes, nodeTypes, StartNodeConfig } from "./types/nodes";
 
 /* 工作流表单组件
@@ -57,7 +57,17 @@ export const WorkflowInfo = memo(
     const meta = ContextWorkflow.use((selector) => selector.meta);
     const { bool } = ContextWorkflow.executor.useIsExecuting();
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
-    const scheduler = SchedulerManager.use((selector) => selector[meta.id]);
+    const scheduler = Scheduler.use();
+
+    console.log(scheduler);
+    console.log(meta.id);
+    const [cron, setCron] = useState<string>("");
+
+    useEffect(() => {
+      if (meta.id in scheduler) {
+        setCron(scheduler[meta.id]);
+      }
+    }, [scheduler, meta.id]);
 
     // 处理名称变更
     const handleNameChange = useCallback(
@@ -79,26 +89,20 @@ export const WorkflowInfo = memo(
     const handleScheduleEnabledChange = useCallback(
       (checked: boolean) => {
         if (checked) {
-          // 确保 frequency 已经初始化
-          if (!scheduler?.schedules?.[0]) {
-            SchedulerManager.schedule(meta.id, "0 0 * * * ?");
-          }
           // 使用当前的 frequency 配置更新定时任务
-          SchedulerManager.schedule(
-            meta.id,
-            scheduler?.schedules?.[0] || "0 0 * * * ?",
-          );
+          Scheduler.add(meta.id, cron);
         } else {
-          SchedulerManager.unschedule(meta.id);
+          Scheduler.cancel(meta.id);
         }
       },
-      [meta.id, scheduler?.schedules?.[0]],
+      [meta.id, scheduler],
     );
 
     // 处理 cron 表达式变更
     const handleCronExpressionChange = useCallback(
       (newExpression: string) => {
-        SchedulerManager.schedule(meta.id, newExpression);
+        setCron(newExpression);
+        Scheduler.update(meta.id, newExpression);
       },
       [meta.id],
     );
@@ -132,12 +136,12 @@ export const WorkflowInfo = memo(
 
             if (error) throw error;
 
-            cmd.message("成功上传工作流到市场", "success");
+            cmd.message("Successfully uploaded workflow to market", "success");
             close();
           } catch (error) {
-            console.error("上传工作流失败:", error);
+            console.error("Upload workflow failed:", error);
             cmd.message(
-              `上传工作流失败: ${
+              `Upload workflow failed: ${
                 error instanceof Error ? error.message : String(error)
               }`,
               "error",
@@ -250,15 +254,15 @@ export const WorkflowInfo = memo(
                       <div className="flex items-center justify-between">
                         <label className="text-sm">Cron Expression</label>
                         <Switch
-                          checked={scheduler?.enabled}
+                          checked={meta.id in scheduler}
                           onCheckedChange={handleScheduleEnabledChange}
                         />
                       </div>
-                      {scheduler?.enabled && (
+                      {meta.id in scheduler && (
                         <div className="space-y-4">
                           <div className="space-y-2">
                             <CronInput
-                              value={scheduler?.schedules?.[0] || ""}
+                              value={cron}
                               onChange={handleCronExpressionChange}
                             />
                           </div>
@@ -299,7 +303,7 @@ const WorkflowGraph = memo(() => {
   }, [workflowData?.meta.id]);
 
   if (!workflowData?.meta.id) {
-    throw Promise.reject(new Error("工作流 ID 不存在"));
+    throw Promise.reject(new Error("Workflow ID is not found"));
   }
 
   return (

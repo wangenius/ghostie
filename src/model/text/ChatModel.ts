@@ -325,7 +325,7 @@ export class ChatModel {
       return {
         name: tool_call.function.name,
         arguments: tool_call.function.arguments,
-        result: String(error),
+        result: { error },
       };
     }
   }
@@ -506,6 +506,7 @@ export class ChatModel {
       let toolResult;
       if (tool_calls.length > 0) {
         for (const tool_call of tool_calls) {
+          console.log(tool_call);
           toolResult = await this.tool_call(tool_call);
           if (toolResult) {
             this.historyMessage.push([
