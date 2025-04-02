@@ -79,10 +79,16 @@ export default function WorkflowsTab() {
           onClick: () => handleWorkflowSelect(id),
           actived: contextWorkflowId === id,
           onRemove: () => {
-            Workflow.delete(id);
-            if (contextWorkflowId === id) {
-              ContextWorkflow.close();
-            }
+            dialog.confirm({
+              title: "Delete Workflow",
+              content: "Are you sure you want to delete this workflow?",
+              onOk: () => {
+                Workflow.delete(id);
+                if (contextWorkflowId === id) {
+                  ContextWorkflow.close();
+                }
+              },
+            });
           },
         }))}
       />

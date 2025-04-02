@@ -4,5 +4,6 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./model/text/llm";
 import "./model/embedding/llm";
+import "./workflow/scheduler/SchedulerManager";
 const element = document.getElementById("root") as HTMLElement;
 createRoot(element).render(<App />);

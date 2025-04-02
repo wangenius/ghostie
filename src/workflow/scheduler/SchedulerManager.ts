@@ -1,8 +1,7 @@
 import { Echo } from "echo-state";
 import { CronExpressionParser } from "cron-parser";
 import { Workflow } from "../execute/Workflow";
-
-interface Schedule {
+interface ScheduleProps {
   /* 任务ID = Workflow.id */
   id: string;
   /* 是否启用 */
@@ -21,20 +20,26 @@ interface Schedule {
   error?: string;
 }
 
-class SchedulerManager {
-  private static store = new Echo<Record<Schedule["id"], Schedule>>({}).indexed(
-    {
-      database: "scheduler",
-      name: "scheduler",
-    },
-  );
+/* 任务调度器 */
+class Scheduler {
+  private static store = new Echo<Record<ScheduleProps["id"], ScheduleProps>>(
+    {},
+  ).indexed({
+    database: "scheduler",
+    name: "scheduler",
+  });
 
-  static use = SchedulerManager.store.use.bind(SchedulerManager.store);
+  static use = Scheduler.store.use.bind(Scheduler.store);
 
-  static set = SchedulerManager.store.set.bind(SchedulerManager.store);
+  static set = Scheduler.store.set.bind(Scheduler.store);
 
-  static current = SchedulerManager.store.getCurrent();
+  static current = Scheduler.store.getCurrent();
 
+  static {
+    Scheduler.initScheduledTasks();
+  }
+
+  /* 计算下次执行时间 */
   static calculateNextRun(cronExpression: string): Date {
     try {
       const interval = CronExpressionParser.parse(cronExpression, {
@@ -67,6 +72,7 @@ class SchedulerManager {
     }
   }
 
+  /* 调度下一个任务 */
   private static async scheduleNextRun(id: string, cronExpr: string) {
     try {
       // 检查任务是否还存在且启用
@@ -325,4 +331,4 @@ class SchedulerManager {
   }
 }
 
-export { SchedulerManager };
+export { Scheduler as SchedulerManager };

@@ -29,8 +29,8 @@ export function BotItem({ bot, isSelected, onClick }: BotItemProps) {
                 	flex items-center gap-2 p-1 rounded-lg select-none group
                 ${isSelected ? "bg-primary/10" : "hover:bg-secondary"}`}
     >
-      <Button variant="ghost" size="icon" className="p-1.5">
-        <LogoIcon />
+      <Button variant="ghost" size="icon">
+        <LogoIcon className="w-4 h-4" />
       </Button>
       <div
         className={`
