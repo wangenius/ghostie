@@ -62,7 +62,7 @@ export function FormContainer<T extends FieldValues>({
       <form
         className={cn("flex-1", className)}
         onSubmit={form.handleSubmit((data) => {
-          onSubmit(data);
+          onSubmit(data as T);
         })}
         onKeyDown={(e) => {
           if (preventEnterSubmit && e.key === "Enter") {
