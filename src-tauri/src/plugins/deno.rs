@@ -15,6 +15,9 @@ use toml;
 use crate::utils::file::get_config_dir;
 use crate::utils::gen::generate_id;
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
 // 全局 AppHandle 状态
 static APP_HANDLE: Lazy<StdMutex<Option<AppHandle>>> = Lazy::new(|| StdMutex::new(None));
 
@@ -138,7 +141,10 @@ impl DenoRuntime {
     // 运行时初始化
     fn new() -> std::io::Result<Self> {
         // 首先尝试直接运行 deno 命令
-        let is_installed = Command::new("deno").arg("--version").output().is_ok();
+        let mut cmd = Command::new("deno");
+        #[cfg(windows)]
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        let is_installed = cmd.arg("--version").output().is_ok();
         println!("直接运行 deno 命令结果: {}", is_installed);
 
         if is_installed {
@@ -181,7 +187,10 @@ impl DenoRuntime {
         // 检查所有可能的路径
         let mut found_path = String::from("deno");
         let is_found = deno_paths.iter().any(|path| {
-            let result = Command::new(path).arg("--version").output().is_ok();
+            let mut cmd = Command::new(path);
+            #[cfg(windows)]
+            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+            let result = cmd.arg("--version").output().is_ok();
             println!("尝试路径 {}: {}", path, result);
             if result {
                 found_path = path.clone();
@@ -195,7 +204,10 @@ impl DenoRuntime {
         if !is_found {
             println!("Deno 未安装，开始安装...");
             // 使用 PowerShell 执行安装脚本
-            let install_result = Command::new("powershell")
+            let mut cmd = Command::new("powershell");
+            #[cfg(windows)]
+            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+            let install_result = cmd
                 .arg("irm")
                 .arg("https://deno.land/install.ps1")
                 .arg("|")
@@ -287,6 +299,8 @@ impl DenoRuntime {
         fs::write(&temp_file, script)?;
         // cmd
         let mut cmd = Command::new(&self.deno_path);
+        #[cfg(windows)]
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
         cmd.args(&self.base_args).arg(&temp_file);
 
         for var in env_vars {
