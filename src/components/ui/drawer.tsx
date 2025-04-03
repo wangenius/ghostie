@@ -37,7 +37,7 @@ export function Drawer({
         <DrawerPrimitive.Overlay className="fixed inset-0 bg-black/40" />
         <DrawerPrimitive.Content
           className={cn(
-            "right-2 top-12 bottom-2 fixed z-10 outline-none flex w-[320px] ",
+            "right-2 top-12 agenttom-2 fixed z-10 outline-none flex w-[320px] ",
             className,
           )}
           onClick={(e) => e.stopPropagation()}
@@ -87,7 +87,7 @@ export function NestedDrawer({
         <DrawerPrimitive.Overlay className="fixed inset-0 bg-black/50" />
         <DrawerPrimitive.Content
           className={cn(
-            "right-2 top-2 bottom-2 fixed z-10 outline-none flex w-[320px] shadow-lg",
+            "right-2 top-2 agenttom-2 fixed z-10 outline-none flex w-[320px] shadow-lg",
             className,
           )}
           style={

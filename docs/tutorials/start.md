@@ -16,5 +16,5 @@ order: 1
 ## Usage
 
 1. Add model
-2. Add bot
+2. Add agent
 3. Start chatting

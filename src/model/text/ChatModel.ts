@@ -1,7 +1,7 @@
 /** Chat模型
  * 该模型依赖于工具模块。
  */
-import { Model } from "@/bot/types/bot";
+import { AgentModelProps } from "@/agent/types/agent";
 import {
   ChatModelRequestBody,
   ChatModelResponse,
@@ -11,13 +11,13 @@ import {
   ToolCallReply,
   ToolRequestBody,
 } from "@/model/types/chatModel";
-import { ToolProps } from "@/plugin/types/plugin";
+import { ToolProps } from "@/plugin/plugin";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
 import { Workflow } from "@/workflow/execute/Workflow";
-import { StartNodeConfig, WorkflowProps } from "@/workflow/types/nodes";
+import { StartNodeConfig, WorkflowProps } from "@/page/workflow/types/nodes";
 import { Echo } from "echo-state";
-import { TOOL_NAME_SPLIT } from "../../bot/Bot";
+import { TOOL_NAME_SPLIT } from "@/assets/const";
 import { Knowledge } from "../../knowledge/Knowledge";
 import { ChatModelManager } from "./ChatModelManager";
 import { HistoryMessage } from "./HistoryMessage";
@@ -70,7 +70,7 @@ export class ChatModel {
    * @param modelwithprovider 模型名称 openai:gpt-4
    * @returns 模型实例
    */
-  static create(model?: Model) {
+  static create(model?: AgentModelProps) {
     if (!model)
       return new ChatModel({
         api_key: "",
@@ -80,8 +80,8 @@ export class ChatModel {
     return ChatModelManager.get(model.provider).create(model.name);
   }
 
-  setBot(bot: string): this {
-    this.historyMessage.setBot(bot);
+  setAgent(agent: string): this {
+    this.historyMessage.setAgent(agent);
     return this;
   }
 

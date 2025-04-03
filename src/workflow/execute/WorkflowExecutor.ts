@@ -1,5 +1,9 @@
 import { Echo } from "echo-state";
-import { NodeResult, NodeState, WorkflowProps } from "../types/nodes";
+import {
+  NodeResult,
+  NodeState,
+  WorkflowProps,
+} from "../../page/workflow/types/nodes";
 import { NodeExecutor } from "./NodeExecutor";
 
 export class WorkflowExecutor {

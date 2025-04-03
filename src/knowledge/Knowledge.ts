@@ -1,4 +1,4 @@
-import { FileMetadata } from "@/knowledge/KnowledgeCreator";
+import { FileMetadata } from "@/page/knowledge/KnowledgeCreator";
 import { EmbeddingModelManager } from "@/model/embedding/EmbeddingModelManger";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";

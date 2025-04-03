@@ -68,7 +68,7 @@
 </div>
 
 <div align="center">
-    <img src="docs/public/bot.png" alt="History View" width="600"/>
+    <img src="docs/public/agent.png" alt="History View" width="600"/>
 </div>
 
 <div align="center">
@@ -181,7 +181,7 @@
 - Complete conversation history
 - Streaming output support
 
-### Agent/Bot/Proxy/Assistant
+### Agent/Agent/Proxy/Assistant
 
 - Configurable conversation strategies
 - Multi-assistant switching

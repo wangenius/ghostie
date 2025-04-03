@@ -25,8 +25,8 @@ import {
 import { NodeProps, Position, useUpdateNodeInternals } from "reactflow";
 import { toast } from "sonner";
 import CustomHandle from "../components/CustomHandle";
-import { useFlow } from "../context/FlowContext";
-import { NODE_TYPES, NodeType } from "../types/nodes";
+import { useFlow } from "../../page/workflow/context/FlowContext";
+import { NODE_TYPES, NodeType } from "../../page/workflow/types/nodes";
 import { ContextWorkflow } from "../execute/Workflow";
 type NodeVariant = NodeType;
 

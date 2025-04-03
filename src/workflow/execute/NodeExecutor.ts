@@ -1,4 +1,9 @@
-import { NodeResult, NodeState, NodeType, WorkflowNode } from "../types/nodes";
+import {
+  NodeResult,
+  NodeState,
+  NodeType,
+  WorkflowNode,
+} from "../../page/workflow/types/nodes";
 
 export class NodeExecutor {
   /** 执行器注册表 */

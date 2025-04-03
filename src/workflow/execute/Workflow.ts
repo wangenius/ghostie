@@ -4,7 +4,7 @@ import {
   NodeResult,
   WorkflowMeta,
   WorkflowProps,
-} from "../types/nodes";
+} from "../../page/workflow/types/nodes";
 import { WorkflowExecutor } from "./WorkflowExecutor";
 import { gen } from "@/utils/generator";
 import { Scheduler } from "../scheduler/Scheduler";

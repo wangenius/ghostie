@@ -44,8 +44,8 @@ return sum;
 
 ### Other Nodes
 
-Other nodes, such as: chat, bot, plugin, branch, iterator, code, panel, etc., all directly use data from input endpoints.
+Other nodes, such as: chat, agent, plugin, branch, iterator, code, panel, etc., all directly use data from input endpoints.
 
-For nodes like bot, plugin, chat, etc., the input is generally wrapped with result. So you need to use <span v-pre>`{{inputs.NODE_ID.result}}`</span> to reference it.
+For nodes like agent, plugin, chat, etc., the input is generally wrapped with result. So you need to use <span v-pre>`{{inputs.NODE_ID.result}}`</span> to reference it.
 
 If you're not sure, you can use a panel node to view the output endpoint data of a certain node.

@@ -8,16 +8,16 @@ import {
   KeyboardEventHandler,
   ChangeEventHandler,
   ChangeEvent,
-} from 'react';
-import { CustomTextAreaRef, Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
+} from "react";
+import { CustomTextAreaRef, Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 interface AutoResizeTextareaProps {
   defaultValue?: string;
   value?: string;
   onValueChange?: ChangeEventHandler<HTMLTextAreaElement>;
   onKeyDown?: KeyboardEventHandler<HTMLTextAreaElement>;
-  variant?: 'ghost' | 'secondary';
+  variant?: "ghost" | "secondary";
   className?: string;
   autoFocus?: boolean;
   minRow?: number;
@@ -41,7 +41,7 @@ const AutoResizeTextarea = forwardRef<
       footer,
       ...props
     },
-    ref
+    ref,
   ) => {
     const textareaRef = useRef<CustomTextAreaRef>(null);
     const [minHeight, setMinHeight] = useState(0);
@@ -86,8 +86,8 @@ const AutoResizeTextarea = forwardRef<
         const style = window.getComputedStyle(textareaRef.current.dom);
         const lineHeight = parseInt(style.lineHeight, 10);
         const paddingTop = parseInt(style.paddingTop, 10);
-        const paddingBottom = parseInt(style.paddingBottom, 10);
-        setMinHeight(lineHeight * minRow + paddingTop + paddingBottom);
+        const paddingAgenttom = parseInt(style.paddingAgenttom, 10);
+        setMinHeight(lineHeight * minRow + paddingTop + paddingAgenttom);
       }
     }, [minRow]);
 
@@ -95,7 +95,7 @@ const AutoResizeTextarea = forwardRef<
       const textarea = textareaRef.current?.dom;
       if (textarea) {
         const scrollPos = window.scrollY;
-        textarea.style.height = 'auto';
+        textarea.style.height = "auto";
         const newHeight = Math.max(textarea.scrollHeight, minHeight);
         textarea.style.height = `${newHeight}px`;
         window.scrollTo(0, scrollPos);
@@ -105,8 +105,8 @@ const AutoResizeTextarea = forwardRef<
     useEffect(() => {
       adjustHeight();
       const handleResize = () => adjustHeight();
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
     }, [value]);
 
     const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -125,29 +125,29 @@ const AutoResizeTextarea = forwardRef<
           autoFocus={autoFocus}
           onKeyDown={onKeyDown}
           style={{
-            resize: 'none',
-            overflow: 'hidden',
+            resize: "none",
+            overflow: "hidden",
             minHeight: `${minHeight}px`,
-            paddingBottom: footer ? `${footerHeight + 12}px` : undefined,
+            paddingAgenttom: footer ? `${footerHeight + 12}px` : undefined,
           }}
           variant={variant}
           className={cn(
-            variant === 'ghost'
-              ? 'm-0 text-base outline-none focus:outline-none h-auto block'
-              : '',
-            footer && 'pb-12',
-            className
+            variant === "ghost"
+              ? "m-0 text-base outline-none focus:outline-none h-auto block"
+              : "",
+            footer && "pb-12",
+            className,
           )}
           {...props}
         />
         {footer && (
-          <div ref={footerRef} className="absolute bottom-0 left-0 right-0">
+          <div ref={footerRef} className="absolute agenttom-0 left-0 right-0">
             {footer}
           </div>
         )}
       </div>
     );
-  }
+  },
 );
 
 export default AutoResizeTextarea;

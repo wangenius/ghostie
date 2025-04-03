@@ -1,4 +1,4 @@
-import { SETTINGS_NAV_ITEMS, SettingsTab } from "@/settings/SettingsPage";
+import { SETTINGS_NAV_ITEMS, SettingsTab } from "@/page/settings/SettingsPage";
 import { LogicalSize, Window } from "@tauri-apps/api/window";
 import { Echo } from "echo-state";
 import { Fragment, ReactNode } from "react";

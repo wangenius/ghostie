@@ -108,14 +108,14 @@ export const Textarea = forwardRef<CustomTextAreaRef, TextAreaProps>(
           )}
           style={{
             ...style,
-            paddingBottom: footer ? `${footerHeight + 16}px` : undefined,
+            paddingAgenttom: footer ? `${footerHeight + 16}px` : undefined,
           }}
           {...rest}
         />
         {footer && (
           <div
             ref={footerRef}
-            className="absolute bottom-1 left-0 right-0 transition-all duration-200"
+            className="absolute agenttom-1 left-0 right-0 transition-all duration-200"
           >
             {footer}
           </div>

@@ -14,7 +14,7 @@ export interface ChatHistoryItem {
   /** 聊天ID */
   id: string;
   /** 助手名称 */
-  bot?: string;
+  agent?: string;
   /** 系统提示词 */
   system: Message;
   /** 聊天记录 */
@@ -35,16 +35,16 @@ export class HistoryMessage implements ChatHistoryItem {
   /** 聊天ID */
   id: string;
   /** 助手名称 */
-  bot?: string;
+  agent?: string;
   /** 系统提示词 */
   system: Message;
   /** 聊天记录 */
   list: Message[];
 
   /** 当前使用的消息历史记录 */
-  static current = new Echo<{ id: string; bot?: string }>({
+  static current = new Echo<{ id: string; agent?: string }>({
     id: "",
-    bot: "",
+    agent: "",
   }).localStorage({ name: "current:history" });
 
   /** 创建一个消息历史记录，id会生成一个新的，即历史记录中会出现一个新的内容 */
@@ -52,18 +52,18 @@ export class HistoryMessage implements ChatHistoryItem {
     this.id = history.id;
     this.system = history.system;
     this.list = history.list;
-    this.bot = history.bot;
+    this.agent = history.agent;
   }
 
   /** 创建一个消息历史记录
    * @param system 系统提示词
-   * @param bot 助手名称
+   * @param agent 助手名称
    * @returns 消息历史记录
    */
-  static create(system: string = "", bot?: string): HistoryMessage {
+  static create(system: string = "", agent?: string): HistoryMessage {
     const history: ChatHistoryItem = {
       id: gen.id(),
-      bot,
+      agent,
       system: {
         role: "system",
         content: system,
@@ -91,11 +91,11 @@ export class HistoryMessage implements ChatHistoryItem {
   }
 
   /** 设置助手名称 */
-  setBot(bot: string): void {
-    this.bot = bot;
+  setAgent(agent: string): void {
+    this.agent = agent;
     ChatHistory.set((prev) => {
       const newState = { ...prev };
-      newState[this.id].bot = bot;
+      newState[this.id].agent = agent;
       return newState;
     });
   }
@@ -161,7 +161,7 @@ export class HistoryMessage implements ChatHistoryItem {
       ...ChatHistory.current,
       [this.id]: {
         id: this.id,
-        bot: this.bot,
+        agent: this.agent,
         system: this.system,
         list: newList,
       },

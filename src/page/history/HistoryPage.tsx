@@ -1,27 +1,35 @@
-import { Message } from "@/model/types/chatModel";
+import { Agent } from "@/agent/Agent";
+import { AgentProps } from "@/agent/types/agent";
 import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { BotManager } from "@/bot/BotManger";
 import { ChatHistory, HistoryMessage } from "@/model/text/HistoryMessage";
+import { Message } from "@/model/types/chatModel";
+import { Page } from "@/utils/PageRouter";
 import { useEffect, useState } from "react";
 import { TbClock, TbMessageCircle, TbTrash } from "react-icons/tb";
 import { MessageItem } from "../main/components/MessageItem";
-import { Page } from "@/utils/PageRouter";
 import { ChatManager } from "./ChatManager";
-import { Bot } from "@/bot/Bot";
 export const HistoryPage = () => {
   const history = ChatHistory.use();
   const [current, setCurrent] = useState<string>("");
   const [selectedHistory, setSelectedHistory] = useState<{
-    bot?: string;
+    agent?: string;
     system: Message;
     list: Message[];
   } | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<AgentProps | null>(null);
 
   useEffect(() => {
     if (current) {
       setSelectedHistory(history[current]);
+      Agent.get(selectedHistory?.agent || "")
+        .then((agent) => {
+          return agent.props();
+        })
+        .then((agent) => {
+          setSelectedAgent(agent);
+        });
     }
   }, [history, current]);
 
@@ -107,16 +115,14 @@ export const HistoryPage = () => {
           {selectedHistory ? (
             <div className="p-4">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-medium">
-                  {BotManager.get(selectedHistory.bot || "")?.name}
-                </h2>
+                <h2 className="text-lg font-medium">{selectedAgent?.name}</h2>
                 <Button
                   onClick={async () => {
-                    const bot = await Bot.get(selectedHistory.bot || "");
-                    bot.model.historyMessage.setList(selectedHistory.list);
-                    console.log(bot.model.historyMessage.getList());
-                    if (bot) {
-                      ChatManager.setCurrentBot(bot);
+                    const agent = await Agent.get(selectedHistory.agent || "");
+                    agent.model.historyMessage.setList(selectedHistory.list);
+                    console.log(agent.model.historyMessage.getList());
+                    if (agent) {
+                      ChatManager.setCurrentAgent(agent);
                       Page.to("main");
                       ChatManager.setActive(true);
                     }

@@ -1,4 +1,4 @@
-import { Model } from "@/bot/types/bot";
+import { AgentModelProps } from "@/agent/types/agent";
 import { ModelKey } from "../key/ModelKey";
 import { ModelProvider, ModelProviderList } from "../types/model";
 import { ChatModel } from "./ChatModel";
@@ -48,7 +48,9 @@ export class ChatModelManager {
     return this.providers[provider];
   }
 
-  static getModel({ provider, name }: Model = { provider: "", name: "" }) {
+  static getModel(
+    { provider, name }: AgentModelProps = { provider: "", name: "" },
+  ) {
     return this.providers[provider]?.models[name];
   }
 

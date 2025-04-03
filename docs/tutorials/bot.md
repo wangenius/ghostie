@@ -1,6 +1,6 @@
 # Assistant Development
 
-Assistant, Agent, and Bot mean the same thing in Ghostie.
+Assistant, Agent, and Agent mean the same thing in Ghostie.
 
 ## Assistant Support
 

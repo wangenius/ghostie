@@ -1,5 +1,5 @@
-import { BotProps } from "@/bot/types/bot";
-import { Bot } from "@/bot/Bot";
+import { AgentProps } from "@/agent/types/agent";
+import { Agent } from "@/agent/Agent";
 import { Echo } from "echo-state";
 
 /* 聊天状态 */
@@ -11,7 +11,7 @@ interface ChatState {
   /* 是否正在加载 */
   isLoading: boolean;
   /* 当前选中的助手 */
-  currentBot?: Bot;
+  currentAgent?: Agent;
 }
 
 /* 聊天管理器 */
@@ -21,11 +21,11 @@ export class ChatManager {
     isActive: false,
     currentInput: "",
     isLoading: false,
-    currentBot: undefined,
+    currentAgent: undefined,
   });
 
-  static setCurrentBot(bot: Bot) {
-    this.state.set({ currentBot: bot });
+  static setCurrentAgent(agent: Agent) {
+    this.state.set({ currentAgent: agent });
   }
   static setActive(active: boolean) {
     this.state.set({ isActive: active });
@@ -38,19 +38,19 @@ export class ChatManager {
       ...state,
       updateInput: (input: string) => this.state.set({ currentInput: input }),
       setLoading: (loading: boolean) => this.state.set({ isLoading: loading }),
-      startChat: async (bot: BotProps) => {
-        const newBot = await Bot.get(bot.id);
+      startChat: async (agent: AgentProps) => {
+        const newAgent = await Agent.get(agent.id);
         this.state.set({
           isActive: true,
-          currentBot: newBot,
+          currentAgent: newAgent,
         });
-        return newBot;
+        return newAgent;
       },
       endChat: () => {
-        this.state.current.currentBot?.stop();
+        this.state.current.currentAgent?.stop();
         this.state.set({
           isActive: false,
-          currentBot: undefined,
+          currentAgent: undefined,
           currentInput: "",
         });
       },

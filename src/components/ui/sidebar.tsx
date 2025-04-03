@@ -1,7 +1,7 @@
-import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
-import React, { useEffect } from 'react';
-import { PiCaretLeft } from 'react-icons/pi';
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import React, { useEffect } from "react";
+import { PiCaretLeft } from "react-icons/pi";
 
 // 添加宽度配置接口
 interface SidebarWidth {
@@ -13,7 +13,7 @@ interface SidebarWidth {
 const createSidebarVariants = (width: SidebarWidth) => ({
   expanded: {
     width: width.expanded,
-    overflow: 'visible',
+    overflow: "visible",
     transition: {
       duration: 0.3,
       ease: [0.4, 0, 0.2, 1],
@@ -21,7 +21,7 @@ const createSidebarVariants = (width: SidebarWidth) => ({
   },
   collapsed: {
     width: width.collapsed,
-    overflow: width.collapsed === '0px' ? 'visible' : 'hidden',
+    overflow: width.collapsed === "0px" ? "visible" : "hidden",
     transition: {
       duration: 0.3,
       ease: [0.4, 0, 0.2, 1],
@@ -56,9 +56,9 @@ export const SidebarHeader = ({
   return (
     <div
       className={cn(
-        'flex h-16 items-center flex-none w-full justify-between',
-        collapsed ? 'justify-center' : 'px-3',
-        className
+        "flex h-16 items-center flex-none w-full justify-between",
+        collapsed ? "justify-center" : "px-3",
+        className,
       )}
     >
       <SidebarHeaderLeft collapsed={collapsed}>{left}</SidebarHeaderLeft>
@@ -83,7 +83,7 @@ export const SidebarHeaderLeft = ({
 }) => {
   return (
     <div
-      className={cn('flex items-center gap-3', collapsed && 'justify-center')}
+      className={cn("flex items-center gap-3", collapsed && "justify-center")}
     >
       {children}
     </div>
@@ -112,19 +112,19 @@ export const SidebarContainer = ({
   setCollapsed,
   className,
   showCollapseButton = true,
-  width = { expanded: '360px', collapsed: '64px' },
+  width = { expanded: "360px", collapsed: "64px" },
 }: SidebarProps) => {
-  const isFullyCollapsed = width.collapsed === '0px';
+  const isFullyCollapsed = width.collapsed === "0px";
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'b' && e.ctrlKey) {
+      if (e.key.toLowerCase() === "b" && e.ctrlKey) {
         setCollapsed?.(!collapsed);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [collapsed]);
 
@@ -133,13 +133,13 @@ export const SidebarContainer = ({
       <motion.div
         initial={false}
         className={cn(
-          'relative flex flex-col h-full',
+          "relative flex flex-col h-full",
           isFullyCollapsed && collapsed
-            ? 'pointer-events-none invisible'
-            : 'visible',
-          className
+            ? "pointer-events-none invisible"
+            : "visible",
+          className,
         )}
-        animate={collapsed ? 'collapsed' : 'expanded'}
+        animate={collapsed ? "collapsed" : "expanded"}
         variants={createSidebarVariants(width)}
       >
         {children}
@@ -149,26 +149,26 @@ export const SidebarContainer = ({
       {showCollapseButton && setCollapsed && (
         <div
           className={cn(
-            'absolute z-50',
-            isFullyCollapsed ? 'left-0' : '-right-4',
-            'bottom-[56px]'
+            "absolute z-50",
+            isFullyCollapsed ? "left-0" : "-right-4",
+            "agenttom-[56px]",
           )}
         >
           <button
             onClick={() => setCollapsed(!collapsed)}
             className={cn(
-              'flex items-center justify-center',
-              'w-4 h-14',
-              isFullyCollapsed ? 'rounded-l-lg' : 'rounded-r-lg',
-              'bg-zinc-400 hover:bg-zinc-300',
-              'transition-colors'
+              "flex items-center justify-center",
+              "w-4 h-14",
+              isFullyCollapsed ? "rounded-l-lg" : "rounded-r-lg",
+              "bg-zinc-400 hover:bg-zinc-300",
+              "transition-colors",
             )}
           >
             <PiCaretLeft
               className={cn(
-                'w-3 h-3 text-zinc-100',
-                'transition-transform duration-200',
-                collapsed && 'rotate-180'
+                "w-3 h-3 text-zinc-100",
+                "transition-transform duration-200",
+                collapsed && "rotate-180",
               )}
             />
           </button>
@@ -192,7 +192,7 @@ export const SidebarSection = ({
     <div className="py-2 w-full">
       {/* 标题区域使用统一的内边距 */}
 
-      <div className={cn('h-6 mb-2 px-3', !title && 'h-0')}>
+      <div className={cn("h-6 mb-2 px-3", !title && "h-0")}>
         {!collapsed && title && (
           <h3 className="text-xs font-medium text-muted-foreground">{title}</h3>
         )}
@@ -223,22 +223,22 @@ export const SidebarItem = ({
   return (
     <button
       className={cn(
-        'relative h-10',
-        'transition-colors duration-200',
-        'focus:outline-none rounded-lg',
-        collapsed ? 'w-[42px]' : 'w-full',
+        "relative h-10",
+        "transition-colors duration-200",
+        "focus:outline-none rounded-lg",
+        collapsed ? "w-[42px]" : "w-full",
         active
-          ? 'bg-primary/5 text-primary'
-          : 'text-muted-foreground hover:bg-muted',
-        className
+          ? "bg-primary/5 text-primary"
+          : "text-muted-foreground hover:bg-muted",
+        className,
       )}
       {...props}
     >
       {/* 固定宽度的图标容器 */}
       <div
         className={cn(
-          'absolute top-0 left-0 w-[42px] h-10',
-          'flex items-center justify-center'
+          "absolute top-0 left-0 w-[42px] h-10",
+          "flex items-center justify-center",
         )}
       >
         <div className="w-6 h-6 flex items-center justify-center text-xl">
@@ -249,9 +249,9 @@ export const SidebarItem = ({
       {/* 修改文字容器，添加动画效果 */}
       <div
         className={cn(
-          'h-10 w-full pl-[42px] pr-3 flex items-center',
-          'transition-[opacity,transform] duration-200',
-          collapsed ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'
+          "h-10 w-full pl-[42px] pr-3 flex items-center",
+          "transition-[opacity,transform] duration-200",
+          collapsed ? "opacity-0 translate-x-2" : "opacity-100 translate-x-0",
         )}
       >
         <span className="text-sm truncate">{children}</span>

@@ -1,7 +1,7 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { ReactNode, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { createRoot } from 'react-dom/client';
+import { AnimatePresence, motion } from "framer-motion";
+import { ReactNode, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { createRoot } from "react-dom/client";
 
 let currentRoot: any = null;
 
@@ -14,7 +14,7 @@ interface ContextMenuPortalProp {
 interface ContextProps {
   content: ReactNode | ((close: () => void) => ReactNode);
   event: MouseEvent | TouchEvent | any;
-  position?: 'cursor' | 'top';
+  position?: "cursor" | "top";
   x?: number;
   y?: number;
   afterClose?: () => void;
@@ -36,10 +36,10 @@ const ContextMenuPortal = ({
       }
     };
 
-    document.addEventListener('mousedown', handleGlobalClick);
+    document.addEventListener("mousedown", handleGlobalClick);
 
     return () => {
-      document.removeEventListener('mousedown', handleGlobalClick);
+      document.removeEventListener("mousedown", handleGlobalClick);
     };
   }, []);
 
@@ -52,25 +52,25 @@ const ContextMenuPortal = ({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 2 }}
           transition={{
-            type: 'spring',
+            type: "spring",
             damping: 25,
             stiffness: 400,
             mass: 0.5,
           }}
           style={{
-            position: 'fixed',
+            position: "fixed",
             top: position.y,
             left: position.x,
             zIndex: 50,
           }}
-          className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 shadow-none"
-          onClick={e => e.stopPropagation()}
+          className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=agenttom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-agenttom-2 shadow-none"
+          onClick={(e) => e.stopPropagation()}
         >
           {content}
         </motion.div>
       )}
     </AnimatePresence>,
-    document.body
+    document.body,
   );
 };
 
@@ -78,7 +78,7 @@ const ContextMenuPortal = ({
 export const context = ({
   content,
   event,
-  position = 'cursor',
+  position = "cursor",
   x = 0,
   y = 0,
   afterClose,
@@ -90,9 +90,9 @@ export const context = ({
   }
 
   event.preventDefault();
-  const menuX = position === 'cursor' ? (event as MouseEvent).clientX : x;
-  const menuY = position === 'cursor' ? (event as MouseEvent).clientY : y;
-  const menuContainer = document.createElement('div');
+  const menuX = position === "cursor" ? (event as MouseEvent).clientX : x;
+  const menuY = position === "cursor" ? (event as MouseEvent).clientY : y;
+  const menuContainer = document.createElement("div");
   document.body.appendChild(menuContainer);
   const root = createRoot(menuContainer);
 
@@ -106,10 +106,10 @@ export const context = ({
 
   root.render(
     <ContextMenuPortal
-      content={typeof content === 'function' ? content(closeMenu) : content}
+      content={typeof content === "function" ? content(closeMenu) : content}
       position={{ x: menuX, y: menuY }}
       onClose={closeMenu}
-    />
+    />,
   );
 
   currentRoot = root;
