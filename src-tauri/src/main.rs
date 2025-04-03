@@ -42,8 +42,14 @@ async fn main() {
                 .build(),
         )
         .setup(|app| {
-            // 设置全局 AppHandle
-            deno::set_app_handle(app.handle().clone());
+            // 初始化 Deno 插件管理器
+            let app_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = deno::init().await {
+                    eprintln!("初始化 Deno 插件管理器失败: {}", e);
+                }
+                deno::set_app_handle(app_handle).await;
+            });
 
             // 仅在桌面平台启用自动更新功能
             #[cfg(desktop)]
@@ -131,6 +137,8 @@ async fn main() {
             deno::plugin_update,
             deno::env_list,
             deno::env_save,
+            deno::deno_install,
+            deno::deno_check,
             utils::window::open_url,
             utils::window::notify,
         ])

@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::{Emitter, Runtime};
 use tokio::sync::{mpsc, oneshot};
+use std::time::Duration;
 
 static CANCEL_CHANNELS: Lazy<Mutex<HashMap<String, oneshot::Sender<()>>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
@@ -66,7 +67,13 @@ pub async fn chat_stream<R: Runtime>(
     request_id: String,
     request_body: ChatModelRequestBody,
 ) -> Result<(), String> {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .connect_timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    println!("request_body: {:#?}", request_body);
 
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
@@ -75,19 +82,25 @@ pub async fn chat_stream<R: Runtime>(
         HeaderValue::from_str(&format!("Bearer {}", api_key)).map_err(|e| e.to_string())?,
     );
 
+    println!("正在发送请求到: {}", api_url);
     let response = client
         .post(&api_url)
         .headers(headers)
         .json(&request_body)
         .send()
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            println!("请求发送失败: {}", e);
+            window.clone().emit(&format!("chat-stream-error-{}", request_id), e.to_string()).unwrap();
+            e.to_string()
+        })?;
 
-    println!("request_body: {:#?}", request_body);
+    println!("response: {:#?}", response);
 
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().await.map_err(|e| e.to_string())?;
+        println!("请求失败，状态码: {}, 错误信息: {}", status, error_text);
         return Err(format!("请求失败: {} - {}", status, error_text));
     }
 

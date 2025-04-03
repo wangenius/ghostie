@@ -415,6 +415,7 @@ export class ChatModel {
       const unlistenStream = await cmd.listen(
         `chat-stream-${this.currentRequestId}`,
         (event) => {
+          console.log(event);
           if (!event.payload) return;
           // 解析原始响应数据
           const {
