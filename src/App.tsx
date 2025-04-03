@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { HistoryPage } from "./page/history/HistoryPage";
 import { MainView } from "./page/main/MainView";
-import { EnvEditor } from "./plugin/EnvEditor";
 import { SettingsManager } from "./settings/SettingsManager";
 import { SettingsPage } from "./settings/SettingsPage";
 import { Page } from "./utils/PageRouter";
@@ -42,7 +41,6 @@ function App() {
     >
       <Page name="main" component={<MainView />} />
       <Page name="settings" component={<SettingsPage />} />
-      <Page name="env" component={<EnvEditor />} />
       <Page name="history" component={<HistoryPage />} />
     </div>
   );

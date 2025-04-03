@@ -1,7 +1,7 @@
 import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
 import { Page } from "@/utils/PageRouter";
-import { Echo } from "echo-state";
+import { useEffect } from "react";
 import { PiCheck, PiInfo, PiWarning, PiXCircle } from "react-icons/pi";
 import {
   TbBox,
@@ -21,9 +21,8 @@ import { PluginsTab } from "../plugin/PluginsTab";
 import WorkflowsTab from "../workflow/WorkflowsTab";
 import { GeneralSettingsPage } from "./GeneralSettingsPage";
 import ShortcutsTab from "./ShortcutsTab";
-import { useEffect } from "react";
 
-const SETTINGS_NAV_ITEMS = [
+export const SETTINGS_NAV_ITEMS = [
   { id: "general", label: "General", icon: TbSettings },
   { id: "models", label: "Models", icon: TbBox },
   { id: "bots", label: "Bots", icon: TbGhost3 },
@@ -33,16 +32,12 @@ const SETTINGS_NAV_ITEMS = [
   { id: "shortcuts", label: "Shortcuts", icon: TbKeyboard },
 ] as const;
 
-type SettingsTab = (typeof SETTINGS_NAV_ITEMS)[number]["id"];
-
-const SettingsNav = new Echo<{ activeTab: SettingsTab }>({
-  activeTab: SETTINGS_NAV_ITEMS[0].id,
-}).localStorage({ name: "settings-nav" });
+export type SettingsTab = (typeof SETTINGS_NAV_ITEMS)[number]["id"];
 
 export function SettingsPage() {
-  const { activeTab } = SettingsNav.use();
+  const { settingsTab } = Page.use();
   const renderContent = () => {
-    switch (activeTab) {
+    switch (settingsTab) {
       case "models":
         return <ModelsTab />;
       case "bots":
@@ -68,25 +63,25 @@ export function SettingsPage() {
       if (e.altKey) {
         switch (e.key) {
           case "1":
-            SettingsNav.set({ activeTab: "general" });
+            Page.settings("general");
             break;
           case "2":
-            SettingsNav.set({ activeTab: "models" });
+            Page.settings("models");
             break;
           case "3":
-            SettingsNav.set({ activeTab: "bots" });
+            Page.settings("bots");
             break;
           case "4":
-            SettingsNav.set({ activeTab: "plugins" });
+            Page.settings("plugins");
             break;
           case "5":
-            SettingsNav.set({ activeTab: "workflows" });
+            Page.settings("workflows");
             break;
           case "6":
-            SettingsNav.set({ activeTab: "knowledge" });
+            Page.settings("knowledge");
             break;
           case "7":
-            SettingsNav.set({ activeTab: "shortcuts" });
+            Page.settings("shortcuts");
             break;
         }
       }
@@ -125,13 +120,11 @@ export function SettingsPage() {
             {SETTINGS_NAV_ITEMS.map(({ id, label, icon: Icon }) => (
               <Button
                 key={id}
-                onClick={() =>
-                  SettingsNav.set({ activeTab: id as SettingsTab })
-                }
+                onClick={() => Page.settings(id as SettingsTab)}
                 variant="ghost"
                 className={`group relative flex items-center justify-start gap-3 py-2 px-4 h-12 text-sm transition-all duration-200
                   ${
-                    activeTab === id
+                    settingsTab === id
                       ? "text-primary font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-5 before:bg-primary before:rounded-full"
                       : "text-muted-foreground hover:text-foreground"
                   }
@@ -141,21 +134,21 @@ export function SettingsPage() {
                 <div
                   className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
                   ${
-                    activeTab === id
+                    settingsTab === id
                       ? "bg-primary/10"
                       : "bg-muted/50 group-hover:bg-muted"
                   }`}
                 >
                   <Icon
                     className={`w-[18px] h-[18px] transition-colors ${
-                      activeTab === id
+                      settingsTab === id
                         ? "text-primary"
                         : "text-muted-foreground group-hover:text-foreground"
                     }`}
                   />
                 </div>
                 <span className="flex-1">{label}</span>
-                {activeTab === id && (
+                {settingsTab === id && (
                   <div className="absolute inset-0 bg-primary/5 rounded-lg" />
                 )}
               </Button>

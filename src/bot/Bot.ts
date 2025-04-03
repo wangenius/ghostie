@@ -84,9 +84,6 @@ export class Bot implements Omit<BotProps, "model"> {
   /* 获取机器人 */
   public static async get(id: string) {
     const bot = BotManager.get(id);
-
-    console.log(bot);
-
     if (!bot) {
       return new Bot();
     }

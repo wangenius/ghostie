@@ -18,14 +18,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getColor } from "@/utils/color";
-import { useEffect, useState } from "react";
+import { Echo } from "echo-state";
+import { useEffect } from "react";
 import { BotEditor } from "./BotEditor";
 import { BotsMarket } from "./BotsMarket";
+
+export const BotSelect = new Echo<BotProps | null>(null);
 /** 机器人列表 */
 export function BotsTab() {
   const bots = BotManager.use();
-
-  const [selectedBot, setSelectedBot] = useState<BotProps | undefined>();
+  const selectedBot = BotSelect.use();
 
   // 自动保存功能
   useEffect(() => {
@@ -43,7 +45,7 @@ export function BotsTab() {
       const id = gen.id();
       const newBot = { ...defaultBot, id };
       BotManager.add(newBot);
-      setSelectedBot(newBot);
+      BotSelect.set(newBot);
     } catch (error) {
       console.error("add bot error:", error);
     }
@@ -57,7 +59,7 @@ export function BotsTab() {
       try {
         BotManager.remove(id);
         if (selectedBot?.id === id) {
-          setSelectedBot(undefined);
+          BotSelect.set(null);
         }
       } catch (error) {
         console.error("delete bot error:", error);
@@ -179,7 +181,7 @@ export function BotsTab() {
             bot.description?.slice(0, 50) ||
             bot.system?.slice(0, 50) ||
             "No prompt",
-          onClick: () => setSelectedBot(bot),
+          onClick: () => BotSelect.set(bot),
           actived: selectedBot?.id === id,
           onRemove: () => handleDeleteBot(id),
         }))}
@@ -193,7 +195,18 @@ export function BotsTab() {
         EmptyIcon={TbRobot}
         isEmpty={!selectedBot}
       >
-        {selectedBot && <BotEditor bot={selectedBot} setBot={setSelectedBot} />}
+        {selectedBot && (
+          <BotEditor
+            bot={selectedBot}
+            setBot={(bot) => {
+              if (bot) {
+                BotSelect.set(bot);
+              } else {
+                BotSelect.set(null);
+              }
+            }}
+          />
+        )}
       </PreferenceBody>
     </PreferenceLayout>
   );

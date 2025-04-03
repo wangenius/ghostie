@@ -1,9 +1,15 @@
+import { SETTINGS_NAV_ITEMS, SettingsTab } from "@/settings/SettingsPage";
 import { LogicalSize, Window } from "@tauri-apps/api/window";
 import { Echo } from "echo-state";
 import { Fragment, ReactNode } from "react";
 
-const PageStore = new Echo<{ page: string; data: Record<string, any> }>({
+const PageStore = new Echo<{
+  page: "main" | "history" | "settings";
+  settingsTab: SettingsTab;
+  data: Record<string, any>;
+}>({
   page: "main",
+  settingsTab: SETTINGS_NAV_ITEMS[0].id,
   data: {},
 }).localStorage({ name: "page" });
 
@@ -11,7 +17,7 @@ export const Page = ({
   name,
   component,
 }: {
-  name: string;
+  name: "main" | "history" | "settings";
   component: ReactNode;
 }) => {
   const { page } = PageStore.use();
@@ -35,12 +41,19 @@ export const Page = ({
   return <Fragment>{component}</Fragment>;
 };
 
-Page.to = (name: string, data?: any) => {
+Page.to = (name: "main" | "history" | "settings") => {
   PageStore.set((prev) => ({
+    ...prev,
     page: name,
-    data: {
-      ...prev.data,
-      ...data,
-    },
   }));
 };
+
+Page.settings = (settings: SettingsTab) => {
+  PageStore.set((prev) => ({
+    ...prev,
+    page: "settings",
+    settingsTab: settings,
+  }));
+};
+
+Page.use = PageStore.use.bind(PageStore);

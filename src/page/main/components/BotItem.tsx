@@ -1,5 +1,6 @@
 import { BotManager } from "@/bot/BotManger";
 import { BotProps } from "@/bot/types/bot";
+import { BotSelect } from "@/bot/ui/BotsTab";
 import { LogoIcon } from "@/components/custom/LogoIcon";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,8 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChatModelManager } from "@/model/text/ChatModelManager";
+import { Page } from "@/utils/PageRouter";
 import { useState } from "react";
-import { TbDots, TbPin, TbPinnedOff } from "react-icons/tb";
+import { TbDots, TbPencil, TbPin, TbPinnedOff } from "react-icons/tb";
 
 interface BotItemProps {
   bot: BotProps;
@@ -90,6 +92,16 @@ export function BotItem({ bot, isSelected, onClick }: BotItemProps) {
                 置顶
               </>
             )}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="flex items-center gap-2"
+            onClick={() => {
+              BotSelect.set(bot);
+              Page.settings("bots");
+            }}
+          >
+            <TbPencil className="w-4 h-4" />
+            编辑
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

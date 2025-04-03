@@ -5,7 +5,8 @@ import { Echo } from "echo-state";
 /** 机器人管理器, 用于管理机器人 */
 export class BotManager {
   /* 所有的机器人在这里存储 */
-  static store = new Echo<Record<string, BotProps>>({}).localStorage({
+  static store = new Echo<Record<string, BotProps>>({}).indexed({
+    database: "bots",
     name: "bots",
   });
 

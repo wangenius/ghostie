@@ -1,6 +1,7 @@
 import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
@@ -82,104 +83,86 @@ export function FontSettings() {
 
 const DenoInstallDialog = ({ checkDeno }: { checkDeno: () => void }) => {
   const [isInstalling, setIsInstalling] = useState(false);
-  const [installProgress, setInstallProgress] = useState("");
-  const [dialogInstance, setDialogInstance] = useState<(() => void) | null>(
-    null,
-  );
+  const [progress, setProgress] = useState(0);
+  const [installLog, setInstallLog] = useState<string[]>([]);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    const setupListeners = async () => {
+      await cmd.listen(
+        "deno_install_progress",
+        (event: { payload: string }) => {
+          setInstallLog((prev) => [...prev, event.payload]);
+          setProgress((prev) => Math.min(prev + 10, 99));
+        },
+      );
+    };
+
+    setupListeners();
+  }, []);
 
   const installDeno = async () => {
-    let unlistenProgress: (() => void) | null = null;
-    let unlistenError: (() => void) | null = null;
-
     try {
       setIsInstalling(true);
-      setInstallProgress("Installing...");
-
-      // 监听安装进度
-      unlistenProgress = await cmd.listen("deno_install_progress", (event) => {
-        setInstallProgress(event.payload);
-      });
-
-      // 监听安装错误
-      unlistenError = await cmd.listen("deno_install_error", (event) => {
-        console.error("Install error:", event.payload);
-        setInstallProgress(`Error: ${event.payload}`);
-      });
-
+      setInstallLog([]);
+      setProgress(10); // 开始安装
       const success = await cmd.invoke<boolean>("deno_install");
-
+      setProgress(100); // 安装完成
       if (success) {
+        setSuccess(true);
         checkDeno();
         await cmd.message("Deno installed successfully", "success");
-        if (dialogInstance) {
-          dialogInstance();
-          setDialogInstance(null);
-        }
       } else {
         await cmd.message("Deno installation failed", "error");
       }
     } catch (error) {
       console.error("Install Deno failed:", error);
       await cmd.message("Install Deno failed", "error");
-    } finally {
-      // 确保清理监听器
-      if (unlistenProgress) unlistenProgress();
-      if (unlistenError) unlistenError();
-      setIsInstalling(false);
-      setInstallProgress("");
     }
   };
+
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Installing Deno will allow you to run and execute plugins. The
-        installation process may take several minutes.
-      </p>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 bg-muted rounded-md p-2">
         <p className="text-sm font-medium">System Requirements:</p>
         <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
           <li>Windows 10 or higher</li>
-          <li>At least 100MB of available disk space</li>
           <li>A stable internet connection</li>
         </ul>
       </div>
-      {installProgress && (
-        <div className="mt-4 p-3 bg-muted rounded-lg">
-          <div className="flex items-center gap-2">
-            <TbLoader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm">{installProgress}</span>
+      {isInstalling && (
+        <div className="space-y-2">
+          <Progress value={progress} className="h-2" />
+          <div className="max-h-40 overflow-y-auto bg-muted rounded-md p-2 space-y-1">
+            {installLog.map((log, index) => (
+              <p
+                key={`install-${index}`}
+                className="text-xs text-muted-foreground"
+              >
+                {log}
+              </p>
+            ))}
           </div>
         </div>
       )}
-      <div className="flex justify-end gap-2">
-        <Button
-          variant="ghost"
-          onClick={() => {
-            close();
-            setDialogInstance(null);
-          }}
-          disabled={isInstalling}
-        >
-          Cancel
-        </Button>
-        <Button
-          variant="primary"
-          onClick={async () => {
-            setDialogInstance(close);
-            await installDeno();
-          }}
-          disabled={isInstalling}
-        >
-          {isInstalling ? (
-            <>
-              <TbLoader2 className="w-4 h-4 animate-spin mr-2" />
-              Installing...
-            </>
-          ) : (
-            "Install"
-          )}
-        </Button>
-      </div>
+
+      <Button
+        variant="primary"
+        onClick={async () => {
+          await installDeno();
+        }}
+        disabled={isInstalling || success}
+        className="w-full h-10"
+      >
+        {isInstalling ? (
+          <>
+            <TbLoader2 className="w-4 h-4 animate-spin mr-2" />
+            Installing...
+          </>
+        ) : (
+          "Install"
+        )}
+      </Button>
     </div>
   );
 };
@@ -208,17 +191,16 @@ export function DenoSettings() {
       setIsInstalled(false);
       setVersion("");
     } finally {
-      setTimeout(() => {
-        setIsChecking(false);
-      }, 300);
+      setIsChecking(false);
     }
   };
 
   const showInstallDialog = () => {
     dialog({
       title: "Install",
-      description:
-        "Deno is a secure JavaScript and TypeScript runtime environment for executing plugins.",
+      description: `Installing Deno will allow you to run and execute plugins. The
+        installation process may take 1~2 minutes.
+      `,
       content: <DenoInstallDialog checkDeno={checkDeno} />,
     });
   };
@@ -243,18 +225,19 @@ export function DenoSettings() {
       title="Plugins Execution Environment"
       description={getDescription()}
       action={
-        isInstalled ? (
+        <div className="flex gap-2">
           <Button variant="ghost" size="sm" onClick={checkDeno}>
             <TbRotate
               className={`w-4 h-4 ${isChecking ? "animate-spin-reverse" : ""}`}
             />
             re-check
           </Button>
-        ) : (
-          <Button size="sm" onClick={showInstallDialog}>
-            install
-          </Button>
-        )
+          {!isInstalled && (
+            <Button size="sm" onClick={showInstallDialog}>
+              install
+            </Button>
+          )}
+        </div>
       }
     />
   );
