@@ -1,4 +1,4 @@
-import { ToolParameters } from "@/plugin/plugin";
+import { ToolParameters } from "@/plugin/types";
 import { SwitchNode } from "@/page/workflow/nodes/SwitchNode";
 import { AgentNode } from "@/page/workflow/nodes/AgentNode";
 import { ChatNode } from "@/page/workflow/nodes/ChatNode";

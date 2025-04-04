@@ -1,6 +1,6 @@
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Input } from "@/components/ui/input";
-import { PluginManager } from "@/plugin/PluginManager";
+import { ToolPlugin } from "@/plugin/ToolPlugin";
 import { cmd } from "@/utils/shell";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { NodeProps } from "reactflow";
@@ -8,9 +8,10 @@ import { useFlow } from "../context/FlowContext";
 import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
 import { NodeState, PluginNodeConfig, WorkflowNode } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
-
+import { EchoManager } from "echo-state";
+import { PLUGIN_DATABASE_INDEX } from "@/plugin/ToolPlugin";
 const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
-  const plugins = PluginManager.use();
+  const plugins = EchoManager.use<ToolPlugin>(PLUGIN_DATABASE_INDEX);
   const { updateNodeData } = useFlow();
   const [localInputs, setLocalInputs] = useState<Record<string, string>>({});
 
@@ -69,8 +70,10 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
     if (!props.data.plugin || !props.data.tool) return null;
 
     const toolParameters =
-      plugins[props.data.plugin].tools.find((t) => t.name === props.data.tool)
-        ?.parameters?.properties || {};
+      plugins
+        .find((p) => p.props.id === props.data.plugin)
+        ?.props.tools.find((t) => t.name === props.data.tool)?.parameters
+        ?.properties || {};
 
     return Object.entries(toolParameters).map(([key, prop]) => (
       <div key={key} className="flex flex-col gap-1">
@@ -88,7 +91,8 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
       </div>
     ));
   }, [
-    plugins[props.data.plugin],
+    plugins,
+    props.data.plugin,
     props.data.tool,
     localInputs,
     handleParameterChange,
@@ -101,18 +105,18 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
         value={[props.data.plugin + "::" + props.data.tool]}
         items={Object.values(plugins)
           .map((plugin) => {
-            return plugin.tools.map((tool) => ({
+            return plugin.props.tools.map((tool) => ({
               label: tool.name,
-              value: plugin.id + "::" + tool.name,
+              value: plugin.props.id + "::" + tool.name,
               description: tool.description,
-              type: plugin.name,
+              type: plugin.props.name,
             }));
           })
           .flat()}
         onSelect={(value) => handlePluginChange(value[0])}
       />
 
-      {plugins[props.data.plugin] && (
+      {plugins.find((p) => p.props.id === props.data.plugin) && (
         <div className="flex flex-col gap-2">
           <div className="text-xs font-medium">Parameter Settings</div>
           {parameterItems}
@@ -144,12 +148,12 @@ export class PluginNodeExecutor extends NodeExecutor {
         throw new Error("Plugin not configured");
       }
 
-      const plugin = await PluginManager.get(pluginConfig.plugin);
+      const plugin = await ToolPlugin.get(pluginConfig.plugin);
       if (!plugin) {
         throw new Error(`Plugin not found: ${pluginConfig.plugin}`);
       }
 
-      const tool = plugin.tools.find((t) => t.name === pluginConfig.tool);
+      const tool = plugin.props.tools.find((t) => t.name === pluginConfig.tool);
       if (!tool) {
         throw new Error(`Tool not found: ${pluginConfig.tool}`);
       }
@@ -166,7 +170,7 @@ export class PluginNodeExecutor extends NodeExecutor {
       );
 
       const pluginResult = await cmd.invoke("plugin_execute", {
-        id: plugin.id,
+        id: plugin.props.id,
         tool: pluginConfig.tool,
         args: processedArgs,
       });

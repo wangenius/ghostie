@@ -1,4 +1,4 @@
-import { ToolProperty } from "@/plugin/plugin";
+import { ToolProperty } from "@/plugin/types";
 import { Input } from "@/components/ui/input";
 import {
   Select,

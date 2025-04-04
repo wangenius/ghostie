@@ -1,5 +1,5 @@
+import { Agent } from "../Agent";
 import { Engine } from "./Engine";
-import { AgentProps } from "@/agent/types/agent";
 
 /** Engine 类型 */
 export type EngineType = string;
@@ -7,7 +7,7 @@ export type EngineType = string;
 export interface EngineProps {
   name: string;
   description: string;
-  create: (agent?: AgentProps) => Engine;
+  create: (agent: Agent) => Engine;
 }
 
 /** Engine 管理器 */
@@ -31,10 +31,11 @@ export class EngineManager {
   }
 
   /** 创建 Engine 实例 */
-  public static create(agent?: AgentProps): Engine {
-    const EngineClass = this.getEngine(agent?.engine || "react");
+  public static create(agent: Agent): Engine {
+    const props = agent.props;
+    const EngineClass = this.getEngine(props.engine || "react");
     if (!EngineClass) {
-      throw new Error(`Engine ${agent?.engine} not found`);
+      throw new Error(`Engine ${props.engine} not found`);
     }
     return EngineClass.create(agent);
   }

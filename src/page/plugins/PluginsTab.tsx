@@ -1,9 +1,10 @@
-import { PluginProps } from "@/plugin/plugin";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { PluginProps } from "@/plugin/types";
+import { EditorView } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
 import { motion } from "framer-motion";
 
@@ -15,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cmd } from "@/utils/shell";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 import {
   TbDatabaseCog,
@@ -30,44 +31,33 @@ import {
   TbUpload,
 } from "react-icons/tb";
 import { EnvEditor } from "./EnvEditor";
-import { PluginManager } from "../../plugin/PluginManager";
 import { PluginsMarket } from "./components/PluginsMarket";
 import { TestDrawer } from "./components/TestDrawer";
 
 import { dialog } from "@/components/custom/DialogModal";
+import { PLUGIN_DATABASE_INDEX, ToolPlugin } from "@/plugin/ToolPlugin";
 import { supabase } from "@/utils/supabase";
 import { javascript } from "@codemirror/lang-javascript";
 import { githubDarkInit } from "@uiw/codemirror-theme-github";
 import CodeMirror from "@uiw/react-codemirror";
-import { Save } from "lucide-react";
-import { toast } from "sonner";
-// 默认插件属性
-const defaultPluginProps: Partial<PluginProps> = {
-  name: "New Plugin",
-  description: "Please add plugin description",
-  version: "1.0.0",
-  tools: [],
-};
+import { EchoManager } from "echo-state";
+const CurrentPlugin = new ToolPlugin();
 
 export function PluginsTab() {
-  /* 插件列表 */
-  const plugins = PluginManager.use();
-  const [selectedPlugin, setSelectedPlugin] = useState<
-    PluginProps | undefined
-  >();
   /* 是否提交中 */
   const [isSubmitting, setIsSubmitting] = useState(false);
   /* 测试参数 */
   const [testArgs, setTestArgs] = useState<Record<string, unknown>>({});
   /* 测试工具 */
   const [testTool, setTestTool] = useState<string>("");
-  /* 脚本内容 */
-  const [content, setContent] = useState("");
   /* 测试抽屉是否打开 */
   const [isTestDrawerOpen, setIsTestDrawerOpen] = useState(false);
   /* 测试结果 */
   const [result, setResult] = useState<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const props = CurrentPlugin.use();
+  const content = CurrentPlugin.useContent();
 
   // 处理测试工具变化
   const handleTestToolChange = (value: string) => {
@@ -75,133 +65,15 @@ export function PluginsTab() {
     setResult(null); // 重置测试结果
   };
 
-  // 加载插件列表
-  const loadPlugins = useCallback(async () => {
-    try {
-      /* 获取工具列表 */
-      const plugins = await cmd.invoke<Record<string, PluginProps>>(
-        "plugins_list",
-      );
-      PluginManager.set(plugins);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      cmd.message(`load plugins error: ${message}`, "error");
-    }
-  }, []);
-
-  // 初始加载
-  useEffect(() => {
-    loadPlugins();
-  }, [loadPlugins]);
-
-  // 加载插件内容
-  const loadPluginContent = useCallback(async (id: string) => {
-    try {
-      const plugin = await cmd.invoke<{ info: PluginProps; content: string }>(
-        "plugin_get",
-        { id },
-      );
-      if (plugin) {
-        setSelectedPlugin(plugin.info);
-        setContent(plugin.content);
-        setResult(null); // 重置测试结果
-        setTestTool(""); // 重置选中的测试工具
-      }
-    } catch (error) {
-      console.error("load plugin error:", error);
-      cmd.message("load plugin error", "error");
-    }
-  }, []);
-
-  const handleRemovePlugin = async (id: string) => {
-    try {
-      const confirm = await cmd.confirm("Are you sure to delete the plugin?");
-      if (!confirm) return;
-      await cmd.invoke("plugin_remove", { id });
-      PluginManager.delete(id);
-      if (selectedPlugin?.id === id) {
-        setSelectedPlugin(undefined);
-        setContent("");
-      }
-    } catch (error) {
-      console.error("delete plugin error:", error);
-      cmd.message("delete plugin error", "error");
-    }
-  };
-
-  // 导入工具
-  const handleImportPlugin = useCallback(async () => {
-    try {
-      const result = await cmd.invoke<{ path: string; content: string }>(
-        "open_file",
-        {
-          title: "Select TypeScript Plugin File",
-          filters: { TypeScriptFile: ["ts"] },
-        },
-      );
-
-      if (!result?.content) return;
-
-      const pluginInfo = await cmd.invoke<PluginProps>("plugin_import", {
-        content: result.content.trim(),
-      });
-
-      await loadPlugins();
-      cmd.message(`success import plugin: ${pluginInfo.name}`, "success");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      cmd.message(`import plugin error: ${message}`, "error");
-    }
-  }, [loadPlugins]);
-
-  // 更新插件
-  const handleUpdate = async () => {
-    if (isSubmitting || !content) return;
-
-    try {
-      setIsSubmitting(true);
-      if (!selectedPlugin) {
-        return;
-      }
-      if (selectedPlugin.id === "new") {
-        // 创建新插件
-        const result = await cmd.invoke<PluginProps>("plugin_import", {
-          content: content,
-        });
-        PluginManager.set({
-          [result.id]: result,
-        });
-        setSelectedPlugin(result);
-        cmd.message("success create plugin", "success");
-      } else {
-        // 更新现有插件
-        const result = await cmd.invoke<PluginProps>("plugin_update", {
-          id: selectedPlugin.id,
-          content: content,
-        });
-        if (result) {
-          PluginManager.set({
-            [result.id]: result,
-          });
-          setSelectedPlugin(result);
-        }
-        cmd.message("success update plugin", "success");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error(JSON.stringify(error || { error: "unknown error" }));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const plugins = EchoManager.use<PluginProps>(PLUGIN_DATABASE_INDEX);
 
   // 测试插件
   const handleTest = async (tool: string) => {
     try {
-      if (!selectedPlugin) return;
+      if (!props.id) return;
       setIsSubmitting(true);
       const result = await cmd.invoke("plugin_execute", {
-        id: selectedPlugin.id,
+        id: props.id,
         tool: tool,
         args: testArgs,
       });
@@ -214,12 +86,9 @@ export function PluginsTab() {
     }
   };
 
-  const handleAdd = () => {
-    setSelectedPlugin({
-      ...defaultPluginProps,
-      id: "new",
-    } as PluginProps);
-    setContent("");
+  const handleAdd = async () => {
+    const plugin = await ToolPlugin.create();
+    CurrentPlugin.switch(plugin.props.id);
   };
 
   const handleToggleFullscreen = useCallback(() => {
@@ -227,16 +96,16 @@ export function PluginsTab() {
   }, [isFullscreen]);
 
   const handleUpload = useCallback(async () => {
-    if (!selectedPlugin) return;
+    if (!props.id) return;
     dialog.confirm({
       title: "Upload Plugin",
       content: "Are you sure to upload this plugin?",
       onOk: async () => {
         try {
           const { error } = await supabase.from("plugins").insert({
-            name: selectedPlugin.name,
-            description: selectedPlugin.description || "",
-            version: selectedPlugin.version || "1.0.0",
+            name: props.name,
+            description: props.description || "",
+            version: props.version || "1.0.0",
             content: content,
           });
 
@@ -259,7 +128,9 @@ export function PluginsTab() {
         }
       },
     });
-  }, [selectedPlugin, content]);
+  }, [props.id, content]);
+
+  const handleImportPlugin = useCallback(() => {}, []);
 
   return (
     <PreferenceLayout>
@@ -306,13 +177,20 @@ export function PluginsTab() {
           </>
         }
         tips="Plugin supported: You can extend the function by writing a TypeScript plugin. Please refer to the development documentation for more information."
-        items={Object.values(plugins).map((plugin) => ({
+        items={plugins.map((plugin) => ({
           id: plugin.id,
           title: plugin.name || "Unnamed Plugin",
           description: plugin.description || "No description",
-          onClick: () => loadPluginContent(plugin.id),
-          actived: selectedPlugin?.id === plugin.id,
-          onRemove: () => handleRemovePlugin(plugin.id),
+          onClick: () => {
+            CurrentPlugin.switch(plugin.id);
+          },
+          actived: CurrentPlugin.props.id === plugin.id,
+          onRemove: () => {
+            ToolPlugin.delete(plugin.id);
+            if (CurrentPlugin.props.id === plugin.id) {
+              CurrentPlugin.close();
+            }
+          },
         }))}
         emptyText="No plugins, click the button above to add a new plugin"
         EmptyIcon={TbPlus}
@@ -336,14 +214,14 @@ export function PluginsTab() {
         <PreferenceBody
           emptyText="Please select a plugin or click the add button to create a new plugin"
           EmptyIcon={TbPlug}
-          isEmpty={!selectedPlugin && !content}
+          isEmpty={!props.id && !content}
           className={cn("rounded-xl flex-1", {
             "mb-4": isFullscreen,
           })}
           header={
             <div className="flex items-center justify-between w-full">
               <h3 className="text-base font-semibold">
-                {selectedPlugin?.name || "Unnamed Plugin"}
+                {props.name || "Unnamed Plugin"}
               </h3>
               <div className="flex items-center gap-2">
                 <Button
@@ -377,16 +255,6 @@ export function PluginsTab() {
                 >
                   <TbPlayerPlay className="w-4 h-4" />
                 </Button>
-
-                <Button
-                  variant="primary"
-                  title={isSubmitting ? "Submitting..." : "Submit"}
-                  onClick={handleUpdate}
-                  disabled={!content || isSubmitting}
-                >
-                  <Save className="w-4 h-4" />
-                  {isSubmitting ? "Saving..." : "Save"}
-                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button size="icon">
@@ -408,6 +276,7 @@ export function PluginsTab() {
             className={cn("h-full overflow-y-auto", {
               "h-auto": isFullscreen,
             })}
+            key={props.id}
             value={content}
             theme={githubDarkInit({
               settings: {
@@ -441,11 +310,16 @@ export function PluginsTab() {
                 },
               ],
             })}
-            extensions={[javascript({ typescript: true })]}
-            onChange={setContent}
+            extensions={[
+              javascript({ typescript: true }),
+              EditorView.lineWrapping,
+            ]}
+            onChange={(value) => {
+              CurrentPlugin.updateContent(value.toString());
+            }}
             placeholder={`Write your plugin code, refer to the development documentation`}
             basicSetup={{
-              lineNumbers: false,
+              lineNumbers: true,
               highlightActiveLineGutter: true,
               highlightSpecialChars: true,
               foldGutter: false,
@@ -463,7 +337,7 @@ export function PluginsTab() {
       <TestDrawer
         open={isTestDrawerOpen}
         onOpenChange={setIsTestDrawerOpen}
-        selectedPlugin={selectedPlugin}
+        selectedPlugin={props}
         testTool={testTool}
         testArgs={testArgs}
         result={result}

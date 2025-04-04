@@ -1,4 +1,3 @@
-import { ToolProperty } from "@/plugin/plugin";
 import { CronInput } from "@/components/custom/CronInput";
 import { dialog } from "@/components/custom/DialogModal";
 import { LoadingSpin } from "@/components/custom/LoadingSpin";
@@ -15,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { ToolProperty } from "@/plugin/types";
 import { cmd } from "@/utils/shell";
 import { supabase } from "@/utils/supabase";
 import { motion } from "framer-motion";
@@ -35,12 +35,12 @@ import ReactFlow, {
   SelectionMode,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { DragToolbar } from "./components/DragToolbar";
-import { FlowControls } from "./components/FlowControls";
-import { FlowProvider, useFlow } from "./context/FlowContext";
 import { ParamHistory } from "../../workflow/execute/ParamHistory";
 import { ContextWorkflow, Workflow } from "../../workflow/execute/Workflow";
 import { Scheduler } from "../../workflow/scheduler/Scheduler";
+import { DragToolbar } from "./components/DragToolbar";
+import { FlowControls } from "./components/FlowControls";
+import { FlowProvider, useFlow } from "./context/FlowContext";
 import { edgeTypes, nodeTypes, StartNodeConfig } from "./types/nodes";
 
 /* 工作流表单组件

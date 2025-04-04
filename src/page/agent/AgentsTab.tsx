@@ -1,4 +1,5 @@
-import { Agent } from "@/agent/Agent";
+import { Agent, AGENT_DATABASE } from "@/agent/Agent";
+import { AgentProps } from "@/agent/types/agent";
 import { dialog } from "@/components/custom/DialogModal";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
@@ -11,37 +12,38 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getColor } from "@/utils/color";
-import { gen } from "@/utils/generator";
 import { cmd } from "@utils/shell";
+import { EchoManager } from "echo-state";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 import { TbDownload, TbGhost3, TbPlus, TbUpload } from "react-icons/tb";
 import { AgentEditor } from "./AgentEditor";
 import { AgentsMarket } from "./AgentsMarket";
-
 export const CurrentAgent = new Agent();
-/** 机器人列表 */
+CurrentAgent.switch("");
+/** AgentsTab */
 export function AgentsTab() {
-  const agents = Agent.list.use();
+  const agents = EchoManager.use<AgentProps>(AGENT_DATABASE);
+
+  /* Current Agent */
   const props = CurrentAgent.use();
 
+  /* 创建机器人 */
   const handleCreateAgent = async () => {
     try {
-      const id = gen.id();
-      await Agent.create({ id });
-      CurrentAgent.indexed(id);
+      await Agent.create();
     } catch (error) {
       console.error("add agent error:", error);
     }
   };
 
-  const handleDeleteAgent = async (id: string) => {
+  const handleDeleteAgent = async (agent: AgentProps) => {
     const answer = await cmd.confirm(
-      `Are you sure you want to delete the assistant "${agents[id].name}"?`,
+      `Are you sure you want to delete the assistant "${agent.name}"?`,
     );
     if (answer) {
       try {
-        Agent.delete(id);
-        if (props?.id === id) {
+        Agent.delete(agent.id);
+        if (props?.id === agent.id) {
           CurrentAgent.close();
         }
       } catch (error) {
@@ -139,31 +141,39 @@ export function AgentsTab() {
             </DropdownMenu>
           </>
         }
-        items={Object.entries(agents).map(([id, agent]) => ({
-          id,
-          title: (
-            <span className="flex items-center">
-              <span>{agent.name || "Unnamed Agent"}</span>
-              <small
-                className="ml-2 text-[10px] text-muted bg-primary/80 px-2 rounded-xl"
-                style={{
-                  backgroundColor: getColor(agent.engine),
-                }}
-              >
-                {agent.engine}
-              </small>
-            </span>
-          ),
-          description:
-            agent.description?.slice(0, 50) ||
-            agent.system?.slice(0, 50) ||
-            "No prompt",
-          onClick: () => {
-            CurrentAgent.indexed(id);
-          },
-          actived: props?.id === id,
-          onRemove: () => handleDeleteAgent(id),
-        }))}
+        items={agents
+          .map((agent) => {
+            if (!agent.id) {
+              Agent.delete(agent.id);
+              return null;
+            }
+            return {
+              id: agent.id,
+              title: (
+                <span className="flex items-center">
+                  <span>{agent.name || "Unnamed Agent"}</span>
+                  <small
+                    className="ml-2 text-[10px] text-muted bg-primary/80 px-2 rounded-xl"
+                    style={{
+                      backgroundColor: getColor(agent.engine),
+                    }}
+                  >
+                    {agent.engine}
+                  </small>
+                </span>
+              ),
+              description:
+                agent.description?.slice(0, 50) ||
+                agent.system?.slice(0, 50) ||
+                "No prompt",
+              onClick: () => {
+                CurrentAgent.switch(agent.id);
+              },
+              actived: props?.id === agent.id,
+              onRemove: () => handleDeleteAgent(agent),
+            };
+          })
+          .filter((item) => item !== null)}
         emptyText="Please select an assistant or click the add button to create a new assistant"
         EmptyIcon={TbGhost3}
       />

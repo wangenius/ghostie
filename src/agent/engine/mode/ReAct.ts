@@ -1,11 +1,11 @@
-import { AgentProps } from "@/agent/types/agent";
+import { Agent } from "@/agent/Agent";
 import { MessageType } from "@/model/types/chatModel";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { Engine } from "../Engine";
 import { EngineManager } from "../EngineManager";
 
 export class ReAct extends Engine {
-  constructor(agent?: AgentProps) {
+  constructor(agent: Agent) {
     super(agent);
     // 初始化 ReAct 特定的内存和上下文
     this.memory = {
@@ -14,9 +14,6 @@ export class ReAct extends Engine {
       },
       isRunning: true,
     };
-
-    this.description =
-      "ReAct 是一种基于反应的对话模式，它允许模型在对话中生成反应，并根据反应执行工具调用。";
 
     this.context = {
       reset: () => {},
@@ -88,5 +85,5 @@ EngineManager.register("react", {
   name: "ReAct",
   description:
     "ReAct 是一种基于反应的对话模式，它允许模型在对话中生成反应，并根据反应执行工具调用。",
-  create: (agent?: AgentProps) => new ReAct(agent),
+  create: (agent: Agent) => new ReAct(agent),
 });

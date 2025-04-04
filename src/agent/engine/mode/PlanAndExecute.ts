@@ -1,21 +1,18 @@
-import { Engine } from "../Engine";
+import { Agent } from "@/agent/Agent";
 import { MessageType } from "@/model/types/chatModel";
 import { SettingsManager } from "@/settings/SettingsManager";
-import { AgentProps } from "@/agent/types/agent";
+import { Engine } from "../Engine";
 import { EngineManager } from "../EngineManager";
 
 export class PlanAndExecute extends Engine {
-  constructor(agent?: AgentProps) {
+  constructor(agent: Agent) {
     super(agent);
-
-    this.description =
-      "PlanAndExecute 是一种基于计划的执行模式，它允许模型在对话中生成计划，并根据计划执行工具调用。";
   }
 
   /* 执行 */
   async execute(input: string) {
     try {
-      const { context } = await this.current();
+      const context = this.getContext();
       /* 重置上下文 */
       context.reset();
 
@@ -37,7 +34,7 @@ export class PlanAndExecute extends Engine {
       let MAX_STEPS = SettingsManager.getReactMaxIterations();
 
       while (
-        (await this.current()).isRunning &&
+        this.getMemory().isRunning &&
         !context.isPlanCompleted() &&
         context.getCurrentIteration() < MAX_STEPS
       ) {
@@ -122,7 +119,7 @@ export class PlanAndExecute extends Engine {
     } catch (error: any) {
       // 5. 错误处理
       console.error("Plan execution error:", error);
-      const { context } = await this.current();
+      const context = this.getContext();
       await this.model.stream(
         `执行过程中遇到错误：${error.message}
   ${context.generate_context_info()}
@@ -149,5 +146,5 @@ EngineManager.register("plan-and-execute", {
   name: "PlanAndExecute",
   description:
     "PlanAndExecute 是一种基于计划的执行模式，它允许模型在对话中生成计划，并根据计划执行工具调用。",
-  create: (agent?: AgentProps) => new PlanAndExecute(agent),
+  create: (agent: Agent) => new PlanAndExecute(agent),
 });

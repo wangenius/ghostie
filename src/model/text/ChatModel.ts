@@ -11,7 +11,7 @@ import {
   ToolCallReply,
   ToolRequestBody,
 } from "@/model/types/chatModel";
-import { ToolProps } from "@/plugin/plugin";
+import { ToolProps } from "@/plugin/types";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
 import { Workflow } from "@/workflow/execute/Workflow";

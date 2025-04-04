@@ -1,4 +1,4 @@
-import { Agent } from "@/agent/Agent";
+import { Agent, AGENT_DATABASE } from "@/agent/Agent";
 import { AgentProps } from "@/agent/types/agent";
 import { LogoIcon } from "@/components/custom/LogoIcon";
 import { Button } from "@/components/ui/button";
@@ -11,11 +11,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { ChatHistory } from "@/model/text/HistoryMessage";
-import { ChatManager } from "@/page/history/ChatManager";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { Page } from "@/utils/PageRouter";
 import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Echo, EchoManager } from "echo-state";
+import { memo, useCallback, useEffect, useRef } from "react";
 import {
   TbArrowBigLeft,
   TbClockDown,
@@ -34,188 +34,57 @@ import { MessageItem } from "./components/MessageItem";
 
 type SortType = "default" | "mostUsed" | "recentUsed";
 
+interface MainViewState {
+  /* 当前输入 */
+  currentInput: string;
+  /* 是否正在加载 */
+  isLoading: boolean;
+  /* 选中的agent */
+  selectedAgentId: string;
+}
+
+const initialState: MainViewState = {
+  currentInput: "",
+  isLoading: false,
+  selectedAgentId: "",
+};
+
+const mainState = new Echo(initialState);
+export const CurrentAgent = new Agent();
+
 /* 主界面 */
 export function MainView() {
-  const {
-    isActive,
-    currentInput,
-    isLoading,
-    currentAgent,
-    updateInput,
-    setLoading,
-    startChat,
-    endChat,
-  } = ChatManager.useChat();
+  const agents = EchoManager.use<AgentProps>(AGENT_DATABASE);
+  const state = mainState.use();
+  const { id } = CurrentAgent.use();
 
-  const agents = Agent.list.use();
-  const agentList = Object.values(agents);
-  const [selectedAgentId, setSelectedAgentId] = useState<string>(
-    () => agentList[0]?.id || "",
-  );
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // 对机器人列表进行排序
-  const sortedAgents = useMemo(() => {
-    const list = [...agentList];
-    return list;
-  }, [agentList]);
-
-  // 使用useMemo缓存selectedAgent
-  const selectedAgent = useMemo(
-    () =>
-      sortedAgents.find((agent) => agent.id === selectedAgentId) ||
-      sortedAgents[0],
-    [sortedAgents, selectedAgentId],
-  );
-
-  const handleKeyDown = useCallback(
-    async (e: React.KeyboardEvent<HTMLInputElement>) => {
-      // 发送消息
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        const trimmedInput = currentInput.trim();
-        if (!trimmedInput) return;
-        updateInput("");
-        /* 开始聊天 */
-        if (!isActive) {
-          /* 记录使用历史 */
-          // Agent.updateMeta({
-          //   id: selectedAgent.id,
-          //   usageCount: (selectedAgent.usageCount || 0) + 1,
-          //   lastUsed: Date.now(),
-          // });
-          /* 开始聊天 */
-          const agent = await startChat(selectedAgent);
-          /* 设置加载状态 */
-          setLoading(true);
-          try {
-            await agent.chat(trimmedInput);
-          } finally {
-            setLoading(false);
-          }
-        } else if (currentAgent) {
-          setLoading(true);
-          try {
-            await currentAgent.chat(trimmedInput);
-          } finally {
-            setLoading(false);
-          }
-        }
-      }
-    },
-    [
-      currentInput,
-      isActive,
-      selectedAgent,
-      currentAgent,
-      startChat,
-      updateInput,
-      setLoading,
-    ],
-  );
-
+  // 初始化选中的agent
   useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // 聚焦输入框
-      if (e.ctrlKey && e.key.toLowerCase() === "i") {
-        e.preventDefault();
-        inputRef.current?.focus();
-      }
-      if (e.ctrlKey && e.key.toLowerCase() === "h") {
-        e.preventDefault();
-        Page.to("history");
-        return;
-      }
-      if (e.ctrlKey && e.key.toLowerCase() === "o") {
-        e.preventDefault();
-        endChat();
-      }
-      // 打开设置
-      if (e.ctrlKey && e.key === ",") {
-        e.preventDefault();
-        Page.to("settings");
-        return;
-      }
-      // 选择助手
-      if (!isActive && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
-        e.preventDefault();
-        const currentIndex = sortedAgents.findIndex(
-          (agent) => agent.id === selectedAgentId,
-        );
-        const newIndex =
-          e.key === "ArrowUp"
-            ? (currentIndex - 1 + sortedAgents.length) % sortedAgents.length
-            : (currentIndex + 1) % sortedAgents.length;
-        setSelectedAgentId(sortedAgents[newIndex].id);
-      }
-    };
-
-    document.addEventListener("keydown", handleGlobalKeyDown);
-    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [isActive, selectedAgentId, sortedAgents.length, endChat]);
+    const list = Object.values(agents);
+    if (list.length > 0 && !state.selectedAgentId) {
+      mainState.set({ selectedAgentId: list[0].id });
+    }
+  }, [agents]);
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <MemoizedHeader
-        inputRef={inputRef}
-        currentInput={currentInput}
-        isLoading={isLoading}
-        isActive={isActive}
-        currentAgent={currentAgent}
-        agentList={sortedAgents}
-        selectedAgentId={selectedAgentId}
-        onInputChange={updateInput}
-        onKeyDown={handleKeyDown}
-        onEndChat={endChat}
-        onSelectAgent={setSelectedAgentId}
-      />
+      <Header />
       <main className="flex-1 overflow-hidden pb-4">
         <div className="h-full overflow-y-auto">
-          {!isActive && (
-            <MemoizedAgentList
-              agentList={sortedAgents}
-              selectedAgentId={selectedAgentId}
-              currentInput={currentInput}
-              onSelectAgent={setSelectedAgentId}
-              onStartChat={startChat}
-            />
-          )}
-          {isActive && currentAgent && (
-            <MemoizedChatBox currentAgent={currentAgent} onEndChat={endChat} />
-          )}
+          {!id && <AgentListPanel />}
+          {id && <ChatBox />}
         </div>
       </main>
     </div>
   );
 }
 
-interface HeaderProps {
-  inputRef: React.RefObject<HTMLInputElement>;
-  currentInput: string;
-  isLoading: boolean;
-  isActive: boolean;
-  currentAgent?: Agent;
-  agentList: AgentProps[];
-  selectedAgentId: string;
-  onInputChange: (value: string) => void;
-  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  onEndChat: () => void;
-  onSelectAgent: (id: string) => void;
-}
-
-const Header = memo(function Header({
-  inputRef,
-  currentInput,
-  isLoading,
-  isActive,
-  currentAgent,
-  agentList,
-  selectedAgentId,
-  onInputChange,
-  onKeyDown,
-  onEndChat,
-}: HeaderProps) {
+const Header = memo(() => {
   const sortType = SettingsManager.use((state) => state.sortType);
+  const state = mainState.use();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const agentList = EchoManager.use<AgentProps>(AGENT_DATABASE);
+  const agent = CurrentAgent.use();
   const handleSettingsClick = useCallback(() => {
     Page.to("settings");
   }, []);
@@ -226,49 +95,108 @@ const Header = memo(function Header({
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      onInputChange(e.target.value);
+      mainState.set({ currentInput: e.target.value });
     },
-    [onInputChange],
+    [],
   );
 
   const handleActionClick = useCallback(() => {
-    if (isActive) {
-      if (isLoading) {
-        currentAgent?.stop();
+    if (agent.id) {
+      if (state.isLoading) {
+        CurrentAgent.stop();
       } else {
-        onEndChat();
+        CurrentAgent.close();
       }
     }
-  }, [isActive, isLoading, currentAgent, onEndChat]);
+  }, [state.isLoading]);
 
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key.toLowerCase() === "i") {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+      if (e.ctrlKey && e.key.toLowerCase() === "h") {
+        e.preventDefault();
+        Page.to("history");
+      }
+      if (e.ctrlKey && e.key.toLowerCase() === "o") {
+        e.preventDefault();
+        CurrentAgent.close();
+      }
+      if (e.ctrlKey && e.key === ",") {
+        e.preventDefault();
+        Page.to("settings");
+      }
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        e.preventDefault();
+        const currentIndex = agentList.findIndex(
+          (agent) => agent.id === state.selectedAgentId,
+        );
+        const newIndex =
+          e.key === "ArrowUp"
+            ? (currentIndex - 1 + agentList.length) % agentList.length
+            : (currentIndex + 1) % agentList.length;
+        mainState.set({ selectedAgentId: agentList[newIndex].id });
+      }
+    };
+
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [state.selectedAgentId, agentList]);
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key.toLowerCase() === "p") {
         e.preventDefault();
-        if (isActive && isLoading) {
-          currentAgent?.stop();
+        if (state.isLoading) {
+          CurrentAgent.stop();
         }
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isActive, isLoading, currentAgent, onEndChat]);
+  }, [state.isLoading]);
+  const handleKeyDown = useCallback(
+    async (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        const trimmedInput = state.currentInput.trim();
+        if (!trimmedInput) return;
+
+        mainState.set({ currentInput: "", isLoading: true });
+
+        try {
+          if (!agent.id) {
+            const agent = await CurrentAgent.switch(state.selectedAgentId);
+            await agent.chat(trimmedInput);
+          } else {
+            await CurrentAgent.chat(trimmedInput);
+          }
+        } catch (error) {
+          console.error(error);
+        } finally {
+          mainState.set({ isLoading: false });
+        }
+      }
+    },
+    [state.currentInput, state.selectedAgentId],
+  );
 
   return (
     <div className="px-3 draggable">
       <div className="mx-auto flex items-center h-12">
         <div className="p-1.5 bg-muted rounded-md flex items-center gap-2 text-xs hover:bg-muted-foreground/15 transition-colors">
           <LogoIcon className="w-4 h-4" />
-          {agentList.find((agent) => agent.id === selectedAgentId)?.name ||
-            agentList[0]?.name}
+          {agentList.find((agent) => agent.id === state.selectedAgentId)
+            ?.name || agentList[0]?.name}
         </div>
         <div className="flex-1 pl-2">
           <Input
             ref={inputRef}
-            value={currentInput}
+            value={state.currentInput}
             variant="ghost"
             onChange={handleInputChange}
-            onKeyDown={onKeyDown}
+            onKeyDown={handleKeyDown}
             className="text-[13px]"
             placeholder={"Type here..."}
           />
@@ -291,7 +219,7 @@ const Header = memo(function Header({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          {!isActive && (
+          {!agent.id && (
             <div className="">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -328,9 +256,9 @@ const Header = memo(function Header({
               </DropdownMenu>
             </div>
           )}
-          {isActive && (
+          {agent.id && (
             <Button onClick={handleActionClick} size="icon">
-              {isLoading ? (
+              {state.isLoading ? (
                 <TbLoader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <TbArrowBigLeft className="h-4 w-4" />
@@ -366,37 +294,22 @@ const Header = memo(function Header({
   );
 });
 
-interface AgentListProps {
-  agentList: AgentProps[];
-  selectedAgentId: string;
-  currentInput: string;
-  onSelectAgent: (id: string) => void;
-  onStartChat: (agent: AgentProps) => void;
-}
-
-const AgentList = memo(function AgentList({
-  agentList,
-  selectedAgentId,
-  currentInput,
-  onSelectAgent,
-  onStartChat,
-}: AgentListProps) {
+const AgentListPanel = memo(() => {
+  const state = mainState.use();
+  const agentList = EchoManager.use<AgentProps>(AGENT_DATABASE);
   const handleAgentClick = useCallback(
-    (agent: AgentProps) => {
-      const trimmedInput = currentInput.trim();
+    async (agent: AgentProps) => {
+      await CurrentAgent.switch(agent.id);
+      const trimmedInput = state.currentInput.trim();
       if (trimmedInput) {
-        onStartChat(agent);
-      } else {
-        onSelectAgent(agent.id);
+        await CurrentAgent.chat(trimmedInput);
       }
     },
-    [currentInput, onStartChat, onSelectAgent],
+    [state.currentInput],
   );
 
-  // 添加ref用于滚动
   const selectedAgentRef = useRef<HTMLDivElement>(null);
 
-  // 当选中的agent改变时，确保其可见
   useEffect(() => {
     if (selectedAgentRef.current) {
       selectedAgentRef.current.scrollIntoView({
@@ -404,18 +317,18 @@ const AgentList = memo(function AgentList({
         block: "nearest",
       });
     }
-  }, [selectedAgentId]);
+  }, [state.selectedAgentId]);
 
   return (
     <div className="container mx-auto px-4 max-w-2xl space-y-1 overflow-y-auto">
       {agentList.map((agent) => (
         <div
           key={agent.id}
-          ref={agent.id === selectedAgentId ? selectedAgentRef : null}
+          ref={agent.id === state.selectedAgentId ? selectedAgentRef : null}
         >
           <AgentItem
             agent={agent}
-            isSelected={agent.id === selectedAgentId}
+            isSelected={agent.id === state.selectedAgentId}
             onClick={() => handleAgentClick(agent)}
           />
         </div>
@@ -424,21 +337,12 @@ const AgentList = memo(function AgentList({
   );
 });
 
-interface ChatBoxProps {
-  currentAgent: Agent;
-  onEndChat: () => void;
-}
-
-const ChatBox = memo(function ChatBox({
-  currentAgent,
-  onEndChat,
-}: ChatBoxProps) {
+const ChatBox = memo(() => {
   const list = ChatHistory.use();
-  const message = list[currentAgent.model.historyMessage.id];
+  const message = list[CurrentAgent.engine.model.historyMessage.id];
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   if (!message) {
-    onEndChat();
     return null;
   }
 
@@ -455,7 +359,3 @@ const ChatBox = memo(function ChatBox({
     </div>
   );
 });
-
-const MemoizedHeader = memo(Header);
-const MemoizedAgentList = memo(AgentList);
-const MemoizedChatBox = memo(ChatBox);

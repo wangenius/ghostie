@@ -1,11 +1,11 @@
-import { PluginMarketProps, PluginProps } from "@/plugin/plugin";
 import { Button } from "@/components/ui/button";
+import { ToolPlugin } from "@/plugin/ToolPlugin";
+import { PluginMarketProps } from "@/plugin/types";
+import { UserMananger } from "@/settings/User";
 import { cmd } from "@/utils/shell";
 import { supabase } from "@/utils/supabase";
 import { useEffect, useState } from "react";
 import { TbLoader2, TbTrash } from "react-icons/tb";
-import { PluginManager } from "../../../plugin/PluginManager";
-import { UserMananger } from "@/settings/User";
 
 export const PluginsMarket = () => {
   const [plugins, setPlugins] = useState<PluginMarketProps[]>([]);
@@ -46,11 +46,14 @@ export const PluginsMarket = () => {
         content: plugin.content.trim(),
       });
 
-      /* 获取工具列表 */
-      const plugins = await cmd.invoke<Record<string, PluginProps>>(
-        "plugins_list",
-      );
-      PluginManager.set(plugins);
+      const newPlugin = await ToolPlugin.create({
+        id: plugin.id,
+        name: plugin.name,
+        description: plugin.description,
+        version: plugin.version,
+      });
+
+      await newPlugin.updateContent(plugin.content.trim());
 
       cmd.message(`success install plugin: ${plugin.name}`, "success");
     } catch (error) {

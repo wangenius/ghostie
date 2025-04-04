@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Knowledge, KnowledgeMeta } from "@/knowledge/Knowledge";
 import { ChatModelManager } from "@/model/text/ChatModelManager";
-import { PluginProps, ToolProps } from "@/plugin/plugin";
+import { PluginProps, ToolProps } from "@/plugin/types";
 import { supabase } from "@/utils/supabase";
 import { Workflow } from "@/workflow/execute/Workflow";
 import { cmd } from "@utils/shell";
@@ -72,7 +72,7 @@ export const AgentEditor = () => {
     });
   }, [props]);
 
-  if (!props) return null;
+  if (!props.id) return null;
 
   return (
     <div key={props.id} className="flex-1 overflow-y-auto">
@@ -83,7 +83,7 @@ export const AgentEditor = () => {
             type="text"
             defaultValue={props?.name || ""}
             onChange={(e) =>
-              CurrentAgent.updateMeta({
+              CurrentAgent.update({
                 name: e.target.value,
               })
             }
@@ -118,7 +118,7 @@ export const AgentEditor = () => {
               description: engine.description,
             }))}
             onSelect={([value]) =>
-              CurrentAgent.updateMeta({
+              CurrentAgent.update({
                 engine: value,
               })
             }
@@ -127,7 +127,7 @@ export const AgentEditor = () => {
             defaultValue={props.description || ""}
             key={props.id}
             onValueChange={(e) =>
-              CurrentAgent.updateMeta({
+              CurrentAgent.update({
                 description: e.target.value,
               })
             }
@@ -160,7 +160,7 @@ export const AgentEditor = () => {
                 },
               )}
               onSelect={([value]) =>
-                CurrentAgent.updateMeta({
+                CurrentAgent.update({
                   models: {
                     ...props.models,
                     text: value,
@@ -185,7 +185,7 @@ export const AgentEditor = () => {
                 step={0.1}
                 className="px-1"
                 onValueChange={(value) =>
-                  CurrentAgent.updateMeta({
+                  CurrentAgent.update({
                     models: {
                       ...props.models,
                       text: {
@@ -206,7 +206,7 @@ export const AgentEditor = () => {
             <AutoResizeTextarea
               defaultValue={props.system}
               onValueChange={(e) =>
-                CurrentAgent.updateMeta({
+                CurrentAgent.update({
                   system: e.target.value,
                 })
               }
@@ -231,7 +231,7 @@ export const AgentEditor = () => {
                   })),
                 )}
                 onSelect={(value) =>
-                  CurrentAgent.updateMeta({
+                  CurrentAgent.update({
                     tools: value,
                   })
                 }
@@ -248,7 +248,7 @@ export const AgentEditor = () => {
                   description: workflow.description,
                 }))}
                 onSelect={(value) =>
-                  CurrentAgent.updateMeta({
+                  CurrentAgent.update({
                     workflows: value,
                   })
                 }
@@ -264,7 +264,7 @@ export const AgentEditor = () => {
                   value: k.id,
                 }))}
                 onSelect={(value) =>
-                  CurrentAgent.updateMeta({
+                  CurrentAgent.update({
                     knowledges: value,
                   })
                 }

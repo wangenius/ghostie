@@ -1,4 +1,4 @@
-import { PluginProps } from "@/plugin/plugin";
+import { PluginProps } from "@/plugin/types";
 import JsonViewer from "@/components/custom/JsonViewer";
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";

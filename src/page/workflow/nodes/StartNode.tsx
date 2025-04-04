@@ -1,8 +1,4 @@
-import {
-  ToolParameters,
-  ToolProperty,
-  ToolPropertyType,
-} from "@/plugin/plugin";
+import { ToolParameters, ToolProperty, ToolPropertyType } from "@/plugin/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";

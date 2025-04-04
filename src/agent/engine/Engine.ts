@@ -1,10 +1,9 @@
-import { AgentProps } from "@/agent/types/agent";
-import { ChatModel } from "@/model/text/ChatModel";
-import { PluginManager } from "@/plugin/PluginManager";
-import { ToolProps } from "@/plugin/plugin";
-import { EngineManager } from "./EngineManager";
 import { TOOL_NAME_SPLIT } from "@/assets/const";
-
+import { ChatModel } from "@/model/text/ChatModel";
+import { ToolProps } from "@/plugin/types";
+import { Agent } from "../Agent";
+import { EngineManager } from "./EngineManager";
+import { ToolPlugin } from "@/plugin/ToolPlugin";
 /** 执行上下文接口 */
 export interface ExecutionContext {
   /** 重置上下文 */
@@ -40,26 +39,37 @@ export interface Memory {
 
 /* Agent 框架父类 */
 export class Engine {
-  /* 名称 */
-  name: string;
-  /* 描述 */
-  description: string = "";
+  /* 代理 */
+  agent: Agent;
   /* 模型 */
-  model: ChatModel;
-
+  model: ChatModel = null as any;
   /* 内存 */
-  protected memory: Memory;
+  protected memory: Memory = { reset: () => {}, isRunning: true };
   /* 执行上下文 */
-  protected context: ExecutionContext;
+  protected context: ExecutionContext = {
+    reset: () => {},
+    getCurrentIteration: () => 0,
+    incrementIteration: () => {},
+    generate_context_info: () => "",
+    setExecutionContext: () => {},
+    updateTaskStatus: () => {},
+    moveToNextStep: () => false,
+    isPlanCompleted: () => false,
+    getCurrentStep: () => undefined,
+  };
 
-  constructor(agent?: AgentProps) {
-    this.name = agent?.name || "default";
-    this.model = ChatModel.create(agent?.models?.text)
-      .setAgent(agent?.id || "")
-      .setTemperature(agent?.models?.text?.temperature || 1)
-      .setTools(this.parseTools(agent?.tools || []))
-      .setKnowledge(agent?.knowledges || []);
+  constructor(agent: Agent) {
+    this.agent = agent;
+    this.init(agent);
+  }
 
+  async init(agent: Agent) {
+    const props = agent.props;
+    this.model = ChatModel.create(props.models?.text)
+      .setAgent(props.id || "")
+      .setTemperature(props.models?.text?.temperature || 1)
+      .setTools(await this.parseTools(props.tools || []))
+      .setKnowledge(props.knowledges || []);
     // 初始化内存和上下文
     this.memory = {
       reset: () => {},
@@ -78,37 +88,37 @@ export class Engine {
       getCurrentStep: () => undefined,
     };
   }
-
   /* 获取上下文 */
   protected getContext(): ExecutionContext {
     return this.context;
   }
 
-  /* 获取当前状态 */
-  protected async current() {
-    return {
-      context: this.context,
-      isRunning: this.memory.isRunning,
-    };
+  protected getMemory() {
+    return this.memory;
   }
 
   /* 解析工具 */
-  private parseTools(tools: string[]): ToolProps[] {
-    return Object.values(PluginManager.current)
-      .flatMap((plugin) =>
-        plugin.tools.map((tool) => ({
+  private async parseTools(tools: string[]): Promise<ToolProps[]> {
+    const parsedTools: ToolProps[] = [];
+    for (const item of tools) {
+      const [pluginId, toolId] = item.split(TOOL_NAME_SPLIT);
+      const plugin = await ToolPlugin.get(pluginId);
+      const tool = plugin.props.tools.find((tool) => tool.name === toolId);
+      if (tool) {
+        parsedTools.push({
           ...tool,
-          plugin: plugin.id,
-          name: `${tool.name}${TOOL_NAME_SPLIT}${plugin.id}`,
-          pluginName: plugin.name,
-        })),
-      )
-      .filter((tool) => tools.includes(tool.name));
+          plugin: plugin.props.id,
+          name: `${tool.name}${TOOL_NAME_SPLIT}${plugin.props.id}`,
+        });
+      }
+    }
+
+    return parsedTools;
   }
 
   /* 执行 */
   async execute(input: string): Promise<{ content: string }> {
-    console.log(`${this.name} 执行 ${input}`);
+    console.log(`执行 ${input}`);
     throw new Error("Not implemented");
   }
 
@@ -116,12 +126,13 @@ export class Engine {
     this.model.stop();
   }
 
-  getDescription() {
-    return this.description;
+  close() {
+    this.model.stop();
   }
 
   /** 创建 Engine 实例 */
-  static create(agent?: AgentProps): Engine {
-    return EngineManager.create(agent);
+  static create(agent: Agent): Engine {
+    const engine = EngineManager.create(agent);
+    return engine;
   }
 }
