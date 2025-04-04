@@ -1,4 +1,4 @@
-import { Agent, AGENT_DATABASE } from "@/agent/Agent";
+import { Agent, AgentStore } from "@/agent/Agent";
 import { AgentProps } from "@/agent/types/agent";
 import { dialog } from "@/components/custom/DialogModal";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
@@ -13,19 +13,29 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getColor } from "@/utils/color";
 import { cmd } from "@utils/shell";
-import { EchoManager } from "echo-state";
+import { Echo } from "echo-state";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 import { TbDownload, TbGhost3, TbPlus, TbUpload } from "react-icons/tb";
 import { AgentEditor } from "./AgentEditor";
 import { AgentsMarket } from "./AgentsMarket";
-export const CurrentAgent = new Agent();
-CurrentAgent.switch("");
+import { useEffect, useState } from "react";
+
+export const CurrentSelectedAgent = new Echo<string>("");
+
 /** AgentsTab */
 export function AgentsTab() {
-  const agents = EchoManager.use<AgentProps>(AGENT_DATABASE);
+  const selectedId = CurrentSelectedAgent.use();
+  const agents = AgentStore.use();
+  const [agent, setAgent] = useState<Agent>(new Agent());
 
+  useEffect(() => {
+    if (selectedId) {
+      Agent.get(selectedId).then((agent) => {
+        setAgent(agent);
+      });
+    }
+  }, [selectedId]);
   /* Current Agent */
-  const props = CurrentAgent.use();
 
   /* 创建机器人 */
   const handleCreateAgent = async () => {
@@ -43,8 +53,8 @@ export function AgentsTab() {
     if (answer) {
       try {
         Agent.delete(agent.id);
-        if (props?.id === agent.id) {
-          CurrentAgent.close();
+        if (selectedId === agent.id) {
+          CurrentSelectedAgent.reset();
         }
       } catch (error) {
         console.error("delete agent error:", error);
@@ -141,7 +151,7 @@ export function AgentsTab() {
             </DropdownMenu>
           </>
         }
-        items={agents
+        items={Object.values(agents)
           .map((agent) => {
             if (!agent.id) {
               Agent.delete(agent.id);
@@ -167,9 +177,9 @@ export function AgentsTab() {
                 agent.system?.slice(0, 50) ||
                 "No prompt",
               onClick: () => {
-                CurrentAgent.switch(agent.id);
+                CurrentSelectedAgent.set(agent.id);
               },
-              actived: props?.id === agent.id,
+              actived: selectedId === agent.id,
               onRemove: () => handleDeleteAgent(agent),
             };
           })
@@ -182,9 +192,9 @@ export function AgentsTab() {
       <PreferenceBody
         emptyText="Please select an assistant or click the add button to create a new assistant"
         EmptyIcon={TbGhost3}
-        isEmpty={!props}
+        isEmpty={!selectedId}
       >
-        <AgentEditor />
+        <AgentEditor agent={agent} />
       </PreferenceBody>
     </PreferenceLayout>
   );

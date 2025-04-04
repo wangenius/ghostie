@@ -134,7 +134,7 @@ export class ChatModel {
           function: {
             name: `executeFlow_${flow.id}`,
             description: flow.description,
-            parameters: (startNode.data as StartNodeConfig).parameters || null,
+            parameters: (startNode.data as StartNodeConfig).parameters,
           },
         });
       });
@@ -314,7 +314,6 @@ export class ChatModel {
       /* 等待工具执行完成 */
       const toolResult = await toolResultPromise;
 
-      console.log(toolResult);
       /* 返回工具调用结果 */
       return {
         name: tool_call.function.name,
@@ -409,13 +408,11 @@ export class ChatModel {
       // 允许子类修改请求体
       requestBody = this.prepareRequestBody(requestBody);
 
-      console.log(requestBody);
       let reasonerContent = "";
       // 监听流式响应事件
       const unlistenStream = await cmd.listen(
         `chat-stream-${this.currentRequestId}`,
         (event) => {
-          console.log(event);
           if (!event.payload) return;
           // 解析原始响应数据
           const {
@@ -507,7 +504,6 @@ export class ChatModel {
       let toolResult;
       if (tool_calls.length > 0) {
         for (const tool_call of tool_calls) {
-          console.log(tool_call);
           toolResult = await this.tool_call(tool_call);
           if (toolResult) {
             this.historyMessage.push([

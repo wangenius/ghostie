@@ -13,9 +13,13 @@ export const DEFAULT_AGENT: AgentProps = {
 /* 数据库名称 */
 export const AGENT_DATABASE = "agents";
 
+export const AgentStore = new Echo<Record<string, AgentProps>>({}).indexed({
+  database: AGENT_DATABASE,
+  name: "index",
+});
+
 /** 代理 */
 export class Agent {
-  private store = new Echo<AgentProps>(DEFAULT_AGENT);
   /* 代理ID */
   props: AgentProps = DEFAULT_AGENT;
   /* Agent引擎 */
@@ -23,28 +27,7 @@ export class Agent {
   /** 构造函数 */
   constructor(agent?: Partial<AgentProps>) {
     this.props = { ...DEFAULT_AGENT, ...agent };
-    if (agent?.id) {
-      this.store
-        .indexed({
-          database: AGENT_DATABASE,
-          name: agent.id,
-        })
-        .ready(this.props);
-    }
-
     this.engine = Engine.create(this);
-  }
-
-  use = this.store.use.bind(this.store);
-
-  async switch(id: string): Promise<Agent> {
-    this.store.indexed({
-      database: AGENT_DATABASE,
-      name: id,
-    });
-    this.props = await this.store.getCurrent();
-    this.engine = Engine.create(this);
-    return this;
   }
 
   /** 创建代理 */
@@ -53,21 +36,20 @@ export class Agent {
     const id = gen.id();
     /* 创建代理 */
     const agent = new Agent({ ...config, id });
-
+    /* 保存代理 */
+    AgentStore.set({
+      [id]: agent.props,
+    });
     /* 返回代理 */
     return agent;
   }
 
   static async get(id: string): Promise<Agent> {
-    const agent = Echo.get<AgentProps>({
-      database: AGENT_DATABASE,
-      name: id,
-    });
-    await agent.ready();
-    if (!agent.current) {
+    const agent = await AgentStore.getCurrent();
+    if (!agent[id]) {
       throw new Error("Agent ID not found");
     }
-    return new Agent(agent.current);
+    return new Agent(agent[id]);
   }
 
   /* 更新机器人元数据 */
@@ -77,7 +59,10 @@ export class Agent {
     }
     /* 实例 */
     this.props = { ...this.props, ...data };
-    this.store.set(this.props);
+    /* 更新代理 */
+    AgentStore.set({
+      [this.props.id]: this.props,
+    });
     this.engine = Engine.create(this);
     return this;
   }
@@ -103,7 +88,6 @@ export class Agent {
 
   close() {
     this.engine.close();
-    this.store.discard();
     this.props = DEFAULT_AGENT;
   }
 }

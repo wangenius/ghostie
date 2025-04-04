@@ -7,9 +7,9 @@ interface DragToolbarProps {
   position?:
     | "top-left"
     | "top-right"
-    | "agenttom-left"
-    | "agenttom-center"
-    | "agenttom-right"
+    | "bottom-left"
+    | "bottom-center"
+    | "bottom-right"
     | "left"
     | "right";
   className?: string;
@@ -56,9 +56,9 @@ export const DragToolbar = ({
   const positionClassName = {
     "top-left": "top-2 left-2",
     "top-right": "top-2 right-2",
-    "agenttom-left": "agenttom-2 left-2",
-    "agenttom-center": "agenttom-2 left-1/2 -translate-x-1/2",
-    "agenttom-right": "agenttom-2 right-2",
+    "bottom-left": "bottom-2 left-2",
+    "bottom-center": "bottom-2 left-1/2 -translate-x-1/2",
+    "bottom-right": "bottom-2 right-2",
     left: "left-2 top-1/2 -translate-y-1/2",
     right: "right-2 top-1/2 -translate-y-1/2",
   };

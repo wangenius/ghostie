@@ -1,4 +1,4 @@
-import { Agent, AGENT_DATABASE } from "@/agent/Agent";
+import { Agent, AgentStore } from "@/agent/Agent";
 import { AgentProps } from "@/agent/types/agent";
 import { LogoIcon } from "@/components/custom/LogoIcon";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,6 @@ import { ChatHistory } from "@/model/text/HistoryMessage";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { Page } from "@/utils/PageRouter";
 import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
-import { Echo, EchoManager } from "echo-state";
 import { memo, useCallback, useEffect, useRef } from "react";
 import {
   TbArrowBigLeft,
@@ -31,6 +30,7 @@ import {
 } from "react-icons/tb";
 import { AgentItem } from "./components/AgentItem";
 import { MessageItem } from "./components/MessageItem";
+import { Echoa } from "echo-state";
 
 type SortType = "default" | "mostUsed" | "recentUsed";
 
@@ -49,14 +49,16 @@ const initialState: MainViewState = {
   selectedAgentId: "",
 };
 
-const mainState = new Echo(initialState);
-export const CurrentAgent = new Agent();
+/* 主界面状态 */
+const mainState = new Echoa(initialState);
+/* 当前对话的agent */
+export const CurrentTalkAgent = new Echoa<Agent>(new Agent());
 
 /* 主界面 */
 export function MainView() {
-  const agents = EchoManager.use<AgentProps>(AGENT_DATABASE);
+  const agents = AgentStore.use();
   const state = mainState.use();
-  const { id } = CurrentAgent.use();
+  const agent = CurrentTalkAgent.use();
 
   // 初始化选中的agent
   useEffect(() => {
@@ -71,8 +73,8 @@ export function MainView() {
       <Header />
       <main className="flex-1 overflow-hidden pb-4">
         <div className="h-full overflow-y-auto">
-          {!id && <AgentListPanel />}
-          {id && <ChatBox />}
+          {!agent.props.id && <AgentListPanel />}
+          {agent.props.id && <ChatBox />}
         </div>
       </main>
     </div>
@@ -83,8 +85,9 @@ const Header = memo(() => {
   const sortType = SettingsManager.use((state) => state.sortType);
   const state = mainState.use();
   const inputRef = useRef<HTMLInputElement>(null);
-  const agentList = EchoManager.use<AgentProps>(AGENT_DATABASE);
-  const agent = CurrentAgent.use();
+  const agents = AgentStore.use();
+  const list = Object.values(agents);
+  const agent = CurrentTalkAgent.use();
   const handleSettingsClick = useCallback(() => {
     Page.to("settings");
   }, []);
@@ -101,14 +104,15 @@ const Header = memo(() => {
   );
 
   const handleActionClick = useCallback(() => {
-    if (agent.id) {
+    if (agent.props.id) {
       if (state.isLoading) {
-        CurrentAgent.stop();
+        agent.stop();
       } else {
-        CurrentAgent.close();
+        // 无论是否正在加载，点击按钮都重置 Agent
+        CurrentTalkAgent.set(new Agent(), { replace: true });
       }
     }
-  }, [state.isLoading]);
+  }, [state.isLoading, agent]);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -122,7 +126,7 @@ const Header = memo(() => {
       }
       if (e.ctrlKey && e.key.toLowerCase() === "o") {
         e.preventDefault();
-        CurrentAgent.close();
+        handleActionClick();
       }
       if (e.ctrlKey && e.key === ",") {
         e.preventDefault();
@@ -130,26 +134,26 @@ const Header = memo(() => {
       }
       if (e.key === "ArrowUp" || e.key === "ArrowDown") {
         e.preventDefault();
-        const currentIndex = agentList.findIndex(
+        const currentIndex = list.findIndex(
           (agent) => agent.id === state.selectedAgentId,
         );
         const newIndex =
           e.key === "ArrowUp"
-            ? (currentIndex - 1 + agentList.length) % agentList.length
-            : (currentIndex + 1) % agentList.length;
-        mainState.set({ selectedAgentId: agentList[newIndex].id });
+            ? (currentIndex - 1 + list.length) % list.length
+            : (currentIndex + 1) % list.length;
+        mainState.set({ selectedAgentId: list[newIndex].id });
       }
     };
 
     document.addEventListener("keydown", handleGlobalKeyDown);
     return () => document.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [state.selectedAgentId, agentList]);
+  }, [state.selectedAgentId, list]);
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key.toLowerCase() === "p") {
         e.preventDefault();
         if (state.isLoading) {
-          CurrentAgent.stop();
+          agent.stop();
         }
       }
     };
@@ -166,11 +170,15 @@ const Header = memo(() => {
         mainState.set({ currentInput: "", isLoading: true });
 
         try {
-          if (!agent.id) {
-            const agent = await CurrentAgent.switch(state.selectedAgentId);
+          if (!agent.props.id) {
+            const agent = await Agent.get(state.selectedAgentId);
+            CurrentTalkAgent.set(agent, { replace: true });
+            console.log(agent.props);
+
             await agent.chat(trimmedInput);
           } else {
-            await CurrentAgent.chat(trimmedInput);
+            console.log(agent);
+            await agent.chat(trimmedInput);
           }
         } catch (error) {
           console.error(error);
@@ -179,7 +187,7 @@ const Header = memo(() => {
         }
       }
     },
-    [state.currentInput, state.selectedAgentId],
+    [state.currentInput, state.selectedAgentId, agent],
   );
 
   return (
@@ -187,8 +195,8 @@ const Header = memo(() => {
       <div className="mx-auto flex items-center h-12">
         <div className="p-1.5 bg-muted rounded-md flex items-center gap-2 text-xs hover:bg-muted-foreground/15 transition-colors">
           <LogoIcon className="w-4 h-4" />
-          {agentList.find((agent) => agent.id === state.selectedAgentId)
-            ?.name || agentList[0]?.name}
+          {list.find((agent) => agent.id === state.selectedAgentId)?.name ||
+            list[0]?.name}
         </div>
         <div className="flex-1 pl-2">
           <Input
@@ -219,7 +227,7 @@ const Header = memo(() => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          {!agent.id && (
+          {!agent.props.id && (
             <div className="">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -256,7 +264,7 @@ const Header = memo(() => {
               </DropdownMenu>
             </div>
           )}
-          {agent.id && (
+          {agent.props.id && (
             <Button onClick={handleActionClick} size="icon">
               {state.isLoading ? (
                 <TbLoader2 className="h-4 w-4 animate-spin" />
@@ -296,13 +304,14 @@ const Header = memo(() => {
 
 const AgentListPanel = memo(() => {
   const state = mainState.use();
-  const agentList = EchoManager.use<AgentProps>(AGENT_DATABASE);
+  const agents = AgentStore.use();
+  const agent = CurrentTalkAgent.use();
   const handleAgentClick = useCallback(
-    async (agent: AgentProps) => {
-      await CurrentAgent.switch(agent.id);
+    async (props: AgentProps) => {
+      CurrentTalkAgent.set(new Agent(props));
       const trimmedInput = state.currentInput.trim();
       if (trimmedInput) {
-        await CurrentAgent.chat(trimmedInput);
+        await agent.chat(trimmedInput);
       }
     },
     [state.currentInput],
@@ -321,7 +330,7 @@ const AgentListPanel = memo(() => {
 
   return (
     <div className="container mx-auto px-4 max-w-2xl space-y-1 overflow-y-auto">
-      {agentList.map((agent) => (
+      {Object.values(agents).map((agent) => (
         <div
           key={agent.id}
           ref={agent.id === state.selectedAgentId ? selectedAgentRef : null}
@@ -338,17 +347,18 @@ const AgentListPanel = memo(() => {
 });
 
 const ChatBox = memo(() => {
+  const agent = CurrentTalkAgent.use();
   const list = ChatHistory.use();
-  const message = list[CurrentAgent.engine.model.historyMessage.id];
+  const message = list[agent.engine.model.historyMessage.id];
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  if (!message) {
-    return null;
-  }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [list]);
+
+  if (!message) {
+    return null;
+  }
 
   return (
     <div className="px-2 space-y-2 my-2">

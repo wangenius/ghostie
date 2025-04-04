@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChatModelManager } from "@/model/text/ChatModelManager";
-import { CurrentAgent } from "@/page/agent/AgentsTab";
+import { CurrentSelectedAgent } from "@/page/agent/AgentsTab";
 import { Page } from "@/utils/PageRouter";
 import { useState } from "react";
 import { TbDots, TbPencil, TbPin } from "react-icons/tb";
@@ -76,7 +76,7 @@ export function AgentItem({ agent, isSelected, onClick }: AgentItemProps) {
           <DropdownMenuItem
             className="flex items-center gap-2"
             onClick={() => {
-              CurrentAgent.switch(agent.id);
+              CurrentSelectedAgent.set(agent.id);
               Page.settings("agents");
             }}
           >

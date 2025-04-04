@@ -41,17 +41,14 @@ export const PluginsMarket = () => {
     try {
       setInstalling(plugin.id);
 
-      // 导入插件
-      await cmd.invoke<PluginMarketProps>("plugin_import", {
-        content: plugin.content.trim(),
-      });
-
       const newPlugin = await ToolPlugin.create({
         id: plugin.id,
         name: plugin.name,
         description: plugin.description,
         version: plugin.version,
       });
+
+      console.log(plugin.content);
 
       await newPlugin.updateContent(plugin.content.trim());
 

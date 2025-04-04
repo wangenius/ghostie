@@ -1,4 +1,3 @@
-import { Agent } from "@/agent/Agent";
 import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -8,10 +7,12 @@ import { Page } from "@/utils/PageRouter";
 import { useEffect, useState } from "react";
 import { TbClock, TbMessageCircle, TbTrash } from "react-icons/tb";
 import { MessageItem } from "../main/components/MessageItem";
-import { CurrentAgent } from "../main/MainView";
-const historyAgent = new Agent();
+import { Agent, AgentStore } from "@/agent/Agent";
+import { CurrentTalkAgent } from "../main/MainView";
+
 export const HistoryPage = () => {
   const history = ChatHistory.use();
+  const agents = AgentStore.use();
   const [current, setCurrent] = useState<string>("");
   const [selectedHistory, setSelectedHistory] = useState<{
     agent?: string;
@@ -22,7 +23,6 @@ export const HistoryPage = () => {
   useEffect(() => {
     if (current) {
       setSelectedHistory(history[current]);
-      historyAgent.switch(selectedHistory?.agent || "");
     }
   }, [history, current]);
 
@@ -109,13 +109,14 @@ export const HistoryPage = () => {
             <div className="p-4">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-medium">
-                  {historyAgent.props.name}
+                  {selectedHistory.agent && agents[selectedHistory.agent]?.name}
                 </h2>
                 <Button
                   onClick={async () => {
                     if (selectedHistory.agent) {
-                      await CurrentAgent.switch(selectedHistory.agent);
-                      CurrentAgent.engine.model.historyMessage.setList(
+                      const agent = await Agent.get(selectedHistory.agent);
+                      CurrentTalkAgent.set(agent, { replace: true });
+                      agent.engine.model.historyMessage.setList(
                         selectedHistory.list,
                       );
                       Page.to("main");

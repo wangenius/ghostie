@@ -110,7 +110,7 @@ export function DrawerSelector({
             >
               <TbSelector className="w-4 h-4" />
               {multiple
-                ? `已选择 ${selectedItems.length} 项`
+                ? `Selected ${selectedItems.length} items`
                 : selectedItems.length > 0
                 ? selectedItems[0].label
                 : placeholder}
@@ -173,7 +173,7 @@ export function DrawerSelector({
             <div className="flex-1 truncate flex gap-1 justify-between">
               <span className="text-xs px-1 rounded-md py-0.5 ">
                 {multiple
-                  ? `已选择 ${selectedItems.length} 项`
+                  ? `Selected ${selectedItems.length} items`
                   : selectedItems.length > 0
                   ? selectedItems[0].label
                   : placeholder}

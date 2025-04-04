@@ -66,6 +66,7 @@ export class Engine {
   async init(agent: Agent) {
     const props = agent.props;
     this.model = ChatModel.create(props.models?.text)
+      .system(props.system)
       .setAgent(props.id || "")
       .setTemperature(props.models?.text?.temperature || 1)
       .setTools(await this.parseTools(props.tools || []))

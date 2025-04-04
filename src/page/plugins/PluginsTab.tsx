@@ -7,7 +7,6 @@ import { PluginProps } from "@/plugin/types";
 import { EditorView } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
 import { motion } from "framer-motion";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cmd } from "@/utils/shell";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 import {
   TbDatabaseCog,
@@ -29,6 +28,7 @@ import {
   TbPlus,
   TbScriptPlus,
   TbUpload,
+  TbCodeAsterisk,
 } from "react-icons/tb";
 import { EnvEditor } from "./EnvEditor";
 import { PluginsMarket } from "./components/PluginsMarket";
@@ -39,8 +39,11 @@ import { PLUGIN_DATABASE_INDEX, ToolPlugin } from "@/plugin/ToolPlugin";
 import { supabase } from "@/utils/supabase";
 import { javascript } from "@codemirror/lang-javascript";
 import { githubDarkInit } from "@uiw/codemirror-theme-github";
-import CodeMirror from "@uiw/react-codemirror";
+import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import { EchoManager } from "echo-state";
+import { format } from "prettier/standalone";
+import * as prettierPluginBabel from "prettier/plugins/babel";
+import * as prettierPluginEstree from "prettier/plugins/estree";
 const CurrentPlugin = new ToolPlugin();
 
 export function PluginsTab() {
@@ -55,6 +58,8 @@ export function PluginsTab() {
   /* 测试结果 */
   const [result, setResult] = useState<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  /* CodeMirror 实例引用 */
+  const editorRef = useRef<ReactCodeMirrorRef>(null);
 
   const props = CurrentPlugin.use();
   const content = CurrentPlugin.useContent();
@@ -72,11 +77,7 @@ export function PluginsTab() {
     try {
       if (!props.id) return;
       setIsSubmitting(true);
-      const result = await cmd.invoke("plugin_execute", {
-        id: props.id,
-        tool: tool,
-        args: testArgs,
-      });
+      const result = await CurrentPlugin.execute(tool, testArgs);
       setResult(result);
     } catch (error) {
       console.error(error);
@@ -86,10 +87,10 @@ export function PluginsTab() {
     }
   };
 
-  const handleAdd = async () => {
+  const handleCreate = useCallback(async () => {
     const plugin = await ToolPlugin.create();
     CurrentPlugin.switch(plugin.props.id);
-  };
+  }, []);
 
   const handleToggleFullscreen = useCallback(() => {
     setIsFullscreen(!isFullscreen);
@@ -132,6 +133,39 @@ export function PluginsTab() {
 
   const handleImportPlugin = useCallback(() => {}, []);
 
+  // 处理代码格式化
+  const handleFormatCode = useCallback(async () => {
+    const view = editorRef.current?.view;
+    const currentContent = view?.state.doc.toString();
+    if (!view || !currentContent) return;
+
+    try {
+      const formattedContent = await format(currentContent, {
+        parser: "babel-ts",
+        plugins: [prettierPluginBabel, prettierPluginEstree as any],
+        semi: true,
+        singleQuote: false,
+        tabWidth: 2,
+      });
+
+      // 更新编辑器内容
+      view.dispatch({
+        changes: {
+          from: 0,
+          to: view.state.doc.length,
+          insert: formattedContent,
+        },
+      });
+    } catch (error) {
+      cmd.message(
+        `Failed to format code: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        "error",
+      );
+    }
+  }, []);
+
   return (
     <PreferenceLayout>
       <PreferenceList
@@ -151,7 +185,7 @@ export function PluginsTab() {
         }
         right={
           <>
-            <Button className="flex-1" onClick={handleAdd}>
+            <Button className="flex-1" onClick={handleCreate}>
               <TbScriptPlus className="w-4 h-4" />
               New
             </Button>
@@ -176,7 +210,7 @@ export function PluginsTab() {
             </DropdownMenu>
           </>
         }
-        tips="Plugin supported: You can extend the function by writing a TypeScript plugin. Please refer to the development documentation for more information."
+        tips="Extend the tools by writing a plugin. Refer to the Documentation for more infos."
         items={plugins.map((plugin) => ({
           id: plugin.id,
           title: plugin.name || "Unnamed Plugin",
@@ -255,6 +289,14 @@ export function PluginsTab() {
                 >
                   <TbPlayerPlay className="w-4 h-4" />
                 </Button>
+                <Button
+                  onClick={handleFormatCode}
+                  variant="ghost"
+                  size="icon"
+                  title="Format Code"
+                >
+                  <TbCodeAsterisk className="w-4 h-4" />
+                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button size="icon">
@@ -273,6 +315,7 @@ export function PluginsTab() {
           }
         >
           <CodeMirror
+            ref={editorRef}
             className={cn("h-full overflow-y-auto", {
               "h-auto": isFullscreen,
             })}

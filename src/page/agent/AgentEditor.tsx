@@ -1,5 +1,5 @@
+import { Agent, AgentStore } from "@/agent/Agent";
 import { EngineManager } from "@/agent/engine/EngineManager";
-import { TOOL_NAME_SPLIT } from "@/assets/const";
 import { dialog } from "@/components/custom/DialogModal";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { Button } from "@/components/ui/button";
@@ -14,30 +14,18 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Knowledge, KnowledgeMeta } from "@/knowledge/Knowledge";
 import { ChatModelManager } from "@/model/text/ChatModelManager";
-import { PluginProps, ToolProps } from "@/plugin/types";
 import { supabase } from "@/utils/supabase";
 import { Workflow } from "@/workflow/execute/Workflow";
 import { cmd } from "@utils/shell";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { TbUpload } from "react-icons/tb";
-import { CurrentAgent } from "./AgentsTab";
 
-export const AgentEditor = () => {
-  const [plugins, setPlugins] = useState<Record<string, PluginProps>>({});
+export const AgentEditor = ({ agent }: { agent: Agent }) => {
   const { list } = Knowledge.useList();
   const workflows = Workflow.list.use();
-  const props = CurrentAgent.use();
+  const props = AgentStore.use((selector) => selector[agent.props.id]);
   const engines = EngineManager.getEngines();
-
-  const loadPlugins = useCallback(async () => {
-    const tools = await cmd.invoke<Record<string, PluginProps>>("plugins_list");
-    setPlugins(tools);
-  }, []);
-
-  useEffect(() => {
-    loadPlugins();
-  }, [loadPlugins]);
 
   // 上传机器人
   const handleUpload = useCallback(async () => {
@@ -72,7 +60,7 @@ export const AgentEditor = () => {
     });
   }, [props]);
 
-  if (!props.id) return null;
+  if (!props) return null;
 
   return (
     <div key={props.id} className="flex-1 overflow-y-auto">
@@ -83,7 +71,7 @@ export const AgentEditor = () => {
             type="text"
             defaultValue={props?.name || ""}
             onChange={(e) =>
-              CurrentAgent.update({
+              agent.update({
                 name: e.target.value,
               })
             }
@@ -118,16 +106,16 @@ export const AgentEditor = () => {
               description: engine.description,
             }))}
             onSelect={([value]) =>
-              CurrentAgent.update({
+              agent.update({
                 engine: value,
               })
             }
           />
           <AutoResizeTextarea
-            defaultValue={props.description || ""}
+            defaultValue={props.description}
             key={props.id}
             onValueChange={(e) =>
-              CurrentAgent.update({
+              agent.update({
                 description: e.target.value,
               })
             }
@@ -160,7 +148,7 @@ export const AgentEditor = () => {
                 },
               )}
               onSelect={([value]) =>
-                CurrentAgent.update({
+                agent.update({
                   models: {
                     ...props.models,
                     text: value,
@@ -185,7 +173,7 @@ export const AgentEditor = () => {
                 step={0.1}
                 className="px-1"
                 onValueChange={(value) =>
-                  CurrentAgent.update({
+                  agent.update({
                     models: {
                       ...props.models,
                       text: {
@@ -206,7 +194,7 @@ export const AgentEditor = () => {
             <AutoResizeTextarea
               defaultValue={props.system}
               onValueChange={(e) =>
-                CurrentAgent.update({
+                agent.update({
                   system: e.target.value,
                 })
               }
@@ -219,7 +207,7 @@ export const AgentEditor = () => {
           <section className="space-y-4">
             <h3 className="text-lg font-medium">Function Extensions</h3>
             <div className="space-y-4">
-              <DrawerSelector
+              {/* <DrawerSelector
                 title="Select Plugin"
                 value={props.tools || []}
                 items={Object.values(plugins).flatMap((plugin: PluginProps) =>
@@ -237,7 +225,7 @@ export const AgentEditor = () => {
                 }
                 multiple
                 placeholder="Select Plugin..."
-              />
+              /> */}
 
               <DrawerSelector
                 title="Select Workflow"
@@ -248,7 +236,7 @@ export const AgentEditor = () => {
                   description: workflow.description,
                 }))}
                 onSelect={(value) =>
-                  CurrentAgent.update({
+                  agent.update({
                     workflows: value,
                   })
                 }
@@ -264,7 +252,7 @@ export const AgentEditor = () => {
                   value: k.id,
                 }))}
                 onSelect={(value) =>
-                  CurrentAgent.update({
+                  agent.update({
                     knowledges: value,
                   })
                 }

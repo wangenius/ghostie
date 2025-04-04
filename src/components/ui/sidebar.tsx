@@ -151,7 +151,7 @@ export const SidebarContainer = ({
           className={cn(
             "absolute z-50",
             isFullyCollapsed ? "left-0" : "-right-4",
-            "agenttom-[56px]",
+            "bottom-[56px]",
           )}
         >
           <button

@@ -124,52 +124,12 @@ pub async fn deno_check() -> Result<HashMap<String, String>> {
     Ok(result)
 }
 
-/// 导入插件
-#[tauri::command]
-pub async fn plugin_import(content: String) -> Result<Plugin> {
-    let manager = PLUGIN_MANAGER.lock().await;
-    let manager = manager.as_ref().ok_or_else(|| PluginError::Plugin("插件管理器未初始化".to_string()))?;
-    manager.import(content).await
-}
-
-/// 获取插件列表
-#[tauri::command]
-pub async fn plugins_list() -> Result<HashMap<String, Plugin>> {
-    let manager = PLUGIN_MANAGER.lock().await;
-    let manager = manager.as_ref().ok_or_else(|| PluginError::Plugin("插件管理器未初始化".to_string()))?;
-    manager.list().await
-}
-
-/// 获取插件
-#[tauri::command]
-pub async fn plugin_get(id: String) -> Result<Option<PluginWithContent>> {
-    let manager = PLUGIN_MANAGER.lock().await;
-    let manager = manager.as_ref().ok_or_else(|| PluginError::Plugin("插件管理器未初始化".to_string()))?;
-    manager.get(&id).await
-}
-
-/// 删除插件
-#[tauri::command]
-pub async fn plugin_remove(id: String) -> Result<()> {
-    let manager = PLUGIN_MANAGER.lock().await;
-    let manager = manager.as_ref().ok_or_else(|| PluginError::Plugin("插件管理器未初始化".to_string()))?;
-    manager.remove(&id).await
-}
-
-/// 更新插件
-#[tauri::command]
-pub async fn plugin_update(id: String, content: String) -> Result<Plugin> {
-    let manager = PLUGIN_MANAGER.lock().await;
-    let manager = manager.as_ref().ok_or_else(|| PluginError::Plugin("插件管理器未初始化".to_string()))?;
-    manager.update(&id, content).await
-}
-
 /// 执行插件工具
 #[tauri::command]
-pub async fn plugin_execute(id: String, tool: String, args: Value) -> Result<Value> {
+pub async fn plugin_execute(content: String, tool: String, args: Value) -> Result<Value> {
     let manager = PLUGIN_MANAGER.lock().await;
     let manager = manager.as_ref().ok_or_else(|| PluginError::Plugin("插件管理器未初始化".to_string()))?;
-    manager.execute(&id, &tool, args).await
+    manager.execute(&content, &tool, args).await
 }
 
 /// 获取环境变量列表

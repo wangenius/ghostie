@@ -347,12 +347,7 @@ const WorkflowGraph = memo(() => {
         connectOnClick
       >
         <Background gap={25} />
-        <FlowControls
-          position="agenttom-center"
-          showZoom
-          showFitView
-          showReset
-        />
+        <FlowControls position="bottom-center" showZoom showFitView showReset />
         <DragToolbar position="left" />
       </ReactFlow>
     </div>

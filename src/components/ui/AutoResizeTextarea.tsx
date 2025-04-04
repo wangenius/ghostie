@@ -86,8 +86,8 @@ const AutoResizeTextarea = forwardRef<
         const style = window.getComputedStyle(textareaRef.current.dom);
         const lineHeight = parseInt(style.lineHeight, 10);
         const paddingTop = parseInt(style.paddingTop, 10);
-        const paddingAgenttom = parseInt(style.paddingAgenttom, 10);
-        setMinHeight(lineHeight * minRow + paddingTop + paddingAgenttom);
+        const paddingBottom = parseInt(style.paddingBottom, 10);
+        setMinHeight(lineHeight * minRow + paddingTop + paddingBottom);
       }
     }, [minRow]);
 
@@ -128,7 +128,7 @@ const AutoResizeTextarea = forwardRef<
             resize: "none",
             overflow: "hidden",
             minHeight: `${minHeight}px`,
-            paddingAgenttom: footer ? `${footerHeight + 12}px` : undefined,
+            paddingBottom: footer ? `${footerHeight + 12}px` : undefined,
           }}
           variant={variant}
           className={cn(
@@ -141,7 +141,7 @@ const AutoResizeTextarea = forwardRef<
           {...props}
         />
         {footer && (
-          <div ref={footerRef} className="absolute agenttom-0 left-0 right-0">
+          <div ref={footerRef} className="absolute bottom-0 left-0 right-0">
             {footer}
           </div>
         )}
