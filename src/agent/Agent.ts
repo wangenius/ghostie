@@ -69,11 +69,7 @@ export class Agent {
 
   /* 删除机器人 */
   static async delete(id: string) {
-    /* 删除状态 */
-    Echo.get<AgentProps>({
-      database: AGENT_DATABASE,
-      name: id,
-    }).discard();
+    AgentStore.delete(id);
   }
 
   /* 机器人对话 */

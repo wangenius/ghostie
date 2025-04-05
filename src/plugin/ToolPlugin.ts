@@ -13,39 +13,19 @@ export const DEFAULT_PLUGIN: PluginProps = {
   tools: [],
   user_id: "",
 };
-/* 插件index */
 export const PLUGIN_DATABASE_INDEX = "plugins_index";
-/* 插件内容 */
 export const PLUGIN_DATABASE_CONTENT = "plugins_content";
 
+export const PluginStore = new Echo<Record<string, PluginProps>>({}).indexed({
+  database: PLUGIN_DATABASE_INDEX,
+  name: "plugins",
+});
+
 export class ToolPlugin {
-  private store = new Echo<PluginProps>(DEFAULT_PLUGIN);
-  private content = new Echo<string>("");
   props: PluginProps = DEFAULT_PLUGIN;
   /** 构造函数 */
   constructor(plugin?: Partial<PluginProps>) {
     this.props = { ...DEFAULT_PLUGIN, ...plugin };
-    if (plugin?.id) {
-    }
-  }
-
-  use = this.store.use.bind(this.store);
-  useContent = this.content.use.bind(this.content);
-
-  /** 切换插件
-   * 将当前实例的代表 的插件 切换为 id 的插件
-   */
-  async switch(id: string): Promise<ToolPlugin> {
-    this.store.indexed({
-      database: PLUGIN_DATABASE_INDEX,
-      name: id,
-    });
-    this.props = await this.store.getCurrent();
-    this.content.indexed({
-      database: PLUGIN_DATABASE_CONTENT,
-      name: id,
-    });
-    return this;
   }
 
   /** 创建插件
@@ -56,18 +36,10 @@ export class ToolPlugin {
     const id = gen.id();
     /* 创建代理 */
     const plugin = new ToolPlugin({ ...config, id });
-    await plugin.store
-      .indexed({
-        database: PLUGIN_DATABASE_INDEX,
-        name: id,
-      })
-      .ready(plugin.props, { replace: true });
-    await plugin.content
-      .indexed({
-        database: PLUGIN_DATABASE_CONTENT,
-        name: id,
-      })
-      .ready();
+    /* 保存插件 */
+    PluginStore.set({
+      [id]: plugin.props,
+    });
     /* 返回代理 */
     return plugin;
   }
@@ -77,29 +49,12 @@ export class ToolPlugin {
    */
   static async get(id: string): Promise<ToolPlugin> {
     /* 获取插件 */
-    const plugin = Echo.get<PluginProps>({
-      database: PLUGIN_DATABASE_INDEX,
-      name: id,
-    });
-    /* 等待插件 */
-    const current = await plugin.getCurrent();
+    const plugin = PluginStore.current[id];
     /* 如果插件不存在 */
-    if (!current) {
+    if (!plugin) {
       throw new Error("Plugin not found");
     }
-    const plug = new ToolPlugin(current);
-    await plug.store
-      .indexed({
-        database: PLUGIN_DATABASE_INDEX,
-        name: current.id,
-      })
-      .ready(current, { replace: true });
-    await plug.content
-      .indexed({
-        database: PLUGIN_DATABASE_CONTENT,
-        name: current.id,
-      })
-      .ready();
+    const plug = new ToolPlugin(plugin);
     /* 返回插件 */
     return plug;
   }
@@ -113,7 +68,9 @@ export class ToolPlugin {
     }
     /* 实例 */
     this.props = { ...this.props, ...data };
-    this.store.set(this.props);
+    PluginStore.set({
+      [this.props.id]: this.props,
+    });
     return this;
   }
 
@@ -148,7 +105,10 @@ export class ToolPlugin {
     }
 
     // 保存内容
-    this.content.set(content);
+    Echo.get<string>({
+      database: PLUGIN_DATABASE_CONTENT,
+      name: this.props.id,
+    }).ready(content);
 
     // 处理插件内容
     const pluginInfo = await this.processContent(content);
@@ -170,26 +130,12 @@ export class ToolPlugin {
    * 删除一个插件
    */
   static async delete(id: string) {
-    /* 删除状态 */
-    await Echo.get<PluginProps>({
-      database: PLUGIN_DATABASE_INDEX,
-      name: id,
-    }).discard();
+    PluginStore.delete(id);
     /* 删除内容 */
     await Echo.get<string>({
       database: PLUGIN_DATABASE_CONTENT,
       name: id,
     }).discard();
-  }
-
-  /** 关闭插件
-   * 关闭一个插件, 变成临时数据并清空
-   */
-  close() {
-    /* 临时 */
-    this.store.temporary().reset();
-    /* 临时 */
-    this.content.temporary().reset();
   }
 
   /** 执行插件
@@ -198,7 +144,10 @@ export class ToolPlugin {
   async execute(tool: string, args: Record<string, unknown>) {
     try {
       const result = await cmd.invoke("plugin_execute", {
-        content: await this.content.getCurrent(),
+        content: await Echo.get<string>({
+          database: PLUGIN_DATABASE_CONTENT,
+          name: this.props.id,
+        }).getCurrent(),
         tool: tool,
         args: args,
       });

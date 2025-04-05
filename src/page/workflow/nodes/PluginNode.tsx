@@ -1,17 +1,15 @@
+import { TOOL_NAME_SPLIT } from "@/assets/const";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Input } from "@/components/ui/input";
-import { ToolPlugin } from "@/plugin/ToolPlugin";
-import { cmd } from "@/utils/shell";
+import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { NodeProps } from "reactflow";
-import { useFlow } from "../context/FlowContext";
 import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
+import { useFlow } from "../context/FlowContext";
 import { NodeState, PluginNodeConfig, WorkflowNode } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
-import { EchoManager } from "echo-state";
-import { PLUGIN_DATABASE_INDEX } from "@/plugin/ToolPlugin";
 const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
-  const plugins = EchoManager.use<ToolPlugin>(PLUGIN_DATABASE_INDEX);
+  const plugins = PluginStore.use();
   const { updateNodeData } = useFlow();
   const [localInputs, setLocalInputs] = useState<Record<string, string>>({});
 
@@ -32,7 +30,7 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
 
   const handlePluginChange = useCallback(
     (value: string) => {
-      const [plugin, tool] = value.split("::");
+      const [plugin, tool] = value.split(TOOL_NAME_SPLIT);
 
       updateNodeData<PluginNodeConfig>(props.id, {
         plugin,
@@ -50,7 +48,6 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
         ...prev,
         [key]: value,
       }));
-
       // 使用setTimeout来模拟防抖，300ms后更新父组件状态
       const timer = setTimeout(() => {
         updateNodeData<PluginNodeConfig>(props.id, (data) => ({
@@ -70,10 +67,8 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
     if (!props.data.plugin || !props.data.tool) return null;
 
     const toolParameters =
-      plugins
-        .find((p) => p.props.id === props.data.plugin)
-        ?.props.tools.find((t) => t.name === props.data.tool)?.parameters
-        ?.properties || {};
+      plugins[props.data.plugin]?.tools.find((t) => t.name === props.data.tool)
+        ?.parameters?.properties || {};
 
     return Object.entries(toolParameters).map(([key, prop]) => (
       <div key={key} className="flex flex-col gap-1">
@@ -102,21 +97,21 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
     <NodePortal {...props} left={1} right={1} variant="plugin" title="Plugin">
       <DrawerSelector
         panelTitle="Select Plugin"
-        value={[props.data.plugin + "::" + props.data.tool]}
+        value={[props.data.plugin + TOOL_NAME_SPLIT + props.data.tool]}
         items={Object.values(plugins)
           .map((plugin) => {
-            return plugin.props.tools.map((tool) => ({
+            return plugin.tools.map((tool) => ({
               label: tool.name,
-              value: plugin.props.id + "::" + tool.name,
+              value: plugin.id + TOOL_NAME_SPLIT + tool.name,
               description: tool.description,
-              type: plugin.props.name,
+              type: plugin.name,
             }));
           })
           .flat()}
         onSelect={(value) => handlePluginChange(value[0])}
       />
 
-      {plugins.find((p) => p.props.id === props.data.plugin) && (
+      {plugins[props.data.plugin] && (
         <div className="flex flex-col gap-2">
           <div className="text-xs font-medium">Parameter Settings</div>
           {parameterItems}
@@ -169,11 +164,9 @@ export class PluginNodeExecutor extends NodeExecutor {
         {},
       );
 
-      const pluginResult = await cmd.invoke("plugin_execute", {
-        id: plugin.props.id,
-        tool: pluginConfig.tool,
-        args: processedArgs,
-      });
+      const pluginResult = await (
+        await ToolPlugin.get(plugin.props.id)
+      ).execute(pluginConfig.tool, processedArgs);
 
       if (!pluginResult) {
         throw new Error("Plugin execution result is empty");

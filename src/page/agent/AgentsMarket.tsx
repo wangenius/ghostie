@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { TbLoader2, TbTrash } from "react-icons/tb";
 import { UserMananger } from "@/settings/User";
 import { Agent } from "../../agent/Agent";
+import { toast } from "sonner";
 
 export const AgentsMarket = () => {
   const [agents, setAgents] = useState<AgentMarketProps[]>([]);
@@ -46,16 +47,10 @@ export const AgentsMarket = () => {
         name: agent.name,
         system: agent.system,
       });
-
-      cmd.message(`Successfully installed agent: ${agent.name}`, "success");
+      toast.success(`Successfully installed agent: ${agent.name}`);
     } catch (error) {
       console.error("Install agent failed:", error);
-      cmd.message(
-        `Install agent failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-        "error",
-      );
+      toast.error(`Install agent failed: ${error}`);
     } finally {
       setInstalling(null);
     }

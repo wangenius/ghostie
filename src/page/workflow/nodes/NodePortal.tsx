@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import CustomHandle from "../components/CustomHandle";
 import { useFlow } from "../context/FlowContext";
 import { NODE_TYPES, NodeType } from "../types/nodes";
-import { ContextWorkflow } from "../../../workflow/execute/Workflow";
+import { CurrentWorkflow } from "@/workflow/Workflow";
 type NodeVariant = NodeType;
 
 interface BaseNodeProps extends NodeProps {
@@ -50,17 +50,19 @@ const NodePortalComponent = ({
   title,
 }: BaseNodeProps) => {
   const updateNodeInternals = useUpdateNodeInternals();
-  const workflowState = ContextWorkflow.executor.use();
-  const workflowId = ContextWorkflow.use((selector) => selector.meta.id);
+  const workflowState = CurrentWorkflow.use();
+  const workflowId = CurrentWorkflow.use((selector) => selector.meta.id);
   const { onNodesChange } = useFlow();
 
   useEffect(() => {
     updateNodeInternals(id);
   }, [id, data, left, right, updateNodeInternals]);
 
-  const state = workflowState[id];
+  const { state } = workflowState.executor.use();
 
-  useEffect(() => {}, [workflowState]);
+  useEffect(() => {
+    console.log("state", state);
+  }, [state]);
 
   const handleCopyParameter = useCallback((nodeId: string) => {
     navigator.clipboard.writeText(nodeId);

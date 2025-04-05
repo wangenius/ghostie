@@ -10,29 +10,23 @@ export interface ParamHistoryState {
 }
 
 export class ParamHistory {
-  private static store = new Echo<ParamHistoryState>({}).indexed({
-    database: "workflow_params_history",
+  private static store = new Echo<ParamHistoryState>({}).localStorage({
     name: "workflow_params_history",
   });
-
   static use = ParamHistory.store.use.bind(ParamHistory.store);
 
   static async init(): Promise<void> {
     await this.store.ready();
   }
 
-  static getHistory(workflowId: string): ParamHistoryItem[] {
-    return this.store.current[workflowId] || [];
-  }
-
   static addHistory(workflowId: string, values: Record<string, any>) {
-    const history = this.getHistory(workflowId);
+    const history = this.store.current[workflowId] || [];
     const newHistory = [
       {
         timestamp: new Date().toISOString(),
         values,
       },
-      ...history.slice(0, 9), // 只保留最近10条记录
+      ...history.slice(0, 9),
     ];
 
     this.store.set({

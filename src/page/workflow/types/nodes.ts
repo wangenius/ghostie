@@ -141,25 +141,23 @@ export interface WorkflowMeta {
   /* 工作流描述 */
   description: string;
   /* 创建时间 */
-  createdAt: string;
+  createdAt: number;
   /* 更新时间 */
-  updatedAt: string;
+  updatedAt: number;
 }
 
 /* 工作流 */
-export interface WorkflowProps {
-  meta: WorkflowMeta;
-  body: {
-    /* 工作流节点 */
-    nodes: Record<string, WorkflowNode>;
-    /* 工作流边 */
-    edges: Record<string, WorkflowEdge>;
-    /* 工作流视图 */
-    viewport: {
-      x: number;
-      y: number;
-      zoom: number;
-    };
+export interface WorkflowBody {
+  id: string;
+  /* 工作流节点 */
+  nodes: Record<string, WorkflowNode>;
+  /* 工作流边 */
+  edges: Record<string, WorkflowEdge>;
+  /* 工作流视图 */
+  viewport: {
+    x: number;
+    y: number;
+    zoom: number;
   };
 }
 /* 节点动作，用于记录节点执行历史 */
@@ -293,21 +291,10 @@ export type NodeConfig =
   | IteratorNodeConfig
   | MessageNodeConfig;
 
-export const INITIAL_WORKFLOW: WorkflowProps = {
-  meta: {
-    id: "",
-    name: "",
-    description: "",
-    createdAt: "",
-    updatedAt: "",
-  },
-  body: {
-    nodes: {},
-    edges: {},
-    viewport: {
-      x: 0,
-      y: 0,
-      zoom: 1,
-    },
-  },
+export const INITIAL_WORKFLOW: WorkflowMeta = {
+  id: "",
+  name: "",
+  description: "",
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
 };

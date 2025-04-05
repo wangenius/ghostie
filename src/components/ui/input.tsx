@@ -13,6 +13,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <input
         type={type}
+        data-vaul-no-drag
         placeholder={"输入"}
         autoComplete="off"
         className={cn(

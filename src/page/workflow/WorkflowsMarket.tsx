@@ -4,7 +4,9 @@ import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
 import { TbLoader2, TbTrash } from "react-icons/tb";
 import { UserMananger } from "@/settings/User";
-import { Workflow } from "@/workflow/execute/Workflow";
+import { Workflow } from "@/workflow/Workflow";
+import { Echo } from "echo-state";
+import { WORKFLOW_BODY_DATABASE } from "@/workflow/const";
 
 interface WorkflowMarketProps {
   id: string;
@@ -61,7 +63,12 @@ export const WorkflowsMarket = () => {
 
       // 更新工作流主体数据
       if (workflow.data && workflow.data.body) {
-        await newWorkflow.updateBody(workflow.data.body);
+        new Echo(workflow.data.body)
+          .indexed({
+            database: WORKFLOW_BODY_DATABASE,
+            name: newWorkflow.meta.id,
+          })
+          .ready();
       }
 
       cmd.message(`成功安装工作流: ${workflow.name}`, "success");

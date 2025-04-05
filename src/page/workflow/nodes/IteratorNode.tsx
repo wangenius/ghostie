@@ -4,13 +4,14 @@ import { memo, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
 import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
-import { ContextWorkflow, Workflow } from "../../../workflow/execute/Workflow";
+import { CurrentWorkflow } from "@/workflow/Workflow";
 import { IteratorNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
+import { Workflow, WorkflowStore } from "@/workflow/Workflow";
 const IteratorNodeComponent = (props: NodeProps<IteratorNodeConfig>) => {
   const [content, setContent] = useState(props.data.target || "");
-  const workflows = Workflow.list.use();
-  const id = ContextWorkflow.use((selector) => selector.meta.id);
+  const workflows = WorkflowStore.use();
+  const id = CurrentWorkflow.use((selector) => selector.meta.id);
   const { updateNodeData } = useFlow();
   const handleTargetChange = (value: string) => {
     setContent(value);
@@ -66,7 +67,7 @@ export class IteratorNodeExecutor extends NodeExecutor {
       inputs: inputs || {},
     });
     const { target, action } = this.node.data as IteratorNodeConfig;
-    const workflow = await Workflow.get(action);
+    const workflow = Workflow.get(action);
 
     let content = this.parseTextFromInputs(target, inputs);
     content = `{ "result": ${content} }`;
@@ -109,9 +110,7 @@ export class IteratorNodeExecutor extends NodeExecutor {
           error: "Iteration item must be an object type",
         };
       }
-      const result = await (
-        await Workflow.get(await workflow.id())
-      ).execute(item);
+      const result = await workflow.execute(item);
 
       if (result.success) {
         body.collected.push(result.data);

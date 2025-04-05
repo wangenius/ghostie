@@ -16,6 +16,7 @@ import {
 } from "react-icons/tb";
 import { SettingsManager } from "../../../settings/SettingsManager";
 import { SettingItem } from "./SettingItem";
+import { DrawerSelector } from "@/components/ui/drawer-selector";
 
 export function ThemeSettings() {
   const settings = SettingsManager.use();
@@ -65,16 +66,14 @@ export function FontSettings() {
       description={`Current font: ${settings.font.label}`}
       action={
         <div className="flex gap-1">
-          {fonts.map((font) => (
-            <Button
-              key={font.name}
-              size="sm"
-              variant={settings.font.name === font.name ? "secondary" : "ghost"}
-              onClick={() => SettingsManager.setFont(font)}
-            >
-              {font.label}
-            </Button>
-          ))}
+          <DrawerSelector
+            value={[settings.font]}
+            items={fonts.map((font) => ({
+              label: font.label,
+              value: font,
+            }))}
+            onSelect={(value) => SettingsManager.setFont(value[0])}
+          />
         </div>
       }
     />

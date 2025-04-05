@@ -1,5 +1,5 @@
 import { Echo } from "echo-state";
-import { Workflow } from "../execute/Workflow";
+import { Workflow } from "./Workflow";
 import { Tickie } from "tickie";
 
 /* 任务调度器 */

@@ -3,12 +3,12 @@ import { memo, useMemo } from "react";
 import { TbCircleX } from "react-icons/tb";
 import { NodeProps } from "reactflow";
 import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
-import { ContextWorkflow } from "../../../workflow/execute/Workflow";
+import { CurrentWorkflow } from "@/workflow/Workflow";
 import { PanelNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 
 const PanelNodeComponent = (props: NodeProps<PanelNodeConfig>) => {
-  const workflow = ContextWorkflow;
+  const workflow = CurrentWorkflow.use();
   const workflowState = workflow.executor.use((selector) => selector[props.id]);
 
   const renderOutputs = useMemo(() => {

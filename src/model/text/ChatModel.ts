@@ -2,6 +2,7 @@
  * 该模型依赖于工具模块。
  */
 import { AgentModelProps } from "@/agent/types/agent";
+import { TOOL_NAME_SPLIT } from "@/assets/const";
 import {
   ChatModelRequestBody,
   ChatModelResponse,
@@ -11,16 +12,16 @@ import {
   ToolCallReply,
   ToolRequestBody,
 } from "@/model/types/chatModel";
+import { StartNodeConfig, WorkflowBody } from "@/page/workflow/types/nodes";
 import { ToolProps } from "@/plugin/types";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
-import { Workflow } from "@/workflow/execute/Workflow";
-import { StartNodeConfig, WorkflowProps } from "@/page/workflow/types/nodes";
+import { Workflow, WorkflowStore } from "@/workflow/Workflow";
 import { Echo } from "echo-state";
-import { TOOL_NAME_SPLIT } from "@/assets/const";
 import { Knowledge } from "../../knowledge/Knowledge";
 import { ChatModelManager } from "./ChatModelManager";
 import { HistoryMessage } from "./HistoryMessage";
+import { WORKFLOW_BODY_DATABASE } from "@/workflow/const";
 
 /** 请求配置 */
 interface RequestConfig {
@@ -109,7 +110,7 @@ export class ChatModel {
   public async setWorkflows(workflows: string[]): Promise<this> {
     if (workflows.length) {
       /* 获取工作流 */
-      const flows = await Workflow.list.getCurrent();
+      const flows = await WorkflowStore.getCurrent();
       workflows.forEach(async (workflow) => {
         const flow = flows[workflow];
         if (!flow) return;
@@ -117,14 +118,14 @@ export class ChatModel {
           this.workflows = [];
         }
 
-        const instance = new Echo<WorkflowProps | null>(null).indexed({
-          database: "workflows",
+        const instance = Echo.get<WorkflowBody>({
+          database: WORKFLOW_BODY_DATABASE,
           name: workflow,
         });
 
         const body = await instance.getCurrent();
 
-        const startNode = Object.values(body?.body.nodes || {}).find(
+        const startNode = Object.values(body?.nodes || {}).find(
           (node) => node.type === "start",
         );
         if (!startNode) return;

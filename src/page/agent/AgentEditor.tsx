@@ -15,7 +15,7 @@ import { Slider } from "@/components/ui/slider";
 import { Knowledge, KnowledgeMeta } from "@/knowledge/Knowledge";
 import { ChatModelManager } from "@/model/text/ChatModelManager";
 import { supabase } from "@/utils/supabase";
-import { Workflow } from "@/workflow/execute/Workflow";
+import { WorkflowStore } from "@/workflow/Workflow";
 import { cmd } from "@utils/shell";
 import { useCallback } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
@@ -23,7 +23,7 @@ import { TbUpload } from "react-icons/tb";
 
 export const AgentEditor = ({ agent }: { agent: Agent }) => {
   const { list } = Knowledge.useList();
-  const workflows = Workflow.list.use();
+  const workflows = WorkflowStore.use();
   const props = AgentStore.use((selector) => selector[agent.props.id]);
   const engines = EngineManager.getEngines();
 

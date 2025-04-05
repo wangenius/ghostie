@@ -11,17 +11,27 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 import { TbDownload, TbPlus, TbShape3 } from "react-icons/tb";
-import { WorkflowsMarket } from "./components/WorkflowsMarket";
-import { ContextWorkflow, Workflow } from "../../workflow/execute/Workflow";
+import {
+  CurrentWorkflow,
+  Workflow,
+  WorkflowStore,
+} from "../../workflow/Workflow";
+import { WorkflowsMarket } from "./WorkflowsMarket";
 import { WorkflowEditor } from "./WorkflowEditor";
+import { CurrentEditWorkflow } from "./context/FlowContext";
+import { WORKFLOW_BODY_DATABASE } from "@/workflow/const";
 
 /* 工作流列表 */
 export default function WorkflowsTab() {
   /* 工作流列表 */
-  const workflows = Workflow.list.use();
-  const contextWorkflowId = ContextWorkflow.use((selector) => selector.meta.id);
+  const workflows = WorkflowStore.use();
+  const contextWorkflowId = CurrentWorkflow.use((selector) => selector.meta.id);
   const handleWorkflowSelect = (id: string) => {
-    ContextWorkflow.switch(id);
+    CurrentWorkflow.set(Workflow.get(id), { replace: true });
+    CurrentEditWorkflow.indexed({
+      database: WORKFLOW_BODY_DATABASE,
+      name: id,
+    });
   };
 
   const handleCreateWorkflow = async () => {
@@ -85,7 +95,7 @@ export default function WorkflowsTab() {
               onOk: () => {
                 Workflow.delete(id);
                 if (contextWorkflowId === id) {
-                  ContextWorkflow.close();
+                  CurrentWorkflow.set(new Workflow());
                 }
               },
             });

@@ -2,11 +2,6 @@ import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { PluginProps } from "@/plugin/types";
-import { EditorView } from "@codemirror/view";
-import { tags as t } from "@lezer/highlight";
-import { motion } from "framer-motion";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,10 +9,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import { cmd } from "@/utils/shell";
-import { useCallback, useState, useRef } from "react";
+import { EditorView } from "@codemirror/view";
+import { tags as t } from "@lezer/highlight";
+import { motion } from "framer-motion";
+import { useCallback, useRef, useState } from "react";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 import {
+  TbCodeAsterisk,
   TbDatabaseCog,
   TbDots,
   TbFileText,
@@ -28,23 +28,36 @@ import {
   TbPlus,
   TbScriptPlus,
   TbUpload,
-  TbCodeAsterisk,
 } from "react-icons/tb";
 import { EnvEditor } from "./EnvEditor";
 import { PluginsMarket } from "./components/PluginsMarket";
 import { TestDrawer } from "./components/TestDrawer";
 
 import { dialog } from "@/components/custom/DialogModal";
-import { PLUGIN_DATABASE_INDEX, ToolPlugin } from "@/plugin/ToolPlugin";
+import {
+  PLUGIN_DATABASE_CONTENT,
+  PluginStore,
+  ToolPlugin,
+} from "@/plugin/ToolPlugin";
 import { supabase } from "@/utils/supabase";
 import { javascript } from "@codemirror/lang-javascript";
 import { githubDarkInit } from "@uiw/codemirror-theme-github";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
-import { EchoManager } from "echo-state";
-import { format } from "prettier/standalone";
+import { Echo } from "echo-state";
 import * as prettierPluginBabel from "prettier/plugins/babel";
 import * as prettierPluginEstree from "prettier/plugins/estree";
-const CurrentPlugin = new ToolPlugin();
+import { format } from "prettier/standalone";
+
+const CurrentPlugin = new Echo<ToolPlugin>(new ToolPlugin());
+const PluginContent = new Echo<string>(
+  `/**
+* @name 请在此处编写插件名称
+* @description 请在此处编写插件描述
+*/`,
+).indexed({
+  database: PLUGIN_DATABASE_CONTENT,
+  name: "",
+});
 
 export function PluginsTab() {
   /* 是否提交中 */
@@ -60,9 +73,10 @@ export function PluginsTab() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   /* CodeMirror 实例引用 */
   const editorRef = useRef<ReactCodeMirrorRef>(null);
-
-  const props = CurrentPlugin.use();
-  const content = CurrentPlugin.useContent();
+  const plugin = CurrentPlugin.use();
+  const plugins = PluginStore.use();
+  const props = plugins[plugin.props.id];
+  const content = PluginContent.use();
 
   // 处理测试工具变化
   const handleTestToolChange = (value: string) => {
@@ -70,14 +84,12 @@ export function PluginsTab() {
     setResult(null); // 重置测试结果
   };
 
-  const plugins = EchoManager.use<PluginProps>(PLUGIN_DATABASE_INDEX);
-
   // 测试插件
   const handleTest = async (tool: string) => {
     try {
       if (!props.id) return;
       setIsSubmitting(true);
-      const result = await CurrentPlugin.execute(tool, testArgs);
+      const result = await plugin.execute(tool, testArgs);
       setResult(result);
     } catch (error) {
       console.error(error);
@@ -89,7 +101,11 @@ export function PluginsTab() {
 
   const handleCreate = useCallback(async () => {
     const plugin = await ToolPlugin.create();
-    CurrentPlugin.switch(plugin.props.id);
+    CurrentPlugin.set(plugin, { replace: true });
+    PluginContent.indexed({
+      database: PLUGIN_DATABASE_CONTENT,
+      name: plugin.props.id,
+    });
   }, []);
 
   const handleToggleFullscreen = useCallback(() => {
@@ -129,7 +145,7 @@ export function PluginsTab() {
         }
       },
     });
-  }, [props.id, content]);
+  }, [props, content]);
 
   const handleImportPlugin = useCallback(() => {}, []);
 
@@ -211,18 +227,22 @@ export function PluginsTab() {
           </>
         }
         tips="Extend the tools by writing a plugin. Refer to the Documentation for more infos."
-        items={plugins.map((plugin) => ({
+        items={Object.values(plugins).map((plugin) => ({
           id: plugin.id,
           title: plugin.name || "Unnamed Plugin",
           description: plugin.description || "No description",
           onClick: () => {
-            CurrentPlugin.switch(plugin.id);
+            CurrentPlugin.set(new ToolPlugin(plugin), { replace: true });
+            PluginContent.indexed({
+              database: PLUGIN_DATABASE_CONTENT,
+              name: plugin.id,
+            });
           },
-          actived: CurrentPlugin.props.id === plugin.id,
+          actived: props?.id === plugin.id,
           onRemove: () => {
             ToolPlugin.delete(plugin.id);
-            if (CurrentPlugin.props.id === plugin.id) {
-              CurrentPlugin.close();
+            if (props?.id === plugin.id) {
+              CurrentPlugin.temporary().reset();
             }
           },
         }))}
@@ -248,14 +268,14 @@ export function PluginsTab() {
         <PreferenceBody
           emptyText="Please select a plugin or click the add button to create a new plugin"
           EmptyIcon={TbPlug}
-          isEmpty={!props.id && !content}
+          isEmpty={!props?.id}
           className={cn("rounded-xl flex-1", {
             "mb-4": isFullscreen,
           })}
           header={
             <div className="flex items-center justify-between w-full">
               <h3 className="text-base font-semibold">
-                {props.name || "Unnamed Plugin"}
+                {props?.name || "Unnamed Plugin"}
               </h3>
               <div className="flex items-center gap-2">
                 <Button
@@ -319,12 +339,12 @@ export function PluginsTab() {
             className={cn("h-full overflow-y-auto", {
               "h-auto": isFullscreen,
             })}
-            key={props.id}
+            key={props?.id}
             value={content}
             theme={githubDarkInit({
               settings: {
                 fontSize: 16,
-                background: "#101113",
+                background: "#333338",
               },
               styles: [
                 {
@@ -358,7 +378,7 @@ export function PluginsTab() {
               EditorView.lineWrapping,
             ]}
             onChange={(value) => {
-              CurrentPlugin.updateContent(value.toString());
+              plugin.updateContent(value.toString());
             }}
             placeholder={`Write your plugin code, refer to the development documentation`}
             basicSetup={{

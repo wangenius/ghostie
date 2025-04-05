@@ -1,4 +1,4 @@
-import { Agent } from "@/agent/Agent";
+import { Agent, AgentStore } from "@/agent/Agent";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Textarea } from "@/components/ui/textarea";
 import { memo, useCallback, useState } from "react";
@@ -9,7 +9,7 @@ import { AgentNodeConfig, NodeState, WorkflowNode } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 
 const AgentNodeComponent = (props: NodeProps<AgentNodeConfig>) => {
-  const agents = Agent.useList();
+  const agents = AgentStore.use();
   const [prompt, setPrompt] = useState(props.data.prompt);
   const { updateNodeData } = useFlow();
 

@@ -48,13 +48,17 @@ export function Drawer({
           }
         >
           <div className="bg-zinc-50 h-full w-full grow flex flex-col rounded-lg gap-1 pt-4">
-            <DrawerPrimitive.Title className="px-4 font-bold">
+            <div className="mx-auto mb-2 h-1.5 w-12 flex-shrink-0 rounded-full bg-zinc-300 hover:bg-zinc-400 transition-colors " />
+            <DrawerPrimitive.Title data-vaul-no-drag className="px-4 font-bold">
               {title}
             </DrawerPrimitive.Title>
-            <DrawerPrimitive.Description>
+            <DrawerPrimitive.Description data-vaul-no-drag>
               {description}
             </DrawerPrimitive.Description>
-            <div className="overflow-y-auto p-3 space-y-2 flex-1">
+            <div
+              data-vaul-no-drag
+              className="overflow-y-auto p-3 space-y-2 flex-1"
+            >
               {children}
             </div>
           </div>
