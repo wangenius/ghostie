@@ -311,7 +311,7 @@ export class ChatModel {
 
       const plugin = await ToolPlugin.get(pluginId);
 
-      /** 执行工具 */
+      /** 执行工具  */
       const toolResult = await plugin.execute(toolName, query);
 
       /* 返回工具调用结果 */
