@@ -14,7 +14,7 @@
       {
         "title": "ghostie",
         "width": 600,
-        "height": 400,
+        "height": 300,
         "resizable": true,
         "decorations": false,
         "skipTaskbar": true,
@@ -36,29 +36,19 @@
         "img-src": "'self' asset: http://asset.localhost",
         "style-src": "'self' 'unsafe-inline'"
       },
-      "capabilities": [
-        "main-capability"
-      ],
+      "capabilities": ["main-capability"],
       "assetProtocol": {
         "enable": true,
-        "scope": [
-          "**"
-        ]
+        "scope": ["**"]
       }
     }
   },
   "bundle": {
     "createUpdaterArtifacts": true,
     "active": true,
-    "targets": [
-      "msi",
-      "nsis"
-    ],
+    "targets": ["msi", "nsis"],
     "publisher": "wangenius",
-    "icon": [
-      "icons/icon.ico",
-      "icons/icon.png"
-    ]
+    "icon": ["icons/icon.ico", "icons/icon.png"]
   },
   "plugins": {
     "updater": {

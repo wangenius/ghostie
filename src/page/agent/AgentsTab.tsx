@@ -162,13 +162,11 @@ export function AgentsTab() {
               title: (
                 <span className="flex items-center">
                   <span>{agent.name || "Unnamed Agent"}</span>
-                  <small
-                    className="ml-2 text-[10px] text-muted bg-primary/80 px-2 rounded-xl"
-                    style={{
-                      backgroundColor: getColor(agent.engine),
-                    }}
-                  >
+                  <small className="ml-2 text-[12px] text-muted bg-primary/80 px-2 rounded-xl">
                     {agent.engine}
+                  </small>
+                  <small className="ml-2 text-[12px] text-muted-foreground bg-muted-foreground/20 px-2 rounded-xl">
+                    {agent.models?.text?.provider}
                   </small>
                 </span>
               ),

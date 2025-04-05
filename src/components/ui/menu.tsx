@@ -46,14 +46,14 @@ export const Menu = ({
         e.stopPropagation();
       }}
       className={cn(
-        "z-50 min-w-[8rem] overflow-hidden rounded-xl border bg-popover p-1.5 text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        "z-50 min-w-[8rem] overflow-hidden rounded-2xl border bg-popover p-1 text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         variant == "default" && "shadow-none border-none",
         className,
       )}
       style={style}
     >
       {items ? (
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col">
           {items.map((item, index) => {
             if (!item) return null;
             if (item.type === "divide")
@@ -128,7 +128,7 @@ function MenuItem(props: {
     <div
       onClick={onClick}
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-lg px-2 py-1.5 text-xs outline-none transition-colors focus:bg-accent text-primary focus:text-accent-foreground hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground hover:bg-accent/50",
+        "relative flex cursor-default select-none items-center gap-2 rounded-full px-1.5 py-0.5 h-[24px] text-[12px] outline-none transition-colors focus:bg-accent text-primary focus:text-accent-foreground hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground hover:bg-accent/50",
         variant === "destructive" &&
           "text-destructive hover:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive [&_svg]:text-destructive [&_svg]:hover:text-destructive",
         className,

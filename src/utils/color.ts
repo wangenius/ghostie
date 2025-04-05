@@ -13,7 +13,7 @@ const getColor = (str: string | undefined): string => {
   const hue = Math.abs(hash % 360);
 
   // 使用 HSL 颜色空间，固定饱和度和亮度以确保颜色美观
-  return `hsla(${hue}, 20%, 50%, 0.9)`;
+  return `hsla(${hue}, 10%, 50%, 0.9)`;
 };
 
 export { getColor };

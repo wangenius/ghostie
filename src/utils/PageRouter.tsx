@@ -24,15 +24,16 @@ export const Page = ({
   if (page !== name) return null;
   if (name === "main") {
     Window.getByLabel("main").then((window) => {
-      window?.setSize(new LogicalSize(600, 400));
+      window?.setSize(new LogicalSize(600, 200));
       window?.center();
       window?.setResizable(false);
-      window?.setMinSize(new LogicalSize(600, 400));
-      window?.setMaxSize(new LogicalSize(600, 400));
+      window?.setMinSize(new LogicalSize(600, 200));
+      window?.setMaxSize(new LogicalSize(600, 200));
     });
   } else {
     Window.getByLabel("main").then((window) => {
       window?.setSize(new LogicalSize(1200, 800));
+      window?.center();
       window?.setResizable(true);
     });
   }

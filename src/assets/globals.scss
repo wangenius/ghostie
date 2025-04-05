@@ -141,7 +141,9 @@ option {
 .draggable a {
   -webkit-app-region: no-drag;
 }
-
+.no-drag {
+  -webkit-app-region: no-drag;
+}
 /* 代码编辑器 */
 .cm-scroller {
   height: 100% !important;
