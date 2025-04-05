@@ -22,6 +22,7 @@ import { Knowledge } from "../../knowledge/Knowledge";
 import { ChatModelManager } from "./ChatModelManager";
 import { HistoryMessage } from "./HistoryMessage";
 import { WORKFLOW_BODY_DATABASE } from "@/workflow/const";
+import { ToolPlugin } from "@/plugin/ToolPlugin";
 
 /** 请求配置 */
 interface RequestConfig {
@@ -101,7 +102,7 @@ export class ChatModel {
       function: {
         name: tool.name,
         description: tool.description,
-        parameters: tool.parameters,
+        parameters: tool.parameters || null,
       },
     }));
     return this;
@@ -135,7 +136,7 @@ export class ChatModel {
           function: {
             name: `executeFlow_${flow.id}`,
             description: flow.description,
-            parameters: (startNode.data as StartNodeConfig).parameters,
+            parameters: (startNode.data as StartNodeConfig).parameters || null,
           },
         });
       });
@@ -305,15 +306,13 @@ export class ChatModel {
         };
       }
 
-      /** 执行工具 */
-      const toolResultPromise = cmd.invoke("plugin_execute", {
-        id: tool_call.function.name.split(TOOL_NAME_SPLIT)[1],
-        tool: tool_call.function.name.split(TOOL_NAME_SPLIT)[0],
-        args: query,
-      });
+      const pluginId = tool_call.function.name.split(TOOL_NAME_SPLIT)[1];
+      const toolName = tool_call.function.name.split(TOOL_NAME_SPLIT)[0];
 
-      /* 等待工具执行完成 */
-      const toolResult = await toolResultPromise;
+      const plugin = await ToolPlugin.get(pluginId);
+
+      /** 执行工具 */
+      const toolResult = await plugin.execute(toolName, query);
 
       /* 返回工具调用结果 */
       return {

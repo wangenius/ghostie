@@ -58,9 +58,16 @@ export class Engine {
     getCurrentStep: () => undefined,
   };
 
+  /* 初始化完成标志 */
+  private isInitialized: boolean = false;
+  /* 初始化Promise */
+  private initPromise: Promise<void> | null = null;
+
   constructor(agent: Agent) {
     this.agent = agent;
-    this.init(agent);
+    this.initPromise = this.init(agent).then(() => {
+      this.isInitialized = true;
+    });
   }
 
   async init(agent: Agent) {
@@ -89,6 +96,14 @@ export class Engine {
       getCurrentStep: () => undefined,
     };
   }
+
+  /* 等待初始化完成 */
+  protected async ensureInitialized() {
+    if (!this.isInitialized && this.initPromise) {
+      await this.initPromise;
+    }
+  }
+
   /* 获取上下文 */
   protected getContext(): ExecutionContext {
     return this.context;
@@ -102,9 +117,10 @@ export class Engine {
   private async parseTools(tools: string[]): Promise<ToolProps[]> {
     const parsedTools: ToolProps[] = [];
     for (const item of tools) {
-      const [pluginId, toolId] = item.split(TOOL_NAME_SPLIT);
+      const [toolName, pluginId] = item.split(TOOL_NAME_SPLIT);
+      console.log(pluginId, toolName);
       const plugin = await ToolPlugin.get(pluginId);
-      const tool = plugin.props.tools.find((tool) => tool.name === toolId);
+      const tool = plugin.props.tools.find((tool) => tool.name === toolName);
       if (tool) {
         parsedTools.push({
           ...tool,
@@ -120,6 +136,8 @@ export class Engine {
   /* 执行 */
   async execute(input: string): Promise<{ content: string }> {
     console.log(`执行 ${input}`);
+    // 确保初始化已完成
+    await this.ensureInitialized();
     throw new Error("Not implemented");
   }
 

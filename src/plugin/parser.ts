@@ -581,6 +581,7 @@ export function parsePluginFromString(codeString: string): PluginOutput {
       const toolData: FunctionCallProps = {
         name: functionName,
         description: funcDescription,
+        parameters: null,
       };
       if (Object.keys(properties).length > 0) {
         toolData.parameters = {

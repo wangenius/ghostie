@@ -49,7 +49,7 @@ export class ToolPlugin {
    */
   static async get(id: string): Promise<ToolPlugin> {
     /* 获取插件 */
-    const plugin = PluginStore.current[id];
+    const plugin = (await PluginStore.getCurrent())[id];
     /* 如果插件不存在 */
     if (!plugin) {
       throw new Error("Plugin not found");

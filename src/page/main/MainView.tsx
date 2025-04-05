@@ -349,7 +349,7 @@ const AgentListPanel = memo(() => {
 const ChatBox = memo(() => {
   const agent = CurrentTalkAgent.use();
   const list = ChatHistory.use();
-  const message = list[agent.engine.model.historyMessage.id];
+  const message = list[agent.engine.model?.historyMessage.id];
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

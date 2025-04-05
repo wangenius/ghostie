@@ -31,6 +31,8 @@ export class ReAct extends Engine {
   /* 执行 */
   async execute(input: string) {
     try {
+      await this.ensureInitialized();
+
       // ReAct循环
       let currentInput = input || undefined;
       let iterations = 0;
@@ -39,6 +41,7 @@ export class ReAct extends Engine {
       while (this.memory.isRunning && iterations < MAX_ITERATIONS) {
         iterations++;
 
+        console.log(this.model);
         // 思考和行动阶段：让模型生成响应和可能的工具调用
         const response = await this.model.stream(currentInput, {
           user:
@@ -46,6 +49,8 @@ export class ReAct extends Engine {
           assistant: MessageType.ASSISTANT_REPLY,
           function: MessageType.TOOL_RESULT,
         });
+
+        console.log(response);
 
         // 如果没有工具调用，说明对话可以结束
         if (!response.tool) {

@@ -1,5 +1,6 @@
 import { Agent, AgentStore } from "@/agent/Agent";
 import { EngineManager } from "@/agent/engine/EngineManager";
+import { TOOL_NAME_SPLIT } from "@/assets/const";
 import { dialog } from "@/components/custom/DialogModal";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Knowledge, KnowledgeMeta } from "@/knowledge/Knowledge";
 import { ChatModelManager } from "@/model/text/ChatModelManager";
+import { PluginStore } from "@/plugin/ToolPlugin";
+import { PluginProps, ToolProps } from "@/plugin/types";
 import { supabase } from "@/utils/supabase";
 import { WorkflowStore } from "@/workflow/Workflow";
 import { cmd } from "@utils/shell";
@@ -25,6 +28,7 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
   const { list } = Knowledge.useList();
   const workflows = WorkflowStore.use();
   const props = AgentStore.use((selector) => selector[agent.props.id]);
+  const plugins = PluginStore.use();
   const engines = EngineManager.getEngines();
 
   // 上传机器人
@@ -207,7 +211,7 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
           <section className="space-y-4">
             <h3 className="text-lg font-medium">Function Extensions</h3>
             <div className="space-y-4">
-              {/* <DrawerSelector
+              <DrawerSelector
                 title="Select Plugin"
                 value={props.tools || []}
                 items={Object.values(plugins).flatMap((plugin: PluginProps) =>
@@ -219,13 +223,13 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
                   })),
                 )}
                 onSelect={(value) =>
-                  CurrentAgent.update({
+                  agent.update({
                     tools: value,
                   })
                 }
                 multiple
                 placeholder="Select Plugin..."
-              /> */}
+              />
 
               <DrawerSelector
                 title="Select Workflow"
