@@ -90,7 +90,7 @@ export function dialog({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
               onClick={handleBackdropClick}
             />
             <motion.div
@@ -115,7 +115,7 @@ export function dialog({
                 }
               }}
               className={cn(
-                "relative z-50 max-h-[85vh] max-w-[80vw] rounded-lg bg-background p-3 shadow-lg w-[800px] flex flex-col gap-2",
+                "relative z-50 max-h-[85vh] max-w-[80vw] rounded-3xl bg-background p-5 w-[800px] flex flex-col gap-2",
                 className,
                 transparent && "bg-transparent backdrop-blur-none !shadow-none",
               )}
@@ -146,7 +146,7 @@ export function dialog({
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex-1 overflow-hidden px-2"
+                className="flex-1 overflow-hidden"
               >
                 {typeof content === "function" ? content(handleClose) : content}
               </motion.div>

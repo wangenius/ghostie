@@ -34,8 +34,9 @@ export function Drawer({
     >
       {trigger && <DrawerPrimitive.Trigger>{trigger}</DrawerPrimitive.Trigger>}
       <DrawerPrimitive.Portal>
-        <DrawerPrimitive.Overlay className="fixed inset-0 bg-black/40" />
+        <DrawerPrimitive.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
         <DrawerPrimitive.Content
+          aria-hidden="false"
           className={cn(
             "right-2 top-12 bottom-2 fixed z-10 outline-none flex w-[320px] ",
             className,
@@ -47,8 +48,8 @@ export function Drawer({
             { "--initial-transform": "calc(100% + 8px)" } as React.CSSProperties
           }
         >
-          <div className="bg-zinc-50 h-full w-full grow flex flex-col rounded-lg gap-1 pt-4">
-            <div className="mx-auto mb-2 h-1.5 w-12 flex-shrink-0 rounded-full bg-zinc-300 hover:bg-zinc-400 transition-colors " />
+          <div className="bg-muted h-full w-full grow flex flex-col rounded-lg gap-1 pt-4">
+            <div className="mx-auto mb-2 h-1.5 w-12 flex-shrink-0 rounded-full bg-muted-foreground/50 hover:bg-muted-foreground/70 transition-colors " />
             <DrawerPrimitive.Title data-vaul-no-drag className="px-4 font-bold">
               {title}
             </DrawerPrimitive.Title>

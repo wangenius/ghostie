@@ -336,7 +336,7 @@ export function PluginsTab() {
         >
           <CodeMirror
             ref={editorRef}
-            className={cn("h-full overflow-y-auto", {
+            className={cn("h-full overflow-y-auto rounded-xl", {
               "h-auto": isFullscreen,
             })}
             key={props?.id}

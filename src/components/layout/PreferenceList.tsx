@@ -31,19 +31,21 @@ export function PreferenceList({
   EmptyIcon,
 }: SettingsListProps) {
   return (
-    <div className="w-[360px] bg-muted flex flex-col h-full overflow-auto rounded-xl p-2 gap-2 flex-none">
+    <div className="w-[360px] bg-muted/50 flex flex-col h-full overflow-auto rounded-2xl p-2 gap-2 flex-none">
       <div className="flex-none flex justify-between items-center">
         <div className="flex items-center gap-1">{left}</div>
         <div className="flex items-center gap-1">{right}</div>
       </div>
 
       {tips && (
-        <div className="flex-none bg-muted-foreground/10 p-3 rounded-lg">
-          <p className="text-xs text-muted-foreground">{tips}</p>
+        <div className="pr-1">
+          <div className="flex-none bg-muted-foreground/10 p-2 px-3 rounded-lg">
+            <p className="text-xs text-muted-foreground">{tips}</p>
+          </div>
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto pr-1 space-y-2 p-1">
+      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
         {items?.length ? (
           items.map((item) => <SettingsListItem key={item.id} {...item} />)
         ) : (
@@ -73,8 +75,8 @@ export function SettingsListItem({
   return (
     <div
       className={cn(
-        "group relative px-4 py-3 rounded-lg transition-all hover:bg-muted-foreground/10 select-none cursor-pointer",
-        actived ? "bg-primary/10 ring-1 ring-primary/20" : "bg-background",
+        "group relative px-4 py-3 rounded-sm transition-all hover:bg-muted-foreground/10 select-none cursor-pointer",
+        actived ? "bg-muted-foreground/10" : "bg-transparent",
       )}
       onClick={() => onClick(id)}
     >
@@ -92,7 +94,7 @@ export function SettingsListItem({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();

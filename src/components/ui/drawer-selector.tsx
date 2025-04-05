@@ -50,14 +50,17 @@ export function DrawerSelector({
   const selectedItems = items.filter((item) => isItemSelected(item.value));
 
   // 按 type 对项目进行分组
-  const groupedItems = items.reduce((groups, item) => {
-    const type = item.type || "default";
-    if (!groups[type]) {
-      groups[type] = [];
-    }
-    groups[type].push(item);
-    return groups;
-  }, {} as Record<string, DrawerSelectorItem[]>);
+  const groupedItems = items.reduce(
+    (groups, item) => {
+      const type = item.type || "default";
+      if (!groups[type]) {
+        groups[type] = [];
+      }
+      groups[type].push(item);
+      return groups;
+    },
+    {} as Record<string, DrawerSelectorItem[]>,
+  );
 
   // 处理选择事件
   const handleSelect = (selectedValue: any) => {
@@ -96,13 +99,13 @@ export function DrawerSelector({
       {renderTrigger ? (
         renderTrigger(selectedItems, setOpen)
       ) : title ? (
-        <div className="w-full bg-muted-foreground/5 p-2 rounded-xl space-y-2">
+        <div className="w-full bg-muted-foreground/5 p-2 rounded-3xl space-y-2">
           <div className="w-full justify-between flex items-center gap-2">
-            <div className="text-sm font-medium pl-2">{title}</div>
+            <div className="text-sm font-medium pl-4">{title}</div>
             <Button
               onClick={() => setOpen(true)}
               className={cn(
-                "relative flex items-center p-3 rounded-lg h-8 transition-all",
+                "relative flex items-center p-3 rounded-full h-8 transition-all",
                 !multiple && selectedItems[0]?.variant === "danger"
                   ? "bg-red-50 hover:bg-red-100 hover:text-red-600 text-red-600"
                   : "bg-muted-foreground/5 hover:bg-muted-foreground/10",
@@ -112,8 +115,8 @@ export function DrawerSelector({
               {multiple
                 ? `Selected ${selectedItems.length} items`
                 : selectedItems.length > 0
-                ? selectedItems[0].label
-                : placeholder}
+                  ? selectedItems[0].label
+                  : placeholder}
             </Button>
           </div>
 
@@ -121,12 +124,12 @@ export function DrawerSelector({
             <div className="flex flex-wrap gap-1.5 px-1">
               {selectedItems.map((item) => (
                 <div
-                  key={item.value}
+                  key={`${item.type}-${typeof item.value === "object" ? JSON.stringify(item.value) : item.value}`}
                   className={cn(
-                    "group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
+                    "group inline-flex select-none items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full text-xs font-medium transition-colors",
                     item.variant === "danger"
                       ? "bg-red-100 text-red-700 hover:bg-red-200"
-                      : "bg-accent/80 hover:bg-accent text-accent-foreground",
+                      : "bg-muted-foreground/20 hover:bg-muted-foreground/30 text-accent-foreground",
                   )}
                 >
                   <span className="truncate max-w-[120px]">{item.label}</span>
@@ -163,7 +166,7 @@ export function DrawerSelector({
           <Button
             onClick={() => setOpen(true)}
             className={cn(
-              "w-full relative flex items-center p-2 h-9 transition-all",
+              "w-full relative flex items-center rounded-full p-2 px-3 h-9 transition-all",
               !multiple && selectedItems[0]?.variant === "danger"
                 ? "bg-red-50 hover:bg-red-100 hover:text-red-600 text-red-600"
                 : "bg-muted-foreground/5 hover:bg-muted-foreground/10",
@@ -175,12 +178,12 @@ export function DrawerSelector({
                 {multiple
                   ? `Selected ${selectedItems.length} items`
                   : selectedItems.length > 0
-                  ? selectedItems[0].label
-                  : placeholder}
+                    ? selectedItems[0].label
+                    : placeholder}
               </span>
 
               {selectedItems[0]?.type && (
-                <span className="text-xs text-muted-foreground/60 bg-muted-foreground/10 px-1 rounded-md py-0.5 line-clamp-1">
+                <span className="text-xs text-muted-foreground/60 bg-muted-foreground/10 px-3 rounded-md py-0.5 line-clamp-1">
                   {selectedItems[0]?.type}
                 </span>
               )}
@@ -191,7 +194,7 @@ export function DrawerSelector({
             <div className="flex flex-wrap gap-1.5 px-1">
               {selectedItems.map((item) => (
                 <div
-                  key={item.value}
+                  key={`${item.type}-${typeof item.value === "object" ? JSON.stringify(item.value) : item.value}`}
                   className={cn(
                     "group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
                     item.variant === "danger"
@@ -256,13 +259,13 @@ export function DrawerSelector({
           </div>
         ) : (
           Object.entries(groupedItems).map(([type, typeItems]) => (
-            <div key={type} className="mb-4 space-y-2">
+            <div key={type} className="mb-4 space-y-1">
               <div className="text-sm font-bold text-muted-foreground px-3">
                 {type}
               </div>
               {typeItems.map((item) => (
                 <div
-                  key={item.value}
+                  key={`${item.type}-${typeof item.value === "object" ? JSON.stringify(item.value) : item.value}`}
                   onClick={() => handleSelect(item.value)}
                   className={cn(
                     "w-full flex items-center justify-between p-3 m-0 rounded-lg text-left transition-colors",
@@ -271,8 +274,8 @@ export function DrawerSelector({
                         ? "bg-red-100 text-red-700"
                         : "bg-card hover:bg-red-50"
                       : isItemSelected(item.value)
-                      ? "bg-accent"
-                      : "bg-card hover:bg-accent",
+                        ? "bg-muted-foreground/10"
+                        : "bg-transparent hover:bg-muted-foreground/10",
                   )}
                 >
                   <div>

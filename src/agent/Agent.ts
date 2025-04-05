@@ -61,7 +61,7 @@ export class Agent {
     this.props = { ...this.props, ...data };
     /* 更新代理 */
     AgentStore.set({
-      [this.props.id]: this.props,
+      [this.props.id]: { ...this.props },
     });
     this.engine = Engine.create(this);
     return this;

@@ -387,13 +387,13 @@ const getLastWeekdayDescription = (
   let description = `Every last ${weekMap[day]}`;
 
   if (second === "0" && minute === "0" && hour === "0") {
-    description += "at 00:00:00";
+    description += " at 00:00:00";
   } else if (second === "0" && minute === "0") {
-    description += `at ${hour}:00`;
+    description += ` at ${hour}:00`;
   } else if (second === "0") {
-    description += `at ${hour}:${minute}:00`;
+    description += ` at ${hour}:${minute}:00`;
   } else {
-    description += `at ${hour}:${minute}:${second}`;
+    description += ` at ${hour}:${minute}:${second}`;
   }
 
   return description;
@@ -423,13 +423,13 @@ const getNthWeekdayDescription = (
   let description = `Every ${ordinals[parseInt(nth)]} ${weekMap[day]}`;
 
   if (second === "0" && minute === "0" && hour === "0") {
-    description += "at 00:00:00";
+    description += " at 00:00:00";
   } else if (second === "0" && minute === "0") {
-    description += `at ${hour}:00`;
+    description += ` at ${hour}:00`;
   } else if (second === "0") {
-    description += `at ${hour}:${minute}:00`;
+    description += ` at ${hour}:${minute}:00`;
   } else {
-    description += `at ${hour}:${minute}:${second}`;
+    description += ` at ${hour}:${minute}:${second}`;
   }
 
   return description;
@@ -443,7 +443,9 @@ export const CronInput = memo(
     value: string;
     onChange: (value: string) => void;
   }) => {
-    const [customExpression, setCustomExpression] = useState(value || "");
+    const [customExpression, setCustomExpression] = useState(
+      value || "0 * * * * *",
+    );
     const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
 
@@ -522,15 +524,28 @@ export const CronInput = memo(
               <h4 className="font-medium text-foreground mb-2">
                 Cron expression format
               </h4>
-              <pre className="text-xs bg-muted/50 p-1 rounded-md border">
-                {`  ┌──────────── seconds (0-59)
-  │ ┌────────── minutes (0-59)
-  │ │ ┌──────── hours (0-23)
-  │ │ │ ┌────── day of month (1-31, L)(L last day of month)
-  │ │ │ │ ┌──── month (1-12)
-  │ │ │ │ │ ┌── day of week (0-7) (0,7 means Sunday)
-  * * * * * *`}
-              </pre>
+              <ul className="text-xs text-muted-foreground">
+                <li>
+                  <span className="font-bold">1</span> = seconds (0-59)
+                </li>
+                <li>
+                  <span className="font-bold">2</span> = minutes (0-59)
+                </li>
+                <li>
+                  <span className="font-bold">3</span> = hours (0-23)
+                </li>
+                <li>
+                  <span className="font-bold">4</span> = day of month (1-31,
+                  L)(L last day of month)
+                </li>
+                <li>
+                  <span className="font-bold">5</span> = month (1-12)
+                </li>
+                <li>
+                  <span className="font-bold">6</span> = day of week (0-7) (0,7
+                  means Sunday)(optional)
+                </li>
+              </ul>
             </div>
 
             <div>

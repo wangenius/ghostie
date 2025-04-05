@@ -33,8 +33,6 @@ export const Page = ({
   } else {
     Window.getByLabel("main").then((window) => {
       window?.setSize(new LogicalSize(1200, 800));
-      window?.center();
-      window?.setMinSize(new LogicalSize(1200, 800));
       window?.setResizable(true);
     });
   }

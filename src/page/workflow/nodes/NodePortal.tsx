@@ -86,8 +86,8 @@ const NodePortalComponent = ({
   const nodeClassName = useMemo(
     () =>
       cn(
-        "transition-all duration-200 border p-2 rounded-xl w-[250px] h-auto relative",
-        NODE_TYPES[variant].variant,
+        "transition-all duration-200 border p-2 rounded-3xl w-[250px] h-auto relative",
+        "bg-muted border-muted-foreground/20",
         selected && `ring-2 ring-primary/40`,
         !isConnectable && "opacity-60 cursor-not-allowed",
       ),
@@ -124,7 +124,7 @@ const NodePortalComponent = ({
         <div className="text-sm font-bold flex-1 flex items-center gap-1">
           <Button
             variant="ghost"
-            className="p-0 bg-muted-foreground/10"
+            className={cn("p-0 bg-muted-foreground/10")}
             size="icon"
           >
             <Icon className="h-4 w-4" />
@@ -210,7 +210,9 @@ const NodePortalComponent = ({
       </div>
 
       <motion.div
-        className="relative z-10 nopan nodrag cursor-default flex flex-col gap-3 p-1"
+        className={cn(
+          "relative z-10 nopan nodrag cursor-default flex flex-col gap-3 p-1",
+        )}
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}

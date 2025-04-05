@@ -4,8 +4,6 @@ export interface AgentModelProps {
   provider: string;
   /* 模型名称 */
   name: string;
-  /* 温度 */
-  temperature?: number;
 }
 
 /** 模型类型 */
@@ -40,6 +38,11 @@ export interface AgentProps {
   knowledges?: string[];
   /* 工作流 */
   workflows?: string[];
+  /* 配置 */
+  configs?: {
+    /* 温度 */
+    temperature?: number;
+  };
 }
 
 /** 代理使用数据 */

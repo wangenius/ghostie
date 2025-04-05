@@ -28,7 +28,13 @@ const PanelNodeComponent = (props: NodeProps<PanelNodeConfig>) => {
         </div>
       );
     }
-    return null;
+    return (
+      <div className="rounded-full transition-all duration-200 bg-muted-foreground/5 hover:bg-muted-foreground/10 text-xs p-2">
+        <div className="text-center text-gray-500 w-full">
+          No outputs, Link the Inputs
+        </div>
+      </div>
+    );
   }, [workflowState]);
 
   const renderError = useMemo(() => {

@@ -8,16 +8,15 @@ import {
 } from "../page/workflow/types/nodes";
 import { Scheduler } from "./Scheduler";
 import { WorkflowExecutor } from "./execute/WorkflowExecutor";
-import { WORKFLOW_BODY_DATABASE } from "./const";
-export const WORKFLOW_DATABASE = "workflows";
+import { WORKFLOW_BODY_DATABASE, WORKFLOW_DATABASE } from "./const";
 
 /* 工作流列表 */
-export const WorkflowStore = new Echo<Record<string, WorkflowMeta>>({}).indexed(
-  {
-    database: WORKFLOW_DATABASE,
-    name: "workflows",
-  },
-);
+export const WorkflowsStore = new Echo<Record<string, WorkflowMeta>>(
+  {},
+).indexed({
+  database: WORKFLOW_DATABASE,
+  name: "workflows",
+});
 
 /* 工作流类 */
 export class Workflow {
@@ -33,13 +32,13 @@ export class Workflow {
 
   /* 获取工作流 */
   static get(id: string) {
-    return new Workflow(WorkflowStore.current[id]);
+    return new Workflow(WorkflowsStore.current[id]);
   }
 
   /* 创建工作流 */
   static async create(): Promise<Workflow> {
     const id = gen.id();
-    if (WorkflowStore.current[id]) {
+    if (WorkflowsStore.current[id]) {
       throw new Error("工作流ID已存在");
     }
     const now = Date.now();
@@ -49,7 +48,7 @@ export class Workflow {
       createdAt: now,
       updatedAt: now,
     });
-    WorkflowStore.set({
+    WorkflowsStore.set({
       [id]: workflow.meta,
     });
     return workflow;
@@ -69,7 +68,7 @@ export class Workflow {
       ...workflow,
       updatedAt: now,
     };
-    WorkflowStore.set({
+    WorkflowsStore.set({
       [this.meta.id]: this.meta,
     });
     return this;
@@ -83,11 +82,11 @@ export class Workflow {
   }
 
   static async delete(id: string) {
-    const workflow = WorkflowStore.current[id];
+    const workflow = WorkflowsStore.current[id];
     if (workflow) {
       // 如果工作流有定时任务，需要先取消
       Scheduler.cancel(id);
-      WorkflowStore.delete(id);
+      WorkflowsStore.delete(id);
       await Echo.get({
         database: WORKFLOW_DATABASE,
         name: id,

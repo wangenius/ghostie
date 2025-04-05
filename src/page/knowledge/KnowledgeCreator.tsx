@@ -186,7 +186,7 @@ export const KnowledgeCreator = ({ close }: { close: () => void }) => {
                 </div>
               </div>
             ) : (
-              <div className="relative h-[300px] w-full overflow-auto">
+              <div className="relative h-[300px] w-full overflow-auto py-2">
                 <ScrollArea className="absolute inset-0">
                   <div className="space-y-2">
                     {selectedFiles.map((file, index) => (
@@ -227,7 +227,7 @@ export const KnowledgeCreator = ({ close }: { close: () => void }) => {
         </div>
       </div>
 
-      <div className="flex justify-end py-3">
+      <div className="flex justify-end pt-3">
         <Button
           size="lg"
           variant={"primary"}

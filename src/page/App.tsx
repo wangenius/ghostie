@@ -13,6 +13,11 @@ function App() {
   const font = SettingsManager.use((selector) => selector.font);
 
   useEffect(() => {
+    document.body.setAttribute("data-theme", theme.name);
+    document.body.setAttribute("data-font", font.name);
+  }, [theme, font]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Alt") {
         e.preventDefault();

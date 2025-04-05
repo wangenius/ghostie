@@ -7,10 +7,10 @@ import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
 import { CurrentWorkflow } from "@/workflow/Workflow";
 import { IteratorNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
-import { Workflow, WorkflowStore } from "@/workflow/Workflow";
+import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
 const IteratorNodeComponent = (props: NodeProps<IteratorNodeConfig>) => {
   const [content, setContent] = useState(props.data.target || "");
-  const workflows = WorkflowStore.use();
+  const workflows = WorkflowsStore.use();
   const id = CurrentWorkflow.use((selector) => selector.meta.id);
   const { updateNodeData } = useFlow();
   const handleTargetChange = (value: string) => {

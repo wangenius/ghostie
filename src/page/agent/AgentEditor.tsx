@@ -18,15 +18,15 @@ import { ChatModelManager } from "@/model/text/ChatModelManager";
 import { PluginStore } from "@/plugin/ToolPlugin";
 import { PluginProps, ToolProps } from "@/plugin/types";
 import { supabase } from "@/utils/supabase";
-import { WorkflowStore } from "@/workflow/Workflow";
-import { cmd } from "@utils/shell";
-import { useCallback } from "react";
+import { WorkflowsStore } from "@/workflow/Workflow";
+import { useCallback, useEffect } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { TbUpload } from "react-icons/tb";
+import { toast } from "sonner";
 
 export const AgentEditor = ({ agent }: { agent: Agent }) => {
   const { list } = Knowledge.useList();
-  const workflows = WorkflowStore.use();
+  const workflows = WorkflowsStore.use();
   const props = AgentStore.use((selector) => selector[agent.props.id]);
   const plugins = PluginStore.use();
   const engines = EngineManager.getEngines();
@@ -48,32 +48,27 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
           });
 
           if (error) throw error;
-
-          cmd.message("Successfully uploaded agent to market", "success");
-          cmd.invoke("close_modal");
+          toast.success("Successfully uploaded agent to market");
         } catch (error) {
-          console.error("Upload agent failed:", error);
-          cmd.message(
-            `Upload agent failed: ${
-              error instanceof Error ? error.message : String(error)
-            }`,
-            "error",
-          );
+          toast.error(`Upload agent failed: ${error}`);
         }
       },
     });
+  }, [props]);
+
+  useEffect(() => {
+    console.log(props);
   }, [props]);
 
   if (!props) return null;
 
   return (
     <div key={props.id} className="flex-1 overflow-y-auto">
-      {/* 顶部名称栏 */}
       <div className="sticky top-0 z-10 bg-background flex items-center justify-between px-8 gap-4 overflow-hidden flex-col">
         <div className="flex items-center justify-between w-full gap-4">
           <Input
             type="text"
-            defaultValue={props?.name || ""}
+            defaultValue={props?.name}
             onChange={(e) =>
               agent.update({
                 name: e.target.value,
@@ -132,7 +127,7 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
 
             <DrawerSelector
               title="Text Model"
-              value={props.models?.text ? [props.models.text] : []}
+              value={[props.models?.text]}
               items={Object.values(ChatModelManager.getProviders()).flatMap(
                 (provider) => {
                   const key = ChatModelManager.getApiKey(provider.name);
@@ -167,27 +162,23 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
                   Temperature
                 </label>
                 <span className="text-sm tabular-nums">
-                  {props.models?.text?.temperature?.toFixed(1)}
+                  {props.configs?.temperature?.toFixed(1)}
                 </span>
               </div>
               <Slider
-                value={[props.models?.text?.temperature || 0]}
+                value={[props.configs?.temperature || 0]}
                 min={0}
                 max={2}
                 step={0.1}
                 className="px-1"
-                onValueChange={(value) =>
+                onValueChange={(value) => {
                   agent.update({
-                    models: {
-                      ...props.models,
-                      text: {
-                        provider: props.models?.text?.provider || "",
-                        name: props.models?.text?.name || "",
-                        temperature: value[0],
-                      },
+                    configs: {
+                      ...props.configs,
+                      temperature: value[0],
                     },
-                  })
-                }
+                  });
+                }}
               />
             </div>
           </section>

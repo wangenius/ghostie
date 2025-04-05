@@ -193,7 +193,7 @@ const Header = memo(() => {
   return (
     <div className="px-3 draggable">
       <div className="mx-auto flex items-center h-12">
-        <div className="p-1.5 bg-muted rounded-md flex items-center gap-2 text-xs hover:bg-muted-foreground/15 transition-colors">
+        <div className="p-1.5 bg-muted rounded-[8px] flex items-center gap-2 text-xs hover:bg-muted-foreground/15 transition-colors">
           <LogoIcon className="w-4 h-4" />
           {list.find((agent) => agent.id === state.selectedAgentId)?.name ||
             list[0]?.name}
@@ -211,7 +211,7 @@ const Header = memo(() => {
         </div>
         <div className="flex items-center gap-1">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild className="rounded-[8px]">
               <Button variant="ghost" size="icon" className="text-xs">
                 <TbPaperclip className="w-4 h-4" />
               </Button>
@@ -230,7 +230,7 @@ const Header = memo(() => {
           {!agent.props.id && (
             <div className="">
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                <DropdownMenuTrigger asChild className="rounded-[8px]">
                   <Button variant="ghost" size="icon" className="text-xs">
                     {sortType === "default" && (
                       <TbSortDescending2 className="w-4 h-4 mr-0.5" />
@@ -265,7 +265,11 @@ const Header = memo(() => {
             </div>
           )}
           {agent.props.id && (
-            <Button onClick={handleActionClick} size="icon">
+            <Button
+              onClick={handleActionClick}
+              size="icon"
+              className="rounded-[8px]"
+            >
               {state.isLoading ? (
                 <TbLoader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -274,7 +278,7 @@ const Header = memo(() => {
             </Button>
           )}
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild className="rounded-[8px]">
               <Button size="icon" variant="ghost">
                 <TbDots className="h-4 w-4" />
               </Button>

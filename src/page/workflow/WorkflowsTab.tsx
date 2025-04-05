@@ -14,7 +14,7 @@ import { TbDownload, TbPlus, TbShape3 } from "react-icons/tb";
 import {
   CurrentWorkflow,
   Workflow,
-  WorkflowStore,
+  WorkflowsStore,
 } from "../../workflow/Workflow";
 import { WorkflowsMarket } from "./WorkflowsMarket";
 import { WorkflowEditor } from "./WorkflowEditor";
@@ -24,7 +24,7 @@ import { WORKFLOW_BODY_DATABASE } from "@/workflow/const";
 /* 工作流列表 */
 export default function WorkflowsTab() {
   /* 工作流列表 */
-  const workflows = WorkflowStore.use();
+  const workflows = WorkflowsStore.use();
   const contextWorkflowId = CurrentWorkflow.use((selector) => selector.meta.id);
   const handleWorkflowSelect = (id: string) => {
     CurrentWorkflow.set(Workflow.get(id), { replace: true });

@@ -66,7 +66,7 @@ export const DragToolbar = ({
   return (
     <div
       className={cn(
-        "absolute z-10 flex flex-col bg-background border rounded-lg gap-0.5 p-1",
+        "absolute z-10 flex flex-col bg-background border rounded-full gap-0.5 p-1",
         "transition-transform duration-200 ease-in-out",
         positionClassName[position],
         className,
@@ -77,7 +77,10 @@ export const DragToolbar = ({
           key={type}
           variant="ghost"
           size="icon"
-          className={cn("h-8 w-8 relative", content.preview && "opacity-80")}
+          className={cn(
+            "h-8 w-8 relative rounded-full",
+            content.preview && "opacity-80",
+          )}
           title={content.preview ? `${content.label} (Preview)` : content.label}
           draggable
           onDragStart={(e) => onDragStart(e, type as NodeType)}

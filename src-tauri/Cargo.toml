@@ -2,7 +2,7 @@
 name = "ghostie"
 version = "0.1.0"
 description = "ghostie"
-authors = ["you"]
+authors = ["wangenius <wangenius@qq.com>"]
 license = ""
 repository = ""
 edition = "2021"

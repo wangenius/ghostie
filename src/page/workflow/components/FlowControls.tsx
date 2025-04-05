@@ -3,9 +3,12 @@ import { cn } from "@/lib/utils";
 import { useCallback } from "react";
 import {
   TbArrowsMaximize,
+  TbArrowsMinimize,
+  TbBolt,
   TbMinus,
+  TbPanoramaHorizontal,
+  TbPlayerPlay,
   TbPlus,
-  TbWindowMaximize,
 } from "react-icons/tb";
 import { useReactFlow } from "reactflow";
 
@@ -19,16 +22,22 @@ interface CustomControlsProps {
   showZoom?: boolean;
   showFitView?: boolean;
   showReset?: boolean;
-  showMaximize?: boolean;
   className?: string;
+  onMaximize?: () => void;
+  isFullscreen?: boolean;
+  onEdit?: () => void;
+  onExecute?: () => void;
 }
 
 export const FlowControls = ({
   position = "bottom-center",
   showZoom = true,
-  showMaximize = false,
   showFitView = true,
   className,
+  onMaximize,
+  isFullscreen,
+  onEdit,
+  onExecute,
 }: CustomControlsProps) => {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
 
@@ -52,12 +61,10 @@ export const FlowControls = ({
     fitView({ duration: 500, padding: 0.1 });
   }, [fitView]);
 
-  const onMaximize = useCallback(() => {}, []);
-
   return (
     <div
       className={cn(
-        "absolute z-10 flex bg-background border rounded-lg gap-0.5 p-1",
+        "absolute z-10 flex bg-background border rounded-full gap-0.5 p-1",
         positionClassName[position],
         className,
       )}
@@ -67,7 +74,7 @@ export const FlowControls = ({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 rounded-full"
             onClick={onZoomOut}
             title="Zoom Out"
           >
@@ -76,7 +83,7 @@ export const FlowControls = ({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 rounded-full"
             onClick={onZoomIn}
             title="Zoom In"
           >
@@ -88,24 +95,44 @@ export const FlowControls = ({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-8 w-8 rounded-full"
           onClick={onFitView}
           title="Fit View"
         >
+          <TbPanoramaHorizontal className="h-4 w-4" />
+        </Button>
+      )}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 rounded-full"
+        onClick={onMaximize}
+        title="Maximize Window"
+      >
+        {isFullscreen ? (
+          <TbArrowsMinimize className="h-4 w-4" />
+        ) : (
           <TbArrowsMaximize className="h-4 w-4" />
-        </Button>
-      )}
-      {showMaximize && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={onMaximize}
-          title="Maximize Window"
-        >
-          <TbWindowMaximize className="h-4 w-4" />
-        </Button>
-      )}
+        )}
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 rounded-full"
+        onClick={onEdit}
+        title="Trigger Workflow"
+      >
+        <TbBolt className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 rounded-full"
+        onClick={onExecute}
+        title="Execute Workflow"
+      >
+        <TbPlayerPlay className="h-4 w-4" />
+      </Button>
     </div>
   );
 };

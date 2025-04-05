@@ -2,7 +2,11 @@
  * 该模型依赖于工具模块。
  */
 import { AgentModelProps } from "@/agent/types/agent";
-import { TOOL_NAME_SPLIT } from "@/assets/const";
+import {
+  KNOWLEDGE_TOOL_NAME_PREFIX,
+  TOOL_NAME_SPLIT,
+  WORKFLOW_TOOL_NAME_PREFIX,
+} from "@/assets/const";
 import {
   ChatModelRequestBody,
   ChatModelResponse,
@@ -16,7 +20,7 @@ import { StartNodeConfig, WorkflowBody } from "@/page/workflow/types/nodes";
 import { ToolProps } from "@/plugin/types";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
-import { Workflow, WorkflowStore } from "@/workflow/Workflow";
+import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
 import { Echo } from "echo-state";
 import { Knowledge } from "../../knowledge/Knowledge";
 import { ChatModelManager } from "./ChatModelManager";
@@ -111,7 +115,7 @@ export class ChatModel {
   public async setWorkflows(workflows: string[]): Promise<this> {
     if (workflows.length) {
       /* 获取工作流 */
-      const flows = await WorkflowStore.getCurrent();
+      const flows = await WorkflowsStore.getCurrent();
       workflows.forEach(async (workflow) => {
         const flow = flows[workflow];
         if (!flow) return;
@@ -134,7 +138,7 @@ export class ChatModel {
         this.workflows?.push({
           type: "function",
           function: {
-            name: `executeFlow_${flow.id}`,
+            name: `${WORKFLOW_TOOL_NAME_PREFIX}${TOOL_NAME_SPLIT}${flow.id}`,
             description: flow.description,
             parameters: (startNode.data as StartNodeConfig).parameters || null,
           },
@@ -158,7 +162,7 @@ export class ChatModel {
         this.knowledges?.push({
           type: "function",
           function: {
-            name: `knowledge_${knowledge}`,
+            name: `${KNOWLEDGE_TOOL_NAME_PREFIX}${TOOL_NAME_SPLIT}${knowledge}`,
             description: `${knowledgeDoc.description}`,
             parameters: {
               type: "object",
@@ -269,28 +273,12 @@ export class ChatModel {
         throw new Error("工具调用参数错误");
       }
 
-      if (tool_call.function.name.startsWith("knowledge_")) {
-        const knowledge = tool_call.function.name.split("_")[1];
-        if (!query.query) {
-          return {
-            name: tool_call.function.name,
-            arguments: tool_call.function.arguments,
-            result: "查询内容query不能为空",
-          };
-        }
-        /* 搜索知识库 */
-        const knowledgeDoc = await Knowledge.search(query.query, [knowledge]);
-        return {
-          name: tool_call.function.name,
-          arguments: tool_call.function.arguments,
-          result: knowledgeDoc,
-        };
-      }
+      const firstName = tool_call.function.name.split(TOOL_NAME_SPLIT)[0];
+      const secondName = tool_call.function.name.split(TOOL_NAME_SPLIT)[1];
+      console.log(firstName, secondName);
 
-      /* 工作流工具 */
-      if (tool_call.function.name.startsWith("executeFlow_")) {
-        const id = tool_call.function.name.split("_")[1];
-        const workflow = await Workflow.get(id);
+      if (firstName === WORKFLOW_TOOL_NAME_PREFIX) {
+        const workflow = Workflow.get(secondName);
         if (!workflow) {
           return {
             name: tool_call.function.name,
@@ -305,15 +293,26 @@ export class ChatModel {
           result,
         };
       }
+      if (firstName === KNOWLEDGE_TOOL_NAME_PREFIX) {
+        if (!query.query) {
+          return {
+            name: tool_call.function.name,
+            arguments: tool_call.function.arguments,
+            result: "查询内容query不能为空",
+          };
+        }
+        /* 搜索知识库 */
+        const knowledgeDoc = await Knowledge.search(query.query, [secondName]);
+        return {
+          name: tool_call.function.name,
+          arguments: tool_call.function.arguments,
+          result: knowledgeDoc,
+        };
+      }
 
-      const pluginId = tool_call.function.name.split(TOOL_NAME_SPLIT)[1];
-      const toolName = tool_call.function.name.split(TOOL_NAME_SPLIT)[0];
-
-      const plugin = await ToolPlugin.get(pluginId);
-
+      const plugin = await ToolPlugin.get(secondName);
       /** 执行工具  */
-      const toolResult = await plugin.execute(toolName, query);
-
+      const toolResult = await plugin.execute(firstName, query);
       /* 返回工具调用结果 */
       return {
         name: tool_call.function.name,
@@ -407,6 +406,8 @@ export class ChatModel {
 
       // 允许子类修改请求体
       requestBody = this.prepareRequestBody(requestBody);
+
+      console.log(requestBody);
 
       let reasonerContent = "";
       // 监听流式响应事件

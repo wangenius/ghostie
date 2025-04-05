@@ -44,10 +44,7 @@ export const WorkflowEditor = () => {
                 "p-0": !isFullscreen,
               })}
             >
-              <WorkflowInfo
-                isFullscreen={isFullscreen}
-                onToggleFullscreen={handleToggleFullscreen}
-              />
+              <WorkflowInfo />
             </motion.div>
             <motion.div
               layout
@@ -56,7 +53,10 @@ export const WorkflowEditor = () => {
                 "p-0 pt-2": !isFullscreen,
               })}
             >
-              <WorkflowGraph />
+              <WorkflowGraph
+                handleToggleFullscreen={handleToggleFullscreen}
+                isFullscreen={isFullscreen}
+              />
             </motion.div>
           </motion.div>
         </FlowProvider>

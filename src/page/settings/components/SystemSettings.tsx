@@ -32,18 +32,14 @@ export function ThemeSettings() {
       description={`Current theme: ${settings.theme.label}`}
       action={
         <div className="flex gap-1">
-          {themes.map((theme) => (
-            <Button
-              key={theme.name}
-              size="sm"
-              variant={
-                settings.theme.name === theme.name ? "secondary" : "ghost"
-              }
-              onClick={() => SettingsManager.setTheme(theme)}
-            >
-              {theme.label}
-            </Button>
-          ))}
+          <DrawerSelector
+            value={[settings.theme]}
+            items={themes.map((theme) => ({
+              label: theme.label,
+              value: theme,
+            }))}
+            onSelect={(value) => SettingsManager.setTheme(value[0])}
+          />
         </div>
       }
     />

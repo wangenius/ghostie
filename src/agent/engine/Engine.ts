@@ -72,12 +72,15 @@ export class Engine {
 
   async init(agent: Agent) {
     const props = agent.props;
-    this.model = ChatModel.create(props.models?.text)
+    this.model = ChatModel.create(props.models?.text);
+    await this.model
       .system(props.system)
       .setAgent(props.id || "")
-      .setTemperature(props.models?.text?.temperature || 1)
+      .setTemperature(props.configs?.temperature || 1)
       .setTools(await this.parseTools(props.tools || []))
-      .setKnowledge(props.knowledges || []);
+      .setKnowledge(props.knowledges || [])
+      .setWorkflows(props.workflows || []);
+
     // 初始化内存和上下文
     this.memory = {
       reset: () => {},
