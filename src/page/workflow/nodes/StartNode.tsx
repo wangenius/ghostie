@@ -710,13 +710,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
   // 渲染节点内容
   return (
     <>
-      <NodePortal
-        {...props}
-        left={0}
-        right={1}
-        variant="start"
-        title="Start Node"
-      >
+      <NodePortal {...props} left={0} right={1} variant="start" title="Start">
         <div
           onClick={() => setDrawerOpen(true)}
           className="rounded-full transition-all duration-200 cursor-pointer bg-muted-foreground/5 hover:bg-muted-foreground/10 text-xs p-2"

@@ -1,10 +1,9 @@
-import { Descendant, Node } from 'slate';
+import { Descendant, Node } from "slate";
 import {
   ParagraphElement,
   CustomText,
   DEFAULT_DESCENDANT_ARRAY,
-} from './slate-types';
-import { Filee } from '@/lib/Filee';
+} from "./slate-types";
 
 declare global {
   interface Array<T> {
@@ -18,9 +17,7 @@ declare global {
     download(name: string): void;
   }
 }
-String.prototype.download = function (this: string, name: string): void {
-  Filee.from(this).save(name, 'txt');
-};
+
 /** 将字符串按字数分割成若干个字符串
  * 1. 如果字符串长度小于count，则返回整个字符串
  * 2. 如果字符串长度大于count，则返回分割后的字符串数组
@@ -48,16 +45,16 @@ String.prototype.toDescendant = function (this: string) {
 
 (Array.prototype as Descendant[]).merge = function (
   this: Descendant[],
-  text: string
+  text: string,
 ) {
   return Prose.descendantAppend(this, text);
 };
 
 (Array.prototype as Descendant[]).isEmpty = function (this: Descendant[]) {
   if (!this || this.length === 0) return true;
-  return this.every(node => {
+  return this.every((node) => {
     const text = Node.string(node);
-    return !text || text.trim() === '';
+    return !text || text.trim() === "";
   });
 };
 
@@ -83,8 +80,8 @@ export const Prose = {
    *
    */
   flatten(editor?: Descendant[] | null): string {
-    if (!editor || !Array.isArray(editor)) return '';
-    return editor.map(item => Node.string(item)).join('\n') + '\n';
+    if (!editor || !Array.isArray(editor)) return "";
+    return editor.map((item) => Node.string(item)).join("\n") + "\n";
   },
 
   /**
@@ -93,13 +90,13 @@ export const Prose = {
    * @returns 返回提取出的主要段落，如果没有编辑器内容则返回空字符串
    */
   extract(body?: Descendant[] | null): string {
-    if (!body?.length) return '';
+    if (!body?.length) return "";
 
     return (
       body
-        .filter(item => (item as ParagraphElement).type === 'paragraph')
-        .map(item => Node.string(item))
-        .join('\n') + '\n'
+        .filter((item) => (item as ParagraphElement).type === "paragraph")
+        .map((item) => Node.string(item))
+        .join("\n") + "\n"
     );
   },
 
@@ -123,10 +120,10 @@ export const Prose = {
     if (!text) return DEFAULT_CONTENT;
 
     return text
-      .split('\n')
-      .filter(line => line.trim())
-      .map(line => ({
-        type: 'paragraph' as const,
+      .split("\n")
+      .filter((line) => line.trim())
+      .map((line) => ({
+        type: "paragraph" as const,
         children: [{ text: line.trimStart() }],
       }));
   },
@@ -136,7 +133,7 @@ export const Prose = {
    */
   descendantAppend(
     descendant: Descendant[] | null | undefined,
-    text: string
+    text: string,
   ): Descendant[] {
     if (!text) return descendant || DEFAULT_DESCENDANT_ARRAY;
 
@@ -145,15 +142,15 @@ export const Prose = {
 
     // 获取最后一个段落
     const lastParagraph = paragraphs[paragraphs.length - 1] as ParagraphElement;
-    const existingText = (lastParagraph.children[0] as CustomText).text || '';
+    const existingText = (lastParagraph.children[0] as CustomText).text || "";
 
     // 分割新文本并过滤掉空行
-    const segments = text.replaceAll('\n\n', '\n').split('\n');
+    const segments = text.replaceAll("\n\n", "\n").split("\n");
 
     // 更新最后一个段落，将第一段新文本追加到现有文本
     if (segments[0]) {
       paragraphs[paragraphs.length - 1] = {
-        type: 'paragraph',
+        type: "paragraph",
         children: [{ text: existingText + segments[0] }],
       };
     }
@@ -161,8 +158,8 @@ export const Prose = {
     // 为剩余的非空段落创建新的段落元素
     const newParagraphs: ParagraphElement[] = segments
       .slice(1)
-      .map(segment => ({
-        type: 'paragraph',
+      .map((segment: string) => ({
+        type: "paragraph",
         children: [{ text: segment }],
       }));
 
@@ -173,7 +170,7 @@ export const Prose = {
 
 export const DEFAULT_CONTENT: Descendant[] = [
   {
-    type: 'paragraph',
-    children: [{ text: '' }],
+    type: "paragraph",
+    children: [{ text: "" }],
   },
 ];

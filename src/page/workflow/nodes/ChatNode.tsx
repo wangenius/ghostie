@@ -5,10 +5,11 @@ import { ChatModel } from "@/model/text/ChatModel";
 import { ChatModelManager } from "@/model/text/ChatModelManager";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
-import { useFlow } from "../context/FlowContext";
 import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
+import { useFlow } from "../context/FlowContext";
 import { ChatNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
+import { AgentModelProps } from "@/agent/types/agent";
 
 const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
   const [system, setSystem] = useState(props.data.system);
@@ -16,12 +17,9 @@ const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
   const { updateNodeData } = useFlow();
 
   const handleModelChange = useCallback(
-    (model: string) => {
+    (model: AgentModelProps) => {
       updateNodeData<ChatNodeConfig>(props.id, {
-        model: {
-          provider: model.split(":")[0],
-          name: model.split(":")[1],
-        },
+        model: model,
       });
     },
     [updateNodeData, props.id],
@@ -52,11 +50,18 @@ const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
         value={[props.data.model]}
         items={Object.values(ChatModelManager.getProviders()).flatMap(
           (provider) => {
-            return Object.values(provider.models).map((model) => {
+            const key = ChatModelManager.getApiKey(provider.name);
+            if (!key) return [];
+            const models = provider.models;
+            return Object.values(models).map((model) => {
               return {
                 label: model.name,
-                value: `${provider.name}:${model.name}`,
+                value: {
+                  provider: provider.name,
+                  name: model.name,
+                },
                 type: provider.name,
+                description: `${model.description}`,
               };
             });
           },

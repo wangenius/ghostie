@@ -17,16 +17,16 @@ import {
   ToolRequestBody,
 } from "@/model/types/chatModel";
 import { StartNodeConfig, WorkflowBody } from "@/page/workflow/types/nodes";
+import { ToolPlugin } from "@/plugin/ToolPlugin";
 import { ToolProps } from "@/plugin/types";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
+import { WORKFLOW_BODY_DATABASE } from "@/workflow/const";
 import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
 import { Echo } from "echo-state";
 import { Knowledge } from "../../knowledge/Knowledge";
 import { ChatModelManager } from "./ChatModelManager";
 import { HistoryMessage } from "./HistoryMessage";
-import { WORKFLOW_BODY_DATABASE } from "@/workflow/const";
-import { ToolPlugin } from "@/plugin/ToolPlugin";
 
 /** 请求配置 */
 interface RequestConfig {
@@ -41,11 +41,11 @@ interface RequestConfig {
 /** Chat模型, 用于与模型进行交互 */
 export class ChatModel {
   /** 模型 */
-  protected model: string;
+  protected model: string = "";
   /** API密钥 */
-  protected api_key: string;
+  protected api_key: string = "";
   /** API URL */
-  protected api_url: string;
+  protected api_url: string = "";
   /** 消息历史 */
   public historyMessage: HistoryMessage = HistoryMessage.create();
   /** 工具 */
@@ -83,6 +83,7 @@ export class ChatModel {
         api_url: "",
         model: "",
       });
+    console.log(model);
     return ChatModelManager.get(model.provider).create(model.name);
   }
 
@@ -275,7 +276,6 @@ export class ChatModel {
 
       const firstName = tool_call.function.name.split(TOOL_NAME_SPLIT)[0];
       const secondName = tool_call.function.name.split(TOOL_NAME_SPLIT)[1];
-      console.log(firstName, secondName);
 
       if (firstName === WORKFLOW_TOOL_NAME_PREFIX) {
         const workflow = Workflow.get(secondName);

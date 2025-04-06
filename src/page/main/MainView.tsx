@@ -6,46 +6,96 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import { ChatHistory } from "@/model/text/HistoryMessage";
 import { Page } from "@/utils/PageRouter";
 import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
+import { LogicalSize, Window } from "@tauri-apps/api/window";
 import { Echoa } from "echo-state";
-import { useCallback, useEffect, useRef } from "react";
-import { TbCornerRightUp, TbHistory, TbSettings } from "react-icons/tb";
-import { TypeArea } from "./chat/ChatArea";
-interface MainViewState {
-  /* 当前输入 */
-  currentInput: string;
-  /* 是否正在加载 */
-  isLoading: boolean;
-  /* 选中的agent */
-  selectedAgentId: string;
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  TbCornerRightUp,
+  TbHistory,
+  TbLoader,
+  TbSettings,
+} from "react-icons/tb";
+import { Descendant } from "slate";
+import { MessageItem } from "./components/MessageItem";
+import { TypeArea } from "./components/TypeArea";
+// 定义 MentionElement 接口
+interface MentionElement {
+  type: "mention";
+  id: string;
+  children: { text: string }[];
 }
 
-const initialState: MainViewState = {
-  currentInput: "",
-  isLoading: false,
-  selectedAgentId: "",
-};
+const plainText = (value: Descendant[]) =>
+  value
+    .map((node) => {
+      // 处理普通文本节点
+      if (!("type" in node)) {
+        return node.text;
+      }
 
-/* 主界面状态 */
-const mainState = new Echoa(initialState);
+      // 跳过mention节点
+      if (node.type === "mention") {
+        return "";
+      }
+
+      // 处理包含子节点的节点
+      if ("children" in node) {
+        return node.children
+          .filter((child) => !("type" in child) || child.type !== "mention")
+          .map((child) => ("text" in child ? child.text : ""))
+          .join("");
+      }
+
+      return "";
+    })
+    .join("")
+    .trim();
+
 /* 当前对话的agent */
 export const CurrentTalkAgent = new Echoa<Agent>(new Agent());
 
 /* 主界面 */
 export function MainView() {
-  const agents = AgentStore.use();
-  const state = mainState.use();
   const agent = CurrentTalkAgent.use();
-  const editorRef = useRef<HTMLDivElement>(null);
+  const [errorInfo, setErrorInfo] = useState<string>("");
+  const props = AgentStore.use((selector) => selector[agent.props.id]);
+  const list = ChatHistory.use();
+  const [loading, setLoading] = useState(false);
+  const message = list[agent.engine.model?.historyMessage.id];
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [value, setValue] = useState<Descendant[]>([
+    {
+      type: "paragraph",
+      children: [
+        {
+          text: "",
+        },
+      ],
+    },
+  ]);
 
-  // 初始化选中的agent
+  // 当消息更新时滚动到底部
   useEffect(() => {
-    const list = Object.values(agents);
-    if (list.length > 0 && !state.selectedAgentId) {
-      mainState.set({ selectedAgentId: list[0].id });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [list]);
+
+  useEffect(() => {
+    if (props?.id) {
+      Window.getByLabel("main").then((window) => {
+        window?.setSize(new LogicalSize(600, 800));
+        window?.center();
+      });
+    } else {
+      Window.getByLabel("main").then((window) => {
+        window?.setSize(new LogicalSize(600, 160));
+        window?.center();
+      });
     }
-  }, [agents]);
+  }, [props]);
 
   const handleSettingsClick = useCallback(() => {
     Page.to("settings");
@@ -57,21 +107,16 @@ export function MainView() {
 
   const handleActionClick = useCallback(() => {
     if (agent.props.id) {
-      if (state.isLoading) {
+      if (loading) {
         agent.stop();
       } else {
-        // 无论是否正在加载，点击按钮都重置 Agent
         CurrentTalkAgent.set(new Agent(), { replace: true });
       }
     }
-  }, [state.isLoading, agent]);
+  }, [loading, agent]);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key.toLowerCase() === "i") {
-        e.preventDefault();
-        editorRef.current?.focus();
-      }
       if (e.ctrlKey && e.key.toLowerCase() === "h") {
         e.preventDefault();
         Page.to("history");
@@ -90,60 +135,151 @@ export function MainView() {
     return () => document.removeEventListener("keydown", handleGlobalKeyDown);
   }, [handleActionClick]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key.toLowerCase() === "p") {
-        e.preventDefault();
-        if (state.isLoading) {
-          agent.stop();
-        }
+  const handleSubmit = useCallback(
+    async (value: Descendant[]) => {
+      console.log(value);
+
+      if (loading) {
+        agent.stop();
+        return;
       }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [state.isLoading, agent]);
+
+      // 提取所有 mention 元素
+      const mentions: { id: string; text: string }[] = [];
+
+      // 遍历所有节点寻找 mention 类型的元素
+      const extractMentions = (nodes: Descendant[]) => {
+        for (const node of nodes) {
+          // 判断节点是否为 mention 类型
+          if ("type" in node && node.type === "mention" && "id" in node) {
+            const mentionNode = node as MentionElement;
+            mentions.push({
+              id: mentionNode.id,
+              text: mentionNode.children[0].text,
+            });
+          }
+
+          // 递归遍历子节点
+          if ("children" in node && Array.isArray(node.children)) {
+            extractMentions(node.children);
+          }
+        }
+      };
+
+      extractMentions(value);
+      console.log(mentions, props);
+
+      if (mentions.length === 0 && !props?.id) {
+        setErrorInfo("please select agent first");
+      }
+
+      // 如果有提取到 mention，进行处理
+      if (mentions.length > 1) {
+        setErrorInfo("current version only support one agent call");
+      }
+
+      if (props?.id) {
+        setErrorInfo("");
+        setValue([
+          {
+            type: "paragraph",
+            children: [{ text: "" }],
+          },
+        ]);
+        setLoading(true);
+        await CurrentTalkAgent.current.chat(plainText(value));
+        setLoading(false);
+      } else {
+        const agent = await Agent.get(mentions[0].id);
+        CurrentTalkAgent.set(agent, { replace: true });
+        setErrorInfo("");
+        setValue([
+          {
+            type: "paragraph",
+            children: [{ text: "" }],
+          },
+        ]);
+        setLoading(true);
+        await agent.chat(plainText(value));
+        setLoading(false);
+      }
+    },
+    [props, agent, loading],
+  );
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <main className="flex-1 overflow-hidden flex flex-col">
-        <TypeArea />
-      </main>
       <div className="px-1.5 draggable">
         <div className="mx-auto flex items-center justify-between h-10">
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              asChild
-              className="no-drag rounded-[8px] cursor-pointer"
-            >
-              <div className="p-1.5 select-none rounded-[6px] cursor-pointer flex items-center gap-2 text-xs hover:bg-muted-foreground/15 transition-colors">
-                <LogoIcon className="w-4 h-4" />
-                Ghostie
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem
-                className="flex items-center gap-2"
-                onClick={handleHistoryClick}
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                asChild
+                className="no-drag rounded-[8px] cursor-pointer"
               >
-                <TbHistory className="h-4 w-4" />
-                History
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="flex items-center gap-2"
-                onClick={handleSettingsClick}
-              >
-                <TbSettings className="h-4 w-4" />
-                Settings
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <Button variant="ghost" className="no-drag rounded-full">
+                  <LogoIcon className="w-4 h-4" />
+                  {props?.name || "Ghostie"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem
+                  className="flex items-center gap-2"
+                  onClick={handleHistoryClick}
+                >
+                  <TbHistory className="h-4 w-4" />
+                  History
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="flex items-center gap-2"
+                  onClick={handleSettingsClick}
+                >
+                  <TbSettings className="h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <small className="text-yellow-600">{errorInfo}</small>
+          </div>
 
-          <Button variant="ghost" className="no-drag">
-            ctrl + enter
-            <TbCornerRightUp className="w-4 h-4" />
+          <Button
+            onClick={() => handleSubmit(value)}
+            variant={
+              !props?.id && plainText(value).trim() === "" ? "ghost" : "default"
+            }
+            className={cn(
+              "no-drag",
+              !props?.id &&
+                plainText(value).trim() === "" &&
+                "opacity-50 hover:bg-transparent cursor-default hover:opacity-50",
+            )}
+          >
+            {loading ? "stop" : "OK"}
+            {loading ? (
+              <TbLoader className="w-4 h-4 animate-spin" />
+            ) : (
+              <TbCornerRightUp className="w-4 h-4" />
+            )}
           </Button>
         </div>
       </div>
+      <main className="flex-1 overflow-hidden flex flex-col justify-between">
+        {props?.id && (
+          <div className="px-4 max-w-3xl w-full space-y-4 overflow-y-auto">
+            {message?.list.map((message, index) => (
+              <MessageItem key={index} message={message} />
+            ))}
+
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+        <TypeArea
+          value={value}
+          onChange={setValue}
+          onSubmit={handleSubmit}
+          className={props?.id ? "bg-muted pt-3 min-h-[140px]" : ""}
+        />
+      </main>
     </div>
   );
 }

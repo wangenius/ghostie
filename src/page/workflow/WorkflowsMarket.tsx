@@ -40,8 +40,8 @@ export const WorkflowsMarket = () => {
 
       setWorkflows(data || []);
     } catch (error) {
-      console.error("获取工作流列表失败:", error);
-      cmd.message("获取工作流列表失败", "error");
+      console.error("failed to get workflow market list:", error);
+      cmd.message("failed to get workflow market list", "error");
     } finally {
       setLoading(false);
     }
@@ -71,7 +71,7 @@ export const WorkflowsMarket = () => {
           .ready();
       }
 
-      cmd.message(`成功安装工作流: ${workflow.name}`, "success");
+      cmd.message(`success to install: ${workflow.name}`, "success");
     } catch (error) {
       console.error("安装工作流失败:", error);
       cmd.message(
@@ -128,7 +128,7 @@ export const WorkflowsMarket = () => {
             onClick={fetchWorkflows}
             disabled={loading}
           >
-            {loading ? "加载中..." : "刷新"}
+            {loading ? "loading..." : "refresh"}
           </Button>
         </div>
       </div>
@@ -138,7 +138,7 @@ export const WorkflowsMarket = () => {
           <div className="animate-spin mr-2">
             <TbLoader2 className="w-5 h-5" />
           </div>
-          <span>加载工作流...</span>
+          <span>loading workflows...</span>
         </div>
       ) : workflows.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -153,9 +153,6 @@ export const WorkflowsMarket = () => {
                     {workflow.description?.slice(0, 100) || "无描述"}
                     {(workflow.description?.length || 0) > 100 ? "..." : ""}
                   </p>
-                  <div className="text-xs text-gray-400 mt-2">
-                    作者: {workflow.user_id || "未知"}
-                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -166,10 +163,10 @@ export const WorkflowsMarket = () => {
                     {installing === workflow.id ? (
                       <>
                         <TbLoader2 className="w-4 h-4 mr-1 animate-spin" />
-                        安装中...
+                        installing...
                       </>
                     ) : (
-                      "安装"
+                      "install"
                     )}
                   </Button>
                   {user?.id === workflow.user_id && (
@@ -192,9 +189,7 @@ export const WorkflowsMarket = () => {
           ))}
         </div>
       ) : (
-        <div className="text-center py-8 text-gray-500">
-          没有可用的工作流或加载失败
-        </div>
+        <div className="text-center py-8 text-gray-500">No workflow</div>
       )}
     </div>
   );

@@ -57,7 +57,7 @@ export function SettingsPage() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key.toLowerCase() === "backspace") {
+      if (e.altKey && e.key.toLowerCase() === "escape") {
         e.preventDefault();
         e.stopPropagation();
         Page.to("main");

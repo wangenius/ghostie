@@ -1,9 +1,9 @@
 import { TOOL_NAME_SPLIT } from "@/assets/const";
 import { ChatModel } from "@/model/text/ChatModel";
+import { ToolPlugin } from "@/plugin/ToolPlugin";
 import { ToolProps } from "@/plugin/types";
 import { Agent } from "../Agent";
 import { EngineManager } from "./EngineManager";
-import { ToolPlugin } from "@/plugin/ToolPlugin";
 /** 执行上下文接口 */
 export interface ExecutionContext {
   /** 重置上下文 */
@@ -45,6 +45,7 @@ export class Engine {
   model: ChatModel = null as any;
   /* 内存 */
   protected memory: Memory = { reset: () => {}, isRunning: true };
+
   /* 执行上下文 */
   protected context: ExecutionContext = {
     reset: () => {},
@@ -72,7 +73,10 @@ export class Engine {
 
   async init(agent: Agent) {
     const props = agent.props;
-    this.model = ChatModel.create(props.models?.text);
+    this.model = ChatModel.create({
+      provider: props.models?.text?.provider || "",
+      name: props.models?.text?.name || "",
+    });
     await this.model
       .system(props.system)
       .setAgent(props.id || "")

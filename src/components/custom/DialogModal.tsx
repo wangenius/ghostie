@@ -215,11 +215,11 @@ dialog.confirm = ({
   return dialog({
     className: "md:max-w-[480px]",
     title,
-    content,
+    content: <div className="px-3">{content}</div>,
     closeIconHide: true,
     footer: (close) => {
       return (
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-1">
           <Button
             variant="ghost"
             className="h-8 px-3 text-xs flex-none"

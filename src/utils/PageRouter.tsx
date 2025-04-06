@@ -24,11 +24,11 @@ export const Page = ({
   if (page !== name) return null;
   if (name === "main") {
     Window.getByLabel("main").then((window) => {
-      window?.setSize(new LogicalSize(600, 200));
+      window?.setSize(new LogicalSize(600, 160));
       window?.center();
       window?.setResizable(false);
-      window?.setMinSize(new LogicalSize(600, 200));
-      window?.setMaxSize(new LogicalSize(600, 200));
+      window?.setMinSize(new LogicalSize(600, 150));
+      window?.setMaxSize(new LogicalSize(600, 150));
     });
   } else {
     Window.getByLabel("main").then((window) => {

@@ -43,7 +43,7 @@ export const Element = (props: any) => {
       return (
         <p
           className={cn(
-            "text-muted-foreground rounded-lg text-sm",
+            "text-muted-foreground rounded-lg text-[15px]",
             isEmpty && isFocused && isSelected && "placeholder-p",
           )}
           {...attributes}

@@ -94,7 +94,7 @@ export const Mention = ({
       <DropdownMenuTrigger asChild>
         <span
           className={cn(
-            "bg-muted-foreground/10 px-2 py-0.5 rounded-full text-xs",
+            "bg-muted-foreground/10 px-2 py-0.5 rounded-full text-xs mx-1",
             select && focus && "bg-muted-foreground/20",
             open && "border-solid",
           )}

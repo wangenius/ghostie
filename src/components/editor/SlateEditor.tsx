@@ -24,6 +24,7 @@ interface SlateEditorProps {
   placeholder?: string;
   className?: string;
   quickFocus?: boolean;
+  onSubmit?: (value: Descendant[]) => void;
 }
 
 const renderElement = (props: any) => <Element {...props} />;
@@ -52,6 +53,7 @@ export const SlateEditor = memo((props: SlateEditorProps) => {
     autoFocus,
     placeholder,
     className,
+    onSubmit,
   } = props;
 
   // 优化底部 ref 的处理
@@ -68,22 +70,15 @@ export const SlateEditor = memo((props: SlateEditorProps) => {
     }
   }, [value, editor]);
 
-  // 优化只读模式下的滚动
-  useEffect(() => {
-    if (readonly && refs.bottom.current) {
-      refs.bottom.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [readonly]);
-
   // 优化键盘事件处理
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
-      if (event.ctrlKey && event.key.toLowerCase() === "w") {
+      if (event.ctrlKey && event.key === "Enter") {
+        onSubmit?.(editor.children);
         event.preventDefault();
       }
-      if (readonly) return;
     },
-    [editor, readonly],
+    [editor, readonly, onSubmit],
   );
 
   // 优化选择处理
@@ -136,11 +131,11 @@ export const SlateEditor = memo((props: SlateEditorProps) => {
           onClick={(event) => {
             if (readonly) event.preventDefault();
           }}
-          className="text-xs overflow-x-hidden h-full border-none outline-none"
+          className="text-sm overflow-x-hidden h-full border-none outline-none"
           renderElement={renderElement}
           renderLeaf={renderLeaf}
           onKeyDown={onKeyDown}
-          placeholder={placeholder || "[#]呼出快捷面板，[@]快速调用角色"}
+          placeholder={placeholder}
         />
         <div ref={refs.bottom} />
         {extensions}

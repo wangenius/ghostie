@@ -3,7 +3,7 @@ import { MessageType } from "@/model/types/chatModel";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { Engine } from "../Engine";
 import { EngineManager } from "../EngineManager";
-
+/* ReAct 引擎 */
 export class ReAct extends Engine {
   constructor(agent: Agent) {
     super(agent);
