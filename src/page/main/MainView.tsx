@@ -67,6 +67,7 @@ export function MainView() {
   const [loading, setLoading] = useState(false);
   const message = list[agent.engine.model?.Message.id];
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [value, setValue] = useState<Descendant[]>([
     {
       type: "paragraph",
@@ -80,7 +81,16 @@ export function MainView() {
 
   // 当消息更新时滚动到底部
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!messagesContainerRef.current) return;
+
+    const container = messagesContainerRef.current;
+    const isNearBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight <
+      50;
+
+    if (isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [list]);
 
   useEffect(() => {
@@ -265,7 +275,10 @@ export function MainView() {
       </div>
       <main className="flex-1 overflow-hidden flex flex-col justify-between">
         {props?.id && (
-          <div className="px-4 w-full space-y-2 overflow-y-auto">
+          <div
+            ref={messagesContainerRef}
+            className="px-4 w-full space-y-2 overflow-y-auto"
+          >
             {message?.list.map((message, index) => (
               <ChatMessageItem key={index} message={message} />
             ))}
