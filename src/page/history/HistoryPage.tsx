@@ -15,6 +15,7 @@ export const HistoryPage = () => {
   const agents = AgentStore.use();
   const [current, setCurrent] = useState<string>("");
   const [selectedHistory, setSelectedHistory] = useState<{
+    id: string;
     agent?: string;
     system: MessageItem;
     list: MessageItem[];
@@ -116,7 +117,9 @@ export const HistoryPage = () => {
                     if (selectedHistory.agent) {
                       const agent = await Agent.get(selectedHistory.agent);
                       CurrentTalkAgent.set(agent, { replace: true });
-                      agent.engine.model.Message.setList(selectedHistory.list);
+                      await agent.engine.model.Message.switch(
+                        selectedHistory.id,
+                      );
                       Page.to("main");
                     }
                   }}

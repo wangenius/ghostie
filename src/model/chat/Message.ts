@@ -43,6 +43,22 @@ export class Message implements HistoryItem {
     this.agent = history.agent;
   }
 
+  /** 切换模型
+   * @param id 模型ID
+   * @returns 模型实例
+   */
+  async switch(id: string): Promise<this> {
+    this.id = id;
+    const history = await ChatHistory.getCurrent();
+    if (!history) {
+      throw new Error("History not found");
+    }
+    this.system = history[id].system;
+    this.list = history[id].list;
+    this.agent = history[id].agent;
+    return this;
+  }
+
   /** 创建一个消息
    * @param system 系统提示词
    * @param agent 助手名称
@@ -59,9 +75,6 @@ export class Message implements HistoryItem {
       },
       list: [],
     };
-    ChatHistory.set({
-      [history.id]: history,
-    });
     return new Message(history);
   }
 
@@ -80,11 +93,6 @@ export class Message implements HistoryItem {
   /** 设置助手名称 */
   setAgent(agent: string): void {
     this.agent = agent;
-    ChatHistory.set((prev) => {
-      const newState = { ...prev };
-      newState[this.id].agent = agent;
-      return newState;
-    });
   }
 
   /** 获取聊天记录 */
@@ -98,21 +106,11 @@ export class Message implements HistoryItem {
       ...this.system,
       content: system,
     };
-    ChatHistory.set((prev) => {
-      const newState = { ...prev };
-      newState[this.id].system = this.system;
-      return newState;
-    });
   }
 
   /** 设置聊天记录 */
   setList(list: MessageItem[]): void {
     this.list = list;
-    ChatHistory.set((prev) => {
-      const newState = { ...prev };
-      newState[this.id].list = list;
-      return newState;
-    });
   }
 
   /** 处理消息列表，应用最大历史限制并移除开头的 tool 消息
@@ -139,8 +137,6 @@ export class Message implements HistoryItem {
   push(message: MessageItem[]): MessagePrototype[] {
     const newList = [...this.list, ...message];
     this.list = newList;
-
-    // 使用对象展开来创建一个新的状态对象，确保触发更新
     ChatHistory.set({
       ...ChatHistory.current,
       [this.id]: {
@@ -150,7 +146,6 @@ export class Message implements HistoryItem {
         list: newList,
       },
     });
-
     return this.processMessages(this.list);
   }
 
