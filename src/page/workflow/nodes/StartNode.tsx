@@ -1,7 +1,10 @@
-import { ToolParameters, ToolProperty, ToolPropertyType } from "@/plugin/types";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
+import {
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -12,12 +15,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ToolParameters, ToolProperty, ToolPropertyType } from "@/plugin/types";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+} from "@radix-ui/react-dropdown-menu";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { nanoid } from "nanoid";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NodeProps } from "reactflow";
-import { useFlow } from "../context/FlowContext";
 import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
+import { useFlow } from "../context/FlowContext";
 import { StartNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 // 定义一个更易于编辑的参数格式
@@ -522,7 +530,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
       const properties = param.properties || {};
 
       return (
-        <div className="space-y-2 bg-muted p-2 rounded-lg">
+        <div className="space-y-2 bg-muted-foreground/10 p-2 rounded-lg">
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"
@@ -545,7 +553,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
                   <div className="mb-2 flex items-center space-x-2">
                     <Input
                       variant="ghost"
-                      placeholder="属性名称"
+                      placeholder="name"
                       className="h-7 text-xs"
                       value={prop.name}
                       onChange={(e) => {
@@ -554,60 +562,61 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
                         });
                       }}
                     />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="h-7 text-xs">
+                        <Button>{prop.type}</Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuRadioGroup
+                          value={prop.type}
+                          onValueChange={(value: string) =>
+                            updateObjectProperty(currentPath, propId, {
+                              type: value as ToolPropertyType,
+                            })
+                          }
+                        >
+                          <DropdownMenuRadioItem value="string">
+                            String
+                          </DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem value="number">
+                            Number
+                          </DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem value="boolean">
+                            Boolean
+                          </DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem value="array">
+                            Array
+                          </DropdownMenuRadioItem>
+                          <DropdownMenuRadioItem value="object">
+                            Object
+                          </DropdownMenuRadioItem>
+                        </DropdownMenuRadioGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-50"
+                      className="h-7 w-7 p-0 flex-none opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-50"
                       onClick={() => removeObjectProperty(currentPath, propId)}
                     >
                       <Trash2 className="h-3.5 w-3.5 text-red-500" />
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">Type</Label>
-                      <Select
-                        value={prop.type}
-                        onValueChange={(value: ToolPropertyType) =>
-                          updateObjectProperty(currentPath, propId, {
-                            type: value,
-                          })
-                        }
-                      >
-                        <SelectTrigger className="h-7 text-xs">
-                          <SelectValue placeholder="select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="string">String</SelectItem>
-                          <SelectItem value="number">Number</SelectItem>
-                          <SelectItem value="boolean">Boolean</SelectItem>
-                          <SelectItem value="array">Array</SelectItem>
-                          <SelectItem value="object">Object</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">
-                        Description
-                      </Label>
-                      <Input
-                        className="h-7 text-xs bg-white"
-                        placeholder="Description"
-                        value={prop.description || ""}
-                        onChange={(e) =>
-                          updateObjectProperty(currentPath, propId, {
-                            description: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
+                  <Input
+                    className="h-7 text-xs bg-muted-foreground/10"
+                    placeholder="Description"
+                    value={prop.description || ""}
+                    onChange={(e) =>
+                      updateObjectProperty(currentPath, propId, {
+                        description: e.target.value,
+                      })
+                    }
+                  />
 
                   {/* 递归渲染嵌套的对象属性 */}
                   {prop.type === "object" && (
-                    <div className="mt-2 border-l-2 border-gray-200">
+                    <div className="mt-2">
                       {renderObjectPropertiesRef.current?.(prop, currentPath)}
                     </div>
                   )}
@@ -629,7 +638,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
   const renderParameterCard = useCallback(
     (param: EditableProperty) => {
       return (
-        <Card key={param.id} className="p-2">
+        <div key={param.id} className="p-2 bg-muted-foreground/10 rounded-md">
           <div className="flex flex-col gap-2">
             <div className="flex-1 flex items-center gap-2">
               <Input
@@ -656,6 +665,8 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
               <Input
                 placeholder="description"
                 value={param.description || ""}
+                variant="ghost"
+                className="text-sm text-muted-foreground"
                 onChange={(e) =>
                   updateParam(param.id, { description: e.target.value })
                 }
@@ -663,27 +674,43 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex-1">
-                <Select
-                  value={param.type}
-                  onValueChange={(value: ToolPropertyType) =>
-                    updateParam(param.id, { type: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="string">String</SelectItem>
-                    <SelectItem value="number">Number</SelectItem>
-                    <SelectItem value="boolean">Boolean</SelectItem>
-                    <SelectItem value="array">Array</SelectItem>
-                    <SelectItem value="object">Object</SelectItem>
-                  </SelectContent>
-                </Select>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost">{param.type}</Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuRadioGroup
+                      value={param.type}
+                      onValueChange={(value: string) =>
+                        updateParam(param.id, {
+                          type: value as ToolPropertyType,
+                        })
+                      }
+                    >
+                      <DropdownMenuRadioItem value="string">
+                        String
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="number">
+                        Number
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="boolean">
+                        Boolean
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="array">
+                        Array
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="object">
+                        Object
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               <div className="flex items-center space-x-2">
-                <Label>Required</Label>
+                <small className="text-xs text-muted-foreground">
+                  Required
+                </small>
                 <Switch
                   checked={param.required}
                   onCheckedChange={(checked) =>
@@ -694,7 +721,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
             </div>
             {renderObjectPropertiesRef.current?.(param)}
           </div>
-        </Card>
+        </div>
       );
     },
     [updateParam, removeParam],

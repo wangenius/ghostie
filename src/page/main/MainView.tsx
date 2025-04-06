@@ -11,7 +11,7 @@ import { ChatHistory } from "@/model/text/HistoryMessage";
 import { Page } from "@/utils/PageRouter";
 import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
 import { LogicalSize, Window } from "@tauri-apps/api/window";
-import { Echoa } from "echo-state";
+import { Echo, Echoa } from "echo-state";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   TbCornerRightUp,
