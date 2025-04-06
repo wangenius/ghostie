@@ -6,6 +6,7 @@ import { cmd } from "@/utils/shell";
 export const MarkdownRender = ({ children }: { children: string }) => {
   return (
     <ReactMarkdown
+      className="text-primary px-2"
       components={{
         code: CodeBlock,
         a: CustomLink,
@@ -77,17 +78,13 @@ const H6: Components["h6"] = ({ children }) => {
 
 const CustomParagraph: Components["p"] = ({ children }) => {
   return (
-    <p className="my-2 text-gray-700 dark:text-gray-300 leading-relaxed">
-      {children}
-    </p>
+    <p className="my-2 text-muted-foreground leading-relaxed">{children}</p>
   );
 };
 
 const CustomUl: Components["ul"] = ({ children }) => {
   return (
-    <ul className={`my-2 ml-6 list-disc text-gray-700 dark:text-gray-300`}>
-      {children}
-    </ul>
+    <ul className={`my-2 ml-6 list-disc text-muted-foreground`}>{children}</ul>
   );
 };
 

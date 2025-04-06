@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChatModelManager } from "@/model/text/ChatModelManager";
+import { ChatModelManager } from "@/model/chat/ChatModelManager";
 import { CurrentSelectedAgent } from "@/page/agent/AgentsTab";
 import { Page } from "@/utils/PageRouter";
 import { useState } from "react";

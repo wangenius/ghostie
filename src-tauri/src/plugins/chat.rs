@@ -1,63 +1,15 @@
 use futures_util::StreamExt;
 use once_cell::sync::Lazy;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::{Emitter, Runtime};
 use tokio::sync::{mpsc, oneshot};
-use std::time::Duration;
 
 static CANCEL_CHANNELS: Lazy<Mutex<HashMap<String, oneshot::Sender<()>>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ChatModelRequestBody {
-    pub model: String,
-    pub messages: Vec<MessagePrototype>,
-    pub stream: bool,
-    pub parallel_tool_calls: bool,
-    pub tools: Option<Vec<ToolRequestBody>>,
-    pub temperature: Option<f32>,
-}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MessagePrototype {
-    pub role: String,
-    pub content: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tool_calls: Option<Vec<ToolCallReply>>,
-    #[serde(rename = "type")]
-    pub message_type: Option<String>,
-    pub created_at: Option<i64>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ToolRequestBody {
-    #[serde(rename = "type")]
-    pub tool_type: String,
-    pub function: ToolFunction,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ToolFunction {
-    pub name: String,
-    pub description: String,
-    pub parameters: serde_json::Value,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ToolCallReply {
-    pub id: String,
-    pub index: usize,
-    pub function: FunctionCall,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct FunctionCall {
-    pub name: String,
-    pub arguments: String,
-}
 
 #[tauri::command]
 pub async fn chat_stream<R: Runtime>(
@@ -65,11 +17,9 @@ pub async fn chat_stream<R: Runtime>(
     api_url: String,
     api_key: String,
     request_id: String,
-    request_body: ChatModelRequestBody,
+    request_body: serde_json::Value,
 ) -> Result<(), String> {
     let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(30))
-        .connect_timeout(Duration::from_secs(10))
         .build()
         .map_err(|e| e.to_string())?;
 

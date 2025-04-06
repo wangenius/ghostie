@@ -1,7 +1,5 @@
-import { TOOL_NAME_SPLIT } from "@/assets/const";
-import { ChatModel } from "@/model/text/ChatModel";
-import { ToolPlugin } from "@/plugin/ToolPlugin";
-import { ToolProps } from "@/plugin/types";
+import { ChatModel } from "@/model/chat/ChatModel";
+import { ToolsHandler } from "@/model/chat/ToolsHandler";
 import { Agent } from "../Agent";
 import { EngineManager } from "./EngineManager";
 /** 执行上下文接口 */
@@ -77,14 +75,19 @@ export class Engine {
       provider: props.models?.text?.provider || "",
       name: props.models?.text?.name || "",
     });
-    await this.model
-      .system(props.system)
-      .setAgent(props.id || "")
+    this.model.Message.setSystem(props.system);
+    this.model.Message.setAgent(props.id || "");
+    this.model
       .setTemperature(props.configs?.temperature || 1)
-      .setTools(await this.parseTools(props.tools || []))
-      .setKnowledge(props.knowledges || [])
-      .setWorkflows(props.workflows || []);
-
+      .setTools([
+        ...(await ToolsHandler.transformAgentToolToModelFormat(props.tools)),
+        ...(await ToolsHandler.transformKnowledgeToModelFormat(
+          props.knowledges || [],
+        )),
+        ...(await ToolsHandler.transformWorkflowToModelFormat(
+          props.workflows || [],
+        )),
+      ]);
     // 初始化内存和上下文
     this.memory = {
       reset: () => {},
@@ -118,26 +121,6 @@ export class Engine {
 
   protected getMemory() {
     return this.memory;
-  }
-
-  /* 解析工具 */
-  private async parseTools(tools: string[]): Promise<ToolProps[]> {
-    const parsedTools: ToolProps[] = [];
-    for (const item of tools) {
-      const [toolName, pluginId] = item.split(TOOL_NAME_SPLIT);
-      console.log(pluginId, toolName);
-      const plugin = await ToolPlugin.get(pluginId);
-      const tool = plugin.props.tools.find((tool) => tool.name === toolName);
-      if (tool) {
-        parsedTools.push({
-          ...tool,
-          plugin: plugin.props.id,
-          name: `${tool.name}${TOOL_NAME_SPLIT}${plugin.props.id}`,
-        });
-      }
-    }
-
-    return parsedTools;
   }
 
   /* 执行 */

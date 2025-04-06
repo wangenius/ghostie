@@ -9,6 +9,11 @@ export interface AgentModelProps {
 /** 模型类型 */
 export type ModelType = "text" | "image" | "audio" | "video" | "embedding";
 
+export interface AgentToolProps {
+  plugin: string;
+  tool: string;
+}
+
 /** 代理配置信息
  * @param name 名称
  * @param system 系统提示
@@ -33,7 +38,7 @@ export interface AgentProps {
     [key in ModelType]?: AgentModelProps;
   };
   /* 可调用的工具 */
-  tools?: string[];
+  tools: AgentToolProps[];
   /* 知识库 */
   knowledges?: string[];
   /* 工作流 */

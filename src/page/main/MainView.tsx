@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { ChatHistory } from "@/model/text/HistoryMessage";
+import { ChatHistory } from "@/model/chat/Message";
 import { Page } from "@/utils/PageRouter";
 import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
 import { LogicalSize, Window } from "@tauri-apps/api/window";
@@ -20,7 +20,7 @@ import {
   TbSettings,
 } from "react-icons/tb";
 import { Descendant } from "slate";
-import { MessageItem } from "./components/MessageItem";
+import { ChatMessageItem } from "./components/MessageItem";
 import { TypeArea } from "./components/TypeArea";
 // 定义 MentionElement 接口
 interface MentionElement {
@@ -65,7 +65,7 @@ export function MainView() {
   const props = AgentStore.use((selector) => selector[agent.props.id]);
   const list = ChatHistory.use();
   const [loading, setLoading] = useState(false);
-  const message = list[agent.engine.model?.historyMessage.id];
+  const message = list[agent.engine.model?.Message.id];
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [value, setValue] = useState<Descendant[]>([
     {
@@ -265,11 +265,10 @@ export function MainView() {
       </div>
       <main className="flex-1 overflow-hidden flex flex-col justify-between">
         {props?.id && (
-          <div className="px-4 max-w-3xl w-full space-y-4 overflow-y-auto">
+          <div className="px-4 w-full space-y-2 overflow-y-auto">
             {message?.list.map((message, index) => (
-              <MessageItem key={index} message={message} />
+              <ChatMessageItem key={index} message={message} />
             ))}
-
             <div ref={messagesEndRef} />
           </div>
         )}

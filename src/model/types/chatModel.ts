@@ -24,31 +24,7 @@ export interface ToolCallReply {
   type: "function";
 }
 
-/** 消息类型 */
-export enum MessageType {
-  /** 系统消息 - 用于设置系统级别的提示和配置 */
-  SYSTEM = "system",
-  /** 用户输入消息 - 用户的主动输入 */
-  USER_INPUT = "user:input",
-  /** 用户隐藏消息 - 系统内部流转的用户消息，不显示给用户 */
-  USER_HIDDEN = "user:hidden",
-  /** 助手加载消息 - 表示助手正在处理中 */
-  ASSISTANT_PENDING = "assistant:pending",
-  /** 助手回复消息 - 助手的标准回复 */
-  ASSISTANT_REPLY = "assistant:reply",
-  /** 助手工具消息 - 助手调用工具时的消息 */
-  ASSISTANT_TOOL = "assistant:tool",
-  /** 助手处理消息 - 助手处理中间步骤的消息 */
-  ASSISTANT_PROCESS = "assistant:process",
-  /** 助手错误消息 - 助手处理出错时的消息 */
-  ASSISTANT_ERROR = "assistant:error",
-  /** 工具执行结果消息 - 工具函数执行后的结果 */
-  TOOL_RESULT = "tool:result",
-  /** 助手推理消息 - 助手推理后的消息 */
-  ASSISTANT_REASONING = "assistant:reasoning",
-}
-
-/** 消息原型 */
+/** 消息原型,一般用于调用的接口 */
 export interface MessagePrototype {
   /* 角色 */
   role: MessageRole;
@@ -60,18 +36,20 @@ export interface MessagePrototype {
   tool_call_id?: string;
 }
 /** 消息接口 */
-export interface Message extends MessagePrototype {
-  /* 消息类型 */
-  type: MessageType;
+export interface MessageItem extends MessagePrototype {
+  /* 是否隐藏 */
+  hidden?: boolean;
+  /* loading */
+  loading?: boolean;
+  /* 错误 */
+  error?: string;
+  /* reasoner */
+  reasoner?: string;
   /* 创建时间 */
   created_at: number;
 }
-/** 工具获取器
- * 可以是字符串, symbol, 函数, 对象
- */
-export type ToolFunctionHandler = string | symbol | Function | { name: string };
 
-/** 工具调用信息 */
+/** 工具调用结果信息 */
 export interface FunctionCallResult<T = any, R = any> {
   /** 工具名称 */
   name: string;

@@ -19,7 +19,7 @@ import {
 import { WorkflowsMarket } from "./WorkflowsMarket";
 import { WorkflowEditor } from "./WorkflowEditor";
 import { CurrentEditWorkflow } from "./context/FlowContext";
-import { WORKFLOW_BODY_DATABASE } from "@/workflow/const";
+import { WORKFLOW_BODY_DATABASE } from "@/assets/const";
 
 /* 工作流列表 */
 export default function WorkflowsTab() {

@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import {
   ChatModelManager,
   ChatModelProvider,
-} from "@/model/text/ChatModelManager";
+} from "@/model/chat/ChatModelManager";
 import { memo } from "react";
 import { ModelKey } from "../../model/key/ModelKey";
 import { ModelProvider, ModelProviderList } from "../../model/types/model";

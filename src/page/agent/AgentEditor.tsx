@@ -1,7 +1,8 @@
 import { Agent, AgentStore } from "@/agent/Agent";
 import { EngineManager } from "@/agent/engine/EngineManager";
-import { TOOL_NAME_SPLIT } from "@/assets/const";
 import { dialog } from "@/components/custom/DialogModal";
+import { Prose } from "@/components/editor/Prose";
+import { SimpleSlate } from "@/components/editor/SimpleSlate";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { Button } from "@/components/ui/button";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
@@ -14,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Knowledge, KnowledgeMeta } from "@/knowledge/Knowledge";
-import { ChatModelManager } from "@/model/text/ChatModelManager";
+import { ChatModelManager } from "@/model/chat/ChatModelManager";
 import { PluginStore } from "@/plugin/ToolPlugin";
 import { PluginProps, ToolProps } from "@/plugin/types";
 import { supabase } from "@/utils/supabase";
@@ -186,16 +187,18 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
           {/* 系统提示词 */}
           <section className="space-y-2">
             <h3 className="text-lg font-medium">System Prompt</h3>
-            <AutoResizeTextarea
-              defaultValue={props.system}
-              onValueChange={(e) =>
-                agent.update({
-                  system: e.target.value,
-                })
-              }
-              className="resize-none"
-              placeholder="Please enter the system prompt..."
-            />
+            <div className="bg-muted-foreground/5 rounded-2xl p-4">
+              <SimpleSlate
+                defaultValue={Prose.sharpen(props.system.trim() || "")}
+                onChange={(e) =>
+                  agent.update({
+                    system: Prose.flatten(e).trim(),
+                  })
+                }
+                className="resize-none outline-none"
+                placeholder="Please enter the system prompt..."
+              />
+            </div>
           </section>
 
           {/* 功能扩展 */}
@@ -204,11 +207,14 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
             <div className="space-y-4">
               <DrawerSelector
                 title="Select Plugin"
-                value={props.tools || []}
+                value={props.tools}
                 items={Object.values(plugins).flatMap((plugin: PluginProps) =>
                   plugin.tools.map((tool: ToolProps) => ({
                     label: tool.name,
-                    value: tool.name + TOOL_NAME_SPLIT + plugin.id,
+                    value: {
+                      plugin: plugin.id,
+                      tool: tool.name,
+                    },
                     type: plugin.name,
                     description: tool.description,
                   })),

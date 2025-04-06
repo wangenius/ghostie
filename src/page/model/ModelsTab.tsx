@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { ChatModelManager } from "@/model/text/ChatModelManager";
+import { ChatModelManager } from "@/model/chat/ChatModelManager";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { getColor } from "@/utils/color";
 import { DropdownMenuRadioGroup } from "@radix-ui/react-dropdown-menu";

@@ -1,5 +1,5 @@
 import { gen } from "@/utils/generator";
-import { WORKFLOW_BODY_DATABASE } from "@/workflow/const";
+import { WORKFLOW_BODY_DATABASE } from "@/assets/const";
 import { CurrentWorkflow } from "@/workflow/Workflow";
 import { Echo } from "echo-state";
 import {

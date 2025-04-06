@@ -90,8 +90,8 @@ export const CodeBlock: Components["code"] = ({
   ) : (
     <code
       className={cn(
-        "px-[.4em] py-[.2em] rounded-md font-mono text-sm",
-        "bg-muted/80",
+        "px-[.4em] py-[.1em] rounded-[6px] font-mono text-[13px]",
+        "bg-muted-foreground/10",
         className,
       )}
       {...props}

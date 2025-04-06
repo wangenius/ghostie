@@ -6,7 +6,7 @@ import { TbLoader2, TbTrash } from "react-icons/tb";
 import { UserMananger } from "@/settings/User";
 import { Workflow } from "@/workflow/Workflow";
 import { Echo } from "echo-state";
-import { WORKFLOW_BODY_DATABASE } from "@/workflow/const";
+import { WORKFLOW_BODY_DATABASE } from "@/assets/const";
 
 export interface WorkflowMarketProps {
   id: string;

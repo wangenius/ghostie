@@ -1,14 +1,14 @@
+import { Agent, AgentStore } from "@/agent/Agent";
 import { Header } from "@/components/custom/Header";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChatHistory, HistoryMessage } from "@/model/text/HistoryMessage";
-import { Message } from "@/model/types/chatModel";
+import { ChatHistory, Message } from "@/model/chat/Message";
+import { MessageItem } from "@/model/types/chatModel";
 import { Page } from "@/utils/PageRouter";
 import { useEffect, useState } from "react";
 import { TbClock, TbMessageCircle, TbTrash } from "react-icons/tb";
-import { MessageItem } from "../main/components/MessageItem";
-import { Agent, AgentStore } from "@/agent/Agent";
 import { CurrentTalkAgent } from "../main/MainView";
+import { ChatMessageItem } from "../main/components/MessageItem";
 
 export const HistoryPage = () => {
   const history = ChatHistory.use();
@@ -16,8 +16,8 @@ export const HistoryPage = () => {
   const [current, setCurrent] = useState<string>("");
   const [selectedHistory, setSelectedHistory] = useState<{
     agent?: string;
-    system: Message;
-    list: Message[];
+    system: MessageItem;
+    list: MessageItem[];
   } | null>(null);
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export const HistoryPage = () => {
           <Button
             variant="destructive"
             onClick={() => {
-              HistoryMessage.clearAll();
+              Message.clearAll();
             }}
           >
             <TbTrash className="h-4 w-4" />
@@ -83,7 +83,7 @@ export const HistoryPage = () => {
                   <Button
                     onClick={(e) => {
                       e.stopPropagation();
-                      HistoryMessage.deleteHistory(key);
+                      Message.deleteHistory(key);
                     }}
                     variant="ghost"
                     size="icon"
@@ -116,9 +116,7 @@ export const HistoryPage = () => {
                     if (selectedHistory.agent) {
                       const agent = await Agent.get(selectedHistory.agent);
                       CurrentTalkAgent.set(agent, { replace: true });
-                      agent.engine.model.historyMessage.setList(
-                        selectedHistory.list,
-                      );
+                      agent.engine.model.Message.setList(selectedHistory.list);
                       Page.to("main");
                     }
                   }}
@@ -132,7 +130,7 @@ export const HistoryPage = () => {
                   {selectedHistory.system.content}
                 </div>
                 {selectedHistory.list.map((message, index) => (
-                  <MessageItem key={index} message={message} />
+                  <ChatMessageItem key={index} message={message} />
                 ))}
               </div>
             </div>

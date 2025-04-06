@@ -1,11 +1,10 @@
-import { ChatModel } from "../ChatModel";
 import { ChatModelRequestBody } from "@/model/types/chatModel";
+import { ChatModel } from "../ChatModel";
 import { ChatModelManager, ChatModelProvider } from "../ChatModelManager";
 
 export class Deepseek extends ChatModel {
   constructor(model: string) {
     const api_key = ChatModelManager.getApiKey(DeepseekProvider.name);
-    // 设置默认API URL
     const configWithDefaults = {
       model,
       api_key,
@@ -22,7 +21,6 @@ export class Deepseek extends ChatModel {
   protected prepareRequestBody(
     body: ChatModelRequestBody,
   ): ChatModelRequestBody {
-    // Deepseek使用OpenAI兼容的API格式，不需要特殊处理
     return body;
   }
 }

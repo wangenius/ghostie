@@ -1,8 +1,8 @@
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ChatModel } from "@/model/text/ChatModel";
-import { ChatModelManager } from "@/model/text/ChatModelManager";
+import { ChatModel } from "@/model/chat/ChatModel";
+import { ChatModelManager } from "@/model/chat/ChatModelManager";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
 import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
@@ -10,6 +10,7 @@ import { useFlow } from "../context/FlowContext";
 import { ChatNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 import { AgentModelProps } from "@/agent/types/agent";
+import { Message } from "@/model/chat/Message";
 
 const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
   const [system, setSystem] = useState(props.data.system);
@@ -121,9 +122,17 @@ export class ChatNodeExecutor extends NodeExecutor {
         inputs,
       );
 
-      const res = await ChatModel.create(chatConfig.model)
-        .system(parsedSystem)
-        .stream(parsedUser);
+      const model = ChatModel.create(chatConfig.model);
+
+      model.Message.setSystem(parsedSystem);
+      model.Message.push([
+        {
+          role: "user",
+          content: parsedUser,
+          created_at: Date.now(),
+        },
+      ]);
+      const res = await model.stream();
 
       if (!res?.body) {
         throw new Error("Chat response is empty");

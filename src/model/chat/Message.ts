@@ -1,73 +1,60 @@
 /** 消息管理类
  * 负责管理所有的消息历史记录
  */
-import {
-  Message,
-  MessagePrototype,
-  MessageType,
-} from "@/model/types/chatModel";
+import { MessageItem, MessagePrototype } from "@/model/types/chatModel";
 import { gen } from "@/utils/generator";
 import { Echo } from "echo-state";
 
 /** 聊天历史记录 */
-export interface ChatHistoryItem {
+export interface HistoryItem {
   /** 聊天ID */
   id: string;
   /** 助手名称 */
   agent?: string;
   /** 系统提示词 */
-  system: Message;
+  system: MessageItem;
   /** 聊天记录 */
-  list: Message[];
+  list: MessageItem[];
 }
 
-export const ChatHistory = new Echo<Record<string, ChatHistoryItem>>(
-  {},
-).indexed({
+export const ChatHistory = new Echo<Record<string, HistoryItem>>({}).indexed({
   database: "history",
   name: "chat",
 });
 
-/** 消息历史记录类
+/** 消息类
  * 负责管理单个聊天的历史记录
  */
-export class HistoryMessage implements ChatHistoryItem {
+export class Message implements HistoryItem {
   /** 聊天ID */
   id: string;
   /** 助手名称 */
   agent?: string;
   /** 系统提示词 */
-  system: Message;
+  system: MessageItem;
   /** 聊天记录 */
-  list: Message[];
+  list: MessageItem[];
 
-  /** 当前使用的消息历史记录 */
-  static current = new Echo<{ id: string; agent?: string }>({
-    id: "",
-    agent: "",
-  }).localStorage({ name: "current:history" });
-
-  /** 创建一个消息历史记录，id会生成一个新的，即历史记录中会出现一个新的内容 */
-  private constructor(history: ChatHistoryItem) {
+  /** 创建一个消息 */
+  private constructor(history: HistoryItem) {
     this.id = history.id;
     this.system = history.system;
     this.list = history.list;
     this.agent = history.agent;
   }
 
-  /** 创建一个消息历史记录
+  /** 创建一个消息
    * @param system 系统提示词
    * @param agent 助手名称
-   * @returns 消息历史记录
+   * @returns 消息
    */
-  static create(system: string = "", agent?: string): HistoryMessage {
-    const history: ChatHistoryItem = {
+  static create(system: string = "", agent?: string): Message {
+    const history: HistoryItem = {
       id: gen.id(),
       agent,
       system: {
         role: "system",
         content: system,
-        type: MessageType.SYSTEM,
         created_at: Date.now(),
       },
       list: [],
@@ -75,19 +62,19 @@ export class HistoryMessage implements ChatHistoryItem {
     ChatHistory.set({
       [history.id]: history,
     });
-    return new HistoryMessage(history);
+    return new Message(history);
   }
 
   /** 获取一个消息历史记录
    * @param id 消息历史记录ID
    * @returns 消息历史记录, 如果id不存在, 则创建一个默认的消息历史记录
    */
-  static async getHistory(id: string): Promise<HistoryMessage> {
+  static async getHistory(id: string): Promise<Message> {
     const history = (await ChatHistory.getCurrent())?.[id];
     if (!history) {
       throw new Error("History not found");
     }
-    return new HistoryMessage(history);
+    return new Message(history);
   }
 
   /** 设置助手名称 */
@@ -101,7 +88,7 @@ export class HistoryMessage implements ChatHistoryItem {
   }
 
   /** 获取聊天记录 */
-  getList(): Message[] {
+  getList(): MessageItem[] {
     return this.list;
   }
 
@@ -119,7 +106,7 @@ export class HistoryMessage implements ChatHistoryItem {
   }
 
   /** 设置聊天记录 */
-  setList(list: Message[]): void {
+  setList(list: MessageItem[]): void {
     this.list = list;
     ChatHistory.set((prev) => {
       const newState = { ...prev };
@@ -131,12 +118,9 @@ export class HistoryMessage implements ChatHistoryItem {
   /** 处理消息列表，应用最大历史限制并移除开头的 tool 消息
    * @returns 处理后的消息原型数组
    */
-  private processMessages(messages: Message[]): MessagePrototype[] {
+  private processMessages(messages: MessageItem[]): MessagePrototype[] {
     return [this.system, ...messages]
-      .filter(
-        (msg) =>
-          msg.type !== "assistant:error" && msg.type !== "assistant:reasoning",
-      )
+      .filter((msg) => !msg.error)
       .map((msg) => {
         const result: Record<string, any> = {
           role: msg.role,
@@ -152,7 +136,7 @@ export class HistoryMessage implements ChatHistoryItem {
    * @param message 要添加的消息
    * @returns 所有消息, 包括系统消息，但不包括 type 为 assistant:warning 的消息
    */
-  push(message: Message[]): MessagePrototype[] {
+  push(message: MessageItem[]): MessagePrototype[] {
     const newList = [...this.list, ...message];
     this.list = newList;
 
@@ -181,7 +165,7 @@ export class HistoryMessage implements ChatHistoryItem {
    * @param updater 更新函数，接收最后一条消息并返回更新后的消息
    * @returns 更新后的消息，如果没有消息则返回undefined
    */
-  updateLastMessage(msg: Partial<Message>): Message | undefined {
+  updateLastMessage(msg: Partial<MessageItem>): MessageItem | undefined {
     const list = this.list;
     if (list.length === 0) return undefined;
     const lastMessage = list[list.length - 1];
@@ -205,7 +189,7 @@ export class HistoryMessage implements ChatHistoryItem {
   /** 获取最后一条消息
    * @returns 最后一条消息，如果没有消息则返回undefined
    */
-  getLastMessage(): Message | undefined {
+  getLastMessage(): MessageItem | undefined {
     return this.list.length > 0 ? this.list[this.list.length - 1] : undefined;
   }
 
@@ -246,7 +230,7 @@ export class HistoryMessage implements ChatHistoryItem {
   /** 替换最后一条消息
    * @param message 新的消息
    */
-  replaceLastMessage(message: Message): void {
+  replaceLastMessage(message: MessageItem): void {
     const list = this.list;
     if (list.length === 0) return;
 

@@ -7,7 +7,7 @@ import {
   WorkflowMeta,
 } from "../page/workflow/types/nodes";
 import { Scheduler } from "./Scheduler";
-import { WORKFLOW_BODY_DATABASE, WORKFLOW_DATABASE } from "./const";
+import { WORKFLOW_BODY_DATABASE, WORKFLOW_DATABASE } from "@/assets/const";
 import { WorkflowExecutor } from "./execute/WorkflowExecutor";
 
 /* 工作流列表 */

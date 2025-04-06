@@ -1,5 +1,4 @@
 import { Agent } from "@/agent/Agent";
-import { MessageType } from "@/model/types/chatModel";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { Engine } from "../Engine";
 import { EngineManager } from "../EngineManager";
@@ -15,20 +14,20 @@ export class PlanAndExecute extends Engine {
       const context = this.getContext();
       /* 重置上下文 */
       context.reset();
-
-      await this.model.stream(
-        `基于用户输入"${input}"，请制定一个详细的执行计划。
+      this.model.Message.setSystem(this.agent.props.system);
+      this.model.Message.push([
+        {
+          role: "user",
+          content: `基于用户输入"${input}"，请制定一个详细的执行计划。
   计划应包含：
   1. 总体目标描述
   2. 具体执行步骤
   3. 每个步骤的预期输出
   4. 步骤之间的依赖关系`,
-        {
-          user: MessageType.USER_INPUT,
-          assistant: MessageType.ASSISTANT_REPLY,
-          function: MessageType.TOOL_RESULT,
+          created_at: Date.now(),
         },
-      );
+      ]);
+      await this.model.stream();
 
       // 3. 执行阶段
       let MAX_STEPS = SettingsManager.getReactMaxIterations();
@@ -42,29 +41,29 @@ export class PlanAndExecute extends Engine {
         if (!currentStep) break;
 
         // 3.1 执行当前步骤
-        const stepResponse = await this.model.stream(
-          `执行当前步骤：${currentStep.description}
-  ${context.generate_context_info()}`,
+        this.model.Message.push([
           {
-            user: MessageType.USER_HIDDEN,
-            assistant: MessageType.ASSISTANT_REPLY,
-            function: MessageType.TOOL_RESULT,
+            role: "user",
+            content: `执行当前步骤：${currentStep.description}`,
+            created_at: Date.now(),
           },
-        );
+        ]);
+        const stepResponse = await this.model.stream();
 
         // 3.2 评估步骤执行结果
-        const evaluationResponse = await this.model.stream(
-          `评估步骤执行结果：
+        this.model.Message.push([
+          {
+            role: "user",
+            content: `评估步骤执行结果：
   1. 检查输出是否符合预期
   2. 验证执行质量
   3. 更新执行状态
   ${stepResponse.body}`,
-          {
-            user: MessageType.USER_HIDDEN,
-            assistant: MessageType.ASSISTANT_PROCESS,
-            function: MessageType.TOOL_RESULT,
+            created_at: Date.now(),
           },
-        );
+        ]);
+
+        const evaluationResponse = await this.model.stream();
 
         // 3.3 更新执行上下文
         context.setExecutionContext(`step_${currentStep.id}_result`, {
@@ -97,8 +96,11 @@ export class PlanAndExecute extends Engine {
         context.getCurrentIteration() >= MAX_STEPS
           ? "已达到最大步骤数限制。请基于已完成的步骤生成总结报告。"
           : "所有计划步骤已完成。请生成完整的执行总结报告。";
-      await this.model.stream(
-        `${summaryPrompt}
+
+      this.model.Message.push([
+        {
+          role: "user",
+          content: `${summaryPrompt}
   ${context.generate_context_info()}
   
   请提供：
@@ -106,22 +108,20 @@ export class PlanAndExecute extends Engine {
   2. 关键成果总结
   3. 遇到的主要问题
   4. 后续建议`,
-        {
-          user: MessageType.USER_HIDDEN,
-          assistant: MessageType.ASSISTANT_REPLY,
-          function: MessageType.TOOL_RESULT,
+          created_at: Date.now(),
         },
-      );
+      ]);
+      await this.model.stream();
 
-      return this.model.historyMessage.list[
-        this.model.historyMessage.list.length - 1
-      ];
+      return this.model.Message.list[this.model.Message.list.length - 1];
     } catch (error: any) {
       // 5. 错误处理
       console.error("Plan execution error:", error);
       const context = this.getContext();
-      await this.model.stream(
-        `执行过程中遇到错误：${error.message}
+      this.model.Message.push([
+        {
+          role: "user",
+          content: `执行过程中遇到错误：${error.message}
   ${context.generate_context_info()}
   
   请提供：
@@ -129,12 +129,10 @@ export class PlanAndExecute extends Engine {
   2. 当前执行状态
   3. 恢复建议
   4. 预防措施`,
-        {
-          user: MessageType.USER_HIDDEN,
-          assistant: MessageType.ASSISTANT_ERROR,
-          function: MessageType.TOOL_RESULT,
+          created_at: Date.now(),
         },
-      );
+      ]);
+      await this.model.stream();
 
       throw error;
     }
