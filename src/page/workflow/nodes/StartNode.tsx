@@ -787,6 +787,7 @@ export const StartNode = memo(StartNodeComponent);
 export class StartNodeExecutor extends NodeExecutor {
   public override async execute(inputs: Record<string, any>) {
     try {
+      console.log("inputs", inputs);
       this.updateNodeState({
         status: "running",
         startTime: new Date().toISOString(),
@@ -797,6 +798,8 @@ export class StartNodeExecutor extends NodeExecutor {
         success: true,
         data: inputs || {},
       };
+
+      console.log("result", result);
 
       this.updateNodeState({
         status: "completed",

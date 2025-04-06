@@ -43,10 +43,11 @@ export const AgentsMarket = () => {
       setInstalling(agent.id);
 
       // 添加到机器人管理器
-      Agent.create({
+      await Agent.create({
         name: agent.name,
         system: agent.system,
       });
+
       toast.success(`Successfully installed agent: ${agent.name}`);
     } catch (error) {
       console.error("Install agent failed:", error);

@@ -27,6 +27,7 @@ export class WorkflowExecutor {
   private inDegree: Map<string, number> = new Map();
   private predecessors: Map<string, Set<string>> = new Map();
   private onDeleteEdge?: (edgeId: string) => void;
+  private inputs?: Record<string, any>;
 
   constructor(workflow: Workflow, onDeleteEdge?: (edgeId: string) => void) {
     this.workflow = workflow;
@@ -82,7 +83,7 @@ export class WorkflowExecutor {
     nodes: Record<string, WorkflowNode>,
   ): Record<string, any> {
     if (nodes[nodeId]?.type === "start") {
-      return nodes[nodeId]?.data || {};
+      return this.inputs || {};
     }
 
     const inputs: Record<string, any> = {};
@@ -105,7 +106,8 @@ export class WorkflowExecutor {
   }
 
   /* 执行工作流 */
-  public async execute(_?: Record<string, any>): Promise<NodeResult> {
+  public async execute(inputs?: Record<string, any>): Promise<NodeResult> {
+    this.inputs = inputs;
     const body = await this.workflow.getBody();
     const { nodes, edges } = body;
     console.log("nodes", nodes);

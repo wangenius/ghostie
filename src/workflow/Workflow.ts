@@ -3,12 +3,12 @@ import { Echo, Echoa } from "echo-state";
 import {
   INITIAL_WORKFLOW,
   NodeResult,
-  WorkflowMeta,
   WorkflowBody,
+  WorkflowMeta,
 } from "../page/workflow/types/nodes";
 import { Scheduler } from "./Scheduler";
-import { WorkflowExecutor } from "./execute/WorkflowExecutor";
 import { WORKFLOW_BODY_DATABASE, WORKFLOW_DATABASE } from "./const";
+import { WorkflowExecutor } from "./execute/WorkflowExecutor";
 
 /* 工作流列表 */
 export const WorkflowsStore = new Echo<Record<string, WorkflowMeta>>(

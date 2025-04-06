@@ -8,7 +8,7 @@ import { Workflow } from "@/workflow/Workflow";
 import { Echo } from "echo-state";
 import { WORKFLOW_BODY_DATABASE } from "@/workflow/const";
 
-interface WorkflowMarketProps {
+export interface WorkflowMarketProps {
   id: string;
   name: string;
   description: string;

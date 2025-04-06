@@ -40,16 +40,10 @@ export const PluginsMarket = () => {
   const handleInstall = async (plugin: PluginMarketProps) => {
     try {
       setInstalling(plugin.id);
-
       const newPlugin = await ToolPlugin.create({
-        id: plugin.id,
         name: plugin.name,
         description: plugin.description,
-        version: plugin.version,
       });
-
-      console.log(plugin.content);
-
       await newPlugin.updateContent(plugin.content.trim());
 
       cmd.message(`success install plugin: ${plugin.name}`, "success");
