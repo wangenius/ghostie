@@ -9,7 +9,7 @@ export class Hunyuan extends ChatModel {
     const configWithDefaults = {
       model,
       api_key,
-      api_url: "https://hunyuan.tencentcloudapi.com/",
+      api_url: "https://api.hunyuan.cloud.tencent.com/v1/chat/completions",
     };
     super(configWithDefaults);
   }
@@ -88,41 +88,44 @@ const HunyuanProvider: ChatModelProvider = {
   description: "腾讯混元",
   icon: "hunyuan-color.svg",
   models: {
-    "hunyuan-lite": {
-      name: "hunyuan-lite",
+    "hunyuan-t1-latest": {
+      name: "hunyuan-t1-latest",
       supportJson: true,
       supportStream: true,
       supportToolCalls: false,
-      supportReasoner: false,
-      contextWindow: 6000,
-      description: "混元Lite - 轻量版本，响应速度快",
+      supportReasoner: true,
+      contextWindow: 92000,
+      description:
+        "业内首个超大规模 Hybrid-Transformer-Mamba 推理模型，扩展推理能力，超强解码速度，进一步对齐人类偏好。",
     },
-    "hunyuan-pro": {
-      name: "hunyuan-pro",
+    "hunyuan-turbos-latest": {
+      name: "hunyuan-turbos-latest",
       supportJson: true,
       supportStream: true,
       supportToolCalls: true,
       supportReasoner: true,
       contextWindow: 32000,
-      description: "混元Pro - 高性能版本，支持复杂任务",
+      description:
+        "【最新版本】【效果最优】【官方推荐使用】\n统一数学解题步骤的风格，加强数学多轮问答。\n文本创作优化回答风格，去除AI味，增加文采。",
     },
-    "hunyuan-standard": {
-      name: "hunyuan-standard",
+    "hunyuan-standard-256K": {
+      name: "hunyuan-standard-256K",
       supportJson: true,
       supportStream: true,
       supportToolCalls: true,
       supportReasoner: false,
-      contextWindow: 16000,
+      contextWindow: 256000,
       description: "混元标准版 - 平衡性能与成本",
     },
-    "hunyuan-turbo": {
-      name: "hunyuan-turbo",
+    "hunyuan-lite": {
+      name: "hunyuan-lite",
       supportJson: true,
       supportStream: true,
       supportToolCalls: true,
       supportReasoner: false,
-      contextWindow: 32000,
-      description: "混元Turbo - 高速版本，针对实时场景优化",
+      contextWindow: 256000,
+      description:
+        "升级为 MOE 结构，上下文窗口为 256k ，在 NLP，代码，数学，行业等多项评测集上领先众多开源模型。",
     },
   },
   create: (model_name: string) => new Hunyuan(model_name),

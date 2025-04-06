@@ -76,4 +76,4 @@ const ZhipuProvider: ChatModelProvider = {
 };
 
 // 注册到ChatModel
-ChatModelManager.registerProvider(ZhipuProvider);
+// ChatModelManager.registerProvider(ZhipuProvider);

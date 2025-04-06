@@ -9,7 +9,7 @@ export class Doubao extends ChatModel {
     const configWithDefaults = {
       model,
       api_key,
-      api_url: "https://api.doubao.com/v1/chat/completions",
+      api_url: "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
     };
     super(configWithDefaults);
   }
@@ -35,32 +35,55 @@ const DoubaoProvider: ChatModelProvider = {
   description: "豆包 (智谱AI大语言模型)",
   icon: "doubao-color.svg",
   models: {
-    "doubao-pro": {
+    "doubao-1.5-pro": {
       name: "doubao-pro",
       supportJson: true,
       supportStream: true,
       supportToolCalls: true,
       supportReasoner: true,
       contextWindow: 32000,
-      description: "豆包Pro - 专业版本，支持复杂任务",
+      description:
+        "最新一代专业版大模型，单价不提升的同时，模型能力有大幅提升，在知识（MMLU_PRO：80.2； GPQA：66.2）、代码（FullStackBench：65.1）、推理（DROP：92.6）、中文（C-Eval：91.5）等相关的多项测评中获得高分，达到行业SOTA水平。",
     },
-    "doubao-lite": {
-      name: "doubao-lite",
+    "doubao-1.5-pro-256k": {
+      name: "doubao-1.5-pro-256k",
       supportJson: true,
       supportStream: true,
       supportToolCalls: true,
       supportReasoner: false,
-      contextWindow: 16000,
-      description: "豆包Lite - 轻量版本，响应速度快",
+      contextWindow: 256000,
+      description:
+        "最新一代专业版大模型，单价不提升的同时，模型能力有大幅提升，在知识（MMLU_PRO：80.2； GPQA：66.2）、代码（FullStackBench：65.1）、推理（DROP：92.6）、中文（C-Eval：91.5）等相关的多项测评中获得高分，达到行业SOTA水平。",
     },
-    "doubao-8b": {
-      name: "doubao-8b",
+    "doubao-1.5-lite-32k": {
+      name: "doubao-1.5-lite-32k",
       supportJson: true,
       supportStream: true,
       supportToolCalls: false,
       supportReasoner: false,
-      contextWindow: 8000,
-      description: "豆包8B - 小参数模型，适合简单对话",
+      contextWindow: 32000,
+      description:
+        "最新一代轻量版大模型，单价不提升的同时，模型能力有大幅提升，模型效果比肩专业版模型doubao-pro-32k-0828，您享受轻量版模型的成本和性能，获得过去专业版模型的效果。",
+    },
+    "doubao-pro-32k": {
+      name: "doubao-pro-32k",
+      supportJson: true,
+      supportStream: true,
+      supportToolCalls: false,
+      supportReasoner: false,
+      contextWindow: 32000,
+      description:
+        "行业领先的专业版大模型，在参考问答、摘要总结、创作等广泛的应用场景上能提供优质的回答，是同时具备高质量与低成本的极具性价比模型。",
+    },
+    "doubao-pro-128k": {
+      name: "doubao-pro-128k",
+      supportJson: true,
+      supportStream: true,
+      supportToolCalls: false,
+      supportReasoner: false,
+      contextWindow: 128000,
+      description:
+        "行业领先的专业版大模型，在参考问答、摘要总结、创作等广泛的应用场景上能提供优质的回答，是同时具备高质量与低成本的极具性价比模型。",
     },
   },
   create: (model_name: string) => new Doubao(model_name),

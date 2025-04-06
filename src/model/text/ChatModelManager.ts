@@ -18,6 +18,8 @@ export interface ChatModelProps {
   contextWindow: number;
   /** 描述 */
   description: string;
+  /** 推理 */
+  reasoner?: boolean;
 }
 
 /** 模型提供商接口 */

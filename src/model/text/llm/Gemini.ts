@@ -9,7 +9,8 @@ export class Gemini extends ChatModel {
     const configWithDefaults = {
       model,
       api_key,
-      api_url: "https://generativelanguage.googleapis.com/v1beta/models",
+      api_url:
+        "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
     };
     super(configWithDefaults);
   }
@@ -97,14 +98,34 @@ const GeminiProvider: ChatModelProvider = {
   description: "Google Gemini",
   icon: "gemini-color.svg",
   models: {
-    "gemini-1.5-pro": {
-      name: "gemini-1.5-pro",
+    "gemini-2.5-pro-preview-03-25": {
+      name: "gemini-2.5-pro-preview-03-25",
       supportJson: true,
       supportStream: true,
       supportToolCalls: true,
       supportReasoner: true,
-      contextWindow: 1000000,
-      description: "Gemini 1.5 Pro - 强大的多模态理解能力，超长上下文窗口",
+      contextWindow: 1048576 + 65536,
+      description:
+        "Gemini 2.5 Pro 是我们最先进的思考型模型，能够推理编码、数学和 STEM 领域的复杂问题，还能使用长上下文分析大型数据集、代码库和文档。",
+    },
+    "gemini-2.0-flash": {
+      name: "gemini-2.0-flash",
+      supportJson: true,
+      supportStream: true,
+      supportToolCalls: true,
+      supportReasoner: false,
+      contextWindow: 1048576 + 8192,
+      description:
+        "Gemini 2.0 Flash 提供新一代功能和增强型功能，包括更快的速度、原生工具使用、多模态生成功能，以及 100 万个 token 的上下文窗口。",
+    },
+    "gemini-2.0-flash-lite": {
+      name: "gemini-2.0-flash-lite",
+      supportJson: true,
+      supportStream: true,
+      supportToolCalls: false,
+      supportReasoner: false,
+      contextWindow: 1048576 + 8192,
+      description: "一款 Gemini 2.0 Flash 模型，针对性价比和低延迟进行了优化。",
     },
     "gemini-1.5-flash": {
       name: "gemini-1.5-flash",
@@ -112,26 +133,9 @@ const GeminiProvider: ChatModelProvider = {
       supportStream: true,
       supportToolCalls: true,
       supportReasoner: false,
-      contextWindow: 1000000,
-      description: "Gemini 1.5 Flash - 高速版本，适合一般应用场景",
-    },
-    "gemini-1.0-pro": {
-      name: "gemini-1.0-pro",
-      supportJson: true,
-      supportStream: true,
-      supportToolCalls: true,
-      supportReasoner: true,
-      contextWindow: 32000,
-      description: "Gemini 1.0 Pro - 上一代多模态模型",
-    },
-    "gemini-pro-vision": {
-      name: "gemini-pro-vision",
-      supportJson: true,
-      supportStream: true,
-      supportToolCalls: false,
-      supportReasoner: false,
-      contextWindow: 16000,
-      description: "Gemini Pro Vision - 专注图像理解的模型",
+      contextWindow: 1048576 + 8192,
+      description:
+        "Gemini 1.5 Flash 是一款快速且多才多艺的多模态模型，可跨多种任务进行扩缩。",
     },
   },
   create: (model_name: string) => new Gemini(model_name),

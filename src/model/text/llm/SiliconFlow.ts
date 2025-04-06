@@ -65,4 +65,4 @@ const SiliconFlowProvider: ChatModelProvider = {
 };
 
 // 注册到ChatModel
-ChatModelManager.registerProvider(SiliconFlowProvider);
+// ChatModelManager.registerProvider(SiliconFlowProvider);

@@ -9,7 +9,7 @@ export class Deepseek extends ChatModel {
     const configWithDefaults = {
       model,
       api_key,
-      api_url: "https://api.deepseek.com/v1/chat/completions",
+      api_url: "https://api.deepseek.com/chat/completions",
     };
     super(configWithDefaults);
   }
@@ -39,35 +39,17 @@ const DeepseekProvider: ChatModelProvider = {
       supportStream: true,
       supportToolCalls: true,
       supportReasoner: false,
-      contextWindow: 32000,
+      contextWindow: 64000,
       description: "Deepseek Chat - 通用对话模型",
     },
-    "deepseek-coder": {
-      name: "deepseek-coder",
-      supportJson: true,
-      supportStream: true,
-      supportToolCalls: true,
-      supportReasoner: false,
-      contextWindow: 32000,
-      description: "Deepseek Coder - 专为代码优化的模型",
-    },
-    "deepseek-llm-67b-chat": {
-      name: "deepseek-llm-67b-chat",
-      supportJson: true,
-      supportStream: true,
-      supportToolCalls: true,
-      supportReasoner: false,
-      contextWindow: 32000,
-      description: "Deepseek LLM 67B - 大参数通用模型",
-    },
-    "deepseek-math": {
-      name: "deepseek-math",
+    "deepseek-reasoner": {
+      name: "deepseek-reasoner",
       supportJson: true,
       supportStream: true,
       supportToolCalls: true,
       supportReasoner: true,
-      contextWindow: 32000,
-      description: "Deepseek Math - 数学推理专用模型",
+      contextWindow: 64000,
+      description: "Deepseek Reasoner - 推理模型",
     },
   },
   create: (model_name: string) => new Deepseek(model_name),
