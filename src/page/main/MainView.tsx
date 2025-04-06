@@ -86,7 +86,7 @@ export function MainView() {
     const container = messagesContainerRef.current;
     const isNearBottom =
       container.scrollHeight - container.scrollTop - container.clientHeight <
-      50;
+      100;
 
     if (isNearBottom) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -289,7 +289,11 @@ export function MainView() {
           value={value}
           onChange={setValue}
           onSubmit={handleSubmit}
-          className={props?.id ? "bg-muted pt-3 min-h-[140px]" : ""}
+          className={
+            props?.id
+              ? "bg-background pt-3 min-h-[120px] max-h-[120px] shadow-top"
+              : ""
+          }
         />
       </main>
     </div>

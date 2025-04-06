@@ -1,3 +1,4 @@
+import { AgentModelProps } from "@/agent/types/agent";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,8 +10,6 @@ import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
 import { useFlow } from "../context/FlowContext";
 import { ChatNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
-import { AgentModelProps } from "@/agent/types/agent";
-import { Message } from "@/model/chat/Message";
 
 const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
   const [system, setSystem] = useState(props.data.system);

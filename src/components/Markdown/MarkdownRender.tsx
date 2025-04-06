@@ -90,7 +90,7 @@ const CustomUl: Components["ul"] = ({ children }) => {
 
 const CustomOl: Components["ol"] = ({ children }) => {
   return (
-    <ol className={`my-2 ml-6 list-decimal text-gray-700 dark:text-gray-300`}>
+    <ol className={`my-2 ml-6 list-decimal text-muted-foreground`}>
       {children}
     </ol>
   );
