@@ -16,6 +16,8 @@ import { Echo } from "echo-state";
 import { WORKFLOW_BODY_DATABASE } from "@/assets/const";
 import { StartNodeConfig, WorkflowBody } from "@/page/workflow/types/nodes";
 import { VisionModel } from "../vision/VisionModel";
+import { ImageModel } from "../image/ImageModel";
+import { ImagesStore } from "@/resources/Image";
 
 export class ToolsHandler {
   static async transformAgentToolToModelFormat(
@@ -68,6 +70,30 @@ export class ToolsHandler {
         },
       });
     }
+    if (models?.image) {
+      toolRequestBody.push({
+        type: "function",
+        function: {
+          name: "IMAGE",
+          description: "当你需要生成图片时, 使用此工具",
+          parameters: {
+            type: "object",
+            properties: {
+              prompt: {
+                type: "string",
+                description: "AI文生图的正向提示词",
+              },
+              negative_prompt: {
+                type: "string",
+                description: "AI文生图的负面提示词",
+              },
+            },
+            required: ["prompt"],
+          },
+        },
+      });
+    }
+
     return toolRequestBody;
   }
 
@@ -179,6 +205,37 @@ export class ToolsHandler {
         };
       }
 
+      if (tool_call.function.name === "IMAGE") {
+        const { prompt, negative_prompt } = query as {
+          prompt: string;
+          negative_prompt: string;
+        };
+        const image = ImageModel.create(otherModels?.image);
+        console.log(image);
+        const result = await image.generate(prompt, negative_prompt);
+        console.log(result);
+
+        if ("output" in result) {
+          const task_id = result.output.task_id;
+          ImagesStore.set({
+            [task_id]: {
+              id: task_id,
+              contentType: "image/png",
+              base64Image: "",
+              task_id,
+            },
+          });
+
+          return {
+            name: tool_call.function.name,
+            arguments: tool_call.function.arguments,
+            result: task_id,
+          };
+        } else {
+          throw result.message;
+        }
+      }
+
       const firstName = tool_call.function.name.split(TOOL_NAME_SPLIT)[0];
       const secondName = tool_call.function.name.split(TOOL_NAME_SPLIT)[1];
 
@@ -236,6 +293,9 @@ export class ToolsHandler {
   static async ToolNameParser(toolName: string) {
     if (toolName === "VISION") {
       return { type: "vision", name: "checking image" };
+    }
+    if (toolName === "IMAGE") {
+      return { type: "image", name: "generating image" };
     }
 
     const firstName = toolName.split(TOOL_NAME_SPLIT)[0];

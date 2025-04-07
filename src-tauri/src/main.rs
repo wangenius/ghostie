@@ -122,6 +122,8 @@ async fn main() {
         .invoke_handler(tauri::generate_handler![
             chat::chat_stream,
             chat::cancel_stream,
+            chat::image_result,
+            chat::image_generate,
             utils::file::open_files_path,
             utils::file::open_file,
             utils::file::save_file,

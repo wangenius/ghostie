@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::{Emitter, Runtime};
 use tokio::sync::{mpsc, oneshot};
+use base64::Engine;
 
 static CANCEL_CHANNELS: Lazy<Mutex<HashMap<String, oneshot::Sender<()>>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
@@ -115,4 +116,124 @@ pub async fn cancel_stream(request_id: String) -> Result<(), String> {
         let _ = cancel_tx.send(());
     }
     Ok(())
+}
+
+#[tauri::command]
+pub async fn image_generate(
+    api_url: String,
+    api_key: String,
+    request_body: serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let client = reqwest::Client::builder()
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let mut headers = HeaderMap::new();
+    headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+    headers.insert(
+        AUTHORIZATION,
+        HeaderValue::from_str(&format!("Bearer {}", api_key)).map_err(|e| e.to_string())?,
+    );
+    headers.insert(
+        "X-DashScope-Async",
+        HeaderValue::from_static("enable"),
+    );
+
+    println!("正在发送图像生成请求到: {}", api_url);
+    let response = client
+        .post(&api_url)
+        .headers(headers)
+        .json(&request_body)
+        .send()
+        .await
+        .map_err(|e| {
+            println!("图像生成请求发送失败: {}", e);
+            e.to_string()
+        })?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.map_err(|e| e.to_string())?;
+        println!("图像生成请求失败，状态码: {}, 错误信息: {}", status, error_text);
+        return Err(format!("请求失败: {} - {}", status, error_text));
+    }
+
+    let response_json: serde_json::Value = response.json().await.map_err(|e| e.to_string())?;
+    Ok(response_json)
+}
+
+#[tauri::command]
+pub async fn image_result(
+    api_url: String,
+    api_key: String,
+) -> Result<serde_json::Value, String> {
+    let client = reqwest::Client::builder()
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let mut headers = HeaderMap::new();
+    headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+    headers.insert(
+        AUTHORIZATION,
+        HeaderValue::from_str(&format!("Bearer {}", api_key)).map_err(|e| e.to_string())?,
+    );
+
+    println!("正在获取图像生成结果: {}", api_url);
+    let response = client
+        .get(&api_url)
+        .headers(headers)
+        .send()
+        .await
+        .map_err(|e| {
+            println!("获取图像生成结果失败: {}", e);
+            e.to_string()
+        })?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.map_err(|e| e.to_string())?;
+        println!("获取图像生成结果失败，状态码: {}, 错误信息: {}", status, error_text);
+        return Err(format!("请求失败: {} - {}", status, error_text));
+    }
+
+    let mut response_json: serde_json::Value = response.json().await.map_err(|e| e.to_string())?;
+    
+    // 如果任务成功完成，获取图片并转换为base64
+    if let Some(output) = response_json.get("output") {
+        if let Some(task_status) = output.get("task_status") {
+            if task_status == "SUCCEEDED" {
+                if let Some(results) = output.get("results") {
+                    if let Some(first_result) = results.get(0) {
+                        if let Some(url) = first_result.get("url") {
+                            // 获取图片内容
+                            let image_response = client
+                                .get(url.as_str().unwrap())
+                                .send()
+                                .await
+                                .map_err(|e| e.to_string())?;
+                            
+                            let image_bytes = image_response.bytes().await.map_err(|e| e.to_string())?;
+                            
+                            // 转换为base64
+                            let base64_image = base64::engine::general_purpose::STANDARD.encode(&image_bytes);
+                            let data_url = format!("data:image/png;base64,{}", base64_image);
+                            
+                            // 创建新的结果对象
+                            if let Some(output) = response_json.get_mut("output") {
+                                if let Some(results) = output.get_mut("results") {
+                                    if let Some(first_result) = results.get_mut(0) {
+                                        if let Some(obj) = first_result.as_object_mut() {
+                                            obj.insert("base64".to_string(), serde_json::Value::String(data_url));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    Ok(response_json)
 }

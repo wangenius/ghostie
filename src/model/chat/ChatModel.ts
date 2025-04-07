@@ -12,6 +12,8 @@ import { cmd } from "@/utils/shell";
 import { ChatModelManager } from "./ChatModelManager";
 import { Message } from "./Message";
 import { ToolsHandler } from "./ToolsHandler";
+import { ImageModel } from "../image/ImageModel";
+import { ImagesStore } from "@/resources/Image";
 
 interface ChatModelInfo {
   model: string;
@@ -266,7 +268,52 @@ export class ChatModel {
             },
           ]);
           toolResult = await ToolsHandler.call(tool_call, this.otherModels);
-          if (toolResult) {
+          console.log(toolResult);
+
+          if (
+            toolResult?.name === "IMAGE" &&
+            typeof toolResult.result === "string"
+          ) {
+            this.Message.updateLastMessage({
+              images: [toolResult.result],
+            });
+            const newImage = ImageModel.create(this.otherModels?.image);
+            newImage.setTaskId(toolResult.result);
+
+            // 轮询检查图片生成状态
+            let result;
+            while (true) {
+              result = await newImage.getResult();
+              if (
+                result.output.task_status === "SUCCEEDED" &&
+                "results" in result.output &&
+                result.output.results[0]?.base64
+              ) {
+                const base64Image = result.output.results[0].base64;
+                ImagesStore.set({
+                  [toolResult.result]: {
+                    id: toolResult.result,
+                    contentType: "image/png",
+                    base64Image,
+                    task_id: toolResult.result,
+                  },
+                });
+                this.Message.updateLastMessage({
+                  tool_loading: false,
+                  content: `图片已生成，请返回结束语。图片的ID为${toolResult.result}。`,
+                });
+                break;
+              } else if (result.output.task_status === "FAILED") {
+                this.Message.updateLastMessage({
+                  tool_loading: false,
+                  error: "图片生成失败",
+                });
+                break;
+              }
+              // 等待3秒后再次检查
+              await new Promise((resolve) => setTimeout(resolve, 3000));
+            }
+          } else if (toolResult) {
             this.Message.updateLastMessage({
               content:
                 typeof toolResult.result === "string"

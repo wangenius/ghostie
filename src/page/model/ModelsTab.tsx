@@ -19,6 +19,8 @@ import { ModelProvider } from "../../model/types/model";
 import { ModelItem } from "./ModelItem";
 import { VisionModelManager } from "@/model/vision/VisionModelManager";
 import { Echo } from "echo-state";
+import { ImageModelManager } from "@/model/image/ImageModelManager";
+import { AudioModelManager } from "@/model/audio/AudioModelManager";
 
 export enum ModelTab {
   TEXT = "text",
@@ -58,6 +60,12 @@ export function ModelsTab() {
     } else if (tab === ModelTab.VISION) {
       setSelectedModel(null);
       setProviders(VisionModelManager.getProviders());
+    } else if (tab === ModelTab.IMAGE) {
+      setSelectedModel(null);
+      setProviders(ImageModelManager.getProviders());
+    } else if (tab === ModelTab.AUDIO) {
+      setSelectedModel(null);
+      setProviders(AudioModelManager.getProviders());
     } else {
       setSelectedModel(null);
       setProviders({});

@@ -38,17 +38,82 @@ export function ChatMessageItem({ message }: MessageItemProps) {
       );
     }
   }, [message.tool_calls]);
-
-  // 如果是隐藏的用户消息或tool:result消息,则不渲染
-  if (message.hidden || message.tool_call_id) {
-    return null;
-  }
-
   const handleCopyMessage = () => {
     navigator.clipboard.writeText(message.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
+  // 如果是隐藏的用户消息或tool:result消息,则不渲染
+  if (message.hidden) {
+    return null;
+  }
+  if (message.tool_call_id && !message.images?.length) {
+    return null;
+  }
+  if (message.tool_call_id && message.images?.length) {
+    if (message.tool_loading) {
+      return (
+        <div className="flex items-center gap-2 px-3 rounded-md text-primary text-sm py-2">
+          <TbLoader2 className="h-3.5 w-3.5 animate-spin" />
+          <span className="text-muted-foreground">loading...</span>
+        </div>
+      );
+    }
+    return (
+      <div className="flex flex-wrap justify-center gap-2">
+        {message.images.map((image) => (
+          <div
+            key={image}
+            className="relative group/image w-[300px] aspect-square rounded-lg overflow-hidden bg-muted"
+            onClick={() => setSelectedImage(image)}
+          >
+            <img
+              src={`${images[image].base64Image}`}
+              alt="生成的图片"
+              className="w-full h-full object-cover transition-transform group-hover/image:scale-105"
+            />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/image:opacity-100 transition-opacity flex items-center justify-center">
+              <TbMaximize className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        ))}
+        <Dialog
+          open={!!selectedImage}
+          onOpenChange={() => setSelectedImage(null)}
+        >
+          <DialogContent className="max-w-[80vw] max-h-[80vh] p-0 bg-black/90 border-none">
+            {selectedImage && (
+              <div className="relative w-full h-full flex items-center justify-center">
+                <img
+                  src={`${images[selectedImage].base64Image}`}
+                  alt="用户上传的图片"
+                  className="max-w-full max-h-[98vh] object-contain"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-4 right-4 text-white hover:text-white hover:bg-white/10"
+                  onClick={() => setSelectedImage(null)}
+                >
+                  <svg
+                    className="w-6 h-6"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
 
   if (message.role === "user")
     return (

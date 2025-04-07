@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { KnowledgesStore, KnowledgeMeta } from "@/knowledge/Knowledge";
 import { ChatModelManager } from "@/model/chat/ChatModelManager";
+import { ImageModelManager } from "@/model/image/ImageModelManager";
 import { VisionModelManager } from "@/model/vision/VisionModelManager";
 import { PluginStore } from "@/plugin/ToolPlugin";
 import { PluginProps, ToolProps } from "@/plugin/types";
@@ -56,10 +57,6 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
         }
       },
     });
-  }, [props]);
-
-  useEffect(() => {
-    console.log(props);
   }, [props]);
 
   if (!props) return null;
@@ -293,6 +290,36 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
                     models: {
                       ...props.models,
                       vision: value,
+                    },
+                  })
+                }
+              />
+              <DrawerSelector
+                title="Image Model"
+                value={[props.models?.image]}
+                items={Object.values(ImageModelManager.getProviders()).flatMap(
+                  (provider) => {
+                    const key = ImageModelManager.getApiKey(provider.name);
+                    if (!key) return [];
+                    const models = provider.models;
+                    return Object.values(models).map((model) => {
+                      return {
+                        label: model.name,
+                        value: {
+                          provider: provider.name,
+                          name: model.name,
+                        },
+                        type: provider.name,
+                        description: `${model.description}`,
+                      };
+                    });
+                  },
+                )}
+                onSelect={([value]) =>
+                  agent.update({
+                    models: {
+                      ...props.models,
+                      image: value,
                     },
                   })
                 }
