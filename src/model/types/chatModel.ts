@@ -41,6 +41,8 @@ export interface MessageItem extends MessagePrototype {
   hidden?: boolean;
   /* loading */
   loading?: boolean;
+  /* 工具调用加载 */
+  tool_loading?: boolean;
   /* 错误 */
   error?: string;
   /* reasoner */

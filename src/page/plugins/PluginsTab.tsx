@@ -51,8 +51,8 @@ import { format } from "prettier/standalone";
 const CurrentPlugin = new Echo<ToolPlugin>(new ToolPlugin());
 const PluginContent = new Echo<string>(
   `/**
-* @name 请在此处编写插件名称
-* @description 请在此处编写插件描述
+* @name write the plugin name here
+* @description write the plugin description here
 */`,
 ).indexed({
   database: PLUGIN_DATABASE_CONTENT,

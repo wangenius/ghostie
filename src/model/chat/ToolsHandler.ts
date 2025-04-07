@@ -9,7 +9,7 @@ import {
   ToolRequestBody,
 } from "../types/chatModel";
 import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
-import { Knowledge } from "@/knowledge/Knowledge";
+import { Knowledge, KnowledgesStore } from "@/knowledge/Knowledge";
 import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
 import { AgentToolProps } from "@/agent/types/agent";
 import { Echo } from "echo-state";
@@ -91,7 +91,7 @@ export class ToolsHandler {
     const toolRequestBody: ToolRequestBody = [];
     if (knowledges.length) {
       /* 获取知识库 */
-      const list = Knowledge.getList();
+      const list = await KnowledgesStore.getCurrent();
 
       /* 将知识库变成工具 */
       knowledges.forEach((knowledge) => {
@@ -129,7 +129,7 @@ export class ToolsHandler {
       try {
         query = JSON.parse(tool_call.function.arguments);
       } catch {
-        throw new Error("工具调用参数错误");
+        throw new Error("tool call arguments error");
       }
 
       const firstName = tool_call.function.name.split(TOOL_NAME_SPLIT)[0];
@@ -141,7 +141,7 @@ export class ToolsHandler {
           return {
             name: tool_call.function.name,
             arguments: tool_call.function.arguments,
-            result: "工作流不存在",
+            result: "the called workflow not found",
           };
         }
         const result = await workflow.execute();
@@ -156,7 +156,7 @@ export class ToolsHandler {
           return {
             name: tool_call.function.name,
             arguments: tool_call.function.arguments,
-            result: "查询内容query不能为空",
+            result: "the query content can't be empty",
           };
         }
         /* 搜索知识库 */
@@ -196,10 +196,10 @@ export class ToolsHandler {
     }
 
     if (firstName === KNOWLEDGE_TOOL_NAME_PREFIX) {
-      const knowledge = Knowledge.getList();
+      const list = await KnowledgesStore.getCurrent();
       return {
         type: "knowledge",
-        name: knowledge[secondName].name || secondName,
+        name: list[secondName].name || secondName,
       };
     }
 

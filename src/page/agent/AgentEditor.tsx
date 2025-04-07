@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Knowledge, KnowledgeMeta } from "@/knowledge/Knowledge";
+import { KnowledgesStore, KnowledgeMeta } from "@/knowledge/Knowledge";
 import { ChatModelManager } from "@/model/chat/ChatModelManager";
 import { PluginStore } from "@/plugin/ToolPlugin";
 import { PluginProps, ToolProps } from "@/plugin/types";
@@ -26,7 +26,7 @@ import { TbUpload } from "react-icons/tb";
 import { toast } from "sonner";
 
 export const AgentEditor = ({ agent }: { agent: Agent }) => {
-  const { list } = Knowledge.useList();
+  const list = KnowledgesStore.use();
   const workflows = WorkflowsStore.use();
   const props = AgentStore.use((selector) => selector[agent.props.id]);
   const plugins = PluginStore.use();
@@ -251,6 +251,7 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
                 items={Object.values(list).map((k: KnowledgeMeta) => ({
                   label: k.name + "(" + k.version + ")",
                   value: k.id,
+                  description: k.description,
                 }))}
                 onSelect={(value) =>
                   agent.update({

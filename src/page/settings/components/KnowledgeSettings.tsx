@@ -80,6 +80,23 @@ export function KnowledgeThresholdSettings() {
       />
       <SettingItem
         icon={<TbDatabase className="w-[18px] h-[18px]" />}
+        title="Chunk Size"
+        description={`Current: ${knowledge.chunkSize}`}
+        action={
+          <Slider
+            value={[knowledge.chunkSize]}
+            min={100}
+            max={800}
+            step={5}
+            onValueChange={([value]) =>
+              SettingsManager.setKnowledge({ chunkSize: value })
+            }
+            className="w-32"
+          />
+        }
+      />
+      <SettingItem
+        icon={<TbDatabase className="w-[18px] h-[18px]" />}
         title="Result Number"
         description={`Current: ${knowledge.limit}`}
         action={

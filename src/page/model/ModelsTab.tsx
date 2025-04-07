@@ -109,7 +109,7 @@ export function ModelsTab() {
               )}
               <div className="flex justify-between flex-1 gap-1">
                 <span className="font-bold text-sm truncate">
-                  {provider.name || "未命名模型"}
+                  {provider.name}
                 </span>
               </div>
             </div>

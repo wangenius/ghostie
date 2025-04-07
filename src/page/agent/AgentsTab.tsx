@@ -11,14 +11,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getColor } from "@/utils/color";
 import { cmd } from "@utils/shell";
 import { Echo } from "echo-state";
+import { useEffect, useState } from "react";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 import { TbDownload, TbGhost3, TbPlus, TbUpload } from "react-icons/tb";
 import { AgentEditor } from "./AgentEditor";
 import { AgentsMarket } from "./AgentsMarket";
-import { useEffect, useState } from "react";
 
 export const CurrentSelectedAgent = new Echo<string>("");
 

@@ -72,14 +72,14 @@ function ShortcutItem({ icon, title, shortcut }: ShortcutItemProps) {
       </div>
       <div className="flex items-center gap-1">
         {shortcut.split("+").map((key, index) => (
-          <>
+          <div key={key}>
             <kbd className="px-2 py-1 text-xs rounded bg-muted">
               {key.trim()}
             </kbd>
             {index < shortcut.split("+").length - 1 && (
               <span className="text-muted-foreground">+</span>
             )}
-          </>
+          </div>
         ))}
       </div>
     </div>

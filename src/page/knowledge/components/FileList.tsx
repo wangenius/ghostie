@@ -1,16 +1,16 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { KnowledgeFile } from "@/knowledge/Knowledge";
+import type { KnowledgeBody } from "@/knowledge/Knowledge";
 import { cn } from "@/lib/utils";
 import { TbFileText, TbSearch, TbTrash } from "react-icons/tb";
 
 interface FileListProps {
-  files: KnowledgeFile[];
+  files: KnowledgeBody;
   searchQuery: string;
   onSearchQueryChange: (query: string) => void;
   onSearch: () => Promise<void>;
-  onSelectFile: (index: number) => void;
+  onSelectFile: (fileName: string) => void;
 }
 
 export function FileList({
@@ -41,14 +41,14 @@ export function FileList({
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-3 p-2">
-        {files.map((file, index) => (
+        {Object.values(files).map((file) => (
           <div
-            key={index}
+            key={file.name}
             className={cn(
               "group relative rounded-lg transition-all cursor-pointer bg-background",
               "hover:bg-accent/50 border border-border mb-2",
             )}
-            onClick={() => onSelectFile(index)}
+            onClick={() => onSelectFile(file.name)}
           >
             <div className="p-3 flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -73,7 +73,6 @@ export function FileList({
                 className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // TODO: 实现删除文件功能
                 }}
               >
                 <TbTrash className="w-4 h-4" />

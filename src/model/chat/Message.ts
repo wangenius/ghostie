@@ -1,6 +1,7 @@
 /** 消息管理类
  * 负责管理所有的消息历史记录
  */
+import { CHAT_HISTORY_DATABASE } from "@/assets/const";
 import { MessageItem, MessagePrototype } from "@/model/types/chatModel";
 import { gen } from "@/utils/generator";
 import { Echo } from "echo-state";
@@ -18,8 +19,8 @@ export interface HistoryItem {
 }
 
 export const ChatHistory = new Echo<Record<string, HistoryItem>>({}).indexed({
-  database: "history",
-  name: "chat",
+  database: CHAT_HISTORY_DATABASE,
+  name: CHAT_HISTORY_DATABASE,
 });
 
 /** 消息类

@@ -5,6 +5,11 @@ import { cmd } from "@/utils/shell";
 import { splitTextIntoChunks } from "@/utils/text";
 import { Echo } from "echo-state";
 import { SettingsManager } from "../settings/SettingsManager";
+import {
+  KNOWLEDGE_BODY_DATABASE,
+  KNOWLEDGE_DATABASE,
+  KNOWLEDGE_VERSION,
+} from "@/assets/const";
 
 /* 文本块元数据 */
 export interface TextChunkMetadata {
@@ -45,10 +50,8 @@ export interface KnowledgeFile {
 }
 
 /* 知识库 */
-export interface KnowledgeProps {
-  meta: KnowledgeMeta;
-  /* 知识库文件 */
-  files: KnowledgeFile[];
+export interface KnowledgeBody {
+  [key: string]: KnowledgeFile;
 }
 
 export interface KnowledgeMeta {
@@ -97,42 +100,41 @@ export interface ProgressCallback {
   currentFile?: string;
 }
 
-const CHUNK_SIZE = 425;
-const KNOWLEDGE_VERSION = "1.0.0";
+export const KnowledgesStore = new Echo<Record<string, KnowledgeMeta>>(
+  {},
+).indexed({
+  database: KNOWLEDGE_DATABASE,
+  name: KNOWLEDGE_DATABASE,
+});
 
 export class Knowledge {
-  store = new Echo<KnowledgeProps | null>(null);
-  private static list = new Echo<{
-    knowledge: string;
-    list: Record<string, KnowledgeMeta>;
-  }>({
-    knowledge: "",
-    list: {},
-  }).localStorage({
-    name: "knowledge_list",
-  });
-  static useList = this.list.use.bind(this.list);
-  static database = "knowledge";
-  use = this.store.use.bind(this.store);
+  meta: KnowledgeMeta;
+  constructor(
+    meta: KnowledgeMeta = {
+      id: "",
+      name: "",
+      description: "",
+      version: KNOWLEDGE_VERSION,
+      created_at: 0,
+      updated_at: 0,
+    },
+  ) {
+    this.meta = meta;
+  }
 
-  constructor(id: string) {
-    this.store = new Echo<KnowledgeProps | null>(null).indexed({
-      database: Knowledge.database,
-      name: id,
+  static async get(id: string): Promise<Knowledge> {
+    const meta = await KnowledgesStore.getCurrent();
+    return new Knowledge(meta[id]);
+  }
+
+  async docs(): Promise<KnowledgeBody> {
+    const docs = Echo.get<KnowledgeBody>({
+      database: KNOWLEDGE_BODY_DATABASE,
+      name: this.meta.id,
     });
+    return docs.getCurrent();
   }
 
-  async docs() {
-    return this.store.getCurrent();
-  }
-
-  static getList() {
-    return Knowledge.list.current.list;
-  }
-
-  switch(id: string) {
-    this.store.switch(id);
-  }
   // 计算余弦相似度
   private static cosineSimilarity(a: number[], b: number[]): number {
     const dotProduct = a.reduce((sum, val, i) => sum + val * b[i], 0);
@@ -148,58 +150,15 @@ export class Knowledge {
 
   // 生成文本向量
 
-  async setDescription(description: string) {
-    this.store.set((prev) => ({
-      ...prev,
-      description,
-    }));
-
-    const id = (await this.store.getCurrent())?.meta.id;
-    if (!id) {
-      return;
-    }
-
-    Knowledge.list.set((prev) => {
+  async updateMeta(meta: Partial<KnowledgeMeta>) {
+    this.meta = {
+      ...this.meta,
+      ...meta,
+    };
+    KnowledgesStore.set((prev) => {
       return {
         ...prev,
-        list: {
-          ...prev.list,
-          [id]: {
-            ...prev.list[id],
-            description,
-          },
-        },
-      };
-    });
-  }
-
-  async setName(name: string) {
-    const id = (await this.store.getCurrent())?.meta.id;
-    if (!id) {
-      return;
-    }
-    this.store.set((prev) => {
-      if (!prev) {
-        return prev;
-      }
-      return {
-        ...prev,
-        meta: {
-          ...prev.meta,
-          name,
-        },
-      };
-    });
-    Knowledge.list.set((prev) => {
-      return {
-        ...prev,
-        list: {
-          ...prev.list,
-          [id]: {
-            ...prev.list[id],
-            name,
-          },
-        },
+        [this.meta.id]: this.meta,
       };
     });
   }
@@ -209,7 +168,7 @@ export class Knowledge {
    * @param options 选项
    * @returns 知识库
    */
-  static async add(
+  static async create(
     filePaths: FileMetadata[],
     options?: {
       name?: string;
@@ -222,7 +181,7 @@ export class Knowledge {
       throw new Error("Model configuration error");
     }
 
-    const processedFiles: KnowledgeFile[] = [];
+    const processedFiles: Record<string, KnowledgeFile> = {};
     const now = Date.now();
     const { onProgress } = options || {};
 
@@ -262,7 +221,10 @@ export class Knowledge {
         currentFile: fileName,
       });
 
-      const chunks = splitTextIntoChunks(file.content, CHUNK_SIZE);
+      const chunks = splitTextIntoChunks(
+        file.content,
+        SettingsManager.current.knowledge.chunkSize,
+      );
       const processedChunks: TextChunk[] = [];
       const totalChunks = chunks.length;
       const [provider, modelName] = model.split(":");
@@ -293,20 +255,20 @@ export class Knowledge {
       }
 
       const fileType = file.path.split(".").pop()?.toLowerCase() || "txt";
-      processedFiles.push({
+      processedFiles[fileName] = {
         name: fileName,
         content: file.content,
         file_type: fileType,
         chunks: processedChunks,
         created_at: now,
         updated_at: now,
-      });
+      };
     }
 
     const id = gen.id();
 
-    const knowledge = new Echo<KnowledgeProps | null>(null).indexed({
-      database: Knowledge.database,
+    const knowledge = new Echo<KnowledgeBody | null>(null).indexed({
+      database: KNOWLEDGE_BODY_DATABASE,
       name: id,
     });
 
@@ -314,34 +276,16 @@ export class Knowledge {
 
     const meta: KnowledgeMeta = {
       id,
-      name:
-        options?.name ||
-        processedFiles[0]?.name ||
-        `Knowledge_${new Date().toISOString().split("T")[0]}`,
+      name: options?.name || "UnNamed",
       description: options?.description || "",
       version: KNOWLEDGE_VERSION,
       created_at: now,
       updated_at: now,
     };
 
-    knowledge.set({
-      meta,
-      files: processedFiles,
-    });
+    knowledge.set(processedFiles);
 
-    Knowledge.list.set((prev) => {
-      const id = meta.id;
-      if (!id) {
-        return prev;
-      }
-      return {
-        ...prev,
-        list: {
-          ...prev.list,
-          [id]: meta,
-        },
-      };
-    });
+    KnowledgesStore.set({ [meta.id]: meta });
 
     onProgress?.({
       progress: 100,
@@ -352,20 +296,12 @@ export class Knowledge {
   }
 
   // 删除知识库
-  static delete(id: string): void {
-    new Echo<Knowledge | null>(null)
-      .indexed({
-        database: this.database,
-        name: id,
-      })
-      .discard();
-    this.list.set((prev) => {
-      const { [id]: _, ...rest } = prev.list;
-      return {
-        ...prev,
-        list: rest,
-      };
-    });
+  static async delete(id: string): Promise<void> {
+    await Echo.get<KnowledgeBody | null>({
+      database: KNOWLEDGE_BODY_DATABASE,
+      name: id,
+    }).discard();
+    KnowledgesStore.delete(id);
   }
 
   /** 搜索知识库
@@ -383,35 +319,45 @@ export class Knowledge {
       throw new Error("Model configuration error");
     }
 
+    console.log("model", model);
+
     /* 获取查询向量 */
     const [provider, modelName] = model.split(":");
+    console.log("provider", provider);
+    console.log("modelName", modelName);
     const embeddingModel =
       EmbeddingModelManager.get(provider).create(modelName);
     const queryEmbedding = await embeddingModel.textToEmbedding(query);
+    console.log("queryEmbedding", queryEmbedding);
     const results: SearchResult[] = [];
 
     /* 搜索所有知识库 */
-    for (const doc of Object.values(this.list.current.list)) {
+    for (const doc of Object.values(await KnowledgesStore.getCurrent())) {
+      console.log("doc", doc);
       /* 如果指定了知识库ID，则只搜索指定知识库, 否则搜索所有知识库 */
       if (knowledgeIds.length > 0 && !knowledgeIds.includes(doc.id)) {
         continue;
       }
-      const knowledge = new Echo<KnowledgeProps | null>(null).indexed({
-        database: this.database,
+      const knowledge = Echo.get<KnowledgeBody>({
+        database: KNOWLEDGE_BODY_DATABASE,
         name: doc.id,
       });
 
-      for (const file of (await knowledge.getCurrent())?.files || []) {
+      console.log("knowledge", await knowledge.getCurrent());
+
+      for (const file of Object.values((await knowledge.getCurrent()) || {})) {
+        console.log("file", file);
         for (const chunk of file.chunks) {
-          const similarity = this.cosineSimilarity(
+          const similarity = Knowledge.cosineSimilarity(
             queryEmbedding,
             chunk.embedding,
           );
+          console.log("similarity", similarity);
           if (similarity > SettingsManager.current.knowledge.threshold) {
             results.push({
               content: chunk.content,
               similarity,
-              document_name: `${knowledge.current?.meta.name}/${file.name}`,
+              document_name: `${doc.name}/${file.name}`,
               document_id: doc.id,
             });
           }
@@ -420,6 +366,7 @@ export class Knowledge {
     }
 
     results.sort((a, b) => b.similarity - a.similarity);
+    console.log("results", results);
     return results.slice(0, SettingsManager.current.knowledge.limit);
   }
 }

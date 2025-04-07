@@ -63,7 +63,7 @@ export const WorkflowGraph = memo(
     return (
       <div
         ref={reactFlowWrapper}
-        className="w-full h-full relative rounded-lg border focus-within:border-primary/40 overflow-hidden"
+        className="w-full h-full relative rounded-3xl border focus-within:border-primary/40 overflow-hidden"
       >
         <ReactFlow
           nodes={nodes}

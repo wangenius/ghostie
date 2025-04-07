@@ -29,6 +29,8 @@ interface SettingsProps {
      * for example: alibaba:tongyi
      */
     searchModel: string;
+    /**  */
+    chunkSize: number;
   };
   proxy: ProxySettingsConfig; // 新增：代理设置字段
 }
@@ -47,6 +49,7 @@ export class SettingsManager {
       limit: 10,
       baseModel: "",
       searchModel: "",
+      chunkSize: 425,
     },
     // 新增：代理默认设置
     proxy: {

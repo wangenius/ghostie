@@ -22,7 +22,7 @@ export function EnvEditor() {
       const envVars = await cmd.invoke<EnvVar[]>("env_list");
       setVars(envVars);
     } catch (error) {
-      cmd.message("加载环境变量失败", "error");
+      cmd.message("failed to load environment variables", "error");
     }
   };
 
@@ -48,15 +48,15 @@ export function EnvEditor() {
     try {
       // 验证是否有空的key
       if (vars.some((v) => !v.key.trim())) {
-        cmd.message("环境变量名称不能为空", "error");
+        cmd.message("environment variable name can't be empty", "error");
         return;
       }
 
       await cmd.invoke("env_save", { vars });
-      await cmd.message("保存成功", "success");
+      await cmd.message("successfully saved environment variables", "success");
       cmd.close();
     } catch (error) {
-      cmd.message("保存失败", "error");
+      cmd.message("failed to save environment variables", "error");
     }
   };
 
@@ -65,19 +65,20 @@ export function EnvEditor() {
       <div className="flex flex-col gap-2 justify-between flex-1">
         <div className="flex-none bg-muted-foreground/10 p-3 rounded-lg">
           <p className="text-xs text-muted-foreground">
-            环境变量使用方式：<code>Deno.env.get("OPENAI_API_KEY");</code>
+            environment variable usage:
+            <code>Deno.env.get("OPENAI_API_KEY");</code>
           </p>
         </div>
         <div className="space-y-2">
           {vars.map((v, i) => (
             <div key={i} className="flex gap-2 items-center">
               <Input
-                placeholder="变量名"
+                placeholder="variable name"
                 value={v.key}
                 onChange={(e) => handleChange(i, "key", e.target.value)}
               />
               <Input
-                placeholder="变量值"
+                placeholder="variable value"
                 value={v.value}
                 onChange={(e) => handleChange(i, "value", e.target.value)}
               />
@@ -92,12 +93,12 @@ export function EnvEditor() {
           ))}
           <Button variant="outline" onClick={handleAdd}>
             <Plus className="h-4 w-4 mr-2" />
-            添加环境变量
+            add environment variable
           </Button>
         </div>
         <div className="flex items-center justify-end">
           <Button variant="primary" onClick={handleSave}>
-            保存
+            save
           </Button>
         </div>
       </div>
@@ -107,7 +108,7 @@ export function EnvEditor() {
 
 EnvEditor.open = () => {
   dialog({
-    title: "环境变量",
+    title: "environment variables",
     content: <EnvEditor />,
     width: 400,
     height: 500,

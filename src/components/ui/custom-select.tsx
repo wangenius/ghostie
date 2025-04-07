@@ -17,7 +17,7 @@ export function CustomSelect({
   value,
   onValueChange,
   options,
-  placeholder = "请选择...",
+  placeholder = "Select...",
 }: CustomSelectProps) {
   const selectedOption = options.find((opt) => opt.value === value);
 
@@ -25,7 +25,7 @@ export function CustomSelect({
     <SelectPrimitive.Root value={value} onValueChange={onValueChange}>
       <SelectPrimitive.Trigger
         className={cn(
-          "flex w-full items-start justify-between rounded-md p-2 text-sm",
+          "flex w-full items-center justify-between rounded-md p-2 px-4 text-sm",
           "bg-muted-foreground transition-colors",
           value ? "hover:bg-muted-foreground/20" : "hover:bg-primary/10",
           value

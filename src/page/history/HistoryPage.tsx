@@ -8,7 +8,7 @@ import { Page } from "@/utils/PageRouter";
 import { useEffect, useState } from "react";
 import { TbClock, TbMessageCircle, TbTrash } from "react-icons/tb";
 import { CurrentTalkAgent } from "../main/MainView";
-import { ChatMessageItem } from "../main/components/MessageItem";
+import { ChatMessageItem } from "../main/MessageItem";
 
 export const HistoryPage = () => {
   const history = ChatHistory.use();

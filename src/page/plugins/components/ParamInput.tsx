@@ -28,7 +28,7 @@ export function ParamInput({
   switch (property.type) {
     case "object":
       return (
-        <div className="pl-4 flex items-center justify-between gap-2">
+        <div className="pl-2 space-y-2">
           <label className="block text-xs font-medium text-muted-foreground">
             {name}
           </label>
@@ -61,13 +61,14 @@ export function ParamInput({
       );
     case "array":
       return (
-        <div className="pl-4 flex items-center justify-between gap-2">
+        <div className="pl-2 space-y-2">
           <label className="block text-xs text-muted-foreground">{name}</label>
           <Input
             value={Array.isArray(value) ? value.join(",") : ""}
             onChange={(e) =>
               onChange(e.target.value.split(",").filter(Boolean))
             }
+            className="rounded-[8px] bg-muted-foreground/10"
             placeholder={
               property.description || "Input array values, separated by commas"
             }
@@ -76,7 +77,7 @@ export function ParamInput({
       );
     case "boolean":
       return (
-        <div className="pl-4 flex items-center justify-between gap-2">
+        <div className="pl-2 space-y-2">
           <label className="block text-xs text-muted-foreground">{name}</label>
           <Select
             value={String(value)}
@@ -94,10 +95,11 @@ export function ParamInput({
       );
     default:
       return (
-        <div className="pl-4 flex items-center justify-between gap-2">
+        <div className="pl-2 space-y-2">
           <label className="block text-xs text-muted-foreground">{name}</label>
           <Input
             value={value ? String(value) : ""}
+            className="rounded-[8px] bg-muted-foreground/10"
             onChange={(e) => onChange(e.target.value)}
             placeholder={property.description}
             type={property.type === "number" ? "number" : "text"}

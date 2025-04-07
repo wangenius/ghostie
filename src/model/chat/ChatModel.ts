@@ -237,19 +237,27 @@ export class ChatModel {
       let toolResult;
       if (tool_calls.length > 0) {
         for (const tool_call of tool_calls) {
+          this.Message.updateLastMessage({
+            loading: false,
+          });
+          this.Message.push([
+            {
+              role: "tool",
+              tool_call_id: tool_call.id,
+              content: "",
+              tool_loading: true,
+              created_at: Date.now(),
+            },
+          ]);
           toolResult = await ToolsHandler.call(tool_call);
           if (toolResult) {
-            this.Message.push([
-              {
-                role: "tool",
-                tool_call_id: tool_call.id,
-                content:
-                  typeof toolResult.result === "string"
-                    ? toolResult.result
-                    : JSON.stringify(toolResult.result),
-                created_at: Date.now(),
-              },
-            ]);
+            this.Message.updateLastMessage({
+              content:
+                typeof toolResult.result === "string"
+                  ? toolResult.result
+                  : JSON.stringify(toolResult.result),
+              tool_loading: false,
+            });
           }
         }
       }

@@ -6,7 +6,7 @@ import { ToolsHandler } from "@/model/chat/ToolsHandler";
 import { MessageItem } from "@/model/types/chatModel";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { TbBrain, TbCopy, TbMathFunction } from "react-icons/tb";
+import { TbBrain, TbCopy, TbMathFunction, TbLoader2 } from "react-icons/tb";
 
 interface MessageItemProps {
   message: MessageItem;
@@ -79,6 +79,12 @@ export function ChatMessageItem({ message }: MessageItemProps) {
           )}
         </div>
       )}
+      {message.loading && !message.content && (
+        <div className="flex items-center gap-2 px-3 rounded-md text-primary text-sm py-2">
+          <TbLoader2 className="h-3.5 w-3.5 animate-spin" />
+          <span className="text-muted-foreground">loading...</span>
+        </div>
+      )}
 
       {message.role === "assistant" && message.content && (
         <MarkdownRender>{message.content}</MarkdownRender>
@@ -90,7 +96,11 @@ export function ChatMessageItem({ message }: MessageItemProps) {
       )}
       {toolCalls.type ? (
         <div className="flex items-center gap-1 p-2 rounded-full bg-primary/10 text-primary text-xs">
-          <TbMathFunction className="h-3.5 w-3.5" />
+          {message.tool_loading ? (
+            <TbLoader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <TbMathFunction className="h-3.5 w-3.5" />
+          )}
           调用: {toolCalls.type}:{toolCalls.name}
         </div>
       ) : (

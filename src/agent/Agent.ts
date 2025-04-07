@@ -2,6 +2,7 @@ import { AgentProps } from "@/agent/types/agent";
 import { gen } from "@/utils/generator";
 import { Echo } from "echo-state";
 import { Engine } from "./engine/Engine";
+import { AGENT_DATABASE } from "@/assets/const";
 
 export const DEFAULT_AGENT: AgentProps = {
   id: "",
@@ -10,8 +11,6 @@ export const DEFAULT_AGENT: AgentProps = {
   tools: [],
   engine: "react",
 };
-/* 数据库名称 */
-export const AGENT_DATABASE = "agents";
 
 export const AgentStore = new Echo<Record<string, AgentProps>>({}).indexed({
   database: AGENT_DATABASE,

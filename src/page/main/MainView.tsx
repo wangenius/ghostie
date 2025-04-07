@@ -20,8 +20,8 @@ import {
   TbSettings,
 } from "react-icons/tb";
 import { Descendant } from "slate";
-import { ChatMessageItem } from "./components/MessageItem";
-import { TypeArea } from "./components/TypeArea";
+import { ChatMessageItem } from "./MessageItem";
+import { TypeArea } from "./TypeArea";
 // 定义 MentionElement 接口
 interface MentionElement {
   type: "mention";

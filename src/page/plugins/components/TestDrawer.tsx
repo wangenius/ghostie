@@ -68,7 +68,7 @@ export function TestDrawer({
         </div>
       }
     >
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-3">
         <div className="space-y-4">
           <CustomSelect
             value={testTool}
@@ -83,29 +83,27 @@ export function TestDrawer({
             placeholder="Select Tool"
           />
 
-          {testTool && (
-            <div className="bg-muted/30 rounded-lg p-3">
+          {testTool && parameters && (
+            <div className="bg-muted/30 rounded-lg">
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
                 Test Parameter Configuration
               </h4>
-              <div className="space-y-3">
+              <div className="space-y-1">
                 {parameters &&
                   Object.entries(parameters.properties || {}).map(
                     ([key, property]) => (
-                      <div key={key} className="bg-background rounded-md p-2">
-                        <ParamInput
-                          name={key}
-                          property={property}
-                          value={testArgs[key]}
-                          onChange={(value) =>
-                            onTestArgsChange({
-                              ...testArgs,
-                              [key]: value,
-                            })
-                          }
-                        />
-                      </div>
+                      <ParamInput
+                        name={key}
+                        key={key}
+                        property={property}
+                        value={testArgs[key]}
+                        onChange={(value) =>
+                          onTestArgsChange({
+                            ...testArgs,
+                            [key]: value,
+                          })
+                        }
+                      />
                     ),
                   )}
               </div>
