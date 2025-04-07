@@ -10,7 +10,7 @@ hero:
   actions:
     - theme: brand
       text: Get Started
-      link: /tutorials/start
+      link: /start/intro
     - theme: alt
       text: Download
       link: https://github.com/wangenius/ghostie/releases
@@ -26,7 +26,7 @@ features:
     details: Full desktop system access and control, local script execution, system-level automation capabilities, native file system integration
   - icon: 🔌
     title: Plugin Architecture
-    details: Extensible plugin system, custom plugin development support, plugin marketplace, hot-reload capability, permission management
+    details: Extensible plugin system, custom plugin development support, plugin marketplace, hot-reload capability, permission management, easy to dev
   - icon: ⚡
     title: Workflow Engine
     details: Visual workflow designer, multi-agent workflow orchestration, conditional branching and loops, error handling and recovery

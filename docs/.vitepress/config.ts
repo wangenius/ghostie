@@ -11,9 +11,8 @@ interface SidebarItem {
   order?: number;
 }
 
-// 生成工作流侧边栏
-function generateWorkflowSidebar(): SidebarItem[] {
-  const workflowsDir = path.join(__dirname, "../tutorials");
+function generateSidebarItem(dir: string): SidebarItem[] {
+  const workflowsDir = path.join(__dirname, `../${dir}`);
 
   function processDirectory(dir: string): SidebarItem[] {
     const items: SidebarItem[] = [];
@@ -48,7 +47,7 @@ function generateWorkflowSidebar(): SidebarItem[] {
           const { data } = matter(content);
 
           const relativePath = path.relative(workflowsDir, fullPath);
-          const link = `/tutorials/${relativePath.replace(/\.md$/, "")}`;
+          const link = `/${dir}/${relativePath.replace(/\.md$/, "")}`;
 
           items.push({
             text: data.title || file.replace(".md", ""),
@@ -73,11 +72,23 @@ function generateWorkflowSidebar(): SidebarItem[] {
   }
 
   const sidebarItems = processDirectory(workflowsDir);
+  return sidebarItems;
+}
 
+// 生成工作流侧边栏
+function generateWorkflowSidebar(): SidebarItem[] {
   return [
     {
-      text: "tutorials",
-      items: sidebarItems,
+      text: "Get Started",
+      items: generateSidebarItem("start"),
+    },
+    {
+      text: "Development",
+      items: generateSidebarItem("dev"),
+    },
+    {
+      text: "Community",
+      items: generateSidebarItem("community"),
     },
   ];
 }
@@ -91,11 +102,11 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: "Home", link: "/" },
-      { text: "Tutorials", link: "/tutorials/start" },
+      { text: "Tutorials", link: "/start/intro" },
     ],
     // 根据路径使用不同的侧边栏
     sidebar: {
-      "/tutorials/": generateWorkflowSidebar(),
+      "/": generateWorkflowSidebar(),
     },
     socialLinks: [
       { icon: "github", link: "https://github.com/wangenius/ghostie" },
