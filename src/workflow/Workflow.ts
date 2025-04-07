@@ -15,7 +15,7 @@ export const WorkflowsStore = new Echo<Record<string, WorkflowMeta>>(
   {},
 ).indexed({
   database: WORKFLOW_DATABASE,
-  name: "workflows",
+  name: WORKFLOW_DATABASE,
 });
 
 /* 工作流类 */
@@ -38,9 +38,6 @@ export class Workflow {
   /* 创建工作流 */
   static async create(): Promise<Workflow> {
     const id = gen.id();
-    if (WorkflowsStore.current[id]) {
-      throw new Error("工作流ID已存在");
-    }
     const now = Date.now();
     const workflow = new Workflow({
       ...INITIAL_WORKFLOW,

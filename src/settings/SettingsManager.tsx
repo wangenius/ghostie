@@ -38,8 +38,8 @@ interface SettingsProps {
 /* 设置管理 */
 export class SettingsManager {
   private static store = new Echo<SettingsProps>({
-    theme: { name: "light", label: "浅色" },
-    font: { name: "maple", label: "思源" },
+    theme: { name: "light", label: "light" },
+    font: { name: "maple", label: "maple" },
     language: "zh-CN",
     reActMaxIterations: 10,
     sortType: "default",

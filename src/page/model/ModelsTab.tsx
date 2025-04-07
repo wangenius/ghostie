@@ -2,7 +2,6 @@ import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
 import { Button } from "@/components/ui/button";
-import { Drawer } from "@/components/ui/drawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +11,6 @@ import {
 import { cn } from "@/lib/utils";
 import { ChatModelManager } from "@/model/chat/ChatModelManager";
 import { SettingsManager } from "@/settings/SettingsManager";
-import { getColor } from "@/utils/color";
 import { DropdownMenuRadioGroup } from "@radix-ui/react-dropdown-menu";
 import { useEffect, useMemo, useState } from "react";
 import { TbBox, TbPlus } from "react-icons/tb";
@@ -31,9 +29,7 @@ export enum ModelTab {
 
 export function ModelsTab() {
   const [selectedModel, setSelectedModel] = useState<any>();
-  const [isAddModelDrawerOpen, setIsAddModelDrawerOpen] = useState(false);
   const [tab, setTab] = useState<ModelTab>(ModelTab.TEXT);
-  // 获取所有已注册的模型提供商
 
   const { theme } = SettingsManager.use();
 
@@ -140,52 +136,6 @@ export function ModelsTab() {
           <ModelItem model={selectedModel} providers={providers} />
         )}
       </PreferenceBody>
-
-      {/* 添加模型抽屉 */}
-      <Drawer
-        open={isAddModelDrawerOpen}
-        onOpenChange={setIsAddModelDrawerOpen}
-        title="choose model provider"
-      >
-        <div className="space-y-4">
-          <div className="text-sm text-muted-foreground mb-4">
-            please choose a model provider, or choose "base model" to create a
-            general model configuration.
-          </div>
-
-          {/* 基础模型选项 */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-card hover:bg-accent cursor-pointer">
-            <div>
-              <div className="text-sm font-medium">base model</div>
-              <div className="text-xs text-muted-foreground">
-                use any model in the standard OpenAI API format
-              </div>
-            </div>
-          </div>
-
-          {/* 提供商列表 */}
-          {Object.entries(providers).map(([key, provider]) => (
-            <div
-              key={key}
-              className="flex items-center justify-between p-3 rounded-lg bg-card hover:bg-accent cursor-pointer"
-              onClick={() => {}}
-            >
-              <div>
-                <div className="text-sm font-medium">{provider.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  {provider.description}
-                </div>
-              </div>
-              <div
-                className="px-2 py-0.5 text-xs rounded-full text-white"
-                style={{ backgroundColor: getColor(key) }}
-              >
-                {key}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Drawer>
     </PreferenceLayout>
   );
 }

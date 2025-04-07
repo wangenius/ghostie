@@ -37,13 +37,13 @@ export class NodeExecutor {
     updateNodeState: (update: Partial<NodeState>) => void,
   ): NodeExecutor {
     if (!node.type) {
-      throw new Error("节点类型不能为空");
+      throw new Error("Type of node is required");
     }
 
     const ExecutorClass = NodeExecutor.executors.get(node.type);
     console.log(
-      `节点类型 ${node.type} 的执行器:`,
-      ExecutorClass ? "找到" : "未找到",
+      `Executor for node type ${node.type}:`,
+      ExecutorClass ? "found" : "not found",
     );
     /* 如果未找到对应的执行器，则使用默认的执行器 */
     if (!ExecutorClass) {
@@ -60,7 +60,7 @@ export class NodeExecutor {
   public async execute(inputs: Record<string, any>) {
     const node = this.node;
     if (!node || !node.type) {
-      return this.createErrorResult("无效的节点配置");
+      return this.createErrorResult("Invalid node configuration");
     }
 
     try {
@@ -73,7 +73,7 @@ export class NodeExecutor {
       let result: NodeResult = {
         success: true,
         data: {
-          result: "执行成功",
+          result: "Execution successful",
         },
       };
 
@@ -85,7 +85,7 @@ export class NodeExecutor {
 
       return result;
     } catch (error) {
-      console.error(`===== 节点 ${node.id} 执行出错 =====`);
+      console.error(`===== Node ${node.id} execution error =====`);
       console.error(error);
       this.updateNodeState({
         status: "failed",
@@ -113,14 +113,18 @@ export class NodeExecutor {
 
         for (const part of parts) {
           if (value === undefined || value === null) {
-            console.warn(`解析输入引用失败: ${path} 的 ${part} 部分不存在`);
+            console.warn(
+              `Failed to parse input reference: ${path} ${part} does not exist`,
+            );
             return match;
           }
           value = value[part];
         }
 
         if (value === undefined || value === null) {
-          console.warn(`解析输入引用失败: ${path} 的值为空`);
+          console.warn(
+            `Failed to parse input reference: ${path} value is null`,
+          );
           return JSON.stringify(value);
         }
 
@@ -135,14 +139,14 @@ export class NodeExecutor {
       });
       return result;
     } catch (error) {
-      console.error("解析输入引用出错:", error);
+      console.error("Failed to parse input reference:", error);
       return text;
     }
   }
 
   /** 创建统一的错误返回对象 */
   protected createErrorResult(error: unknown): NodeResult {
-    console.error("创建错误返回对象", error);
+    console.error("Create error return object", error);
     this.updateNodeState({
       status: "failed",
       error: error instanceof Error ? error.message : JSON.stringify(error),
