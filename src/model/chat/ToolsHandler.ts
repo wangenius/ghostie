@@ -49,7 +49,8 @@ export class ToolsHandler {
         type: "function",
         function: {
           name: "VISION",
-          description: "使用视觉模型查看图片内容, 一次只能查看一张图片",
+          description:
+            "当你需要查看图片内容时, 使用此工具，一次只能查看一张图片",
           parameters: {
             type: "object",
             properties: {
@@ -234,7 +235,7 @@ export class ToolsHandler {
 
   static async ToolNameParser(toolName: string) {
     if (toolName === "VISION") {
-      return { type: "vision", name: "VISION" };
+      return { type: "vision", name: "checking image" };
     }
 
     const firstName = toolName.split(TOOL_NAME_SPLIT)[0];
@@ -242,14 +243,17 @@ export class ToolsHandler {
 
     if (firstName === WORKFLOW_TOOL_NAME_PREFIX) {
       const list = await WorkflowsStore.getCurrent();
-      return { type: "workflow", name: list[secondName].name || secondName };
+      return {
+        type: "workflow",
+        name: `running workflow: ${list[secondName].name}`,
+      };
     }
 
     if (firstName === KNOWLEDGE_TOOL_NAME_PREFIX) {
       const list = await KnowledgesStore.getCurrent();
       return {
         type: "knowledge",
-        name: list[secondName].name || secondName,
+        name: `searching knowledge: ${list[secondName].name}`,
       };
     }
 
@@ -257,8 +261,7 @@ export class ToolsHandler {
     const plugin = plugins[secondName];
     return {
       type: plugin.name,
-      name:
-        plugin.tools.find((item) => item.name === firstName)?.name || firstName,
+      name: `calling tool: ${plugin.tools.find((item) => item.name === firstName)?.name || firstName}`,
     };
   }
 }

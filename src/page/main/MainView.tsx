@@ -70,6 +70,7 @@ export function MainView() {
   const message = list[agent.engine.model?.Message.id];
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<{ focus: () => void }>(null);
   const [value, setValue] = useState<Descendant[]>([
     {
       type: "paragraph",
@@ -300,6 +301,7 @@ export function MainView() {
           value={value}
           onChange={setValue}
           onSubmit={handleSubmit}
+          editorRef={editorRef}
           className={
             props?.id
               ? "bg-background pt-3 min-h-[120px] max-h-[120px] shadow-top"

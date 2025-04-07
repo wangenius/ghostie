@@ -7,7 +7,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { createEditor, Descendant } from "slate";
+import { createEditor, Descendant, Editor, Transforms } from "slate";
 import { withHistory } from "slate-history";
 import { Editable, ReactEditor, Slate, withReact } from "slate-react";
 import { Element, Leaf } from "./elements";
@@ -28,6 +28,7 @@ interface SlateEditorProps {
   className?: string;
   quickFocus?: boolean;
   onSubmit?: (value: Descendant[]) => void;
+  editorRef?: React.RefObject<{ focus: () => void }>;
 }
 
 const renderElement = (props: any) => {
@@ -64,6 +65,7 @@ export const SlateEditor = memo((props: SlateEditorProps) => {
     placeholder,
     className,
     onSubmit,
+    editorRef,
   } = props;
 
   // 优化底部 ref 的处理
@@ -86,6 +88,12 @@ export const SlateEditor = memo((props: SlateEditorProps) => {
       if (event.ctrlKey && event.key === "Enter") {
         onSubmit?.(editor.children);
         event.preventDefault();
+        // 提交后聚焦到编辑器末尾
+        setTimeout(() => {
+          const end = Editor.end(editor, []);
+          Transforms.select(editor, end);
+          ReactEditor.focus(editor);
+        }, 0);
       }
     },
     [editor, readonly, onSubmit],
@@ -150,12 +158,29 @@ export const SlateEditor = memo((props: SlateEditorProps) => {
         event.key.toLowerCase() === "i"
       ) {
         event.preventDefault();
+        // 聚焦到编辑器末尾
+        const end = Editor.end(editor, []);
+        Transforms.select(editor, end);
         ReactEditor.focus(editor);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [props.quickFocus]);
+  }, [props.quickFocus, editor]);
+
+  // 暴露聚焦方法
+  useEffect(() => {
+    if (editorRef?.current) {
+      editorRef.current.focus = () => {
+        setTimeout(() => {
+          // 聚焦到编辑器末尾
+          const end = Editor.end(editor, []);
+          Transforms.select(editor, end);
+          ReactEditor.focus(editor);
+        }, 0);
+      };
+    }
+  }, [editor, editorRef]);
 
   return (
     <div className={cn("flex-1", className)} ref={refs.root}>

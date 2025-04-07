@@ -11,6 +11,7 @@ export const TypeArea = memo(
     className?: string;
     value: Descendant[];
     onChange: (value: Descendant[]) => void;
+    editorRef?: React.RefObject<{ focus: () => void }>;
   }) => {
     return (
       <div
@@ -24,6 +25,7 @@ export const TypeArea = memo(
           onChange={props.onChange}
           onSubmit={props.onSubmit}
           quickFocus={true}
+          editorRef={props.editorRef}
           placeholder="use @ to call agent, use / to call resources and ctrl + enter to send"
           extensions={[
             <HashDrop key="hash_drop_menu" />,

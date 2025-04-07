@@ -89,7 +89,7 @@ export class Agent {
     });
     return await this.engine.execute(content, {
       images,
-      extra: `图片的ID:${images.join(",")}`,
+      extra: images.length > 0 ? `图片的ID:${images.join(",")}` : "",
     });
   }
 
