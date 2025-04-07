@@ -7,7 +7,17 @@ export interface AgentModelProps {
 }
 
 /** 模型类型 */
-export type ModelType = "text" | "image" | "audio" | "video" | "embedding";
+export type ModelType =
+  | "text"
+  | "vision"
+  | "image"
+  | "audio"
+  | "video"
+  | "embedding";
+
+export interface AgentChatOptions {
+  images?: { contentType: string; base64Image: string }[];
+}
 
 export interface AgentToolProps {
   plugin: string;

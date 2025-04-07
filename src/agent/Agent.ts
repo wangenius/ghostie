@@ -1,8 +1,9 @@
-import { AgentProps } from "@/agent/types/agent";
+import { AgentChatOptions, AgentProps } from "@/agent/types/agent";
 import { gen } from "@/utils/generator";
 import { Echo } from "echo-state";
 import { Engine } from "./engine/Engine";
 import { AGENT_DATABASE } from "@/assets/const";
+import { ImagesStore } from "@/resources/Image";
 
 export const DEFAULT_AGENT: AgentProps = {
   id: "",
@@ -72,8 +73,24 @@ export class Agent {
   }
 
   /* 机器人对话 */
-  public async chat(input: string) {
-    return await this.engine.execute(input);
+  public async chat(input: string, options?: AgentChatOptions) {
+    let content = input;
+    let images: string[] = [];
+    options?.images?.forEach((image) => {
+      const id = gen.id();
+      ImagesStore.set({
+        [id]: {
+          id,
+          contentType: image.contentType,
+          base64Image: image.base64Image,
+        },
+      });
+      images.push(id);
+    });
+    return await this.engine.execute(content, {
+      images,
+      extra: `图片的ID:${images.join(",")}`,
+    });
   }
 
   /* 停止机器人 */

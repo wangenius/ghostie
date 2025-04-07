@@ -1,5 +1,5 @@
 /** Chat模型 */
-import { AgentModelProps } from "@/agent/types/agent";
+import { AgentModelProps, AgentProps } from "@/agent/types/agent";
 import {
   ChatModelRequestBody,
   ChatModelResponse,
@@ -32,6 +32,8 @@ export class ChatModel {
   protected currentRequestId: string | undefined;
   /** 温度 */
   protected temperature: number = 1;
+  /** 其他模型 */
+  protected otherModels?: AgentProps["models"];
 
   /** 构造函数
    * @param config 模型配置
@@ -60,8 +62,22 @@ export class ChatModel {
     return this;
   }
 
+  setOtherModels(models: AgentProps["models"]): this {
+    this.otherModels = models;
+    return this;
+  }
+
   setTools(tools: ToolRequestBody): this {
     if (tools.length > 0) {
+      this.tools = tools;
+    }
+    return this;
+  }
+
+  addTools(tools: ToolRequestBody): this {
+    if (this.tools) {
+      this.tools = [...this.tools, ...tools];
+    } else {
       this.tools = tools;
     }
     return this;
@@ -249,7 +265,7 @@ export class ChatModel {
               created_at: Date.now(),
             },
           ]);
-          toolResult = await ToolsHandler.call(tool_call);
+          toolResult = await ToolsHandler.call(tool_call, this.otherModels);
           if (toolResult) {
             this.Message.updateLastMessage({
               content:

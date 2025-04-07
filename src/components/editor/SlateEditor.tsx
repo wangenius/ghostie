@@ -12,6 +12,9 @@ import { withHistory } from "slate-history";
 import { Editable, ReactEditor, Slate, withReact } from "slate-react";
 import { Element, Leaf } from "./elements";
 import { withMentions } from "./elements/mention";
+import { withImages } from "./elements/withImages";
+import { Image } from "./elements/image";
+import { insertImage } from "./elements/withImages";
 
 interface SlateEditorProps {
   value: Descendant[];
@@ -27,7 +30,14 @@ interface SlateEditorProps {
   onSubmit?: (value: Descendant[]) => void;
 }
 
-const renderElement = (props: any) => <Element {...props} />;
+const renderElement = (props: any) => {
+  switch (props.element.type) {
+    case "image":
+      return <Image {...props} />;
+    default:
+      return <Element {...props} />;
+  }
+};
 const renderLeaf = (props: any) => <Leaf {...props} />;
 
 /**
@@ -40,7 +50,7 @@ const renderLeaf = (props: any) => <Leaf {...props} />;
 export const SlateEditor = memo((props: SlateEditorProps) => {
   /** 编辑器实例记忆化 */
   const editor = useMemo(
-    () => withMentions(withReact(withHistory(createEditor()))),
+    () => withImages(withMentions(withReact(withHistory(createEditor())))),
     [],
   );
 
@@ -104,6 +114,34 @@ export const SlateEditor = memo((props: SlateEditorProps) => {
     [editor, onChange],
   );
 
+  // 处理粘贴事件
+  const handlePaste = useCallback(
+    (event: React.ClipboardEvent) => {
+      const items = event.clipboardData.items;
+
+      for (const item of items) {
+        if (item.type.startsWith("image/")) {
+          event.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const base64String = e.target?.result as string;
+              const base64Image = base64String.split(",")[1];
+              insertImage(editor, {
+                contentType: file.type,
+                base64Image: base64Image,
+              });
+            };
+            reader.readAsDataURL(file);
+          }
+          return;
+        }
+      }
+    },
+    [editor],
+  );
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
@@ -135,6 +173,7 @@ export const SlateEditor = memo((props: SlateEditorProps) => {
           renderElement={renderElement}
           renderLeaf={renderLeaf}
           onKeyDown={onKeyDown}
+          onPaste={handlePaste}
           placeholder={placeholder}
         />
         <div ref={refs.bottom} />

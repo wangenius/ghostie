@@ -11,10 +11,11 @@ import {
 import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
 import { Knowledge, KnowledgesStore } from "@/knowledge/Knowledge";
 import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
-import { AgentToolProps } from "@/agent/types/agent";
+import { AgentProps, AgentToolProps } from "@/agent/types/agent";
 import { Echo } from "echo-state";
 import { WORKFLOW_BODY_DATABASE } from "@/assets/const";
 import { StartNodeConfig, WorkflowBody } from "@/page/workflow/types/nodes";
+import { VisionModel } from "../vision/VisionModel";
 
 export class ToolsHandler {
   static async transformAgentToolToModelFormat(
@@ -36,6 +37,35 @@ export class ToolsHandler {
             parameters: targetTool.parameters,
           },
         });
+    }
+    return toolRequestBody;
+  }
+  static async transformModelToModelFormat(
+    models: AgentProps["models"],
+  ): Promise<ToolRequestBody> {
+    const toolRequestBody: ToolRequestBody = [];
+    if (models?.vision) {
+      toolRequestBody.push({
+        type: "function",
+        function: {
+          name: "VISION",
+          description: "使用视觉模型查看图片内容, 一次只能查看一张图片",
+          parameters: {
+            type: "object",
+            properties: {
+              image: {
+                type: "string",
+                description: "图片的ID",
+              },
+              query: {
+                type: "string",
+                description: "查询内容",
+              },
+            },
+            required: ["image", "query"],
+          },
+        },
+      });
     }
     return toolRequestBody;
   }
@@ -121,6 +151,7 @@ export class ToolsHandler {
 
   static async call(
     tool_call: ToolCallReply,
+    otherModels: AgentProps["models"],
   ): Promise<FunctionCallResult | undefined> {
     if (!tool_call) return;
 
@@ -130,6 +161,21 @@ export class ToolsHandler {
         query = JSON.parse(tool_call.function.arguments);
       } catch {
         throw new Error("tool call arguments error");
+      }
+
+      if (tool_call.function.name === "VISION") {
+        const { image, query: queryContent } = query as {
+          image: string;
+          query: string;
+        };
+        const vision = VisionModel.create(otherModels?.vision);
+        console.log(vision);
+        const result = await vision.execute(image, queryContent);
+        return {
+          name: tool_call.function.name,
+          arguments: tool_call.function.arguments,
+          result,
+        };
       }
 
       const firstName = tool_call.function.name.split(TOOL_NAME_SPLIT)[0];
@@ -187,6 +233,10 @@ export class ToolsHandler {
   }
 
   static async ToolNameParser(toolName: string) {
+    if (toolName === "VISION") {
+      return { type: "vision", name: "VISION" };
+    }
+
     const firstName = toolName.split(TOOL_NAME_SPLIT)[0];
     const secondName = toolName.split(TOOL_NAME_SPLIT)[1];
 

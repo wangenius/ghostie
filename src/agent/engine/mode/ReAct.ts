@@ -28,9 +28,11 @@ export class ReAct extends Engine {
   }
 
   /* 执行 */
-  async execute(input: string) {
+  async execute(input: string, props?: { images?: string[]; extra?: string }) {
     try {
       await this.ensureInitialized();
+
+      let content = input;
 
       let iterations = 0;
       let MAX_ITERATIONS = SettingsManager.getReactMaxIterations();
@@ -39,8 +41,10 @@ export class ReAct extends Engine {
       this.model.Message.push([
         {
           role: "user",
-          content: input,
+          content: content,
           created_at: Date.now(),
+          images: props?.images,
+          extra: props?.extra,
         },
       ]);
       while (this.memory.isRunning && iterations < MAX_ITERATIONS) {

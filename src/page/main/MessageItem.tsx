@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ToolsHandler } from "@/model/chat/ToolsHandler";
 import { MessageItem } from "@/model/types/chatModel";
+import { ImagesStore } from "@/resources/Image";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { TbBrain, TbCopy, TbMathFunction, TbLoader2 } from "react-icons/tb";
@@ -20,6 +21,7 @@ export function ChatMessageItem({ message }: MessageItemProps) {
     type: "",
     name: "",
   });
+  const images = ImagesStore.use();
 
   useEffect(() => {
     if (message.tool_calls) {
@@ -48,6 +50,14 @@ export function ChatMessageItem({ message }: MessageItemProps) {
         )}
       >
         <span>{message.content}</span>
+        {message.images?.map((image) => (
+          <img
+            key={image}
+            src={`data:${images[image].contentType};base64,${images[image].base64Image}`}
+            alt="image"
+            className="w-10 h-10 rounded-md"
+          />
+        ))}
       </div>
     );
 

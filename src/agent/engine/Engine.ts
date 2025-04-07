@@ -1,6 +1,7 @@
 import { ChatModel } from "@/model/chat/ChatModel";
 import { ToolsHandler } from "@/model/chat/ToolsHandler";
 import { Agent } from "../Agent";
+import { AgentChatOptions } from "../types/agent";
 import { EngineManager } from "./EngineManager";
 /** 执行上下文接口 */
 export interface ExecutionContext {
@@ -79,6 +80,7 @@ export class Engine {
     this.model.Message.setAgent(props.id || "");
     this.model
       .setTemperature(props.configs?.temperature || 1)
+      .setOtherModels(props.models)
       .setTools([
         ...(await ToolsHandler.transformAgentToolToModelFormat(props.tools)),
         ...(await ToolsHandler.transformKnowledgeToModelFormat(
@@ -87,7 +89,9 @@ export class Engine {
         ...(await ToolsHandler.transformWorkflowToModelFormat(
           props.workflows || [],
         )),
+        ...(await ToolsHandler.transformModelToModelFormat(props.models)),
       ]);
+
     // 初始化内存和上下文
     this.memory = {
       reset: () => {},
@@ -124,8 +128,13 @@ export class Engine {
   }
 
   /* 执行 */
-  async execute(input: string): Promise<{ content: string }> {
-    console.log(`执行 ${input}`);
+  async execute(
+    input: string,
+    props?: { images?: string[]; extra?: string },
+  ): Promise<{ content: string }> {
+    console.log(
+      `执行 ${input}, images: ${props?.images}, extra: ${props?.extra}`,
+    );
     // 确保初始化已完成
     await this.ensureInitialized();
     throw new Error("Not implemented");

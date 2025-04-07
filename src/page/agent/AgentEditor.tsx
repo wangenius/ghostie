@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { KnowledgesStore, KnowledgeMeta } from "@/knowledge/Knowledge";
 import { ChatModelManager } from "@/model/chat/ChatModelManager";
+import { VisionModelManager } from "@/model/vision/VisionModelManager";
 import { PluginStore } from "@/plugin/ToolPlugin";
 import { PluginProps, ToolProps } from "@/plugin/types";
 import { supabase } from "@/utils/supabase";
@@ -260,6 +261,41 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
                 }
                 multiple
                 placeholder="Select Knowledge..."
+              />
+            </div>
+          </section>
+          <section className="space-y-4">
+            <h3 className="text-lg font-medium">More Models</h3>
+            <div className="space-y-4">
+              <DrawerSelector
+                title="Vision Model"
+                value={[props.models?.vision]}
+                items={Object.values(VisionModelManager.getProviders()).flatMap(
+                  (provider) => {
+                    const key = VisionModelManager.getApiKey(provider.name);
+                    if (!key) return [];
+                    const models = provider.models;
+                    return Object.values(models).map((model) => {
+                      return {
+                        label: model.name,
+                        value: {
+                          provider: provider.name,
+                          name: model.name,
+                        },
+                        type: provider.name,
+                        description: `${model.description}`,
+                      };
+                    });
+                  },
+                )}
+                onSelect={([value]) =>
+                  agent.update({
+                    models: {
+                      ...props.models,
+                      vision: value,
+                    },
+                  })
+                }
               />
             </div>
           </section>

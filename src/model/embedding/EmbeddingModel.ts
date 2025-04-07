@@ -59,9 +59,6 @@ export class EmbeddingModel {
   }
 
   async textToEmbedding(text: string): Promise<number[]> {
-    console.log(this.api_url);
-    console.log(this.api_key);
-    console.log(this.model);
     const response = await fetch(this.api_url, {
       method: "POST",
       headers: {
@@ -78,7 +75,7 @@ export class EmbeddingModel {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`API 调用失败: ${errorText}`);
+      throw new Error(`API call failed: ${errorText}`);
     }
 
     const data = await response.json();

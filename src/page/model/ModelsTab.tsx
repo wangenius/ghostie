@@ -17,19 +17,26 @@ import { TbBox, TbPlus } from "react-icons/tb";
 import { EmbeddingModelManager } from "../../model/embedding/EmbeddingModelManger";
 import { ModelProvider } from "../../model/types/model";
 import { ModelItem } from "./ModelItem";
+import { VisionModelManager } from "@/model/vision/VisionModelManager";
+import { Echo } from "echo-state";
 
 export enum ModelTab {
   TEXT = "text",
   EMBEDDING = "embedding",
+  VISION = "vision",
   IMAGE = "image",
   AUDIO = "audio",
   VIDEO = "video",
   MULTIMODAL = "multimodal",
 }
 
+const selectedTab = new Echo<ModelTab>(ModelTab.TEXT).localStorage({
+  name: "selectedTab",
+});
+
 export function ModelsTab() {
   const [selectedModel, setSelectedModel] = useState<any>();
-  const [tab, setTab] = useState<ModelTab>(ModelTab.TEXT);
+  const tab = selectedTab.use();
 
   const { theme } = SettingsManager.use();
 
@@ -48,6 +55,9 @@ export function ModelsTab() {
     } else if (tab === ModelTab.EMBEDDING) {
       setSelectedModel(null);
       setProviders(EmbeddingModelManager.getProviders());
+    } else if (tab === ModelTab.VISION) {
+      setSelectedModel(null);
+      setProviders(VisionModelManager.getProviders());
     } else {
       setSelectedModel(null);
       setProviders({});
@@ -72,7 +82,7 @@ export function ModelsTab() {
               <DropdownMenuContent align="start">
                 <DropdownMenuRadioGroup
                   value={tab}
-                  onValueChange={(value) => setTab(value as ModelTab)}
+                  onValueChange={(value) => selectedTab.set(value as ModelTab)}
                 >
                   {Object.values(ModelTab).map((modelTab) => (
                     <DropdownMenuRadioItem key={modelTab} value={modelTab}>

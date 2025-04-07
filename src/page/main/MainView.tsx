@@ -22,6 +22,8 @@ import {
 import { Descendant } from "slate";
 import { ChatMessageItem } from "./MessageItem";
 import { TypeArea } from "./TypeArea";
+import { ImageElement } from "@/components/editor/elements/image";
+
 // 定义 MentionElement 接口
 interface MentionElement {
   type: "mention";
@@ -154,30 +156,39 @@ export function MainView() {
         return;
       }
 
-      // 提取所有 mention 元素
+      // 提取所有 mention 元素和图片元素
       const mentions: { id: string; text: string }[] = [];
+      const images: { contentType: string; base64Image: string }[] = [];
 
-      // 遍历所有节点寻找 mention 类型的元素
-      const extractMentions = (nodes: Descendant[]) => {
+      // 遍历所有节点寻找 mention 和 image 类型的元素
+      const extractElements = (nodes: Descendant[]) => {
         for (const node of nodes) {
           // 判断节点是否为 mention 类型
-          if ("type" in node && node.type === "mention" && "id" in node) {
-            const mentionNode = node as MentionElement;
-            mentions.push({
-              id: mentionNode.id,
-              text: mentionNode.children[0].text,
-            });
+          if ("type" in node) {
+            if (node.type === "mention" && "id" in node) {
+              const mentionNode = node as MentionElement;
+              mentions.push({
+                id: mentionNode.id,
+                text: mentionNode.children[0].text,
+              });
+            } else if (node.type === "image") {
+              const imageNode = node as ImageElement;
+              images.push({
+                contentType: imageNode.contentType,
+                base64Image: imageNode.base64Image,
+              });
+            }
           }
 
           // 递归遍历子节点
           if ("children" in node && Array.isArray(node.children)) {
-            extractMentions(node.children);
+            extractElements(node.children);
           }
         }
       };
 
-      extractMentions(value);
-      console.log(mentions, props);
+      extractElements(value);
+      console.log(mentions, images, props);
 
       if (mentions.length === 0 && !props?.id) {
         setErrorInfo("please select agent first");
@@ -197,7 +208,7 @@ export function MainView() {
           },
         ]);
         setLoading(true);
-        await CurrentTalkAgent.current.chat(plainText(value));
+        await CurrentTalkAgent.current.chat(plainText(value), { images });
         setLoading(false);
       } else {
         const agent = await Agent.get(mentions[0].id);
@@ -210,7 +221,7 @@ export function MainView() {
           },
         ]);
         setLoading(true);
-        await agent.chat(plainText(value));
+        await agent.chat(plainText(value), { images });
         setLoading(false);
       }
     },

@@ -123,7 +123,7 @@ export class Message implements HistoryItem {
       .map((msg) => {
         const result: Record<string, any> = {
           role: msg.role,
-          content: msg.content,
+          content: msg.content + (msg.extra ? `\n\n${msg.extra}` : ""),
         };
         if (msg.tool_calls) result.tool_calls = msg.tool_calls;
         if (msg.tool_call_id) result.tool_call_id = msg.tool_call_id;

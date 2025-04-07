@@ -49,6 +49,10 @@ export interface MessageItem extends MessagePrototype {
   reasoner?: string;
   /* 创建时间 */
   created_at: number;
+  /* 图片 */
+  images?: string[];
+  /* 补充内容 */
+  extra?: string;
 }
 
 /** 工具调用结果信息 */
