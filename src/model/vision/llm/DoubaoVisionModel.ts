@@ -3,7 +3,6 @@ import { VisionModel } from "../VisionModel";
 import {
   VisionModelInfo,
   VisionModelRequestBody,
-  VisionModelProps,
   VisionModelProvider,
 } from "@/model/types/visionModel";
 import { VisionModelManager } from "../VisionModelManager";
