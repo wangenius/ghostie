@@ -1,8 +1,9 @@
 import { ChatModel } from "@/model/chat/ChatModel";
 import { ToolsHandler } from "@/model/chat/ToolsHandler";
 import { Agent } from "../Agent";
-import { AgentChatOptions } from "../types/agent";
+import { EngineOptions } from "../types/agent";
 import { EngineManager } from "./EngineManager";
+
 /** 执行上下文接口 */
 export interface ExecutionContext {
   /** 重置上下文 */
@@ -130,7 +131,7 @@ export class Engine {
   /* 执行 */
   async execute(
     input: string,
-    props?: { images?: string[]; extra?: string },
+    props?: EngineOptions,
   ): Promise<{ content: string }> {
     console.log(
       `执行 ${input}, images: ${props?.images}, extra: ${props?.extra}`,

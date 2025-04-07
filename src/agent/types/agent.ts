@@ -18,7 +18,10 @@ export type ModelType =
 export interface AgentChatOptions {
   images?: { contentType: string; base64Image: string }[];
 }
-
+export interface EngineOptions {
+  images?: string[];
+  extra?: string;
+}
 export interface AgentToolProps {
   plugin: string;
   tool: string;

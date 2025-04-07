@@ -1,13 +1,21 @@
 import { iconVariants } from "@/components/custom/CodeBlock";
 import { MarkdownRender } from "@/components/Markdown/MarkdownRender";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Avatar, AvatarImage } from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
 import { ToolsHandler } from "@/model/chat/ToolsHandler";
 import { MessageItem } from "@/model/types/chatModel";
 import { ImagesStore } from "@/resources/Image";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { TbBrain, TbCopy, TbMathFunction, TbLoader2 } from "react-icons/tb";
+import {
+  TbBrain,
+  TbCopy,
+  TbMathFunction,
+  TbLoader2,
+  TbMaximize,
+} from "react-icons/tb";
 
 interface MessageItemProps {
   message: MessageItem;
@@ -17,6 +25,7 @@ export function ChatMessageItem({ message }: MessageItemProps) {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
   const [showReasoning, setShowReasoning] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [toolCalls, setToolCalls] = useState<{ type: string; name: string }>({
     type: "",
     name: "",
@@ -44,21 +53,71 @@ export function ChatMessageItem({ message }: MessageItemProps) {
 
   if (message.role === "user")
     return (
-      <div
-        className={cn(
-          "border-0 px-3 py-1 rounded-3xl transition-colors group overflow-hidden text-muted-foreground text-sm",
-        )}
-      >
-        <span>{message.content}</span>
-        {message.images?.map((image) => (
-          <img
-            key={image}
-            src={`data:${images[image].contentType};base64,${images[image].base64Image}`}
-            alt="image"
-            className="w-10 h-10 rounded-md"
-          />
-        ))}
-      </div>
+      <>
+        <div
+          className={cn(
+            "border-0 px-3 py-1 rounded-3xl transition-colors group overflow-hidden text-muted-foreground text-sm",
+          )}
+        >
+          {message.content && (
+            <span className="block mb-2">{message.content}</span>
+          )}
+          {message.images && message.images.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {message.images.map((image) => (
+                <div
+                  key={image}
+                  className="relative group/image aspect-square rounded-lg overflow-hidden bg-muted"
+                  onClick={() => setSelectedImage(image)}
+                >
+                  <img
+                    src={`data:${images[image].contentType};base64,${images[image].base64Image}`}
+                    alt="用户上传的图片"
+                    className="w-full h-full object-cover transition-transform group-hover/image:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/image:opacity-100 transition-opacity flex items-center justify-center">
+                    <TbMaximize className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <Dialog
+          open={!!selectedImage}
+          onOpenChange={() => setSelectedImage(null)}
+        >
+          <DialogContent className="max-w-[98vw] max-h-[98vh] p-0 bg-black/90 border-none">
+            {selectedImage && (
+              <div className="relative w-full h-full flex items-center justify-center">
+                <img
+                  src={`data:${images[selectedImage].contentType};base64,${images[selectedImage].base64Image}`}
+                  alt="用户上传的图片"
+                  className="max-w-full max-h-[98vh] object-contain"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-4 right-4 text-white hover:text-white hover:bg-white/10"
+                  onClick={() => setSelectedImage(null)}
+                >
+                  <svg
+                    className="w-6 h-6"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </>
     );
 
   return (
