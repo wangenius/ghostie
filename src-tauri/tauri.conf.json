@@ -36,35 +36,34 @@
         "img-src": "'self' asset: http://asset.localhost",
         "style-src": "'self' 'unsafe-inline'"
       },
-      "capabilities": [
-        "main-capability"
-      ],
+      "capabilities": ["main-capability"],
       "assetProtocol": {
         "enable": true,
-        "scope": [
-          "**"
-        ]
+        "scope": ["**"]
       }
     }
   },
   "bundle": {
+    "category": "Productivity",
     "createUpdaterArtifacts": true,
     "active": true,
-    "targets": [
-      "msi",
-      "nsis"
-    ],
+    "targets": ["nsis"],
     "publisher": "wangenius",
-    "icon": [
-      "icons/icon.ico",
-      "icons/icon.png"
-    ]
+    "icon": ["icons/icon.ico", "icons/icon.png"],
+    "windows": {
+      "nsis": {
+        "headerImage": "icons/icon.ico",
+        "installerIcon": "icons/icon.ico",
+        "installMode": "currentUser"
+      }
+    }
   },
   "plugins": {
     "updater": {
       "windows": {
         "installMode": "passive"
       },
+      "createUpdaterArtifacts": true,
       "active": true,
       "endpoints": [
         "https://github.com/wangenius/ghostie/releases/latest/download/latest.json"
