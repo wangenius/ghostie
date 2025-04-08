@@ -50,15 +50,14 @@ const NodePortalComponent = ({
   title,
 }: BaseNodeProps) => {
   const updateNodeInternals = useUpdateNodeInternals();
-  const workflowState = CurrentWorkflow.use();
-  const workflowId = CurrentWorkflow.use((selector) => selector.meta.id);
+  const workflow = CurrentWorkflow.use();
   const { onNodesChange } = useFlow();
 
   useEffect(() => {
     updateNodeInternals(id);
   }, [id, data, left, right, updateNodeInternals]);
 
-  const { state } = workflowState.executor.use();
+  const state = workflow.executor.use((selector) => selector[id]);
 
   useEffect(() => {
     console.log("state", state);
@@ -118,7 +117,7 @@ const NodePortalComponent = ({
       onDoubleClick={handleNodeDoubleClick}
       className={nodeClassName}
       onContextMenu={handleContextMenu}
-      key={workflowId + id}
+      key={workflow.meta.id + id}
     >
       <div className="flex items-center justify-between h-8 px-1">
         <div className="text-sm font-bold flex-1 flex items-center gap-1">
@@ -154,13 +153,13 @@ const NodePortalComponent = ({
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon">
-                  <TbCheck className="rounded-full text-green-500" />
+                  <TbCheck className="rounded-full" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80" align="end">
                 <div className="space-y-2">
                   <div className="text-sm font-medium">Execution Result</div>
-                  <div className="text-sm bg-green-50 border border-green-200 rounded p-2 max-h-[300px] overflow-y-auto">
+                  <div className="text-sm border rounded p-2 max-h-[300px] overflow-y-auto">
                     {typeof state.outputs.result === "object"
                       ? JSON.stringify(state.outputs.result)
                       : state.outputs.result || JSON.stringify(state.outputs)}

@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { KnowledgesStore, KnowledgeMeta } from "@/knowledge/Knowledge";
+import { AudioModelManager } from "@/model/audio/AudioModelManager";
 import { ChatModelManager } from "@/model/chat/ChatModelManager";
 import { ImageModelManager } from "@/model/image/ImageModelManager";
 import { VisionModelManager } from "@/model/vision/VisionModelManager";
@@ -201,7 +202,7 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
 
           {/* 功能扩展 */}
           <section className="space-y-4">
-            <h3 className="text-lg font-medium">Function Extensions</h3>
+            <h3 className="text-lg font-medium">Abilities</h3>
             <div className="space-y-4">
               <DrawerSelector
                 title="Select Plugin"

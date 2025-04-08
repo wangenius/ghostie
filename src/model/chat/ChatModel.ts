@@ -7,13 +7,13 @@ import {
   ToolCallReply,
   ToolRequestBody,
 } from "@/model/types/chatModel";
+import { ImageManager } from "@/resources/Image";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
+import { ImageModel } from "../image/ImageModel";
 import { ChatModelManager } from "./ChatModelManager";
 import { Message } from "./Message";
 import { ToolsHandler } from "./ToolsHandler";
-import { ImageModel } from "../image/ImageModel";
-import { ImagesStore } from "@/resources/Image";
 
 interface ChatModelInfo {
   model: string;
@@ -290,17 +290,19 @@ export class ChatModel {
                 result.output.results[0]?.base64
               ) {
                 const base64Image = result.output.results[0].base64;
-                ImagesStore.set({
-                  [toolResult.result]: {
-                    id: toolResult.result,
-                    contentType: "image/png",
-                    base64Image,
-                    task_id: toolResult.result,
-                  },
-                });
+                await ImageManager.setImage(
+                  toolResult.result,
+                  base64Image,
+                  "image/png",
+                );
+                await ImageManager.setImageTaskId(
+                  toolResult.result,
+                  toolResult.result,
+                );
+
                 this.Message.updateLastMessage({
                   tool_loading: false,
-                  content: `图片已生成，请返回结束语。图片的ID为${toolResult.result}。`,
+                  content: `图片已生成, 请返回结束语。图片的ID为${toolResult.result}。`,
                 });
                 break;
               } else if (result.output.task_status === "FAILED") {

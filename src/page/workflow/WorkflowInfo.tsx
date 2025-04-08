@@ -33,19 +33,19 @@ export const WorkflowInfo = memo(() => {
       onOk: async () => {
         try {
           // 获取完整的工作流数据
-          const workflowData = workflow;
+          const workflowData = await workflow.getBody();
+          console.log(workflowData);
 
           // 上传到 Supabase
           const { error } = await supabase.from("workflows").insert({
-            name: workflowData.meta.name,
-            description: workflowData.meta.description,
-            data: workflowData,
+            name: workflow.meta.name,
+            description: workflow.meta.description,
+            data: JSON.stringify(workflowData),
           });
 
           if (error) throw error;
 
           cmd.message("Successfully uploaded workflow to market", "success");
-          close();
         } catch (error) {
           console.error("Upload workflow failed:", error);
           cmd.message(

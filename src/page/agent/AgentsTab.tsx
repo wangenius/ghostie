@@ -15,7 +15,19 @@ import { cmd } from "@utils/shell";
 import { Echo } from "echo-state";
 import { useEffect, useState } from "react";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
-import { TbDownload, TbGhost3, TbPlus, TbUpload } from "react-icons/tb";
+import {
+  TbCapture,
+  TbDatabase,
+  TbDeviceAudioTape,
+  TbDownload,
+  TbGhost3,
+  TbPhoto,
+  TbPlus,
+  TbScript,
+  TbShape3,
+  TbSquareRoundedLetterL,
+  TbUpload,
+} from "react-icons/tb";
 import { AgentEditor } from "./AgentEditor";
 import { AgentsMarket } from "./AgentsMarket";
 
@@ -164,15 +176,82 @@ export function AgentsTab() {
                   <small className="ml-2 text-[12px] text-muted bg-primary/80 px-2 rounded-xl">
                     {agent.engine}
                   </small>
-                  <small className="ml-2 text-[12px] text-muted-foreground bg-muted-foreground/20 px-2 rounded-xl">
-                    {agent.models?.text?.provider}
-                  </small>
                 </span>
               ),
-              description:
-                agent.description?.slice(0, 50) ||
-                agent.system?.slice(0, 50) ||
-                "No prompt",
+              description: (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  {agent.models?.text?.name && (
+                    <Button
+                      variant="ghost"
+                      className="rounded-[8px]"
+                      size="icon"
+                      title="text model"
+                    >
+                      <TbSquareRoundedLetterL className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {agent.models?.image?.name && (
+                    <Button
+                      variant="ghost"
+                      className="rounded-[8px]"
+                      size="icon"
+                      title="image model"
+                    >
+                      <TbPhoto className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {agent.models?.vision?.name && (
+                    <Button
+                      variant="ghost"
+                      className="rounded-[8px]"
+                      size="icon"
+                      title="vision model"
+                    >
+                      <TbCapture className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {agent.models?.audio?.name && (
+                    <Button
+                      variant="ghost"
+                      className="rounded-[8px]"
+                      size="icon"
+                      title="audio model"
+                    >
+                      <TbDeviceAudioTape className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {agent.tools.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      className="rounded-[8px]"
+                      size="icon"
+                      title="tool"
+                    >
+                      <TbScript className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {agent.workflows?.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      className="rounded-[8px]"
+                      size="icon"
+                      title="workflow"
+                    >
+                      <TbShape3 className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {agent.knowledges?.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      className="rounded-[8px]"
+                      size="icon"
+                      title="knowledge"
+                    >
+                      <TbDatabase className="w-4 h-4" />
+                    </Button>
+                  )}
+                </span>
+              ),
               onClick: () => {
                 CurrentSelectedAgent.set(agent.id);
               },

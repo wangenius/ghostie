@@ -19,6 +19,7 @@ export const Header = ({
       <div className="text-sm pl-3 flex-1 font-medium text-foreground">
         {title}
       </div>
+
       <div className="flex items-center gap-2">
         {extra}
         <Button size="icon" onClick={close}>

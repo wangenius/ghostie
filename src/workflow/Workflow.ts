@@ -31,8 +31,9 @@ export class Workflow {
   }
 
   /* 获取工作流 */
-  static get(id: string) {
-    return new Workflow(WorkflowsStore.current[id]);
+  static async get(id: string) {
+    const workflows = await WorkflowsStore.getCurrent();
+    return new Workflow(workflows[id]);
   }
 
   /* 创建工作流 */

@@ -67,7 +67,7 @@ export class IteratorNodeExecutor extends NodeExecutor {
       inputs: inputs || {},
     });
     const { target, action } = this.node.data as IteratorNodeConfig;
-    const workflow = Workflow.get(action);
+    const workflow = await Workflow.get(action);
 
     let content = this.parseTextFromInputs(target, inputs);
     content = `{ "result": ${content} }`;

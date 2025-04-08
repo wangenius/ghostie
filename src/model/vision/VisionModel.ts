@@ -10,7 +10,7 @@ import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
 import { VisionModelManager } from "./VisionModelManager";
 import { VisionMessage } from "./VisionMessage";
-import { ImagesStore } from "@/resources/Image";
+import { ImageManager, ImagesStore } from "@/resources/Image";
 
 /** 视觉模型, 用于与模型进行交互 */
 export class VisionModel {
@@ -88,7 +88,7 @@ export class VisionModel {
     this.Message.setSystem(
       `你是一个专业的视觉模型，请根据用户的问题和图片内容，给出详细的回答。`,
     );
-    const url = (await ImagesStore.getCurrent())[image];
+    const imagebase64 = await ImageManager.getImageBody(image);
     this.Message.push([
       {
         role: "user",
@@ -96,7 +96,7 @@ export class VisionModel {
           {
             type: "image_url",
             image_url: {
-              url: `data:${url.contentType};base64,${url.base64Image}`,
+              url: imagebase64,
             },
           },
           {

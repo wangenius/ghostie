@@ -11,16 +11,23 @@ import { useEffect, useState } from "react";
 import {
   TbBrain,
   TbCopy,
-  TbMathFunction,
   TbLoader2,
+  TbMathFunction,
   TbMaximize,
 } from "react-icons/tb";
+import { ImageView } from "./ImageView";
 
 interface MessageItemProps {
   message: MessageItem;
+  lastMessageType?: string;
+  nextMessageType?: string;
 }
 
-export function ChatMessageItem({ message }: MessageItemProps) {
+export function ChatMessageItem({
+  message,
+  lastMessageType,
+  nextMessageType,
+}: MessageItemProps) {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
   const [showReasoning, setShowReasoning] = useState(true);
@@ -48,27 +55,51 @@ export function ChatMessageItem({ message }: MessageItemProps) {
     return null;
   }
   if (message.tool_call_id && !message.images?.length) {
-    return null;
-  }
-  if (message.tool_call_id && message.images?.length) {
-    if (message.tool_loading) {
-      return (
+    return (
+      <div
+        className={cn(
+          "border-0 p-1 h-10 flex gap-2 transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2",
+          {
+            "rounded-b-3xl":
+              message.role === "tool" && nextMessageType === undefined,
+          },
+          {
+            hidden: message.role === "tool" && nextMessageType === "assistant",
+          },
+        )}
+      >
         <div className="flex items-center gap-2 px-3 rounded-md text-primary text-sm py-2">
           <TbLoader2 className="h-3.5 w-3.5 animate-spin" />
           <span className="text-muted-foreground">loading...</span>
         </div>
+      </div>
+    );
+  }
+  if (message.tool_call_id && message.images?.length) {
+    if (message.tool_loading) {
+      return (
+        <div className="border-0 p-1 rounded-b-3xl px-4 flex gap-2 transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2">
+          <div className="relative group/image w-[160px] aspect-square rounded-lg overflow-hidden bg-muted-foreground/10 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <TbLoader2 className="w-8 h-8 text-primary animate-spin" />
+              <span className="text-xs text-muted-foreground">
+                generating image...
+              </span>
+            </div>
+          </div>
+        </div>
       );
     }
     return (
-      <div className="flex flex-wrap justify-center gap-2">
+      <div className="border-0 p-1 flex px-4 gap-2 transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2">
         {message.images.map((image) => (
           <div
             key={image}
-            className="relative group/image w-[300px] aspect-square rounded-lg overflow-hidden bg-muted"
+            className="relative group/image w-[160px] mb-1 aspect-square rounded-lg overflow-hidden bg-muted"
             onClick={() => setSelectedImage(image)}
           >
             <img
-              src={`${images[image].base64Image}`}
+              src={images[image]?.base64Image}
               alt="生成的图片"
               className="w-full h-full object-cover transition-transform group-hover/image:scale-105"
             />
@@ -77,40 +108,10 @@ export function ChatMessageItem({ message }: MessageItemProps) {
             </div>
           </div>
         ))}
-        <Dialog
-          open={!!selectedImage}
-          onOpenChange={() => setSelectedImage(null)}
-        >
-          <DialogContent className="max-w-[80vw] max-h-[80vh] p-0 bg-black/90 border-none">
-            {selectedImage && (
-              <div className="relative w-full h-full flex items-center justify-center">
-                <img
-                  src={`${images[selectedImage].base64Image}`}
-                  alt="用户上传的图片"
-                  className="max-w-full max-h-[98vh] object-contain"
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-4 right-4 text-white hover:text-white hover:bg-white/10"
-                  onClick={() => setSelectedImage(null)}
-                >
-                  <svg
-                    className="w-6 h-6"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M18 6L6 18M6 6l12 12" />
-                  </svg>
-                </Button>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        <ImageView
+          selectedImage={selectedImage}
+          setSelectedImage={setSelectedImage}
+        />
       </div>
     );
   }
@@ -120,22 +121,20 @@ export function ChatMessageItem({ message }: MessageItemProps) {
       <>
         <div
           className={cn(
-            "border-0 px-3 py-1 rounded-3xl transition-colors group overflow-hidden text-muted-foreground text-sm",
+            "border-0 px-3 py-1 mt-2 rounded-3xl transition-colors group overflow-hidden text-muted-foreground text-sm",
           )}
         >
-          {message.content && (
-            <span className="block mb-2">{message.content}</span>
-          )}
+          {message.content && <span className="block">{message.content}</span>}
           {message.images && message.images.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="flex gap-2 py-1">
               {message.images.map((image) => (
                 <div
                   key={image}
-                  className="relative group/image aspect-square rounded-lg overflow-hidden bg-muted"
+                  className="relative group/image aspect-square rounded-[8px] overflow-hidden bg-muted max-w-[100px]"
                   onClick={() => setSelectedImage(image)}
                 >
                   <img
-                    src={`data:${images[image].contentType};base64,${images[image].base64Image}`}
+                    src={images[image]?.base64Image}
                     alt="用户上传的图片"
                     className="w-full h-full object-cover transition-transform group-hover/image:scale-105"
                   />
@@ -147,40 +146,10 @@ export function ChatMessageItem({ message }: MessageItemProps) {
             </div>
           )}
         </div>
-        <Dialog
-          open={!!selectedImage}
-          onOpenChange={() => setSelectedImage(null)}
-        >
-          <DialogContent className="max-w-[98vw] max-h-[98vh] p-0 bg-black/90 border-none">
-            {selectedImage && (
-              <div className="relative w-full h-full flex items-center justify-center">
-                <img
-                  src={`data:${images[selectedImage].contentType};base64,${images[selectedImage].base64Image}`}
-                  alt="用户上传的图片"
-                  className="max-w-full max-h-[98vh] object-contain"
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-4 right-4 text-white hover:text-white hover:bg-white/10"
-                  onClick={() => setSelectedImage(null)}
-                >
-                  <svg
-                    className="w-6 h-6"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M18 6L6 18M6 6l12 12" />
-                  </svg>
-                </Button>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        <ImageView
+          selectedImage={selectedImage}
+          setSelectedImage={setSelectedImage}
+        />
       </>
     );
 
@@ -188,6 +157,17 @@ export function ChatMessageItem({ message }: MessageItemProps) {
     <div
       className={cn(
         "border-0 p-3 rounded-3xl transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2",
+        {
+          "!rounded-t-none pt-0":
+            message.role === "assistant" && lastMessageType === "tool",
+        },
+        {
+          "rounded-b-none pb-1":
+            message.role === "assistant" && nextMessageType === "tool",
+        },
+        {
+          "mt-2": message.role === "assistant" && lastMessageType === "user",
+        },
       )}
     >
       {message.reasoner && (

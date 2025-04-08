@@ -10,26 +10,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { ChatModelManager } from "@/model/chat/ChatModelManager";
+import { ImageModelManager } from "@/model/image/ImageModelManager";
+import { VisionModelManager } from "@/model/vision/VisionModelManager";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { DropdownMenuRadioGroup } from "@radix-ui/react-dropdown-menu";
+import { Echo } from "echo-state";
 import { useEffect, useMemo, useState } from "react";
 import { TbBox, TbPlus } from "react-icons/tb";
 import { EmbeddingModelManager } from "../../model/embedding/EmbeddingModelManger";
 import { ModelProvider } from "../../model/types/model";
 import { ModelItem } from "./ModelItem";
-import { VisionModelManager } from "@/model/vision/VisionModelManager";
-import { Echo } from "echo-state";
-import { ImageModelManager } from "@/model/image/ImageModelManager";
-import { AudioModelManager } from "@/model/audio/AudioModelManager";
 
 export enum ModelTab {
   TEXT = "text",
   EMBEDDING = "embedding",
   VISION = "vision",
   IMAGE = "image",
-  AUDIO = "audio",
-  VIDEO = "video",
-  MULTIMODAL = "multimodal",
 }
 
 const selectedTab = new Echo<ModelTab>(ModelTab.TEXT).localStorage({
@@ -63,9 +59,6 @@ export function ModelsTab() {
     } else if (tab === ModelTab.IMAGE) {
       setSelectedModel(null);
       setProviders(ImageModelManager.getProviders());
-    } else if (tab === ModelTab.AUDIO) {
-      setSelectedModel(null);
-      setProviders(AudioModelManager.getProviders());
     } else {
       setSelectedModel(null);
       setProviders({});

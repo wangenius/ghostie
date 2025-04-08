@@ -53,9 +53,9 @@ export interface AgentProps {
   /* 可调用的工具 */
   tools: AgentToolProps[];
   /* 知识库 */
-  knowledges?: string[];
+  knowledges: string[];
   /* 工作流 */
-  workflows?: string[];
+  workflows: string[];
   /* 配置 */
   configs?: {
     /* 温度 */

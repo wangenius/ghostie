@@ -4,10 +4,12 @@ import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
 import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
-import { MessageNodeConfig } from "../types/nodes";
+import { NotificationNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 
-const MessageNodeComponent = (props: NodeProps<MessageNodeConfig>) => {
+const NotificationNodeComponent = (
+  props: NodeProps<NotificationNodeConfig>,
+) => {
   const [message, setMessage] = useState(props.data.message);
   const { updateNodeData } = useFlow();
 
@@ -15,7 +17,7 @@ const MessageNodeComponent = (props: NodeProps<MessageNodeConfig>) => {
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newValue = e.target.value;
       setMessage(newValue);
-      updateNodeData<MessageNodeConfig>(props.id, {
+      updateNodeData<NotificationNodeConfig>(props.id, {
         message: newValue,
       });
     },
@@ -23,33 +25,39 @@ const MessageNodeComponent = (props: NodeProps<MessageNodeConfig>) => {
   );
 
   return (
-    <NodePortal {...props} left={1} right={1} variant="message" title="Message">
+    <NodePortal
+      {...props}
+      left={1}
+      right={1}
+      variant="notification"
+      title="Notification"
+    >
       <div className="space-y-1.5">
         <Textarea
           variant="dust"
           className="text-xs min-h-[80px] transition-colors resize-none p-2"
           value={message}
           onChange={handleSystemChange}
-          placeholder="input message content..."
+          placeholder="input notification content..."
         />
       </div>
     </NodePortal>
   );
 };
 
-export const MessageNode = memo(MessageNodeComponent);
+export const NotificationNode = memo(NotificationNodeComponent);
 
-export class MessageNodeExecutor extends NodeExecutor {
+export class NotificationNodeExecutor extends NodeExecutor {
   public override async execute(inputs: Record<string, any>) {
     try {
-      const messageConfig = this.node.data as MessageNodeConfig;
+      const messageConfig = this.node.data as NotificationNodeConfig;
       const message = this.parseTextFromInputs(
         messageConfig.message || "",
         inputs,
       );
 
       if (!message) {
-        throw new Error("Message content is empty");
+        throw new Error("Notification content is empty");
       }
 
       await cmd.notify(message);
@@ -72,4 +80,4 @@ export class MessageNodeExecutor extends NodeExecutor {
   }
 }
 
-NodeExecutor.register("message", MessageNodeExecutor);
+NodeExecutor.register("notification", NotificationNodeExecutor);

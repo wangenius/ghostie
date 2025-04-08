@@ -25,13 +25,15 @@ import { WORKFLOW_BODY_DATABASE } from "@/assets/const";
 export default function WorkflowsTab() {
   /* 工作流列表 */
   const workflows = WorkflowsStore.use();
+  /* 当前工作流 */
   const contextWorkflowId = CurrentWorkflow.use((selector) => selector.meta.id);
-  const handleWorkflowSelect = (id: string) => {
-    CurrentWorkflow.set(Workflow.get(id), { replace: true });
-    CurrentEditWorkflow.indexed({
+
+  const handleWorkflowSelect = async (id: string) => {
+    CurrentWorkflow.set(await Workflow.get(id), { replace: true });
+    await CurrentEditWorkflow.indexed({
       database: WORKFLOW_BODY_DATABASE,
       name: id,
-    });
+    }).ready();
   };
 
   const handleCreateWorkflow = async () => {
@@ -86,7 +88,7 @@ export default function WorkflowsTab() {
           id,
           title: workflow.name || "Unnamed Workflow",
           description: workflow.description || "No description",
-          onClick: () => handleWorkflowSelect(id),
+          onClick: async () => await handleWorkflowSelect(id),
           actived: contextWorkflowId === id,
           onRemove: () => {
             dialog.confirm({

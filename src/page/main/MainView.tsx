@@ -1,28 +1,28 @@
 import { Agent, AgentStore } from "@/agent/Agent";
 import { LogoIcon } from "@/components/custom/LogoIcon";
+import { ImageElement } from "@/components/editor/elements/image";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
 import { ChatHistory } from "@/model/chat/Message";
 import { Page } from "@/utils/PageRouter";
-import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
 import { LogicalSize, Window } from "@tauri-apps/api/window";
 import { Echoa } from "echo-state";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  TbCornerRightUp,
+  TbCapture,
+  TbDatabase,
+  TbDeviceAudioTape,
   TbHistory,
-  TbLoader,
+  TbPhoto,
+  TbScript,
   TbSettings,
+  TbShape3,
+  TbSquareRoundedLetterL,
 } from "react-icons/tb";
 import { Descendant } from "slate";
 import { ChatMessageItem } from "./MessageItem";
 import { TypeArea } from "./TypeArea";
-import { ImageElement } from "@/components/editor/elements/image";
+import { Popover } from "@radix-ui/react-popover";
+import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // 定义 MentionElement 接口
 interface MentionElement {
@@ -31,7 +31,7 @@ interface MentionElement {
   children: { text: string }[];
 }
 
-const plainText = (value: Descendant[]) =>
+export const plainText = (value: Descendant[]) =>
   value
     .map((node) => {
       // 处理普通文本节点
@@ -104,7 +104,7 @@ export function MainView() {
       });
     } else {
       Window.getByLabel("main").then((window) => {
-        window?.setSize(new LogicalSize(600, 160));
+        window?.setSize(new LogicalSize(600, 200));
         window?.center();
       });
     }
@@ -234,67 +234,118 @@ export function MainView() {
       <div className="px-1.5 draggable">
         <div className="mx-auto flex items-center justify-between h-10">
           <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                asChild
-                className="no-drag rounded-[8px] cursor-pointer"
-              >
-                <Button variant="ghost" className="no-drag rounded-full">
-                  <LogoIcon className="w-4 h-4" />
-                  {props?.name || "Ghostie"}
+            <Button variant="ghost" className="no-drag rounded-full">
+              <LogoIcon className="w-4 h-4" />
+              {props?.name || "Ghostie"}
+            </Button>
+
+            <span className="text-xs text-muted-foreground flex items-center gap-0.5">
+              {props?.models?.text?.name && (
+                <Button
+                  variant="ghost"
+                  className="rounded-[8px]"
+                  size="icon"
+                  title="text model"
+                >
+                  <TbSquareRoundedLetterL className="w-4 h-4" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem
-                  className="flex items-center gap-2"
-                  onClick={handleHistoryClick}
+              )}
+              {props?.models?.image?.name && (
+                <Button
+                  variant="ghost"
+                  className="rounded-[8px]"
+                  size="icon"
+                  title="image model"
                 >
-                  <TbHistory className="h-4 w-4" />
-                  History
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="flex items-center gap-2"
-                  onClick={handleSettingsClick}
+                  <TbPhoto className="w-4 h-4" />
+                </Button>
+              )}
+              {props?.models?.vision?.name && (
+                <Button
+                  variant="ghost"
+                  className="rounded-[8px]"
+                  size="icon"
+                  title="vision model"
                 >
-                  <TbSettings className="h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <TbCapture className="w-4 h-4" />
+                </Button>
+              )}
+              {props?.models?.audio?.name && (
+                <Button
+                  variant="ghost"
+                  className="rounded-[8px]"
+                  size="icon"
+                  title="audio model"
+                >
+                  <TbDeviceAudioTape className="w-4 h-4" />
+                </Button>
+              )}
+              {props?.tools?.length > 0 && (
+                <Button
+                  variant="ghost"
+                  className="rounded-[8px]"
+                  size="icon"
+                  title="tool"
+                >
+                  <TbScript className="w-4 h-4" />
+                </Button>
+              )}
+              {props?.workflows?.length > 0 && (
+                <Button
+                  variant="ghost"
+                  className="rounded-[8px]"
+                  size="icon"
+                  title="workflow"
+                >
+                  <TbShape3 className="w-4 h-4" />
+                </Button>
+              )}
+              {props?.knowledges?.length > 0 && (
+                <Button
+                  variant="ghost"
+                  className="rounded-[8px]"
+                  size="icon"
+                  title="knowledge"
+                >
+                  <TbDatabase className="w-4 h-4" />
+                </Button>
+              )}
+            </span>
             <small className="text-yellow-600">{errorInfo}</small>
           </div>
-
-          <Button
-            onClick={() => handleSubmit(value)}
-            variant={
-              !props?.id && plainText(value).trim() === "" ? "ghost" : "default"
-            }
-            className={cn(
-              "no-drag",
-              !props?.id &&
-                plainText(value).trim() === "" &&
-                "opacity-50 hover:bg-transparent cursor-default hover:opacity-50",
-            )}
-          >
-            {loading ? "stop" : "OK"}
-            {loading ? (
-              <TbLoader className="w-4 h-4 animate-spin" />
-            ) : (
-              <TbCornerRightUp className="w-4 h-4" />
-            )}
-          </Button>
+          <div className="flex items-center gap-0.5">
+            <Button
+              size={"icon"}
+              className="rounded-[8px]"
+              onClick={handleHistoryClick}
+            >
+              <TbHistory className="h-4 w-4" />
+            </Button>
+            <Button
+              size={"icon"}
+              className="rounded-[8px]"
+              onClick={handleSettingsClick}
+            >
+              <TbSettings className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
       <main className="flex-1 overflow-hidden flex flex-col justify-between">
         {props?.id && (
           <div
             ref={messagesContainerRef}
-            className="px-4 w-full space-y-2 overflow-y-auto"
+            className="px-4 w-full overflow-y-auto flex-1"
           >
-            {message?.list.map((message, index) => (
-              <ChatMessageItem key={index} message={message} />
+            {message?.list.map((msg, index) => (
+              <ChatMessageItem
+                key={props.id + index}
+                message={msg}
+                lastMessageType={message?.list[index - 1]?.role}
+                nextMessageType={message?.list[index + 1]?.role}
+              />
             ))}
-            <div ref={messagesEndRef} />
+            <div className="h-4" ref={messagesEndRef} />
           </div>
         )}
         <TypeArea
@@ -302,11 +353,8 @@ export function MainView() {
           onChange={setValue}
           onSubmit={handleSubmit}
           editorRef={editorRef}
-          className={
-            props?.id
-              ? "bg-background pt-3 min-h-[120px] max-h-[120px] shadow-top"
-              : ""
-          }
+          currentAgent={props?.id}
+          loading={loading}
         />
       </main>
     </div>

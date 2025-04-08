@@ -3,7 +3,7 @@ import { gen } from "@/utils/generator";
 import { Echo } from "echo-state";
 import { Engine } from "./engine/Engine";
 import { AGENT_DATABASE } from "@/assets/const";
-import { ImagesStore } from "@/resources/Image";
+import { ImageManager, ImagesStore } from "@/resources/Image";
 
 export const DEFAULT_AGENT: AgentProps = {
   id: "",
@@ -11,6 +11,8 @@ export const DEFAULT_AGENT: AgentProps = {
   system: "",
   tools: [],
   engine: "react",
+  knowledges: [],
+  workflows: [],
 };
 
 export const AgentStore = new Echo<Record<string, AgentProps>>({}).indexed({
@@ -76,17 +78,16 @@ export class Agent {
   public async chat(input: string, options?: AgentChatOptions) {
     let content = input;
     let images: string[] = [];
-    options?.images?.forEach((image) => {
-      const id = gen.id();
-      ImagesStore.set({
-        [id]: {
+    await Promise.all(
+      options?.images?.map(async (image) => {
+        const id = gen.id();
+        await ImageManager.setImage(
           id,
-          contentType: image.contentType,
-          base64Image: image.base64Image,
-        },
-      });
-      images.push(id);
-    });
+          `data:${image.contentType};base64,${image.base64Image}`,
+        );
+        images.push(id);
+      }) ?? [],
+    );
     return await this.engine.execute(content, {
       images,
       extra: images.length > 0 ? `图片的ID:${images.join(",")}` : "",

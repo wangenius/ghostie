@@ -17,7 +17,7 @@ import { WORKFLOW_BODY_DATABASE } from "@/assets/const";
 import { StartNodeConfig, WorkflowBody } from "@/page/workflow/types/nodes";
 import { VisionModel } from "../vision/VisionModel";
 import { ImageModel } from "../image/ImageModel";
-import { ImagesStore } from "@/resources/Image";
+import { ImageManager } from "@/resources/Image";
 
 export class ToolsHandler {
   static async transformAgentToolToModelFormat(
@@ -195,8 +195,8 @@ export class ToolsHandler {
           image: string;
           query: string;
         };
+        console.log(image, queryContent);
         const vision = VisionModel.create(otherModels?.vision);
-        console.log(vision);
         const result = await vision.execute(image, queryContent);
         return {
           name: tool_call.function.name,
@@ -217,15 +217,8 @@ export class ToolsHandler {
 
         if ("output" in result) {
           const task_id = result.output.task_id;
-          ImagesStore.set({
-            [task_id]: {
-              id: task_id,
-              contentType: "image/png",
-              base64Image: "",
-              task_id,
-            },
-          });
-
+          await ImageManager.setImage(task_id, "", "image/png");
+          await ImageManager.setImageTaskId(task_id, task_id);
           return {
             name: tool_call.function.name,
             arguments: tool_call.function.arguments,
@@ -240,7 +233,7 @@ export class ToolsHandler {
       const secondName = tool_call.function.name.split(TOOL_NAME_SPLIT)[1];
 
       if (firstName === WORKFLOW_TOOL_NAME_PREFIX) {
-        const workflow = Workflow.get(secondName);
+        const workflow = await Workflow.get(secondName);
         if (!workflow) {
           return {
             name: tool_call.function.name,

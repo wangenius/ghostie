@@ -240,10 +240,16 @@ export function PluginsTab() {
           },
           actived: props?.id === plugin.id,
           onRemove: () => {
-            ToolPlugin.delete(plugin.id);
-            if (props?.id === plugin.id) {
-              CurrentPlugin.temporary().reset();
-            }
+            dialog.confirm({
+              title: "Delete Plugin",
+              content: `Are you sure to delete this plugin ${plugin.name}?`,
+              onOk() {
+                ToolPlugin.delete(plugin.id);
+                if (props?.id === plugin.id) {
+                  CurrentPlugin.temporary().reset();
+                }
+              },
+            });
           },
         }))}
         emptyText="No plugins, click the button above to add a new plugin"
