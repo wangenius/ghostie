@@ -1,9 +1,9 @@
 import { AgentChatOptions, AgentProps } from "@/agent/types/agent";
+import { AGENT_DATABASE } from "@/assets/const";
+import { ImageManager } from "@/resources/Image";
 import { gen } from "@/utils/generator";
 import { Echo } from "echo-state";
 import { Engine } from "./engine/Engine";
-import { AGENT_DATABASE } from "@/assets/const";
-import { ImageManager, ImagesStore } from "@/resources/Image";
 
 export const DEFAULT_AGENT: AgentProps = {
   id: "",

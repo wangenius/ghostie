@@ -1,7 +1,6 @@
 import { iconVariants } from "@/components/custom/CodeBlock";
 import { MarkdownRender } from "@/components/Markdown/MarkdownRender";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { ToolsHandler } from "@/model/chat/ToolsHandler";
 import { MessageItem } from "@/model/types/chatModel";

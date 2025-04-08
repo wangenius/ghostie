@@ -21,8 +21,6 @@ import {
 import { Descendant } from "slate";
 import { ChatMessageItem } from "./MessageItem";
 import { TypeArea } from "./TypeArea";
-import { Popover } from "@radix-ui/react-popover";
-import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // 定义 MentionElement 接口
 interface MentionElement {

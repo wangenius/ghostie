@@ -14,8 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { KnowledgesStore, KnowledgeMeta } from "@/knowledge/Knowledge";
-import { AudioModelManager } from "@/model/audio/AudioModelManager";
+import { KnowledgeMeta, KnowledgesStore } from "@/knowledge/Knowledge";
 import { ChatModelManager } from "@/model/chat/ChatModelManager";
 import { ImageModelManager } from "@/model/image/ImageModelManager";
 import { VisionModelManager } from "@/model/vision/VisionModelManager";
@@ -23,7 +22,7 @@ import { PluginStore } from "@/plugin/ToolPlugin";
 import { PluginProps, ToolProps } from "@/plugin/types";
 import { supabase } from "@/utils/supabase";
 import { WorkflowsStore } from "@/workflow/Workflow";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
 import { TbUpload } from "react-icons/tb";
 import { toast } from "sonner";

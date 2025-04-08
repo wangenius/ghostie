@@ -1,16 +1,16 @@
 /** 视觉模型 */
 import { AgentModelProps } from "@/agent/types/agent";
 import {
+  VisionMessage as VisionMessageType,
   VisionModelInfo,
   VisionModelRequestBody,
   VisionModelResponse,
-  VisionMessage as VisionMessageType,
 } from "@/model/types/visionModel";
+import { ImageManager } from "@/resources/Image";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
-import { VisionModelManager } from "./VisionModelManager";
 import { VisionMessage } from "./VisionMessage";
-import { ImageManager, ImagesStore } from "@/resources/Image";
+import { VisionModelManager } from "./VisionModelManager";
 
 /** 视觉模型, 用于与模型进行交互 */
 export class VisionModel {

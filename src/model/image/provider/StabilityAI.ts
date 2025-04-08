@@ -1,4 +1,3 @@
-import { ImageModelRequestBody } from "@/model/types/imageModel";
 import { ImageModel } from "../ImageModel";
 import { ImageModelManager, ImageModelProvider } from "../ImageModelManager";
 

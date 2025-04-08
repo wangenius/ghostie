@@ -4,17 +4,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageModel } from "@/model/image/ImageModel";
 import { ImageModelManager } from "@/model/image/ImageModelManager";
+import { ImageView } from "@/page/main/ImageView";
 import { ImageManager, ImagesStore } from "@/resources/Image";
+import { CurrentWorkflow } from "@/workflow/Workflow";
 import { memo, useCallback, useState } from "react";
+import { TbMaximize } from "react-icons/tb";
 import { NodeProps } from "reactflow";
 import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
 import { useFlow } from "../context/FlowContext";
 import { ImageNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
-import { CurrentWorkflow } from "@/workflow/Workflow";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { TbMaximize } from "react-icons/tb";
-import { ImageView } from "@/page/main/ImageView";
 
 const ImageNodeComponet = (props: NodeProps<ImageNodeConfig>) => {
   const [prompt, setPrompt] = useState(props.data.prompt);
