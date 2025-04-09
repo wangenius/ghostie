@@ -2,8 +2,8 @@ use std::process::Command;
 use std::time::Duration;
 use tokio::time;
 
-use crate::plugins::deno::error::{PluginError, Result};
 use crate::plugins::deno::env::EnvVar;
+use crate::plugins::deno::error::{PluginError, Result};
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
@@ -22,7 +22,7 @@ impl DenoRuntime {
         let mut cmd = Command::new("deno");
         #[cfg(windows)]
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-        
+
         let is_installed = cmd.arg("--version").output().is_ok();
 
         if is_installed {
@@ -80,6 +80,7 @@ impl DenoRuntime {
             "--allow-net".to_string(),
             "--allow-env".to_string(),
             "--allow-run".to_string(),
+            "--allow-sys".to_string(),
         ]
     }
 
@@ -104,18 +105,16 @@ impl DenoRuntime {
         let mut cmd = Command::new(&self.deno_path);
         #[cfg(windows)]
         cmd.creation_flags(0x08000000);
-        
+
         cmd.args(&self.base_args).arg(&temp_file);
 
         for var in env_vars {
             cmd.env(&var.key, &var.value);
         }
 
-        let output = time::timeout(self.timeout, async {
-            cmd.output()
-        })
-        .await
-        .map_err(|_| PluginError::Timeout)??;
+        let output = time::timeout(self.timeout, async { cmd.output() })
+            .await
+            .map_err(|_| PluginError::Timeout)??;
 
         // 清理临时文件
         let _ = std::fs::remove_file(&temp_file);
@@ -123,7 +122,9 @@ impl DenoRuntime {
         if output.status.success() {
             Ok(String::from_utf8_lossy(&output.stdout).to_string())
         } else {
-            Err(PluginError::Plugin(String::from_utf8_lossy(&output.stderr).to_string()))
+            Err(PluginError::Plugin(
+                String::from_utf8_lossy(&output.stderr).to_string(),
+            ))
         }
     }
 
@@ -162,4 +163,4 @@ impl DenoRuntime {
             Err(_) => None,
         }
     }
-} 
+}
