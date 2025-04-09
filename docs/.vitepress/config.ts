@@ -96,7 +96,7 @@ function generateWorkflowSidebar(): SidebarItem[] {
 export default defineConfig({
   title: "Ghostie",
   description: "Ghostie Documentation",
-  base: "/ghostie/",
+  base: process.env.NODE_ENV === "production" ? "/" : "/ghostie/",
   head: [["link", { rel: "icon", href: "./icon.png" }]],
   cleanUrls: true,
   themeConfig: {
