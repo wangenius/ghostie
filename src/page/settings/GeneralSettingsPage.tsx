@@ -1,5 +1,6 @@
 import { AuthSettings } from "./components/AuthSettings";
 import {
+  AutoStartSettings,
   ConfigDirSettings,
   DenoSettings,
   FontSettings,
@@ -24,6 +25,7 @@ export function GeneralSettingsPage() {
       <h3 className="text-lg font-bold pt-6">System</h3>
       <ThemeSettings />
       <FontSettings />
+      <AutoStartSettings />
       <DenoSettings />
       <UpdateSettings />
       <ProxySettings />

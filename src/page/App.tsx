@@ -38,12 +38,7 @@ function App() {
   }, []);
 
   return (
-    <div
-      data-theme={theme.name}
-      data-font={font.name}
-      id="app"
-      className="h-full w-full bg-background"
-    >
+    <div id="app" className="h-full w-full bg-background">
       <Page name="main" component={<MainView />} />
       <Page name="settings" component={<SettingsPage />} />
       <Page name="history" component={<HistoryPage />} />

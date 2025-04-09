@@ -4,39 +4,33 @@
 }
 
 @font-face {
-  font-family: "maple";
-  src: url("HarmonyOS_Sans_SC_Regular.ttf") format("opentype");
-  font-weight: normal;
-}
-
-@font-face {
   font-family: "harmony";
   src: url("HarmonyOS_Sans_SC_Regular.ttf") format("opentype");
-}
-
-[data-font="maple"] * {
-  font-family: "maple";
 }
 
 [data-font="harmony"] * {
   font-family: "harmony";
 }
 
+[data-font="mono"] * {
+  font-family: "mono";
+}
+
 .mono {
-  font-family: "maple" !important;
+  font-family: "mono" !important;
 }
 
 code * {
-  font-family: "maple";
+  font-family: "mono";
 }
 .code * {
-  font-family: "maple";
+  font-family: "mono";
 }
 .cm-line {
-  font-family: "maple";
+  font-family: "mono";
 }
 .cm-line * {
-  font-family: "maple";
+  font-family: "mono";
 }
 
 .cm-theme {

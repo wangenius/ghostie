@@ -1,11 +1,14 @@
 import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
+import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { cmd } from "@/utils/shell";
+import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { useEffect, useState } from "react";
 import {
+  TbAutomation,
   TbFolder,
   TbFrustum,
   TbLoader2,
@@ -16,7 +19,6 @@ import {
 } from "react-icons/tb";
 import { SettingsManager } from "../../../settings/SettingsManager";
 import { SettingItem } from "./SettingItem";
-import { DrawerSelector } from "@/components/ui/drawer-selector";
 
 export function ThemeSettings() {
   const settings = SettingsManager.use();
@@ -28,7 +30,7 @@ export function ThemeSettings() {
   return (
     <SettingItem
       icon={<TbPalette className="w-[18px] h-[18px]" />}
-      title="Theme Settings"
+      title="Theme"
       description={`Current theme: ${settings.theme.label}`}
       action={
         <div className="flex gap-1">
@@ -49,7 +51,6 @@ export function ThemeSettings() {
 export function FontSettings() {
   const settings = SettingsManager.use();
   const fonts = [
-    { name: "maple", label: "maple" },
     { name: "mono", label: "jetbrains" },
     { name: "harmony", label: "harmony" },
     { name: "default", label: "default" },
@@ -58,7 +59,7 @@ export function FontSettings() {
   return (
     <SettingItem
       icon={<TbTypography className="w-[18px] h-[18px]" />}
-      title="Font Settings"
+      title="Font"
       description={`Current font: ${settings.font.label}`}
       action={
         <div className="flex gap-1">
@@ -372,6 +373,45 @@ export function ProxySettings() {
             checked={settings.proxy.enabled}
             disabled={true}
             title="Proxy is not supported in the current version"
+            onCheckedChange={handleEnabledChange}
+          />
+        </div>
+      }
+    />
+  );
+}
+
+export function AutoStartSettings() {
+  const [autoStart, setAutoStart] = useState(false);
+
+  useEffect(() => {
+    isEnabled().then((enabled) => {
+      setAutoStart(enabled);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (autoStart) {
+      enable();
+    } else {
+      disable();
+    }
+  }, [autoStart]);
+
+  const handleEnabledChange = (checked: boolean) => {
+    setAutoStart(checked);
+  };
+
+  return (
+    <SettingItem
+      icon={<TbAutomation className="w-[18px] h-[18px]" />}
+      title="Auto Start"
+      description={autoStart ? `Enabled: ${autoStart}` : "Disabled"}
+      action={
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={autoStart}
+            title="Auto Start is not supported in the current version"
             onCheckedChange={handleEnabledChange}
           />
         </div>
