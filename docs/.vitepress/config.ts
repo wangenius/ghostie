@@ -47,7 +47,10 @@ function generateSidebarItem(dir: string): SidebarItem[] {
           const { data } = matter(content);
 
           const relativePath = path.relative(workflowsDir, fullPath);
-          const link = `/${dir}/${relativePath.replace(/\.md$/, "")}`;
+          const linkPath = relativePath
+            .replace(/\\/g, "/")
+            .replace(/\.md$/, "");
+          const link = `/${dir}/${linkPath}`;
 
           items.push({
             text: data.title || file.replace(".md", ""),
