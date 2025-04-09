@@ -1,5 +1,4 @@
-import { ToolParameters } from "@/plugin/types";
-import { SwitchNode } from "@/page/workflow/nodes/SwitchNode";
+import { AgentModelProps } from "@/agent/types/agent";
 import { AgentNode } from "@/page/workflow/nodes/AgentNode";
 import { ChatNode } from "@/page/workflow/nodes/ChatNode";
 import { CodeNode } from "@/page/workflow/nodes/CodeNode";
@@ -9,6 +8,8 @@ import { NotificationNode } from "@/page/workflow/nodes/MessageNode";
 import { PanelNode } from "@/page/workflow/nodes/PanelNode";
 import { PluginNode } from "@/page/workflow/nodes/PluginNode";
 import { StartNode } from "@/page/workflow/nodes/StartNode";
+import { SwitchNode } from "@/page/workflow/nodes/SwitchNode";
+import { ToolParameters } from "@/plugin/types";
 import {
   TbArrowIteration,
   TbBellRinging2,
@@ -17,16 +18,17 @@ import {
   TbGhost3,
   TbMessage,
   TbPhoto,
+  TbPlaceholder,
   TbPlayerPlay,
   TbScript,
   TbSwitch,
   TbWallpaper,
 } from "react-icons/tb";
 import { MarkerType, Node } from "reactflow";
-import { WorkflowEdge } from "./edges";
 import { CustomEdge } from "../components/CustomEdge";
-import { AgentModelProps } from "@/agent/types/agent";
+import { FormatNode } from "../nodes/FormatNode";
 import { ImageNode } from "../nodes/ImageNode";
+import { WorkflowEdge } from "./edges";
 /* 节点类型 */
 export const nodeTypes = {
   /* 开始节点，一个工作流必须有且只有一个开始节点 */
@@ -51,6 +53,8 @@ export const nodeTypes = {
   notification: NotificationNode,
   /* 图片节点，用于显示图片 */
   image: ImageNode,
+  /* 格式化节点，用于格式化文本 */
+  format: FormatNode,
 } as const;
 
 /* 边类型 */
@@ -90,6 +94,11 @@ export const NODE_TYPES: Record<
   image: {
     label: "image",
     icon: TbPhoto,
+    variant: "bg-purple-50 border-purple-200",
+  },
+  format: {
+    label: "format",
+    icon: TbPlaceholder,
     variant: "bg-purple-50 border-purple-200",
   },
   switch: {
@@ -245,6 +254,12 @@ export interface PanelNodeConfig extends BaseNodeConfig {
   type: "panel";
 }
 
+export interface FormatNodeConfig extends BaseNodeConfig {
+  type: "format";
+  /* 格式化文本 */
+  content: string;
+}
+
 export interface ChatNodeConfig extends BaseNodeConfig {
   type: "chat";
   system: string;
@@ -307,7 +322,8 @@ export type NodeConfig =
   | CodeNodeConfig
   | IteratorNodeConfig
   | NotificationNodeConfig
-  | ImageNodeConfig;
+  | ImageNodeConfig
+  | FormatNodeConfig;
 
 export const INITIAL_WORKFLOW: WorkflowMeta = {
   id: "",

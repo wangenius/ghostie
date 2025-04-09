@@ -86,7 +86,7 @@ export const Textarea = forwardRef<CustomTextAreaRef, TextAreaProps>(
     );
 
     return (
-      <div className="relative h-full">
+      <div className="relative h-full p">
         <textarea
           ref={internalRef}
           value={value}

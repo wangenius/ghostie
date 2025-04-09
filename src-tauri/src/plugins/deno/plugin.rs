@@ -1,7 +1,8 @@
+use crate::plugins::deno::error::{PluginError, Result};
+use crate::utils::gen::generate_id;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use crate::plugins::deno::error::{PluginError, Result};
-use base64::engine::{general_purpose::STANDARD, Engine};
+use std::fs::{create_dir_all, write};
 
 /// 插件信息结构
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -47,48 +48,55 @@ impl PluginManager {
     /// 执行插件工具
     pub async fn execute(&self, content: &str, tool: &str, args: Value) -> Result<Value> {
         let runtime = crate::plugins::deno::DENO_RUNTIME.lock().await;
-        let runtime = runtime.as_ref().ok_or_else(|| PluginError::Plugin("Deno运行时未初始化".to_string()))?;
+        let runtime = runtime
+            .as_ref()
+            .ok_or_else(|| PluginError::Plugin("Deno运行时未初始化".to_string()))?;
 
         if !runtime.check_installed() {
             return Err(PluginError::DenoNotInstalled);
         }
 
-        // 使用 data URL 直接执行内容
+        // 获取插件目录
+        let config_dir = crate::utils::file::get_config_dir()
+            .ok_or_else(|| PluginError::Plugin("无法获取配置目录".to_string()))?;
+        let plugins_dir = config_dir.join("plugins");
+        create_dir_all(&plugins_dir)?;
+
+        // 创建唯一的插件文件
+        let plugin_path = plugins_dir.join(format!("plugin_{}.ts", generate_id()));
+        let plugin_path_str = plugin_path.to_str().unwrap();
+
+        // 写入插件内容
+        write(&plugin_path, content)?;
+
+        // 使用文件路径方式执行
         let script = format!(
             r#"
             (async () => {{
-                const plugin = await import('data:text/typescript;base64,{content}');
+                const plugin = await import('file://{plugin_path}');
                 const targetFunction = plugin['{tool}'];
                 if (typeof targetFunction !== 'function') {{
                     throw new Error(`插件中未找到函数 '{tool}' 或导出不是一个函数。`);
                 }}
-                // 从 Rust 传递过来的 JSON 字符串，需要解析
                 const parsedArgs = JSON.parse('{args_json}'); 
-                // 直接调用目标函数并传递解析后的参数对象
-                // TypeScript 函数内部负责处理参数结构
                 const result = await targetFunction(parsedArgs); 
-                // 将结果序列化为 JSON 字符串并打印到 stdout, 以便 Rust 捕获
                 console.log(JSON.stringify(result !== undefined ? result : null)); 
             }})();
             "#,
-            content = STANDARD.encode(content),
+            plugin_path = plugin_path_str.replace("\\", "/"), // 确保路径使用正斜杠
             tool = tool,
-            // 确保 args 被正确序列化为 JSON 字符串, 并进行 JS 字符串所需的基本转义
             args_json = serde_json::to_string(&args)?
-                            .replace("\\", "\\\\") // 必须先转义反斜杠本身
-                            .replace("'", "\\'")   // 转义单引号
-                            .replace("\"", "\\\"")  // 转义双引号
-                            .replace("\n", "\\n")   // 转义换行符
-                            .replace("\r", "\\r")   // 转义回车符
+                .replace("\\", "\\\\")
+                .replace("'", "\\'")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
         );
-
-        println!("{}", script);
 
         let env_vars = self.env_manager.load().await?;
         let output = runtime.execute(&script, &env_vars).await?;
-        
+        // 清理插件文件
+        let _ = std::fs::remove_file(&plugin_path);
         serde_json::from_str(&output).map_err(|e| PluginError::Json(e.to_string()))
     }
-
-
-} 
+}

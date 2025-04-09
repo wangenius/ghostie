@@ -50,6 +50,7 @@ export const WorkflowsMarket = () => {
   // 安装工作流
   const handleInstall = async (workflow: WorkflowMarketProps) => {
     try {
+      console.log(workflow);
       setInstalling(workflow.id);
 
       // 添加到工作流管理器
@@ -61,9 +62,11 @@ export const WorkflowsMarket = () => {
         description: workflow.description,
       });
 
+      console.log(workflow.data);
+
       // 更新工作流主体数据
-      if (workflow.data && workflow.data.body) {
-        new Echo(workflow.data.body)
+      if (workflow.data && workflow.data) {
+        new Echo(JSON.parse(workflow.data))
           .indexed({
             database: WORKFLOW_BODY_DATABASE,
             name: newWorkflow.meta.id,

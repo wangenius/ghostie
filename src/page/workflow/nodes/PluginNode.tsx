@@ -75,7 +75,7 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
         <div className="text-xs text-gray-500">{key}</div>
         <Input
           type={prop.type === "number" ? "number" : "text"}
-          className="h-8 px-2 text-xs rounded-md border"
+          className="h-8 px-3 text-xs rounded-full border"
           variant="dust"
           value={localInputs[key] || ""}
           onChange={(e) =>

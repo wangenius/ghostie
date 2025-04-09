@@ -46,19 +46,21 @@ export function TestDrawer({
           <div className="flex items-center justify-between w-full">
             <h3 className="text-lg font-semibold">{selectedPlugin?.name}</h3>{" "}
             <Button
-              disabled={!testTool}
+              disabled={!testTool || isSubmitting}
               onClick={() => onTest(testTool)}
               variant="default"
               size="sm"
             >
-              <TbPlayerPlay className="w-3.5 h-3.5" />
               {isSubmitting ? (
                 <span className="flex items-center gap-1.5">
                   <TbLoader2 className="w-3.5 h-3.5 animate-spin" />
                   Testing...
                 </span>
               ) : (
-                "Run Test"
+                <span className="flex items-center gap-1.5">
+                  <TbPlayerPlay className="w-3.5 h-3.5" />
+                  Run Test
+                </span>
               )}
             </Button>
           </div>
