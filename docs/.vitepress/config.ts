@@ -28,11 +28,12 @@ export default defineConfig({
         text: "Guide",
         items: [
           { text: "Settings", link: "/guide/settings" },
-          { text: "Workflow", link: "/guide/workflow" },
-          { text: "Knowledge", link: "/guide/knowledge" },
-          { text: "Plugin", link: "/guide/plugin" },
           { text: "Agent", link: "/guide/agent" },
           { text: "Model", link: "/guide/model" },
+          { text: "Plugin", link: "/guide/plugin" },
+          { text: "MCP", link: "/guide/mcp" },
+          { text: "Workflow", link: "/guide/workflow" },
+          { text: "Knowledge", link: "/guide/knowledge" },
         ],
       },
       {
