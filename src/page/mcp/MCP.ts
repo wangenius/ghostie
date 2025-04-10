@@ -1,6 +1,7 @@
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
 import { Echo } from "echo-state";
+import { toast } from "sonner";
 export const MCP_DATABASE = "mcp";
 
 export interface MCPTool {
@@ -11,7 +12,7 @@ export interface MCPTool {
 
 const DEFAULT_MCP: MCPProps = {
   id: "",
-  service: "",
+  server: "",
   name: "",
   description: "",
   opened: false,
@@ -19,10 +20,11 @@ const DEFAULT_MCP: MCPProps = {
 
 export interface MCPProps {
   id: string;
-  service: string;
+  server: string;
   name: string;
   description: string;
   opened: boolean;
+  error?: string;
 }
 
 export const MCP_Actived = new Echo<Record<string, MCPTool[]>>({});
@@ -41,9 +43,17 @@ export class MCP {
   static {
     MCPStore.getCurrent().then((mcps) => {
       for (const mcp of Object.values(mcps)) {
-        if (mcp.opened) {
-          const m = new MCP(mcp);
-          m.getInfo();
+        const m = new MCP(mcp);
+        try {
+          if (mcp.opened) {
+            m.getInfo();
+          }
+        } catch (error) {
+          console.error(error);
+          m.update({
+            opened: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
       }
     });
@@ -53,11 +63,14 @@ export class MCP {
    * 创建新的MCP服务实例
    * 生成唯一ID并保存到存储中
    */
-  static async create() {
+  static async create(props?: Partial<MCPProps>) {
     /* 生成ID */
     const id = gen.id();
+    console.log(props);
+    console.log({ ...props, id });
     /* 创建代理 */
-    const mcp = new MCP({ id });
+    const mcp = new MCP({ ...props, id });
+    console.log(mcp);
     /* 保存插件 */
     MCPStore.set({
       [id]: mcp.props,
@@ -116,7 +129,7 @@ export class MCP {
    */
   run(tool: string, args: Record<string, unknown>) {
     return cmd.invoke("call_tool", {
-      id: this.props.service,
+      id: this.props.server,
       name: tool,
       args,
     });
@@ -127,10 +140,22 @@ export class MCP {
    * 初始化并启动MCP服务实例
    */
   async start() {
-    await cmd.invoke("start_service", {
-      id: this.props.service,
-    });
-    this.getInfo();
+    try {
+      await cmd.invoke("start_service", {
+        id: this.props.server,
+      });
+      this.getInfo();
+      this.update({
+        opened: true,
+      });
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : String(error));
+      this.update({
+        opened: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   /**
@@ -139,7 +164,7 @@ export class MCP {
    */
   async stop() {
     cmd.invoke("stop_service", {
-      id: this.props.service,
+      id: this.props.server,
     });
     this.update({ opened: false });
     MCP_Actived.delete(this.props.id);
@@ -152,7 +177,7 @@ export class MCP {
   async getInfo() {
     try {
       const result = await cmd.invoke<[string, MCPTool[]]>("get_service_info", {
-        id: this.props.service,
+        id: this.props.server,
       });
       MCP_Actived.set({
         [this.props.id]: result[1],
@@ -160,6 +185,11 @@ export class MCP {
       return result;
     } catch (error) {
       console.error(error);
+      toast.error(error instanceof Error ? error.message : String(error));
+      this.update({
+        opened: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return null;
     }
   }

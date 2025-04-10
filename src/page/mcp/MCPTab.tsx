@@ -1,26 +1,42 @@
+import { dialog } from "@/components/custom/DialogModal";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { PiStorefrontDuotone } from "react-icons/pi";
-import { TbPlug, TbPlus, TbScriptPlus } from "react-icons/tb";
+import {
+  TbDatabaseCog,
+  TbLoader2,
+  TbPlayerPlay,
+  TbPlayerStop,
+  TbPlug,
+  TbPlus,
+  TbScriptPlus,
+} from "react-icons/tb";
+import { EnvEditor } from "../plugins/EnvEditor";
 import { MCP, MCP_Actived, MCPStore } from "./MCP";
+import { MCPMarket } from "./MCPMarket";
 
 export function MCPTab() {
   const mcps = MCPStore.use();
   const [currentMCP, setCurrentMCP] = useState<MCP | null>(null);
   const actived_mcps = MCP_Actived.use();
+  const [loading, setLoading] = useState(false);
 
   return (
     <PreferenceLayout>
       <PreferenceList
         left={
           <Button
-            onClick={() => {}}
+            onClick={() => {
+              dialog({
+                closeIconHide: true,
+                content: <MCPMarket />,
+              });
+            }}
             className="bg-muted-foreground/10 hover:bg-muted-foreground/20"
           >
             <PiStorefrontDuotone className="w-4 h-4" />
@@ -29,6 +45,10 @@ export function MCPTab() {
         }
         right={
           <>
+            <Button onClick={() => EnvEditor.open()}>
+              <TbDatabaseCog className="w-4 h-4" />
+              Environment Variables
+            </Button>
             <Button
               className="flex-1"
               onClick={() => {
@@ -40,7 +60,7 @@ export function MCPTab() {
             </Button>
           </>
         }
-        tips="通过编写插件扩展工具功能。更多信息请参阅文档。"
+        tips="mcp目前仅支持npx环境的stdio方式的mcp服务, 可能需要提前配置环境和网络服务。您可前往第三方MCP市场获取更多资源。"
         items={Object.values(mcps).map((mcp) => ({
           id: mcp.id,
           title: (
@@ -60,12 +80,12 @@ export function MCPTab() {
             MCP.delete(mcp.id);
           },
         }))}
-        emptyText="暂无插件，点击上方按钮添加新插件"
+        emptyText="点击上方按钮添加新mcp"
         EmptyIcon={TbPlus}
       />
 
       <PreferenceBody
-        emptyText="请选择一个插件或点击添加按钮创建新插件"
+        emptyText="请选择一个mcp或点击添加按钮创建新mcp"
         EmptyIcon={TbPlug}
         isEmpty={!currentMCP}
         className={cn("rounded-xl flex-1")}
@@ -82,24 +102,40 @@ export function MCPTab() {
               }}
             />
             <div className="flex flex-none items-center gap-2">
-              <Switch
-                checked={mcps[currentMCP?.props.id || ""]?.opened || false}
-                onCheckedChange={(checked) => {
+              <Button
+                disabled={loading}
+                variant={
+                  mcps[currentMCP?.props.id || ""]?.opened ? "ghost" : "primary"
+                }
+                onClick={async () => {
+                  setLoading(true);
                   if (currentMCP) {
-                    if (checked) {
-                      currentMCP.start();
+                    if (mcps[currentMCP?.props.id || ""]?.opened) {
+                      await currentMCP.stop();
                     } else {
-                      currentMCP.stop();
+                      await currentMCP.start();
                     }
-                    currentMCP.update({ opened: checked });
                   }
+                  setLoading(false);
                 }}
-              />
+              >
+                {loading ? (
+                  <TbLoader2 className="w-4 h-4 animate-spin" />
+                ) : mcps[currentMCP?.props.id || ""]?.opened ? (
+                  <TbPlayerStop className="w-4 h-4" />
+                ) : (
+                  <TbPlayerPlay className="w-4 h-4" />
+                )}
+                {mcps[currentMCP?.props.id || ""]?.opened ? "停止" : "启动"}
+              </Button>
             </div>
           </div>
         }
       >
-        <div className="flex flex-col gap-4 overflow-y-auto">
+        <div
+          key={currentMCP?.props.id}
+          className="flex flex-col gap-4 overflow-y-auto"
+        >
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium">基本信息</label>
@@ -120,10 +156,10 @@ export function MCPTab() {
             <label className="text-sm font-medium">服务设置</label>
             <Input
               placeholder="服务名称"
-              value={mcps[currentMCP?.props.id || ""]?.service}
+              value={mcps[currentMCP?.props.id || ""]?.server}
               onChange={(e) => {
                 currentMCP?.update({
-                  service: e.target.value,
+                  server: e.target.value,
                 });
               }}
             />

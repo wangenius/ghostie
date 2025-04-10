@@ -36,4 +36,10 @@ features:
   - icon: 🎯
     title: User Experience
     details: Quick shortcut activation, modern UI based on Tailwind CSS, automatic updates, cross-platform consistency
+  - icon: 🌐
+    title: MCP Protocol Support
+    details: Full support for MCP , seamless integration with third-party services and APIs, bridging various large model capabilities
+  - icon: 🧩
+    title: Local Extension System
+    details: Powerful local extension mechanism, support for custom local tools and capabilities, extend functionality without cloud services while protecting privacy
 ---
