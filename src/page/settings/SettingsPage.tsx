@@ -17,7 +17,7 @@ import {
 import { Toaster } from "sonner";
 import { AgentsTab } from "../agent/AgentsTab";
 import { KnowledgeTab } from "../knowledge/KnowledgeTab";
-import { MCPTab } from "../mcp/McpTab";
+import { MCPTab } from "../mcp/MCPManagerTab";
 import { ModelsTab } from "../model/ModelsTab";
 import { PluginsTab } from "../plugins/PluginsTab";
 import WorkflowsTab from "../workflow/WorkflowsTab";
