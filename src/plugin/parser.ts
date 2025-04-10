@@ -85,7 +85,19 @@ function mapTsTypeToJsonSchemaType(
       description = `联合类型: ${typeNode.getText(sourceFile)}`;
       return { type: resolvedType, description };
     case ts.SyntaxKind.IntersectionType:
-      description = `交叉类型: ${typeNode.getText(sourceFile)}`;
+      // 对于交叉类型，我们返回对象类型，因为交叉类型通常表示接口继承或类型合并
+      const intersectionNode = typeNode as ts.IntersectionTypeNode;
+      // 尝试提取所有类型名称以提供更好的描述
+      const intersectionTypeNames = intersectionNode.types
+        .map((type) => {
+          if (ts.isTypeReferenceNode(type) && ts.isIdentifier(type.typeName)) {
+            return type.typeName.text;
+          }
+          return type.getText(sourceFile);
+        })
+        .join(" & ");
+
+      description = `交叉类型: ${intersectionTypeNames}`;
       return { type: "object", description };
     case ts.SyntaxKind.AnyKeyword:
     case ts.SyntaxKind.UnknownKeyword:
@@ -182,6 +194,36 @@ function parseInterfaceMembers(
   const properties: { [paramName: string]: ToolProperty } = {};
   const required: string[] = [];
   const codeString = sourceFile.getFullText(); // 获取完整代码字符串以便提取注释
+
+  // 处理接口继承
+  if (ts.isInterfaceDeclaration(declaration) && declaration.heritageClauses) {
+    for (const heritage of declaration.heritageClauses) {
+      if (heritage.token === ts.SyntaxKind.ExtendsKeyword) {
+        for (const type of heritage.types) {
+          if (
+            ts.isExpressionWithTypeArguments(type) &&
+            ts.isIdentifier(type.expression)
+          ) {
+            const baseInterfaceName = type.expression.text;
+            const baseInterface = findInterfaceDeclaration(
+              baseInterfaceName,
+              sourceFile,
+            );
+
+            if (baseInterface) {
+              // 递归解析基础接口的属性
+              const { properties: baseProperties, required: baseRequired } =
+                parseInterfaceMembers(baseInterface, sourceFile);
+
+              // 合并基础接口的属性
+              Object.assign(properties, baseProperties);
+              required.push(...baseRequired);
+            }
+          }
+        }
+      }
+    }
+  }
 
   declaration.members.forEach((member) => {
     if (ts.isPropertySignature(member) && member.name && member.type) {

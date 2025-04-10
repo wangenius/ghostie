@@ -1,4 +1,6 @@
+import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ToolPlugin } from "@/plugin/ToolPlugin";
 import { PluginMarketProps } from "@/plugin/types";
 import { UserMananger } from "@/settings/User";
@@ -6,10 +8,14 @@ import { cmd } from "@/utils/shell";
 import { supabase } from "@/utils/supabase";
 import { useEffect, useState } from "react";
 import {
-  TbLoader2,
-  TbTrash,
   TbChevronLeft,
   TbChevronRight,
+  TbDownload,
+  TbInfoCircle,
+  TbLoader2,
+  TbRefresh,
+  TbSearch,
+  TbTrash,
 } from "react-icons/tb";
 
 export const PluginsMarket = () => {
@@ -18,8 +24,8 @@ export const PluginsMarket = () => {
   const [installing, setInstalling] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const itemsPerPage = 10;
   const user = UserMananger.use();
 
@@ -27,15 +33,6 @@ export const PluginsMarket = () => {
   const fetchPlugins = async (page = 1) => {
     try {
       setLoading(true);
-
-      // Get total count
-      const countResponse = await supabase
-        .from("plugins")
-        .select("id", { count: "exact", head: true });
-
-      const total = countResponse.count || 0;
-      setTotalCount(total);
-      setTotalPages(Math.ceil(total / itemsPerPage));
 
       // Get current page data
       const start = (page - 1) * itemsPerPage;
@@ -53,6 +50,9 @@ export const PluginsMarket = () => {
 
       setPlugins(data || []);
       setCurrentPage(page);
+
+      // If we got less items than itemsPerPage, there's no next page
+      setHasNextPage((data?.length || 0) >= itemsPerPage);
     } catch (error) {
       console.error("Failed to fetch plugins:", error);
       cmd.message("Failed to fetch plugins", "error");
@@ -71,11 +71,11 @@ export const PluginsMarket = () => {
       });
       await newPlugin.updateContent(plugin.content.trim());
 
-      cmd.message(`Successfully installed plugin: ${plugin.name}`, "success");
+      cmd.message(`成功安装插件: ${plugin.name}`, "success");
     } catch (error) {
       console.error("Failed to install plugin:", error);
       cmd.message(
-        `Failed to install plugin: ${
+        `安装插件失败: ${
           error instanceof Error ? error.message : String(error)
         }`,
         "error",
@@ -100,11 +100,11 @@ export const PluginsMarket = () => {
 
       // Update current page data
       fetchPlugins(currentPage);
-      cmd.message(`Successfully deleted plugin: ${plugin.name}`, "success");
+      cmd.message(`成功删除插件: ${plugin.name}`, "success");
     } catch (error) {
       console.error("Failed to delete plugin:", error);
       cmd.message(
-        `Failed to delete plugin: ${
+        `删除插件失败: ${
           error instanceof Error ? error.message : String(error)
         }`,
         "error",
@@ -114,9 +114,73 @@ export const PluginsMarket = () => {
     }
   };
 
+  // Show plugin details
+  const showPluginDetails = (plugin: PluginMarketProps) => {
+    dialog({
+      title: plugin.name,
+      description: `版本: ${plugin.version}`,
+      className: "md:max-w-[600px]",
+      content: (close) => (
+        <div className="flex flex-col gap-4 p-2">
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <h3 className="text-lg font-medium mb-2">插件描述</h3>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              {plugin.description}
+            </p>
+          </div>
+
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <h3 className="text-lg font-medium mb-2">插件代码</h3>
+            <div className="max-h-[300px] overflow-y-auto rounded border bg-background p-3">
+              <pre className="text-xs whitespace-pre-wrap">
+                {plugin.content}
+              </pre>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-2">
+            {user?.id === plugin.user_id && (
+              <Button
+                variant="destructive"
+                className="flex items-center gap-1"
+                onClick={() => {
+                  close();
+                  handleDelete(plugin);
+                }}
+                disabled={deleting === plugin.id}
+              >
+                {deleting === plugin.id ? (
+                  <TbLoader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <TbTrash className="w-4 h-4" />
+                )}
+                删除
+              </Button>
+            )}
+            <Button
+              className="flex items-center gap-1"
+              onClick={() => {
+                close();
+                handleInstall(plugin);
+              }}
+              disabled={installing === plugin.id}
+            >
+              {installing === plugin.id ? (
+                <TbLoader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <TbDownload className="w-4 h-4" />
+              )}
+              安装
+            </Button>
+          </div>
+        </div>
+      ),
+    });
+  };
+
   // Page navigation
   const handleNextPage = () => {
-    if (currentPage < totalPages) {
+    if (hasNextPage) {
       fetchPlugins(currentPage + 1);
     }
   };
@@ -132,102 +196,128 @@ export const PluginsMarket = () => {
     fetchPlugins(1);
   }, []);
 
+  const filteredPlugins = searchQuery
+    ? plugins.filter(
+        (plugin) =>
+          plugin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          plugin.description.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+    : plugins;
+
   return (
-    // Use fixed height container
-    <div
-      className="h-[600px] max-h-full w-full flex flex-col"
-      style={{ minHeight: "200px" }}
-    >
-      {/* 1. Top toolbar - fixed height */}
-      <div className="flex-none h-14 bg-background border-b">
-        <div className="flex items-center justify-between h-full px-4">
-          <div className="space-x-2">
+    <div className="h-[600px] max-h-full w-full flex flex-col gap-3">
+      {/* Header with search */}
+      <div className="flex-none">
+        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between pl-4">
+          <h2 className="text-lg font-semibold">Plugins Market</h2>
+          <div className="flex items-center gap-2 w-full sm:w-auto max-w-[300px]">
+            <div className="relative flex-1">
+              <TbSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                className="pl-8 h-9 text-sm"
+                placeholder="Search plugins..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
             <Button
               variant="outline"
               size="sm"
               onClick={() => fetchPlugins(1)}
               disabled={loading}
+              className="h-9"
             >
-              {loading ? "Loading..." : "Refresh"}
+              {loading ? (
+                <TbLoader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <TbRefresh className="w-4 h-4" />
+              )}
+              <span className="ml-1 hidden sm:inline">Refresh</span>
             </Button>
           </div>
-          <div className="text-sm text-gray-500">
-            Total: {totalCount} plugins
-          </div>
         </div>
       </div>
 
-      {/* 2. Content area - flexible and scrollable */}
-      <div className="flex-grow overflow-auto">
-        <div className="p-4">
-          {loading ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin mr-2">
-                <TbLoader2 className="w-5 h-5" />
-              </div>
-              <span>Loading plugins...</span>
+      {/* Content area - plugin cards */}
+      <div className="flex-grow overflow-auto px-2">
+        {loading ? (
+          <div className="flex justify-center items-center h-full">
+            <div className="animate-spin mr-2">
+              <TbLoader2 className="w-6 h-6" />
             </div>
-          ) : plugins.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {plugins.map((plugin) => (
-                <div key={plugin.id} className="border rounded-lg p-4 bg-card">
-                  <div className="flex justify-between items-start">
-                    <div className="max-w-[70%]">
-                      <h3 className="font-medium text-sm text-card-foreground truncate">
-                        {plugin.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        {plugin.description}
-                      </p>
-                      <div className="text-xs text-muted-foreground mt-2">
-                        Version: {plugin.version}
-                      </div>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                      <Button
-                        size="sm"
-                        onClick={() => handleInstall(plugin)}
-                        disabled={installing === plugin.id}
-                      >
-                        {installing === plugin.id ? (
-                          <>
-                            <TbLoader2 className="w-4 h-4 mr-1 animate-spin" />
-                            Installing
-                          </>
-                        ) : (
-                          "Install"
-                        )}
-                      </Button>
-                      {user?.id === plugin.user_id && (
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          onClick={() => handleDelete(plugin)}
-                          disabled={deleting === plugin.id}
-                        >
-                          {deleting === plugin.id ? (
-                            <TbLoader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <TbTrash className="w-4 h-4" />
-                          )}
-                        </Button>
-                      )}
+            <span>加载插件中...</span>
+          </div>
+        ) : filteredPlugins.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredPlugins.map((plugin) => (
+              <div
+                key={plugin.id}
+                className="border rounded-xl p-4 bg-card hover:border-primary/50 hover:shadow-md transition-all duration-200 cursor-pointer"
+                onClick={() => showPluginDetails(plugin)}
+              >
+                <div className="flex flex-col h-full">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-medium text-sm text-card-foreground flex items-center gap-1.5">
+                      <span className="bg-primary/10 text-primary p-1 rounded">
+                        <TbInfoCircle className="w-3.5 h-3.5" />
+                      </span>
+                      {plugin.name}
+                    </h3>
+                    <div className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+                      v{plugin.version}
                     </div>
                   </div>
+
+                  <p className="text-sm text-muted-foreground line-clamp-1 mb-3 flex-grow">
+                    {plugin.description}
+                  </p>
+
+                  <div className="flex justify-between items-center mt-auto pt-2 border-t">
+                    <div className="text-xs text-muted-foreground">
+                      点击查看详情
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleInstall(plugin);
+                      }}
+                      disabled={installing === plugin.id}
+                    >
+                      {installing === plugin.id ? (
+                        <TbLoader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                      ) : (
+                        <TbDownload className="w-3.5 h-3.5 mr-1" />
+                      )}
+                      安装
+                    </Button>
+                  </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No plugins found or failed to load
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+            <div className="text-4xl mb-4">🔍</div>
+            <p>未找到匹配的插件</p>
+            {searchQuery && (
+              <Button
+                variant="link"
+                className="mt-2"
+                onClick={() => setSearchQuery("")}
+              >
+                清除搜索
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* 3. Pagination controls - fixed height */}
-      {plugins.length > 0 && (
-        <div className="flex-none h-14 border-t bg-background">
+      {/* Pagination controls */}
+      {filteredPlugins.length > 0 && !searchQuery && (
+        <div className="flex-none">
           <div className="flex justify-center items-center h-full">
             <Button
               variant="outline"
@@ -237,14 +327,12 @@ export const PluginsMarket = () => {
             >
               <TbChevronLeft className="w-4 h-4" />
             </Button>
-            <span className="text-sm mx-4">
-              Page {currentPage} of {totalPages}
-            </span>
+            <span className="text-sm mx-4">第 {currentPage} 页</span>
             <Button
               variant="outline"
               size="sm"
               onClick={handleNextPage}
-              disabled={currentPage === totalPages || loading}
+              disabled={!hasNextPage || loading}
             >
               <TbChevronRight className="w-4 h-4" />
             </Button>

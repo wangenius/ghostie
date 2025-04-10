@@ -10,6 +10,7 @@ export const DEFAULT_AGENT: AgentProps = {
   name: "",
   system: "",
   tools: [],
+  mcps: [],
   engine: "react",
   knowledges: [],
   workflows: [],

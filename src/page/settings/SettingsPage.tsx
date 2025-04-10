@@ -10,12 +10,14 @@ import {
   TbKeyboard,
   TbLoader2,
   TbScript,
+  TbServer,
   TbSettings,
   TbShape3,
 } from "react-icons/tb";
 import { Toaster } from "sonner";
 import { AgentsTab } from "../agent/AgentsTab";
 import { KnowledgeTab } from "../knowledge/KnowledgeTab";
+import { MCPTab } from "../mcp/McpTab";
 import { ModelsTab } from "../model/ModelsTab";
 import { PluginsTab } from "../plugins/PluginsTab";
 import WorkflowsTab from "../workflow/WorkflowsTab";
@@ -29,6 +31,7 @@ export const SETTINGS_NAV_ITEMS = [
   { id: "plugins", label: "Plugins", icon: TbScript },
   { id: "workflows", label: "Workflows", icon: TbShape3 },
   { id: "knowledge", label: "Knowledge", icon: TbDatabase },
+  { id: "mcp", label: "MCP", icon: TbServer },
   { id: "shortcuts", label: "Shortcuts", icon: TbKeyboard },
 ] as const;
 
@@ -50,6 +53,8 @@ export function SettingsPage() {
         return <WorkflowsTab />;
       case "shortcuts":
         return <ShortcutsTab />;
+      case "mcp":
+        return <MCPTab />;
       default:
         return <GeneralSettingsPage />;
     }
@@ -83,6 +88,9 @@ export function SettingsPage() {
             Page.settings("knowledge");
             break;
           case "7":
+            Page.settings("mcp");
+            break;
+          case "8":
             Page.settings("shortcuts");
             break;
         }

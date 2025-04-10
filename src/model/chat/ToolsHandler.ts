@@ -1,23 +1,25 @@
+import { AgentMCPProps, AgentProps, AgentToolProps } from "@/agent/types/agent";
 import {
   KNOWLEDGE_TOOL_NAME_PREFIX,
   TOOL_NAME_SPLIT,
+  WORKFLOW_BODY_DATABASE,
   WORKFLOW_TOOL_NAME_PREFIX,
 } from "@/assets/const";
+import { Knowledge, KnowledgesStore } from "@/knowledge/Knowledge";
+import { MCP, MCP_Actived } from "@/page/mcp/MCP";
+import { StartNodeConfig, WorkflowBody } from "@/page/workflow/types/nodes";
+import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
+import { ToolParameters } from "@/plugin/types";
+import { ImageManager } from "@/resources/Image";
+import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
+import { Echo } from "echo-state";
+import { ImageModel } from "../image/ImageModel";
 import {
   FunctionCallResult,
   ToolCallReply,
   ToolRequestBody,
 } from "../types/chatModel";
-import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
-import { Knowledge, KnowledgesStore } from "@/knowledge/Knowledge";
-import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
-import { AgentProps, AgentToolProps } from "@/agent/types/agent";
-import { Echo } from "echo-state";
-import { WORKFLOW_BODY_DATABASE } from "@/assets/const";
-import { StartNodeConfig, WorkflowBody } from "@/page/workflow/types/nodes";
 import { VisionModel } from "../vision/VisionModel";
-import { ImageModel } from "../image/ImageModel";
-import { ImageManager } from "@/resources/Image";
 
 export class ToolsHandler {
   static async transformAgentToolToModelFormat(
@@ -42,6 +44,27 @@ export class ToolsHandler {
     }
     return toolRequestBody;
   }
+  static async transformMCPToModelFormat(
+    mcps: AgentMCPProps[],
+  ): Promise<ToolRequestBody> {
+    const toolRequestBody: ToolRequestBody = [];
+    for (const mcp of mcps) {
+      const tools = MCP_Actived.current[mcp.server];
+      const targetTool = tools.find((item) => item.name === mcp.tool);
+
+      if (targetTool)
+        toolRequestBody.push({
+          type: "function",
+          function: {
+            name: `${targetTool.name}${TOOL_NAME_SPLIT}mcp`,
+            description: targetTool.description,
+            parameters: targetTool.inputSchema as ToolParameters,
+          },
+        });
+    }
+    return toolRequestBody;
+  }
+
   static async transformModelToModelFormat(
     models: AgentProps["models"],
   ): Promise<ToolRequestBody> {
@@ -232,6 +255,26 @@ export class ToolsHandler {
       const firstName = tool_call.function.name.split(TOOL_NAME_SPLIT)[0];
       const secondName = tool_call.function.name.split(TOOL_NAME_SPLIT)[1];
 
+      if (secondName === "mcp") {
+        const server = Object.keys(MCP_Actived.current).find((item) => {
+          return MCP_Actived.current[item].find(
+            (tool) => tool.name === firstName,
+          );
+        });
+        if (!server) {
+          return {
+            name: tool_call.function.name,
+            arguments: tool_call.function.arguments,
+            result: "the called mcp not found",
+          };
+        }
+        const result = await (await MCP.get(server)).run(firstName, query);
+        return {
+          name: tool_call.function.name,
+          arguments: tool_call.function.arguments,
+          result,
+        };
+      }
       if (firstName === WORKFLOW_TOOL_NAME_PREFIX) {
         const workflow = await Workflow.get(secondName);
         if (!workflow) {
@@ -289,6 +332,11 @@ export class ToolsHandler {
     }
     if (toolName === "IMAGE") {
       return { type: "image", name: "generating image" };
+    }
+
+    if (toolName.includes("mcp")) {
+      const firstName = toolName.split(TOOL_NAME_SPLIT)[0];
+      return { type: "mcp", name: `running mcp: ${firstName}` };
     }
 
     const firstName = toolName.split(TOOL_NAME_SPLIT)[0];

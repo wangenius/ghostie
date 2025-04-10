@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { cmd } from "@/utils/shell";
 import React, {
   memo,
   ReactNode,
@@ -11,11 +12,12 @@ import { createEditor, Descendant, Editor, Transforms } from "slate";
 import { withHistory } from "slate-history";
 import { Editable, ReactEditor, Slate, withReact } from "slate-react";
 import { Element, Leaf } from "./elements";
-import { withMentions } from "./elements/mention";
-import { withImages } from "./elements/withImages";
+import { File, insertFile, withFiles } from "./elements/file";
 import { Image } from "./elements/image";
-import { insertImage } from "./elements/withImages";
-
+import { withMentions } from "./elements/mention";
+import { insertImage, withImages } from "./elements/withImages";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { toast } from "sonner";
 interface SlateEditorProps {
   value: Descendant[];
 
@@ -35,6 +37,8 @@ const renderElement = (props: any) => {
   switch (props.element.type) {
     case "image":
       return <Image {...props} />;
+    case "file":
+      return <File {...props} />;
     default:
       return <Element {...props} />;
   }
@@ -51,7 +55,10 @@ const renderLeaf = (props: any) => <Leaf {...props} />;
 export const SlateEditor = memo((props: SlateEditorProps) => {
   /** 编辑器实例记忆化 */
   const editor = useMemo(
-    () => withImages(withMentions(withReact(withHistory(createEditor())))),
+    () =>
+      withFiles(
+        withImages(withMentions(withReact(withHistory(createEditor())))),
+      ),
     [],
   );
 
@@ -126,8 +133,10 @@ export const SlateEditor = memo((props: SlateEditorProps) => {
   const handlePaste = useCallback(
     (event: React.ClipboardEvent) => {
       const items = event.clipboardData.items;
+      console.log("🟢 粘贴事件", items);
 
       for (const item of items) {
+        console.log("🟢 粘贴事件", item);
         if (item.type.startsWith("image/")) {
           event.preventDefault();
           const file = item.getAsFile();
@@ -143,12 +152,90 @@ export const SlateEditor = memo((props: SlateEditorProps) => {
             };
             reader.readAsDataURL(file);
           }
-          return;
         }
+      }
+
+      // 检查是否有文件（非图片）在剪贴板
+      cmd
+        .invoke<string[]>("get_file_drop_list")
+        .then((files) => {
+          if (files && files.length > 0) {
+            event.preventDefault();
+            // 将文件路径插入编辑器
+            files.forEach((filePath) => {
+              // 检查是否是图片文件
+              const isImageFile = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(
+                filePath,
+              );
+              if (!isImageFile) {
+                // 插入文件节点而不是纯文本
+                insertFile(editor, filePath);
+              }
+            });
+          }
+        })
+        .catch((error) => {
+          console.error("获取剪贴板文件列表失败", error);
+        });
+    },
+    [editor],
+  );
+
+  // 处理拖拽文件
+  const handleDragOver = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+    },
+    [],
+  );
+
+  // 处理拖放文件
+  const handleDrop = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+
+      // 处理拖拽的文件
+      if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+        const files = Array.from(event.dataTransfer.files);
+        console.log("🟢 拖拽文件", files);
+
+        // 处理图片文件
+        files.forEach((file) => {
+          if (file.type.startsWith("image/")) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const base64String = e.target?.result as string;
+              const base64Image = base64String.split(",")[1];
+              insertImage(editor, {
+                contentType: file.type,
+                base64Image: base64Image,
+              });
+            };
+            reader.readAsDataURL(file);
+          }
+          if (!file.type.startsWith("image/")) {
+            insertFile(editor, file.name);
+            toast.warning("非图片文件暂时不支持拖动，你可以复制后粘贴进来。");
+          }
+        });
       }
     },
     [editor],
   );
+
+  useEffect(() => {
+    getCurrentWebview().onDragDropEvent((event) => {
+      console.log("🟢 拖拽事件", event);
+      if (event.payload.type === "over") {
+        console.log("User hovering", event.payload.position);
+      } else if (event.payload.type === "drop") {
+        console.log("User dropped", event.payload.paths);
+      } else {
+        console.log("File drop cancelled");
+      }
+    });
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -183,7 +270,12 @@ export const SlateEditor = memo((props: SlateEditorProps) => {
   }, [editor, editorRef]);
 
   return (
-    <div className={cn("flex-1", className)} ref={refs.root}>
+    <div
+      className={cn("flex-1", className)}
+      ref={refs.root}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <Slate editor={editor} initialValue={value} onChange={handleSlateChange}>
         <Editable
           autoFocus={autoFocus}

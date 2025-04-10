@@ -122,7 +122,7 @@ export function dialog({
               {...props}
             >
               {(title || !closeIconHide) && (
-                <div className="flex items-center justify-between mb-3 flex-none pl-3">
+                <div className="flex items-center justify-between mb-3 flex-none pl-3 select-none">
                   {title && (
                     <div>
                       <h2 className="font-semibold">{title}</h2>

@@ -189,7 +189,7 @@ export function PluginsTab() {
           <Button
             onClick={() => {
               dialog({
-                title: "Plugins Market",
+                closeIconHide: true,
                 content: <PluginsMarket />,
               });
             }}

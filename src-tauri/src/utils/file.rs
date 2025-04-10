@@ -1,5 +1,7 @@
 use crate::utils::document::{read_docx, read_pdf};
 use anyhow::Result;
+#[cfg(target_os = "windows")]
+use clipboard_win::{formats::FileList, get_clipboard};
 use std::env;
 use std::fs;
 use std::path::Path;
@@ -183,5 +185,27 @@ pub async fn read_file_text(path: String) -> Result<String, String> {
         }
         "pdf" => read_pdf(&path.to_string_lossy()).map_err(|e| format!("读取 PDF 文件失败: {}", e)),
         _ => fs::read_to_string(&path).map_err(|e| format!("读取文件失败: {}", e)),
+    }
+}
+
+#[tauri::command]
+pub async fn get_file_drop_list() -> Result<Vec<String>, String> {
+    #[cfg(target_os = "windows")]
+    {
+        let mut paths = Vec::new();
+        match get_clipboard::<Vec<String>, _>(FileList) {
+            Ok(data) => {
+                for path in data {
+                    paths.push(path);
+                }
+                Ok(paths)
+            }
+            Err(e) => Err(format!("获取剪贴板文件列表失败: {}", e)),
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("此功能仅支持Windows系统".to_string())
     }
 }

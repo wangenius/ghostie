@@ -26,6 +26,10 @@ export interface AgentToolProps {
   plugin: string;
   tool: string;
 }
+export interface AgentMCPProps {
+  server: string;
+  tool: string;
+}
 
 /** 代理配置信息
  * @param name 名称
@@ -52,6 +56,8 @@ export interface AgentProps {
   };
   /* 可调用的工具 */
   tools: AgentToolProps[];
+  /* 可调用的MCP */
+  mcps: AgentMCPProps[];
   /* 知识库 */
   knowledges: string[];
   /* 工作流 */

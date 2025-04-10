@@ -1,20 +1,20 @@
-pub mod error;
-pub mod runtime;
 pub mod env;
+pub mod error;
 pub mod plugin;
+pub mod runtime;
 
+pub use env::{EnvManager, EnvVar};
 pub use error::{PluginError, Result};
-pub use runtime::DenoRuntime;
-pub use env::{EnvVar, EnvManager};
-pub use plugin::{Plugin, Tool, PluginWithContent, PluginManager};
-use tauri::Emitter;
 use once_cell::sync::Lazy;
-use tokio::sync::Mutex;
-use tauri::AppHandle;
+pub use plugin::{Plugin, PluginManager, PluginWithContent, Tool};
+pub use runtime::DenoRuntime;
 use serde_json::Value;
 use std::collections::HashMap;
+use tauri::AppHandle;
+use tauri::Emitter;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
+use tokio::sync::Mutex;
 
 // 全局状态
 static APP_HANDLE: Lazy<Mutex<Option<AppHandle>>> = Lazy::new(|| Mutex::new(None));
@@ -59,7 +59,7 @@ pub async fn deno_install(window: tauri::Window) -> Result<bool> {
     let mut cmd = Command::new("powershell");
     #[cfg(windows)]
     cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    
+
     let mut child = cmd
         .arg("irm")
         .arg("https://deno.land/install.ps1")
@@ -89,11 +89,11 @@ pub async fn deno_install(window: tauri::Window) -> Result<bool> {
         if let Ok(new_path) = std::env::var("PATH") {
             std::env::set_var("PATH", new_path);
         }
-        
+
         // 创建新的运行时实例
         let mut runtime = DENO_RUNTIME.lock().await;
         *runtime = Some(DenoRuntime::new()?);
-        
+
         Ok(true)
     } else {
         println!("Deno 安装失败");
@@ -106,21 +106,21 @@ pub async fn deno_install(window: tauri::Window) -> Result<bool> {
 pub async fn deno_check() -> Result<HashMap<String, String>> {
     let runtime = DenoRuntime::new()?;
     let is_installed = runtime.check_installed();
-    
+
     // 无论是否安装，都更新全局运行时
     let mut global_runtime = DENO_RUNTIME.lock().await;
     *global_runtime = Some(runtime);
-    
+
     let mut result = HashMap::new();
     result.insert("installed".to_string(), is_installed.to_string());
-    
+
     if is_installed {
         if let Some((version, path)) = global_runtime.as_ref().unwrap().get_version_and_path() {
             result.insert("version".to_string(), version);
             result.insert("path".to_string(), path);
         }
     }
-    
+
     Ok(result)
 }
 
@@ -128,7 +128,9 @@ pub async fn deno_check() -> Result<HashMap<String, String>> {
 #[tauri::command]
 pub async fn plugin_execute(content: String, tool: String, args: Value) -> Result<Value> {
     let manager = PLUGIN_MANAGER.lock().await;
-    let manager = manager.as_ref().ok_or_else(|| PluginError::Plugin("插件管理器未初始化".to_string()))?;
+    let manager = manager
+        .as_ref()
+        .ok_or_else(|| PluginError::Plugin("插件管理器未初始化".to_string()))?;
     manager.execute(&content, &tool, args).await
 }
 
@@ -136,7 +138,9 @@ pub async fn plugin_execute(content: String, tool: String, args: Value) -> Resul
 #[tauri::command]
 pub async fn env_list() -> Result<Vec<EnvVar>> {
     let manager = ENV_MANAGER.lock().await;
-    let manager = manager.as_ref().ok_or_else(|| PluginError::Plugin("环境变量管理器未初始化".to_string()))?;
+    let manager = manager
+        .as_ref()
+        .ok_or_else(|| PluginError::Plugin("环境变量管理器未初始化".to_string()))?;
     manager.load().await
 }
 
@@ -144,6 +148,8 @@ pub async fn env_list() -> Result<Vec<EnvVar>> {
 #[tauri::command]
 pub async fn env_save(vars: Vec<EnvVar>) -> Result<()> {
     let manager = ENV_MANAGER.lock().await;
-    let manager = manager.as_ref().ok_or_else(|| PluginError::Plugin("环境变量管理器未初始化".to_string()))?;
+    let manager = manager
+        .as_ref()
+        .ok_or_else(|| PluginError::Plugin("环境变量管理器未初始化".to_string()))?;
     manager.save(&vars).await
-} 
+}

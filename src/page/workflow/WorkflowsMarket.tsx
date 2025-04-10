@@ -2,11 +2,22 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/utils/supabase";
 import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
-import { TbLoader2, TbTrash } from "react-icons/tb";
+import {
+  TbLoader2,
+  TbTrash,
+  TbDownload,
+  TbInfoCircle,
+  TbSearch,
+  TbRefresh,
+  TbChevronLeft,
+  TbChevronRight,
+} from "react-icons/tb";
 import { UserMananger } from "@/settings/User";
 import { Workflow } from "@/workflow/Workflow";
 import { Echo } from "echo-state";
 import { WORKFLOW_BODY_DATABASE } from "@/assets/const";
+import { Input } from "@/components/ui/input";
+import { dialog } from "@/components/custom/DialogModal";
 
 export interface WorkflowMarketProps {
   id: string;
@@ -23,25 +34,39 @@ export const WorkflowsMarket = () => {
   const [loading, setLoading] = useState(false);
   const [installing, setInstalling] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const itemsPerPage = 10;
   const user = UserMananger.use();
 
-  // 从 Supabase 获取工作流列表
-  const fetchWorkflows = async () => {
+  // 从 Supabase 获取工作流列表 - 分页处理
+  const fetchWorkflows = async (page = 1) => {
     try {
       setLoading(true);
+
+      // 获取当前页数据
+      const start = (page - 1) * itemsPerPage;
+      const end = start + itemsPerPage - 1;
+
       const { data, error } = await supabase
         .from("workflows")
         .select("*")
-        .order("inserted_at", { ascending: false });
+        .order("inserted_at", { ascending: false })
+        .range(start, end);
 
       if (error) {
         throw error;
       }
 
       setWorkflows(data || []);
+      setCurrentPage(page);
+
+      // 如果获取的项目数少于itemsPerPage，说明没有下一页
+      setHasNextPage((data?.length || 0) >= itemsPerPage);
     } catch (error) {
-      console.error("failed to get workflow market list:", error);
-      cmd.message("failed to get workflow market list", "error");
+      console.error("获取工作流列表失败:", error);
+      cmd.message("获取工作流列表失败", "error");
     } finally {
       setLoading(false);
     }
@@ -50,7 +75,6 @@ export const WorkflowsMarket = () => {
   // 安装工作流
   const handleInstall = async (workflow: WorkflowMarketProps) => {
     try {
-      console.log(workflow);
       setInstalling(workflow.id);
 
       // 添加到工作流管理器
@@ -62,10 +86,8 @@ export const WorkflowsMarket = () => {
         description: workflow.description,
       });
 
-      console.log(workflow.data);
-
       // 更新工作流主体数据
-      if (workflow.data && workflow.data) {
+      if (workflow.data) {
         new Echo(JSON.parse(workflow.data))
           .indexed({
             database: WORKFLOW_BODY_DATABASE,
@@ -74,7 +96,7 @@ export const WorkflowsMarket = () => {
           .ready();
       }
 
-      cmd.message(`success to install: ${workflow.name}`, "success");
+      cmd.message(`成功安装工作流: ${workflow.name}`, "success");
     } catch (error) {
       console.error("安装工作流失败:", error);
       cmd.message(
@@ -101,7 +123,8 @@ export const WorkflowsMarket = () => {
         throw error;
       }
 
-      setWorkflows(workflows.filter((w) => w.id !== workflow.id));
+      // 更新当前页数据
+      fetchWorkflows(currentPage);
       cmd.message(`成功删除工作流: ${workflow.name}`, "success");
     } catch (error) {
       console.error("删除工作流失败:", error);
@@ -116,83 +139,235 @@ export const WorkflowsMarket = () => {
     }
   };
 
+  // 显示工作流详情
+  const showWorkflowDetails = (workflow: WorkflowMarketProps) => {
+    dialog({
+      title: workflow.name || "未命名工作流",
+      description: `更新时间: ${new Date(workflow.updated_at).toLocaleString()}`,
+      className: "md:max-w-[600px]",
+      content: (close) => (
+        <div className="flex flex-col gap-4 p-2">
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <h3 className="text-lg font-medium mb-2">工作流描述</h3>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              {workflow.description || "无描述"}
+            </p>
+          </div>
+
+          {workflow.data && (
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <h3 className="text-lg font-medium mb-2">工作流数据</h3>
+              <div className="max-h-[300px] overflow-y-auto rounded p-3">
+                一共有 {Object.keys(JSON.parse(workflow.data).nodes).length}
+                个节点
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 mt-2">
+            {user?.id === workflow.user_id && (
+              <Button
+                variant="destructive"
+                className="flex items-center gap-1"
+                onClick={() => {
+                  close();
+                  handleDelete(workflow);
+                }}
+                disabled={deleting === workflow.id}
+              >
+                {deleting === workflow.id ? (
+                  <TbLoader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <TbTrash className="w-4 h-4" />
+                )}
+                删除
+              </Button>
+            )}
+            <Button
+              className="flex items-center gap-1"
+              onClick={() => {
+                close();
+                handleInstall(workflow);
+              }}
+              disabled={installing === workflow.id}
+            >
+              {installing === workflow.id ? (
+                <TbLoader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <TbDownload className="w-4 h-4" />
+              )}
+              安装
+            </Button>
+          </div>
+        </div>
+      ),
+    });
+  };
+
+  // 页面导航
+  const handleNextPage = () => {
+    if (hasNextPage) {
+      fetchWorkflows(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      fetchWorkflows(currentPage - 1);
+    }
+  };
+
   // 初始加载
   useEffect(() => {
-    fetchWorkflows();
+    fetchWorkflows(1);
   }, []);
 
+  const filteredWorkflows = searchQuery
+    ? workflows.filter(
+        (workflow) =>
+          (workflow.name || "")
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          (workflow.description || "")
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()),
+      )
+    : workflows;
+
   return (
-    <div className="h-[80vh]">
-      <div className="flex items-center justify-between mb-4">
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchWorkflows}
-            disabled={loading}
-          >
-            {loading ? "loading..." : "refresh"}
-          </Button>
+    <div className="h-[600px] max-h-full w-full flex flex-col gap-3">
+      {/* 标题栏与搜索 */}
+      <div className="flex-none">
+        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between pl-4">
+          <h2 className="text-lg font-semibold">Workflows Market</h2>
+          <div className="flex items-center gap-2 w-full sm:w-auto max-w-[300px]">
+            <div className="relative flex-1">
+              <TbSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                className="pl-8 h-9 text-sm"
+                placeholder="搜索工作流..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchWorkflows(1)}
+              disabled={loading}
+              className="h-9"
+            >
+              {loading ? (
+                <TbLoader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <TbRefresh className="w-4 h-4" />
+              )}
+              <span className="ml-1 hidden sm:inline">刷新</span>
+            </Button>
+          </div>
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center py-8">
-          <div className="animate-spin mr-2">
-            <TbLoader2 className="w-5 h-5" />
+      {/* 内容区域 - 工作流卡片 */}
+      <div className="flex-grow overflow-auto px-2">
+        {loading ? (
+          <div className="flex justify-center items-center h-full">
+            <div className="animate-spin mr-2">
+              <TbLoader2 className="w-6 h-6" />
+            </div>
+            <span>加载工作流中...</span>
           </div>
-          <span>loading workflows...</span>
-        </div>
-      ) : workflows.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {workflows.map((workflow) => (
-            <div key={workflow.id} className="border rounded-lg p-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-medium">
-                    {workflow.name || "未命名工作流"}
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {workflow.description?.slice(0, 100) || "无描述"}
-                    {(workflow.description?.length || 0) > 100 ? "..." : ""}
+        ) : filteredWorkflows.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredWorkflows.map((workflow) => (
+              <div
+                key={workflow.id}
+                className="border rounded-xl p-4 bg-card hover:border-primary/50 hover:shadow-md transition-all duration-200 cursor-pointer"
+                onClick={() => showWorkflowDetails(workflow)}
+              >
+                <div className="flex flex-col h-full">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-medium text-sm text-card-foreground flex items-center gap-1.5">
+                      <span className="bg-primary/10 text-primary p-1 rounded">
+                        <TbInfoCircle className="w-3.5 h-3.5" />
+                      </span>
+                      {workflow.name || "未命名工作流"}
+                    </h3>
+                    <div className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+                      {new Date(workflow.updated_at).toLocaleDateString()}
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-muted-foreground line-clamp-1 mb-3 flex-grow">
+                    {workflow.description || "无描述"}
                   </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => handleInstall(workflow)}
-                    disabled={installing === workflow.id}
-                  >
-                    {installing === workflow.id ? (
-                      <>
-                        <TbLoader2 className="w-4 h-4 mr-1 animate-spin" />
-                        installing...
-                      </>
-                    ) : (
-                      "install"
-                    )}
-                  </Button>
-                  {user?.id === workflow.user_id && (
+
+                  <div className="flex justify-between items-center mt-auto pt-2 border-t">
+                    <div className="text-xs text-muted-foreground">
+                      点击查看详情
+                    </div>
                     <Button
-                      size="icon"
-                      variant="destructive"
-                      onClick={() => handleDelete(workflow)}
-                      disabled={deleting === workflow.id}
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleInstall(workflow);
+                      }}
+                      disabled={installing === workflow.id}
                     >
-                      {deleting === workflow.id ? (
-                        <TbLoader2 className="w-4 h-4 animate-spin" />
+                      {installing === workflow.id ? (
+                        <TbLoader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
                       ) : (
-                        <TbTrash className="w-4 h-4" />
+                        <TbDownload className="w-3.5 h-3.5 mr-1" />
                       )}
+                      安装
                     </Button>
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+            <div className="text-4xl mb-4">🔍</div>
+            <p>未找到匹配的工作流</p>
+            {searchQuery && (
+              <Button
+                variant="link"
+                className="mt-2"
+                onClick={() => setSearchQuery("")}
+              >
+                清除搜索
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 分页控制 */}
+      {filteredWorkflows.length > 0 && !searchQuery && (
+        <div className="flex-none">
+          <div className="flex justify-center items-center h-full">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrevPage}
+              disabled={currentPage === 1 || loading}
+            >
+              <TbChevronLeft className="w-4 h-4" />
+            </Button>
+            <span className="text-sm mx-4">第 {currentPage} 页</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextPage}
+              disabled={!hasNextPage || loading}
+            >
+              <TbChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
-      ) : (
-        <div className="text-center py-8 text-gray-500">No workflow</div>
       )}
     </div>
   );

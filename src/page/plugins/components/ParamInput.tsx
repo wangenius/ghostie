@@ -7,6 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { TbPlus, TbTrash } from "react-icons/tb";
 
 interface ParamInputProps {
   property: ToolProperty;
@@ -63,15 +65,10 @@ export function ParamInput({
       return (
         <div className="pl-2 space-y-2">
           <label className="block text-xs text-muted-foreground">{name}</label>
-          <Input
-            value={Array.isArray(value) ? value.join(",") : ""}
-            onChange={(e) =>
-              onChange(e.target.value.split(",").filter(Boolean))
-            }
-            className="rounded-[8px] bg-muted-foreground/10"
-            placeholder={
-              property.description || "Input array values, separated by commas"
-            }
+          <InputArray
+            value={value}
+            description={property.description}
+            onChange={onChange}
           />
         </div>
       );
@@ -107,4 +104,52 @@ export function ParamInput({
         </div>
       );
   }
+}
+
+function InputArray({
+  value,
+  onChange,
+  description,
+}: {
+  value: unknown;
+  onChange: (value: unknown) => void;
+  description?: string;
+}) {
+  const items = Array.isArray(value) ? value : [];
+
+  const addItem = () => {
+    onChange([...items, ""]);
+  };
+
+  const updateItem = (index: number, newValue: string) => {
+    const newItems = [...items];
+    newItems[index] = newValue;
+    onChange(newItems);
+  };
+
+  const removeItem = (index: number) => {
+    const newItems = items.filter((_, i) => i !== index);
+    onChange(newItems);
+  };
+
+  return (
+    <div className="space-y-2">
+      {items.map((item, index) => (
+        <div key={index} className="flex gap-2">
+          <Input
+            value={String(item)}
+            onChange={(e) => updateItem(index, e.target.value)}
+            className="flex-1 rounded-[8px] bg-muted-foreground/10"
+            placeholder={description || "输入值"}
+          />
+          <Button size={"icon"} onClick={() => removeItem(index)}>
+            <TbTrash />
+          </Button>
+        </div>
+      ))}
+      <Button size={"icon"} onClick={addItem}>
+        <TbPlus />
+      </Button>
+    </div>
+  );
 }

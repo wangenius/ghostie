@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { KnowledgeMeta, KnowledgesStore } from "@/knowledge/Knowledge";
 import { ChatModelManager } from "@/model/chat/ChatModelManager";
 import { ImageModelManager } from "@/model/image/ImageModelManager";
@@ -24,8 +25,10 @@ import { supabase } from "@/utils/supabase";
 import { WorkflowsStore } from "@/workflow/Workflow";
 import { useCallback } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
-import { TbUpload } from "react-icons/tb";
+import { TbListSearch, TbUpload } from "react-icons/tb";
 import { toast } from "sonner";
+import { MCPTool, MCP_Actived } from "../mcp/MCP";
+import { SettingItem } from "../settings/components/SettingItem";
 
 export const AgentEditor = ({ agent }: { agent: Agent }) => {
   const list = KnowledgesStore.use();
@@ -33,6 +36,7 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
   const props = AgentStore.use((selector) => selector[agent.props.id]);
   const plugins = PluginStore.use();
   const engines = EngineManager.getEngines();
+  const actived_mcps = MCP_Actived.use();
 
   // 上传机器人
   const handleUpload = useCallback(async () => {
@@ -202,7 +206,22 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
           {/* 功能扩展 */}
           <section className="space-y-4">
             <h3 className="text-lg font-medium">Abilities</h3>
-            <div className="space-y-4">
+            <div className="space-y-4 px-2">
+              <SettingItem
+                icon={<TbListSearch className="w-[18px] h-[18px]" />}
+                title="auto search all abilities"
+                description={`Current abilities: ${false}`}
+                action={
+                  <div className="flex gap-1">
+                    <Switch
+                      checked={false}
+                      disabled={true}
+                      title="this will be implemented in the next version"
+                      onCheckedChange={() => {}}
+                    />
+                  </div>
+                }
+              />
               <DrawerSelector
                 title="Select Plugin"
                 value={props.tools}
@@ -242,7 +261,30 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
                 multiple
                 placeholder="Select Workflow..."
               />
-
+              <DrawerSelector
+                title="Select MCP"
+                value={props.mcps}
+                items={Object.entries(actived_mcps)
+                  .flatMap(([id, tools]) =>
+                    tools?.map((tool: MCPTool) => ({
+                      label: tool.name,
+                      value: {
+                        server: id,
+                        tool: tool.name,
+                      },
+                      type: id,
+                      description: tool.description,
+                    })),
+                  )
+                  .filter((item) => item !== null)}
+                onSelect={(value) =>
+                  agent.update({
+                    mcps: value,
+                  })
+                }
+                multiple
+                placeholder="Select MCP..."
+              />
               <DrawerSelector
                 title="Select Knowledge"
                 value={props.knowledges || []}

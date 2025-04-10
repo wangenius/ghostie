@@ -1,6 +1,6 @@
-import { BaseEditor, BaseRange, Descendant, Element, Range } from 'slate';
-import { HistoryEditor } from 'slate-history';
-import { ReactEditor } from 'slate-react';
+import { BaseEditor, BaseRange, Descendant, Element, Range } from "slate";
+import { HistoryEditor } from "slate-history";
+import { ReactEditor } from "slate-react";
 
 /*
  * 关于slate的类型定义
@@ -9,7 +9,7 @@ import { ReactEditor } from 'slate-react';
  */
 /**默认的章节内容*/
 export const DEFAULT_DESCENDANT_ARRAY: Descendant[] = [
-  { type: 'paragraph', children: [{ text: '' }] },
+  { type: "paragraph", children: [{ text: "" }] },
 ];
 declare global {
   // 定义自定义编辑器类型
@@ -21,7 +21,7 @@ declare global {
 
   // 基础文本类型定义
   type CustomText = {
-    type?: 'text';
+    type?: "text";
     bold?: boolean;
     italic?: boolean;
     code?: boolean;
@@ -31,117 +31,124 @@ declare global {
   };
 
   type EmptyText = {
-    type?: 'text';
+    type?: "text";
     text: string;
   };
 
   // 表格相关类型
   type TableCell = {
-    type: 'table-cell';
+    type: "table-cell";
     children: CustomText[];
   };
 
   type TableRow = {
-    type: 'table-row';
+    type: "table-row";
     children: TableCell[];
   };
 
   // 所有元素类型定义
   type BlockQuoteElement = {
-    type: 'block-quote';
+    type: "block-quote";
     align?: string;
     children: Descendant[];
   };
 
   type BulletedListElement = {
-    type: 'bulleted-list';
+    type: "bulleted-list";
     align?: string;
     children: Descendant[];
   };
 
   type CheckListItemElement = {
-    type: 'check-list-item';
+    type: "check-list-item";
     checked: boolean;
     children: Descendant[];
   };
 
   type EditableVoidElement = {
-    type: 'editable-void';
+    type: "editable-void";
     children: EmptyText[];
   };
 
   type HeadingElement = {
-    type: 'heading';
+    type: "heading";
     align?: string;
     children: Descendant[];
   };
 
   type HeadingTwoElement = {
-    type: 'heading-two';
+    type: "heading-two";
     align?: string;
     children: Descendant[];
   };
 
   type ImageElement = {
-    type: 'image';
+    type: "image";
     url: string;
     children: EmptyText[];
   };
 
   type LinkElement = {
-    type: 'link';
+    type: "link";
     url: string;
     children: Descendant[];
   };
 
   type ButtonElement = {
-    type: 'button';
+    type: "button";
     children: Descendant[];
   };
 
   type BadgeElement = {
-    type: 'badge';
+    type: "badge";
     children: Descendant[];
   };
 
   type ListItemElement = {
-    type: 'list-item';
+    type: "list-item";
     children: Descendant[];
   };
 
   type MentionElement = {
-    type: 'mention';
+    type: "mention";
     id: string;
     children: CustomText[];
   };
 
+  type FileElement = {
+    type: "file";
+    path: string;
+    name: string;
+    children: EmptyText[];
+  };
+
   type PredictElement = {
-    type: 'deduce';
+    type: "deduce";
     id: string;
     children: CustomText[];
   };
 
   type AnswerNodeElement = {
-    type: 'answer';
+    type: "answer";
     id: string;
     loading: boolean;
     children: CustomText[];
   };
 
   type InlineAIDialogElement = {
-    type: 'dialog';
+    type: "dialog";
     id: string;
     children: CustomText[];
   };
 
   type ParagraphElement = {
-    type: 'paragraph';
+    type: "paragraph";
     align?: string;
     children: Descendant[];
   };
 
   type TableElement = {
-    type: 'table';
+    type: "table";
     children: TableRow[];
   };
 
@@ -150,24 +157,24 @@ declare global {
   type TableRowElement = TableRow;
 
   type TitleElement = {
-    type: 'title';
+    type: "title";
     children: Descendant[];
   };
 
   type VideoElement = {
-    type: 'video';
+    type: "video";
     url: string;
     children: EmptyText[];
   };
 
   type CodeBlockElement = {
-    type: 'code-block';
+    type: "code-block";
     language: string;
     children: Descendant[];
   };
 
   type CodeLineElement = {
-    type: 'code-line';
+    type: "code-line";
     children: Descendant[];
   };
 
@@ -185,6 +192,7 @@ declare global {
     | BadgeElement
     | ListItemElement
     | MentionElement
+    | FileElement
     | AnswerNodeElement
     | PredictElement
     | InlineAIDialogElement
@@ -198,7 +206,7 @@ declare global {
     | CodeLineElement;
 }
 
-declare module 'slate' {
+declare module "slate" {
   interface CustomTypes {
     Editor: CustomEditor;
     Element: CustomElement;

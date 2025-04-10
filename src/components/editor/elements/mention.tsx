@@ -1,13 +1,6 @@
-import { AgentStore } from "@/agent/Agent";
 import { AgentProps } from "@/agent/types/agent";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { TbGhost3 } from "react-icons/tb";
 import { Editor, Node, Transforms } from "slate";
 import { useFocused, useSelected } from "slate-react";
 
@@ -81,34 +74,25 @@ export const Mention = ({
 }) => {
   const select = useSelected();
   const focus = useFocused();
-  const [open, setOpen] = useState(false);
-
-  const agent = AgentStore.use((state) => state[element.id]);
 
   return (
-    <DropdownMenu
-      onOpenChange={(v) => {
-        setOpen(v);
+    <span
+      {...attributes}
+      contentEditable={false}
+      style={{
+        fontSize: "12px",
       }}
+      className={cn(
+        "inline-flex items-center translate-y-0.5 py-1 bg-muted px-2 rounded-md text-xs m-0 mx-1",
+        select && focus && "bg-muted-foreground/20 ring-1 ring-primary",
+      )}
+      data-id={element.id}
     >
-      <DropdownMenuTrigger asChild>
-        <span
-          className={cn(
-            "bg-muted-foreground/10 px-2 py-0.5 rounded-full text-xs mx-1",
-            select && focus && "bg-muted-foreground/20",
-            open && "border-solid",
-          )}
-          {...attributes}
-          contentEditable={false}
-          data-id={element.id}
-        >
-          {element.children[0].text}
-          {children}
-        </span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent side={"bottom"} align={"start"} className="w-44">
-        <DropdownMenuItem>{agent.id}</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      <TbGhost3 size={14} className="mr-1 select-none" />
+      <span className="max-w-[300px] truncate select-none">
+        {element.children[0].text}
+      </span>
+      {children}
+    </span>
   );
 };

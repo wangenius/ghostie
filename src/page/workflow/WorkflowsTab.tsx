@@ -42,9 +42,8 @@ export default function WorkflowsTab() {
 
   const handleOpenMarket = () => {
     dialog({
-      title: "Workflows Market",
+      closeIconHide: true,
       content: <WorkflowsMarket />,
-      className: "max-w-3xl",
     });
   };
 

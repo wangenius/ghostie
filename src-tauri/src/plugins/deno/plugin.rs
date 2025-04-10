@@ -29,9 +29,7 @@ pub struct PluginWithContent {
 }
 
 /// 插件管理器
-pub struct PluginManager {
-    env_manager: crate::plugins::deno::env::EnvManager,
-}
+pub struct PluginManager {}
 
 impl PluginManager {
     /// 创建新的插件管理器
@@ -50,9 +48,7 @@ impl PluginManager {
             write(&deno_json_path, deno_json_content)?;
         }
 
-        Ok(Self {
-            env_manager: crate::plugins::deno::env::EnvManager::new()?,
-        })
+        Ok(Self {})
     }
 
     /// 执行插件工具
@@ -109,7 +105,7 @@ impl PluginManager {
                 .replace("\r", "\\r")
         );
 
-        let env_vars = self.env_manager.load().await?;
+        let env_vars = crate::plugins::deno::env_list().await?;
         let output = runtime.execute(&script, &env_vars).await?;
         // 清理插件文件
         let _ = std::fs::remove_file(&plugin_path);

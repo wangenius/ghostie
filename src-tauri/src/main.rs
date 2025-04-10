@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use ghostie::plugins::{chat, deno};
+use ghostie::plugins::{chat, deno, mcp};
 use ghostie::utils;
 use tauri::{
     menu::{Menu, MenuItem},
@@ -49,6 +49,13 @@ async fn main() {
                     eprintln!("初始化 Deno 插件管理器失败: {}", e);
                 }
                 deno::set_app_handle(app_handle).await;
+            });
+
+            // 初始化 MCP 插件管理器
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = mcp::init().await {
+                    eprintln!("初始化 MCP 插件管理器失败: {}", e);
+                }
             });
 
             // 仅在桌面平台启用自动更新功能
@@ -128,6 +135,7 @@ async fn main() {
             utils::file::open_file,
             utils::file::save_file,
             utils::file::read_file_text,
+            utils::file::get_file_drop_list,
             utils::window::open_config_dir,
             utils::update::check_update,
             utils::update::install_update,
@@ -138,6 +146,10 @@ async fn main() {
             deno::deno_check,
             utils::window::open_url,
             utils::window::notify,
+            mcp::start_service,
+            mcp::stop_service,
+            mcp::get_service_info,
+            mcp::call_tool,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

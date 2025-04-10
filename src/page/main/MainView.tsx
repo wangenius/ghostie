@@ -8,6 +8,7 @@ import { LogicalSize, Window } from "@tauri-apps/api/window";
 import { Echoa } from "echo-state";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  TbArrowLeft,
   TbCapture,
   TbDatabase,
   TbDeviceAudioTape,
@@ -37,16 +38,21 @@ export const plainText = (value: Descendant[]) =>
         return node.text;
       }
 
-      // 跳过mention节点
-      if (node.type === "mention") {
-        return "";
-      }
-
       // 处理包含子节点的节点
       if ("children" in node) {
         return node.children
-          .filter((child) => !("type" in child) || child.type !== "mention")
-          .map((child) => ("text" in child ? child.text : ""))
+          .map((child) => {
+            if (child.type === "file") {
+              return `[file](${child.path})`;
+            }
+            if (child.type === "mention") {
+              return "";
+            }
+            if (child.type === "image") {
+              return "";
+            }
+            return "text" in child ? child.text : "";
+          })
           .join("");
       }
 
@@ -237,6 +243,19 @@ export function MainView() {
               {props?.name || "Ghostie"}
             </Button>
 
+            {props?.id && (
+              <Button
+                variant="ghost"
+                className="no-drag rounded-full"
+                onClick={() => {
+                  agent.stop();
+                  CurrentTalkAgent.set(new Agent(), { replace: true });
+                }}
+              >
+                <TbArrowLeft className="w-4 h-4" />
+                Back
+              </Button>
+            )}
             <span className="text-xs text-muted-foreground flex items-center gap-0.5">
               {props?.models?.text?.name && (
                 <Button

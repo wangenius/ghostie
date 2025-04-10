@@ -84,13 +84,14 @@ export class Engine {
       .setOtherModels(props.models)
       .setTools([
         ...(await ToolsHandler.transformAgentToolToModelFormat(props.tools)),
-        ...(await ToolsHandler.transformKnowledgeToModelFormat(
-          props.knowledges || [],
-        )),
         ...(await ToolsHandler.transformWorkflowToModelFormat(
           props.workflows || [],
         )),
         ...(await ToolsHandler.transformModelToModelFormat(props.models)),
+        ...(await ToolsHandler.transformMCPToModelFormat(props.mcps)),
+        ...(await ToolsHandler.transformKnowledgeToModelFormat(
+          props.knowledges || [],
+        )),
       ]);
 
     // 初始化内存和上下文

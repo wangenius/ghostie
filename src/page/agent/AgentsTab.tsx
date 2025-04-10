@@ -124,9 +124,8 @@ export function AgentsTab() {
           <Button
             onClick={() => {
               dialog({
-                title: "Agents Market",
+                closeIconHide: true,
                 content: <AgentsMarket />,
-                className: "max-w-3xl",
               });
             }}
             className="bg-muted-foreground/10 hover:bg-muted-foreground/20"

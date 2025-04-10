@@ -42,8 +42,12 @@ export const Element = (props: any) => {
     default:
       return (
         <p
+          style={{
+            lineHeight: "27px",
+            fontSize: "14px",
+          }}
           className={cn(
-            "text-muted-foreground rounded-lg text-[15px]",
+            "text-muted-foreground rounded-lg items-center flex-wrap",
             isEmpty && isFocused && isSelected && "placeholder-p",
           )}
           {...attributes}
