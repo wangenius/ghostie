@@ -32,18 +32,14 @@
     "security": {
       "csp": {
         "default-src": "'self' ipc: http://ipc.localhost",
-        "connect-src": "'self' https://*.supabase.co",
+        "connect-src": "'self' https://*.supabase.co ipc: http://ipc.localhost",
         "img-src": "'self' asset: http://asset.localhost",
         "style-src": "'self' 'unsafe-inline'"
       },
-      "capabilities": [
-        "main-capability"
-      ],
+      "capabilities": ["main-capability"],
       "assetProtocol": {
         "enable": true,
-        "scope": [
-          "**"
-        ]
+        "scope": ["**"]
       }
     }
   },
@@ -51,14 +47,9 @@
     "category": "Productivity",
     "createUpdaterArtifacts": true,
     "active": true,
-    "targets": [
-      "nsis"
-    ],
+    "targets": ["nsis"],
     "publisher": "wangenius",
-    "icon": [
-      "icons/icon.ico",
-      "icons/icon.png"
-    ],
+    "icon": ["icons/icon.ico", "icons/icon.png"],
     "windows": {
       "nsis": {
         "headerImage": "icons/icon.ico",
