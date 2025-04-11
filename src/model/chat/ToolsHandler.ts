@@ -285,7 +285,7 @@ export class ToolsHandler {
             result: "the called workflow not found",
           };
         }
-        const result = await workflow.execute();
+        const result = await workflow.execute(query);
         return {
           name: tool_call.function.name,
           arguments: tool_call.function.arguments,
