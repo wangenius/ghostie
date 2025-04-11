@@ -26,17 +26,18 @@ export class ToolsHandler {
     tools: AgentToolProps[],
   ): Promise<ToolRequestBody> {
     const toolRequestBody: ToolRequestBody = [];
+    const list = await PluginStore.getCurrent();
     for (const tool of tools) {
-      const plugin = await ToolPlugin.get(tool.plugin);
-      const targetTool = plugin.props.tools.find(
-        (item) => item.name === tool.tool,
-      );
-
+      /* 获取插件 */
+      /* 如果插件不存在 */
+      if (!list[tool.plugin]) continue;
+      const plugin = list[tool.plugin];
+      const targetTool = plugin.tools.find((item) => item.name === tool.tool);
       if (targetTool)
         toolRequestBody.push({
           type: "function",
           function: {
-            name: `${targetTool.name}${TOOL_NAME_SPLIT}${plugin.props.id}`,
+            name: `${targetTool.name}${TOOL_NAME_SPLIT}${list[tool.plugin].id}`,
             description: targetTool.description,
             parameters: targetTool.parameters,
           },
