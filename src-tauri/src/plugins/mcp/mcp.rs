@@ -39,6 +39,9 @@ impl MCPManager {
 
         // 创建命令并注入环境变量
         let mut cmd = Command::new("cmd");
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
         cmd.arg("/c").arg("npx").arg("-y").arg(service_id);
 
         // 添加所有环境变量到命令

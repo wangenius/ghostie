@@ -17,6 +17,11 @@
 - Customizable agent personalities and behaviors
 - Agent collaboration and task delegation
 
+### 🌐 MCP Support
+
+- MCP market: open with one click
+- more from other source
+
 ### 💻 Desktop Integration
 
 - Full desktop system access and control
@@ -195,6 +200,14 @@
 - Task chain processing
 - Multi-agent collaboration
 - Extensible plugin system
+
+### MCP (Multi-Cloud Platform)
+
+- 地理位置服务（地址解析、地点搜索、天气查询）
+- 路线规划与导航服务（驾车、步行、公交、骑行）
+- IP定位服务
+- 距离测量与周边搜索
+- 可扩展的API集成框架
 
 ## ⚙️ Development Setup
 
