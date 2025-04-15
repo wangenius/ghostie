@@ -40,6 +40,17 @@ pub fn get_config_dir() -> Option<PathBuf> {
     Some(path)
 }
 
+pub fn get_plugins_dir() -> Option<PathBuf> {
+    let config_dir = get_config_dir()?;
+    let path = config_dir.join("plugins");
+    if !path.exists() {
+        if let Err(_) = fs::create_dir_all(&path) {
+            return None;
+        }
+    }
+    Some(path)
+}
+
 #[tauri::command]
 pub async fn open_files_path(
     window: tauri::Window,

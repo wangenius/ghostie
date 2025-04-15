@@ -1,31 +1,6 @@
 use crate::plugins::node::error::{PluginError, Result};
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs::write;
-
-/// 插件信息结构
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Plugin {
-    pub id: String,
-    pub name: String,
-    pub description: Option<String>,
-    pub tools: Vec<Tool>,
-}
-
-/// 工具信息结构
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Tool {
-    pub name: String,
-    pub description: String,
-    pub parameters: Option<Value>,
-}
-
-/// 带内容的插件结构
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PluginWithContent {
-    pub info: Plugin,
-    pub content: String,
-}
 
 /// 插件管理器
 pub struct PluginManager {}
@@ -33,10 +8,8 @@ pub struct PluginManager {}
 impl PluginManager {
     /// 创建新的插件管理器
     pub fn new() -> Result<Self> {
-        let plugins_dir = crate::utils::file::get_config_dir()
-            .ok_or_else(|| PluginError::Plugin("无法获取配置目录".to_string()))?
-            .join("plugins");
-        std::fs::create_dir_all(&plugins_dir)?;
+        let plugins_dir = crate::utils::file::get_plugins_dir()
+            .ok_or_else(|| PluginError::Plugin("无法获取插件目录".to_string()))?;
 
         // 检查并创建 deno.json
         let deno_json_path = plugins_dir.join("deno.json");
@@ -64,25 +37,16 @@ impl PluginManager {
         // 构造执行脚本
         let script = format!(
             r#"
-            // 插件内容
             {content}
-
-            // 执行函数
             (async () => {{
                 try {{
-                    // 检查工具函数是否存在
                     if (typeof {tool} !== 'function') {{
-                        throw new Error(`找不到函数 '{tool}' 或者它不是一个函数`);
+                        throw new Error(`can't find function '{tool}' or it's not a function`);
                     }}
-                    
-                    // 解析参数
                     const args = {args_json};
                     const result = await {tool}(args);
-                    
-                    // 输出结果
                     console.log(JSON.stringify({{ result: result !== undefined ? result : null }}));
                 }} catch (error) {{
-                    console.error('执行错误:', error);
                     console.log(JSON.stringify({{ 
                         error: error instanceof Error ? error.message : String(error) 
                     }}));

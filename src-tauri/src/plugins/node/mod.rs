@@ -6,7 +6,7 @@ pub mod runtime;
 pub use env::{EnvManager, EnvVar};
 pub use error::{PluginError, Result};
 use once_cell::sync::Lazy;
-pub use plugin::{Plugin, PluginManager, PluginWithContent, Tool};
+pub use plugin::PluginManager;
 pub use runtime::NodeRuntime;
 use serde_json::Value;
 use std::collections::HashMap;
