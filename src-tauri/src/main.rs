@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use ghostie::plugins::{chat, deno, mcp};
+use ghostie::plugins::{chat, mcp, node};
 use ghostie::utils;
 use tauri::{
     menu::{Menu, MenuItem},
@@ -45,10 +45,10 @@ async fn main() {
             // 初始化 Deno 插件管理器
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                if let Err(e) = deno::init().await {
-                    eprintln!("初始化 Deno 插件管理器失败: {}", e);
+                if let Err(e) = node::init().await {
+                    eprintln!("初始化 Node 插件管理器失败: {}", e);
                 }
-                deno::set_app_handle(app_handle).await;
+                node::set_app_handle(app_handle).await;
             });
 
             // 初始化 MCP 插件管理器
@@ -139,11 +139,15 @@ async fn main() {
             utils::window::open_config_dir,
             utils::update::check_update,
             utils::update::install_update,
-            deno::plugin_execute,
-            deno::env_list,
-            deno::env_save,
-            deno::deno_install,
-            deno::deno_check,
+            node::plugin_execute,
+            node::env_list,
+            node::env_save,
+            node::node_install,
+            node::node_check,
+            node::node_list_dependencies,
+            node::node_install_dependency,
+            node::node_update_dependencies,
+            node::node_uninstall_dependency,
             utils::window::open_url,
             utils::window::notify,
             mcp::start_service,

@@ -3,6 +3,7 @@ import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
 import { Echo } from "echo-state";
 import { parsePluginFromString } from "./parser";
+import * as ts from "typescript";
 
 /* 默认 */
 export const DEFAULT_PLUGIN: PluginProps = {
@@ -143,11 +144,18 @@ export class ToolPlugin {
    */
   async execute(tool: string, args: Record<string, unknown>) {
     try {
+      // 获取插件内容（TypeScript代码）
+      const tsContent = await Echo.get<string>({
+        database: PLUGIN_DATABASE_CONTENT,
+        name: this.props.id,
+      }).getCurrent();
+
+      // 使用TypeScript编译器将TypeScript代码编译成JavaScript代码
+      const jsContent = this.compileTypeScriptToJavaScript(tsContent);
+
+      // 调用后端执行JavaScript代码
       const result = await cmd.invoke("plugin_execute", {
-        content: await Echo.get<string>({
-          database: PLUGIN_DATABASE_CONTENT,
-          name: this.props.id,
-        }).getCurrent(),
+        content: jsContent,
         tool: tool,
         args: args,
       });
@@ -155,6 +163,29 @@ export class ToolPlugin {
     } catch (error) {
       console.error("执行插件时出错:", error);
       throw new Error("插件执行失败");
+    }
+  }
+
+  /** 将TypeScript代码编译成JavaScript代码
+   * @param tsContent TypeScript代码
+   * @returns 编译后的JavaScript代码
+   */
+  private compileTypeScriptToJavaScript(tsContent: string): string {
+    try {
+      // 使用TypeScript编译器编译代码
+      const result = ts.transpileModule(tsContent, {
+        compilerOptions: {
+          module: ts.ModuleKind.ESNext,
+          target: ts.ScriptTarget.ES2020,
+          moduleResolution: ts.ModuleResolutionKind.NodeJs,
+          esModuleInterop: true,
+        },
+      });
+
+      return result.outputText;
+    } catch (error) {
+      console.error("编译TypeScript代码时出错:", error);
+      throw new Error("TypeScript编译失败");
     }
   }
 }

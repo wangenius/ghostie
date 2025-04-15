@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use std::fs;
+use std::path::PathBuf;
 
-use crate::plugins::deno::error::{PluginError, Result};
+use crate::plugins::node::error::{PluginError, Result};
 
 /// 环境变量结构
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -61,4 +61,4 @@ impl EnvManager {
         fs::write(&self.env_file, content)?;
         Ok(())
     }
-} 
+}

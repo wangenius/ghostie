@@ -1,8 +1,7 @@
-use crate::plugins::deno::error::{PluginError, Result};
-use crate::utils::gen::generate_id;
+use crate::plugins::node::error::{PluginError, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::fs::{create_dir_all, write};
+use std::fs::write;
 
 /// 插件信息结构
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -53,63 +52,54 @@ impl PluginManager {
 
     /// 执行插件工具
     pub async fn execute(&self, content: &str, tool: &str, args: Value) -> Result<Value> {
-        let runtime = crate::plugins::deno::DENO_RUNTIME.lock().await;
+        let runtime = crate::plugins::node::NODE_RUNTIME.lock().await;
         let runtime = runtime
             .as_ref()
-            .ok_or_else(|| PluginError::Plugin("Deno运行时未初始化".to_string()))?;
+            .ok_or_else(|| PluginError::Plugin("Node运行时未初始化".to_string()))?;
 
         if !runtime.check_installed() {
-            return Err(PluginError::DenoNotInstalled);
+            return Err(PluginError::NodeNotInstalled);
         }
 
-        // 获取插件目录
-        let config_dir = crate::utils::file::get_config_dir()
-            .ok_or_else(|| PluginError::Plugin("无法获取配置目录".to_string()))?;
-        let plugins_dir = config_dir.join("plugins");
-        create_dir_all(&plugins_dir)?;
-
-        // 创建唯一的插件文件
-        let plugin_path = plugins_dir.join(format!("plugin_{}.ts", generate_id()));
-        let plugin_path_str = plugin_path.to_str().unwrap();
-
-        // 写入插件内容
-        write(&plugin_path, content)?;
-
-        // 使用文件路径方式执行
+        // 构造执行脚本
         let script = format!(
             r#"
+            // 插件内容
+            {content}
+
+            // 执行函数
             (async () => {{
                 try {{
-                    const plugin = await import('file://{plugin_path}');
-                    const targetFunction = plugin['{tool}'];
-                    if (typeof targetFunction !== 'function') {{
-                        throw new Error(`插件中未找到函数 '{tool}' 或导出不是一个函数。`);
+                    // 检查工具函数是否存在
+                    if (typeof {tool} !== 'function') {{
+                        throw new Error(`找不到函数 '{tool}' 或者它不是一个函数`);
                     }}
-                    const parsedArgs = JSON.parse('{args_json}');
-                    const result = await targetFunction(parsedArgs);
-                    // 输出成功结果
+                    
+                    // 解析参数
+                    const args = {args_json};
+                    const result = await {tool}(args);
+                    
+                    // 输出结果
                     console.log(JSON.stringify({{ result: result !== undefined ? result : null }}));
-                }} catch (e) {{
-                    // 输出错误结果
-                    console.log(JSON.stringify({{ error: e instanceof Error ? e.message : String(e) }}));
+                }} catch (error) {{
+                    console.error('执行错误:', error);
+                    console.log(JSON.stringify({{ 
+                        error: error instanceof Error ? error.message : String(error) 
+                    }}));
                 }}
             }})();
             "#,
-            plugin_path = plugin_path_str.replace("\\", "/"), // 确保路径使用正斜杠
+            content = content,
             tool = tool,
             args_json = serde_json::to_string(&args)?
-                .replace("\\", "\\\\")
-                .replace("'", "\\'")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
         );
 
-        let env_vars = crate::plugins::deno::env_list().await?;
+        println!("{}", script);
+
+        let env_vars = crate::plugins::node::env_list().await?;
         let output = runtime.execute(&script, &env_vars).await?;
-        // 清理插件文件
-        let _ = std::fs::remove_file(&plugin_path);
         println!("{}", output);
+
         // 尝试将输出解析为 JSON 值
         match serde_json::from_str::<Value>(&output) {
             Ok(json_value) => Ok(json_value),

@@ -14,7 +14,10 @@ export abstract class cmd {
   }
 
   /** @Description 监听事件 */
-  static async listen(channel: string, callback: (event: any) => void) {
+  static async listen(
+    channel: string,
+    callback: (message: { event: string; payload: string; id: number }) => void,
+  ) {
     return await listen(channel, callback);
   }
 

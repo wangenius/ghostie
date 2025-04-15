@@ -5,8 +5,8 @@ use thiserror::Error;
 pub enum PluginError {
     #[error("IO错误: {0}")]
     Io(String),
-    #[error("Deno未安装")]
-    DenoNotInstalled,
+    #[error("Node未安装")]
+    NodeNotInstalled,
     #[error("JSON错误: {0}")]
     Json(String),
     #[error("TOML错误: {0}")]
@@ -55,4 +55,4 @@ impl<'a> From<&'a str> for PluginError {
     }
 }
 
-pub type Result<T> = std::result::Result<T, PluginError>; 
+pub type Result<T> = std::result::Result<T, PluginError>;

@@ -247,3 +247,27 @@ dialog.confirm = ({
     },
   });
 };
+dialog.message = (content: string) => {
+  return dialog({
+    className: "md:max-w-[480px]",
+    title: "Message",
+    content: <div className="px-3">{content}</div>,
+    closeIconHide: true,
+    footer: (close) => {
+      return (
+        <div className="flex justify-end gap-1">
+          <Button
+            variant="default"
+            className="h-8 px-3 text-xs flex-none relative"
+            onClick={() => {
+              close();
+            }}
+          >
+            <TbCheck className="w-4 h-4" />
+            OK
+          </Button>
+        </div>
+      );
+    },
+  });
+};

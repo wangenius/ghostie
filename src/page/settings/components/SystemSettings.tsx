@@ -77,7 +77,7 @@ export function FontSettings() {
   );
 }
 
-const DenoInstallDialog = ({ checkDeno }: { checkDeno: () => void }) => {
+const NodeInstallDialog = ({ checkNode }: { checkNode: () => void }) => {
   const [isInstalling, setIsInstalling] = useState(false);
   const [progress, setProgress] = useState(0);
   const [installLog, setInstallLog] = useState<string[]>([]);
@@ -86,7 +86,7 @@ const DenoInstallDialog = ({ checkDeno }: { checkDeno: () => void }) => {
   useEffect(() => {
     const setupListeners = async () => {
       await cmd.listen(
-        "deno_install_progress",
+        "node_install_progress",
         (event: { payload: string }) => {
           setInstallLog((prev) => [...prev, event.payload]);
           setProgress((prev) => Math.min(prev + 10, 99));
@@ -102,18 +102,18 @@ const DenoInstallDialog = ({ checkDeno }: { checkDeno: () => void }) => {
       setIsInstalling(true);
       setInstallLog([]);
       setProgress(10); // 开始安装
-      const success = await cmd.invoke<boolean>("deno_install");
+      const success = await cmd.invoke<boolean>("node_install");
       setProgress(100); // 安装完成
       if (success) {
         setSuccess(true);
-        checkDeno();
-        await cmd.message("Deno installed successfully", "success");
+        checkNode();
+        await cmd.message("Node installed successfully", "success");
       } else {
-        await cmd.message("Deno installation failed", "error");
+        await cmd.message("Node installation failed", "error");
       }
     } catch (error) {
-      console.error("Install Deno failed:", error);
-      await cmd.message("Install Deno failed", "error");
+      console.error("Install Node failed:", error);
+      await cmd.message("Install Node failed", "error");
     }
   };
 
@@ -169,13 +169,13 @@ export function DenoSettings() {
   const [version, setVersion] = useState<string>("");
 
   useEffect(() => {
-    checkDeno();
+    checkNode();
   }, []);
 
-  const checkDeno = async () => {
+  const checkNode = async () => {
     try {
       setIsChecking(true);
-      const result = await cmd.invoke<Record<string, string>>("deno_check");
+      const result = await cmd.invoke<Record<string, string>>("node_check");
       setIsInstalled(result.installed === "true");
       if (result.installed === "true") {
         setVersion(result.version || "");
@@ -183,7 +183,7 @@ export function DenoSettings() {
         setVersion("");
       }
     } catch (error) {
-      console.error("Check Deno environment failed:", error);
+      console.error("Check Node environment failed:", error);
       setIsInstalled(false);
       setVersion("");
     } finally {
@@ -194,10 +194,10 @@ export function DenoSettings() {
   const showInstallDialog = () => {
     dialog({
       title: "Install",
-      description: `Installing Deno will allow you to run and execute plugins. The
+      description: `Installing Node will allow you to run and execute plugins. The
         installation process may take 1~2 minutes.
       `,
-      content: <DenoInstallDialog checkDeno={checkDeno} />,
+      content: <NodeInstallDialog checkNode={checkNode} />,
     });
   };
 
@@ -222,7 +222,7 @@ export function DenoSettings() {
       description={getDescription()}
       action={
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={checkDeno}>
+          <Button variant="ghost" size="sm" onClick={checkNode}>
             <TbRotate
               className={`w-4 h-4 ${isChecking ? "animate-spin-reverse" : ""}`}
             />

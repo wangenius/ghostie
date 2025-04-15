@@ -28,6 +28,7 @@ import {
   TbPlus,
   TbScriptPlus,
   TbUpload,
+  TbPackage,
 } from "react-icons/tb";
 import { EnvEditor } from "./EnvEditor";
 import { PluginsMarket } from "./components/PluginsMarket";
@@ -216,6 +217,14 @@ export function PluginsTab() {
                 <DropdownMenuItem onClick={() => EnvEditor.open()}>
                   <TbDatabaseCog className="w-4 h-4" />
                   Environment Variables
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    import("./NodeDeps").then((mod) => mod.NodeDeps.open())
+                  }
+                >
+                  <TbPackage className="w-4 h-4" />
+                  依赖管理
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleImportPlugin}>

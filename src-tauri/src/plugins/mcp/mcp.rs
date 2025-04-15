@@ -1,4 +1,4 @@
-use crate::plugins::deno;
+use crate::plugins::node;
 use anyhow::Result;
 use rmcp::{
     model::{CallToolRequestParam, CallToolResult, Tool},
@@ -35,7 +35,7 @@ impl MCPManager {
         }
 
         // 获取环境变量
-        let env_vars = deno::env_list().await?;
+        let env_vars = node::env_list().await?;
 
         // 创建命令并注入环境变量
         let mut cmd = Command::new("cmd");
