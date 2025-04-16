@@ -1,29 +1,26 @@
+import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/utils/supabase";
-import { cmd } from "@/utils/shell";
-import { useEffect, useState } from "react";
-import {
-  TbLoader2,
-  TbTrash,
-  TbDownload,
-  TbInfoCircle,
-  TbSearch,
-  TbRefresh,
-  TbChevronLeft,
-  TbChevronRight,
-} from "react-icons/tb";
+import { Input } from "@/components/ui/input";
 import { UserMananger } from "@/settings/User";
 import { Workflow } from "@/workflow/Workflow";
-import { Echo } from "echo-state";
-import { WORKFLOW_BODY_DATABASE } from "@/assets/const";
-import { Input } from "@/components/ui/input";
-import { dialog } from "@/components/custom/DialogModal";
+import { useEffect, useState } from "react";
+import {
+  TbChevronLeft,
+  TbChevronRight,
+  TbDownload,
+  TbInfoCircle,
+  TbLoader2,
+  TbRefresh,
+  TbSearch,
+  TbTrash,
+} from "react-icons/tb";
+import { toast } from "sonner";
 
 export interface WorkflowMarketProps {
   id: string;
   name: string;
   description: string;
-  data: any;
+  body: any;
   inserted_at: string;
   updated_at: string;
   user_id: string;
@@ -44,29 +41,13 @@ export const WorkflowsMarket = () => {
   const fetchWorkflows = async (page = 1) => {
     try {
       setLoading(true);
-
-      // 获取当前页数据
-      const start = (page - 1) * itemsPerPage;
-      const end = start + itemsPerPage - 1;
-
-      const { data, error } = await supabase
-        .from("workflows")
-        .select("*")
-        .order("inserted_at", { ascending: false })
-        .range(start, end);
-
-      if (error) {
-        throw error;
-      }
-
+      const data = await Workflow.fetchFromMarket(page, itemsPerPage);
       setWorkflows(data || []);
       setCurrentPage(page);
-
       // 如果获取的项目数少于itemsPerPage，说明没有下一页
       setHasNextPage((data?.length || 0) >= itemsPerPage);
     } catch (error) {
-      console.error("获取工作流列表失败:", error);
-      cmd.message("获取工作流列表失败", "error");
+      toast.error(`获取工作流列表失败:${error}`);
     } finally {
       setLoading(false);
     }
@@ -76,35 +57,10 @@ export const WorkflowsMarket = () => {
   const handleInstall = async (workflow: WorkflowMarketProps) => {
     try {
       setInstalling(workflow.id);
-
-      // 添加到工作流管理器
-      const newWorkflow = await Workflow.create();
-
-      // 更新工作流元数据和内容
-      await newWorkflow.updateMeta({
-        name: workflow.name,
-        description: workflow.description,
-      });
-
-      // 更新工作流主体数据
-      if (workflow.data) {
-        new Echo(JSON.parse(workflow.data))
-          .indexed({
-            database: WORKFLOW_BODY_DATABASE,
-            name: newWorkflow.meta.id,
-          })
-          .ready();
-      }
-
-      cmd.message(`成功安装工作流: ${workflow.name}`, "success");
+      await Workflow.installFromMarket(workflow);
+      toast.success(`成功安装工作流: ${workflow.name}`);
     } catch (error) {
-      console.error("安装工作流失败:", error);
-      cmd.message(
-        `安装工作流失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-        "error",
-      );
+      toast.error(`安装工作流失败:${error}`);
     } finally {
       setInstalling(null);
     }
@@ -114,26 +70,12 @@ export const WorkflowsMarket = () => {
   const handleDelete = async (workflow: WorkflowMarketProps) => {
     try {
       setDeleting(workflow.id);
-      const { error } = await supabase
-        .from("workflows")
-        .delete()
-        .eq("id", workflow.id);
-
-      if (error) {
-        throw error;
-      }
-
+      await Workflow.uninstallFromMarket(workflow.id);
       // 更新当前页数据
       fetchWorkflows(currentPage);
-      cmd.message(`成功删除工作流: ${workflow.name}`, "success");
+      toast.success(`成功删除工作流: ${workflow.name}`);
     } catch (error) {
-      console.error("删除工作流失败:", error);
-      cmd.message(
-        `删除工作流失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-        "error",
-      );
+      toast.error(`删除工作流失败:${error}`);
     } finally {
       setDeleting(null);
     }
@@ -154,11 +96,11 @@ export const WorkflowsMarket = () => {
             </p>
           </div>
 
-          {workflow.data && (
+          {workflow.body && (
             <div className="bg-muted/50 p-4 rounded-lg">
               <h3 className="text-lg font-medium mb-2">工作流数据</h3>
               <div className="max-h-[300px] overflow-y-auto rounded p-3">
-                一共有 {Object.keys(JSON.parse(workflow.data).nodes).length}
+                一共有 {Object.keys(workflow.body.nodes).length}
                 个节点
               </div>
             </div>

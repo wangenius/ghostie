@@ -160,8 +160,10 @@ export class ToolPlugin {
       });
       return result;
     } catch (error) {
-      console.error("执行插件时出错:", error);
-      throw new Error("插件执行失败");
+      console.error(error);
+      throw new Error(
+        `执行插件时出错:${typeof error === "object" ? JSON.stringify(error) : error}`,
+      );
     }
   }
 
@@ -203,7 +205,7 @@ export class ToolPlugin {
       .range(start, end);
 
     if (error) {
-      throw error;
+      throw JSON.stringify(error);
     }
     return (data as PluginMarketProps[]) || [];
   }
@@ -213,7 +215,6 @@ export class ToolPlugin {
       id: data.id,
       name: data.name,
       description: data.description,
-      tools: data.tools,
     });
     await plugin.updateContent(data.content.trim());
     return plugin;
@@ -222,12 +223,19 @@ export class ToolPlugin {
   static async uninstallFromMarket(id: string) {
     const { error } = await supabase.from("plugins").delete().eq("id", id);
     if (error) {
-      throw error;
+      throw JSON.stringify(error);
     }
   }
 
   async uploadToMarket(content: string) {
-    console.log(this.props);
+    /* 检查是否已经有了 */
+    const { data } = await supabase
+      .from("plugins")
+      .select("id")
+      .eq("id", this.props.id);
+    if (data && data.length > 0) {
+      throw new Error("key already exists");
+    }
     const { error } = await supabase.from("plugins").insert({
       id: this.props.id,
       name: this.props.name,
@@ -235,7 +243,7 @@ export class ToolPlugin {
       content: content,
     });
     if (error) {
-      throw error;
+      throw JSON.stringify(error);
     }
     return;
   }

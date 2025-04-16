@@ -98,6 +98,7 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
               label: engine.name,
               value: key,
               description: engine.description,
+              variant: engine.name !== "ReAct" ? "danger" : "default",
             }))}
             onSelect={([value]) =>
               agent.update({

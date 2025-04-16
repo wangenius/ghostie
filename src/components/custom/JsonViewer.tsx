@@ -70,7 +70,7 @@ const JsonViewer: React.FC<JsonViewerProps> = ({
       return (
         <span
           className={cn(
-            "font-medium",
+            "font-medium select-text",
             dark ? "text-emerald-300" : "text-emerald-600",
           )}
         >

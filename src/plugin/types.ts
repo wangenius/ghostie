@@ -65,7 +65,7 @@ export interface PluginProps {
   tools: ToolProps[];
 }
 
-export interface PluginMarketProps extends PluginProps {
+export interface PluginMarketProps extends Omit<PluginProps, "tools"> {
   /* 插件创建时间 */
   created_at: string;
   /* 插件更新时间 */

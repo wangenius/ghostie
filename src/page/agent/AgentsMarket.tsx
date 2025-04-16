@@ -3,7 +3,6 @@ import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserMananger } from "@/settings/User";
-import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
 import {
   TbChevronLeft,
@@ -66,15 +65,10 @@ export const AgentsMarket = () => {
 
       // 更新当前页数据
       fetchAgents(currentPage);
-      cmd.message(`Successfully deleted agent: ${agent.name}`, "success");
+      toast.success(`Successfully deleted agent: ${agent.name}`);
     } catch (error) {
       console.error("Delete agent failed:", error);
-      cmd.message(
-        `Delete agent failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-        "error",
-      );
+      toast.error(`Delete agent failed: ${error}`);
     } finally {
       setDeleting(null);
     }

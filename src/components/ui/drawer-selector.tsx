@@ -4,6 +4,18 @@ import { TbCheck, TbSelector, TbTrash, TbX } from "react-icons/tb";
 import { Button } from "./button";
 import { Drawer } from "./drawer";
 
+// 比较两个一层对象是否相等
+function shallowEqual(a: any, b: any): boolean {
+  if (a === b) return true;
+  if (typeof a !== "object" || typeof b !== "object" || !a || !b) return false;
+
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+
+  if (keysA.length !== keysB.length) return false;
+  return keysA.every((key) => a[key] === b[key]);
+}
+
 export interface DrawerSelectorItem {
   label: string;
   value: any;
@@ -41,8 +53,11 @@ export function DrawerSelector({
   // 检查项目是否被选中
   const isItemSelected = (itemValue: any) => {
     return value.some((v) =>
-      typeof v === "object"
-        ? JSON.stringify(v) === JSON.stringify(itemValue)
+      typeof v === "object" &&
+      v !== null &&
+      typeof itemValue === "object" &&
+      itemValue !== null
+        ? shallowEqual(v, itemValue)
         : v === itemValue,
     );
   };
@@ -66,13 +81,19 @@ export function DrawerSelector({
   const handleSelect = (selectedValue: any) => {
     if (multiple) {
       const newValues = value.some((v) =>
-        typeof v === "object"
-          ? JSON.stringify(v) === JSON.stringify(selectedValue)
+        typeof v === "object" &&
+        v !== null &&
+        typeof selectedValue === "object" &&
+        selectedValue !== null
+          ? shallowEqual(v, selectedValue)
           : v === selectedValue,
       )
         ? value.filter((v) =>
-            typeof v === "object"
-              ? JSON.stringify(v) !== JSON.stringify(selectedValue)
+            typeof v === "object" &&
+            v !== null &&
+            typeof selectedValue === "object" &&
+            selectedValue !== null
+              ? !shallowEqual(v, selectedValue)
               : v !== selectedValue,
           )
         : [...value, selectedValue];
@@ -87,8 +108,11 @@ export function DrawerSelector({
   const handleRemoveItem = (itemValue: any, e: React.MouseEvent) => {
     e.stopPropagation();
     const newValues = value.filter((v) =>
-      typeof v === "object"
-        ? JSON.stringify(v) !== JSON.stringify(itemValue)
+      typeof v === "object" &&
+      v !== null &&
+      typeof itemValue === "object" &&
+      itemValue !== null
+        ? !shallowEqual(v, itemValue)
         : v !== itemValue,
     );
     onSelect(newValues);

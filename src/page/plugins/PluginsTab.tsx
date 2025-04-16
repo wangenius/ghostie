@@ -94,7 +94,7 @@ export function PluginsTab() {
       setResult(result);
     } catch (error) {
       console.error(error);
-      cmd.message("test plugin error", "warning");
+      toast.error(`test plugin error: ${error}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -120,6 +120,10 @@ export function PluginsTab() {
       content: "Are you sure to upload this plugin?",
       onOk: async () => {
         try {
+          const content = await Echo.get<string>({
+            database: PLUGIN_DATABASE_CONTENT,
+            name: props.id,
+          }).getCurrent();
           await plugin.uploadToMarket(content);
           toast.success("plugin uploaded successfully, waiting for review");
         } catch (error) {

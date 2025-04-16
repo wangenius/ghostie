@@ -1,6 +1,5 @@
 use crate::plugins::node::error::{PluginError, Result};
 use serde_json::Value;
-use std::fs::write;
 
 /// 插件管理器
 pub struct PluginManager {}
@@ -8,18 +7,6 @@ pub struct PluginManager {}
 impl PluginManager {
     /// 创建新的插件管理器
     pub fn new() -> Result<Self> {
-        let plugins_dir = crate::utils::file::get_plugins_dir()
-            .ok_or_else(|| PluginError::Plugin("无法获取插件目录".to_string()))?;
-
-        // 检查并创建 deno.json
-        let deno_json_path = plugins_dir.join("deno.json");
-        if !deno_json_path.exists() {
-            let deno_json_content = r#"{
-  "nodeModulesDir": "auto"
-}"#;
-            write(&deno_json_path, deno_json_content)?;
-        }
-
         Ok(Self {})
     }
 
@@ -57,24 +44,13 @@ impl PluginManager {
             tool = tool,
             args_json = serde_json::to_string(&args)?
         );
-
-        println!("{}", script);
-
         let env_vars = crate::plugins::node::env_list().await?;
         let output = runtime.execute(&script, &env_vars).await?;
-        println!("{}", output);
-
         // 尝试将输出解析为 JSON 值
         match serde_json::from_str::<Value>(&output) {
             Ok(json_value) => Ok(json_value),
-            // JSON 解析完全失败
-            Err(e) => {
-                // 如果脚本内部逻辑完全失败并未能输出 JSON，则可能在此处失败
-                Err(PluginError::Json(format!(
-                    "Failed to parse JSON output from plugin ({}): {}",
-                    e, output
-                )))
-            }
+            // JSON 解析失败时返回原始字符串
+            Err(_) => Ok(Value::String(output)),
         }
     }
 }

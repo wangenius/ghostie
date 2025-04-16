@@ -1,6 +1,7 @@
 import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { parsePluginFromString } from "@/plugin/parser";
 import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
 import { PluginMarketProps } from "@/plugin/types";
 import { UserMananger } from "@/settings/User";
@@ -70,7 +71,6 @@ export const PluginsMarket = () => {
     try {
       setDeleting(plugin.id);
       await ToolPlugin.uninstallFromMarket(plugin.id);
-      // Update current page data
       fetchPlugins(currentPage);
       toast.success(`Successfully deleted plugin: ${plugin.name}`);
     } catch (error) {
@@ -87,6 +87,8 @@ export const PluginsMarket = () => {
 
   // Show plugin details
   const showPluginDetails = (plugin: PluginMarketProps) => {
+    console.log(plugin);
+
     dialog({
       title: plugin.name,
       className: "md:max-w-[600px]",
@@ -100,10 +102,20 @@ export const PluginsMarket = () => {
           </div>
 
           <div className="bg-muted/50 p-4 rounded-lg">
-            <h3 className="text-lg font-medium mb-2">插件代码</h3>
-            <div className="max-h-[300px] overflow-y-auto rounded border bg-background p-3">
+            <div className="max-h-[300px] overflow-y-auto">
               <pre className="text-xs whitespace-pre-wrap">
-                {plugin.content}
+                {Object.values(parsePluginFromString(plugin.content).tools).map(
+                  (tool) => (
+                    <div key={tool.name} className="flex gap-2">
+                      <span className="font-bold min-w-[140px]">
+                        {tool.name}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {tool.description}
+                      </span>
+                    </div>
+                  ),
+                )}
               </pre>
             </div>
           </div>

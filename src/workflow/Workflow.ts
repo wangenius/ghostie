@@ -5,10 +5,21 @@ import {
   NodeResult,
   WorkflowBody,
   WorkflowMeta,
+  PluginNodeConfig,
+  AgentNodeConfig,
+  WorkflowNode,
 } from "../page/workflow/types/nodes";
 import { Scheduler } from "./Scheduler";
 import { WORKFLOW_BODY_DATABASE, WORKFLOW_DATABASE } from "@/assets/const";
 import { WorkflowExecutor } from "./execute/WorkflowExecutor";
+import { supabase } from "@/utils/supabase";
+import { WorkflowMarketProps } from "@/page/workflow/WorkflowsMarket";
+import {
+  ToolPlugin,
+  PLUGIN_DATABASE_CONTENT,
+  PluginStore,
+} from "@/plugin/ToolPlugin";
+import { Agent, AgentStore } from "@/agent/Agent";
 
 /* 工作流列表 */
 export const WorkflowsStore = new Echo<Record<string, WorkflowMeta>>(
@@ -108,7 +119,230 @@ export class Workflow {
     }
   }
 
-  static async uploadToMarket() {}
+  async uploadToMarket() {
+    const { data } = await supabase
+      .from("workflows")
+      .select("id")
+      .eq("id", this.meta.id);
+    if (data && data.length > 0) {
+      throw new Error("key already exists");
+    }
+
+    const workflowData = await this.getBody();
+    const processedPlugins = new Set<string>();
+    const processedAgents = new Set<string>();
+
+    for (const node of Object.values(workflowData.nodes) as WorkflowNode[]) {
+      if (node.type === "plugin") {
+        const pluginConfig = node.data as PluginNodeConfig;
+        const pluginId = pluginConfig.plugin;
+
+        if (!processedPlugins.has(pluginId)) {
+          try {
+            const plugin = await ToolPlugin.get(pluginId);
+            const content = await Echo.get<string>({
+              database: PLUGIN_DATABASE_CONTENT,
+              name: pluginId,
+            }).getCurrent();
+
+            // 尝试上传插件，如果失败则检查是否是因为已存在
+            try {
+              await plugin.uploadToMarket(content);
+              console.log(`插件 ${pluginId} 上传成功`);
+            } catch (uploadError) {
+              // 如果是已存在的错误，则忽略并继续
+              console.log(`插件 ${pluginId} 已存在或上传失败，继续执行...`);
+            }
+
+            processedPlugins.add(pluginId);
+          } catch (error) {
+            console.log(`获取插件 ${pluginId} 失败，继续执行...`, error);
+          }
+        }
+      }
+
+      if (node.type === "agent") {
+        const agentConfig = node.data as AgentNodeConfig;
+        const agentId = agentConfig.agent;
+
+        if (!processedAgents.has(agentId)) {
+          try {
+            const agent = await Agent.get(agentId);
+
+            // 尝试上传代理，如果失败则检查是否是因为已存在
+            try {
+              await agent.uploadToMarket();
+              console.log(`代理 ${agentId} 上传成功`);
+            } catch (uploadError) {
+              // 如果是已存在的错误，则忽略并继续
+              console.log(`代理 ${agentId} 已存在或上传失败，继续执行...`);
+            }
+
+            processedAgents.add(agentId);
+          } catch (error) {
+            console.log(`获取代理 ${agentId} 失败，继续执行...`, error);
+          }
+        }
+      }
+    }
+
+    // 最后上传工作流本身
+    try {
+      const { error } = await supabase.from("workflows").insert({
+        id: this.meta.id,
+        name: this.meta.name,
+        description: this.meta.description,
+        body: workflowData,
+      });
+
+      console.log(error);
+
+      if (error) throw error;
+      console.log(`工作流 ${this.meta.id} 上传成功`);
+    } catch (error) {
+      throw new Error(`上传工作流失败: ${error}`);
+    }
+  }
+  static async installFromMarket(workflow: WorkflowMarketProps) {
+    const wf = new Workflow({
+      id: workflow.id,
+      name: workflow.name,
+      description: workflow.description,
+    });
+    WorkflowsStore.set({
+      [workflow.id]: wf.meta,
+    });
+
+    console.log(workflow.body);
+
+    // 解析工作流主体数据
+    if (workflow.body) {
+      const workflowData =
+        typeof workflow.body === "string"
+          ? JSON.parse(workflow.body)
+          : workflow.body;
+
+      // 存储需要安装的插件和代理ID
+      const pluginsToInstall = new Set<string>();
+      const agentsToInstall = new Set<string>();
+
+      // 获取现有的插件和代理，用于检查是否已安装
+      const existingPlugins = await PluginStore.getCurrent();
+      const existingAgents = await AgentStore.getCurrent();
+
+      // 处理所有节点，检查是否需要安装插件和代理
+      for (const node of Object.values(
+        workflowData.nodes || {},
+      ) as WorkflowNode[]) {
+        // 检查插件节点
+        if (node.type === "plugin") {
+          const pluginConfig = node.data as PluginNodeConfig;
+          const pluginId = pluginConfig.plugin;
+
+          // 如果插件不存在，需要安装
+          if (pluginId && !existingPlugins[pluginId]) {
+            pluginsToInstall.add(pluginId);
+          }
+        }
+
+        // 检查代理节点
+        if (node.type === "agent") {
+          const agentConfig = node.data as AgentNodeConfig;
+          const agentId = agentConfig.agent;
+
+          // 如果代理不存在，需要安装
+          if (agentId && !existingAgents[agentId]) {
+            agentsToInstall.add(agentId);
+          }
+        }
+      }
+
+      // 安装缺失的插件
+      for (const pluginId of pluginsToInstall) {
+        try {
+          // 从市场获取插件数据
+          const { data, error } = await supabase
+            .from("plugins")
+            .select("*")
+            .eq("id", pluginId)
+            .single();
+
+          if (error) {
+            console.error(`获取插件 ${pluginId} 失败:`, error);
+            continue;
+          }
+
+          if (data) {
+            // 安装插件
+            await ToolPlugin.installFromMarket(data);
+            console.log(`成功安装插件: ${data.name}`);
+          }
+        } catch (error) {
+          console.error(`安装插件 ${pluginId} 失败:`, error);
+        }
+      }
+
+      // 安装缺失的代理
+      for (const agentId of agentsToInstall) {
+        try {
+          // 从市场获取代理数据
+          const { data, error } = await supabase
+            .from("agents")
+            .select("*")
+            .eq("id", agentId)
+            .single();
+
+          if (error) {
+            console.error(`获取代理 ${agentId} 失败:`, error);
+            continue;
+          }
+
+          if (data) {
+            // 安装代理
+            await Agent.installFromMarket(data);
+            console.log(`成功安装代理: ${data.name}`);
+          }
+        } catch (error) {
+          console.error(`安装代理 ${agentId} 失败:`, error);
+        }
+      }
+
+      console.log(workflowData);
+
+      // 最后更新工作流数据
+      await new Echo(workflowData)
+        .indexed({
+          database: WORKFLOW_BODY_DATABASE,
+          name: wf.meta.id,
+        })
+        .ready(workflowData, { replace: true });
+    }
+
+    return wf;
+  }
+  static async uninstallFromMarket(id: string) {
+    const { error } = await supabase.from("workflows").delete().eq("id", id);
+
+    if (error) {
+      throw error;
+    }
+  }
+  static async fetchFromMarket(page: number, itemsPerPage: number) {
+    // 获取当前页数据
+    const start = (page - 1) * itemsPerPage;
+    const end = start + itemsPerPage - 1;
+
+    const { data, error } = await supabase
+      .from("workflows")
+      .select("*")
+      .order("inserted_at", { ascending: false })
+      .range(start, end);
+
+    if (error) {
+      throw error;
+    }
+    return (data as WorkflowMarketProps[]) || [];
+  }
 }
 /* 当前工作流 */
 export const CurrentWorkflow = new Echoa<Workflow>(new Workflow());

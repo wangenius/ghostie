@@ -8,10 +8,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { cmd } from "@/utils/shell";
-import { supabase } from "@/utils/supabase";
 import { memo, useCallback } from "react";
 import { TbDots, TbFileText, TbShape3, TbUpload } from "react-icons/tb";
 import "reactflow/dist/style.css";
+import { toast } from "sonner";
 import { CurrentWorkflow, WorkflowsStore } from "../../workflow/Workflow";
 
 export const WorkflowInfo = memo(() => {
@@ -32,28 +32,10 @@ export const WorkflowInfo = memo(() => {
       content: "Are you sure to upload this workflow?",
       onOk: async () => {
         try {
-          // 获取完整的工作流数据
-          const workflowData = await workflow.getBody();
-          console.log(workflowData);
-
-          // 上传到 Supabase
-          const { error } = await supabase.from("workflows").insert({
-            name: workflow.meta.name,
-            description: workflow.meta.description,
-            data: JSON.stringify(workflowData),
-          });
-
-          if (error) throw error;
-
-          cmd.message("Successfully uploaded workflow to market", "success");
+          await workflow.uploadToMarket();
+          toast.success("Successfully uploaded workflow to market");
         } catch (error) {
-          console.error("Upload workflow failed:", error);
-          cmd.message(
-            `Upload workflow failed: ${
-              error instanceof Error ? error.message : String(error)
-            }`,
-            "error",
-          );
+          toast.error(`Upload workflow failed:${error}`);
         }
       },
     });
