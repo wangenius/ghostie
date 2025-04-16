@@ -91,8 +91,8 @@ export interface AgentMarketProps {
   updated_at: string;
   /* 助手作者 */
   user_id: string;
-  /* 助手系统提示 */
-  system: string;
   /* 助手描述 */
   description: string;
+  /* 助手配置 */
+  body: AgentProps;
 }

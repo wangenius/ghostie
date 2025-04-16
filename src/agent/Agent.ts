@@ -1,9 +1,14 @@
-import { AgentChatOptions, AgentProps } from "@/agent/types/agent";
+import {
+  AgentChatOptions,
+  AgentMarketProps,
+  AgentProps,
+} from "@/agent/types/agent";
 import { AGENT_DATABASE } from "@/assets/const";
 import { ImageManager } from "@/resources/Image";
 import { gen } from "@/utils/generator";
 import { Echo } from "echo-state";
 import { Engine } from "./engine/Engine";
+import { supabase } from "@/utils/supabase";
 
 export const DEFAULT_AGENT: AgentProps = {
   id: "",
@@ -103,5 +108,61 @@ export class Agent {
   close() {
     this.engine.close();
     this.props = DEFAULT_AGENT;
+  }
+
+  public async uploadToMarket() {
+    // 上传到 Supabase
+    const { error } = await supabase.from("agents").insert({
+      id: this.props.id,
+      name: this.props.name,
+      description: this.props.description || this.props.system,
+      body: this.props,
+    });
+    if (error) {
+      throw error;
+    }
+    return;
+  }
+
+  static async fetchMarketData(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<AgentMarketProps[]> {
+    // 获取当前页数据
+    const start = (page - 1) * limit;
+    const end = start + limit - 1;
+    const { data, error } = await supabase
+      .from("agents")
+      .select("*")
+      .order("inserted_at", { ascending: false })
+      .range(start, end);
+
+    if (error) {
+      throw error;
+    }
+    console.log(data);
+    return (data as AgentMarketProps[]) || [];
+  }
+
+  static async installFromMarket(data: AgentMarketProps) {
+    /* 如果有plugins、workflow、或者mcp时，先检查档期啊你是否含有，如果没有需要去市场安装。 */
+    // const { tools, workflows, mcps } = data.body;
+
+    /* 创建代理 */
+    const agent = new Agent(data.body);
+
+    /* 保存代理 */
+    AgentStore.set({
+      [data.id]: agent.props,
+    });
+    return agent;
+  }
+
+  /* 从市场卸载 */
+  static async uninstallFromMarket(id: string) {
+    const { error } = await supabase.from("agents").delete().eq("id", id);
+    if (error) {
+      throw error;
+    }
   }
 }

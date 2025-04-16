@@ -23,12 +23,12 @@ import {
   TbFileText,
   TbMaximize,
   TbMinimize,
+  TbPackage,
   TbPlayerPlay,
   TbPlug,
   TbPlus,
   TbScriptPlus,
   TbUpload,
-  TbPackage,
 } from "react-icons/tb";
 import { EnvEditor } from "./EnvEditor";
 import { PluginsMarket } from "./components/PluginsMarket";
@@ -40,7 +40,6 @@ import {
   PluginStore,
   ToolPlugin,
 } from "@/plugin/ToolPlugin";
-import { supabase } from "@/utils/supabase";
 import { javascript } from "@codemirror/lang-javascript";
 import { githubDarkInit } from "@uiw/codemirror-theme-github";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
@@ -48,6 +47,7 @@ import { Echo } from "echo-state";
 import * as prettierPluginBabel from "prettier/plugins/babel";
 import * as prettierPluginEstree from "prettier/plugins/estree";
 import { format } from "prettier/standalone";
+import { toast } from "sonner";
 
 const CurrentPlugin = new Echo<ToolPlugin>(new ToolPlugin());
 const PluginContent = new Echo<string>(
@@ -120,28 +120,14 @@ export function PluginsTab() {
       content: "Are you sure to upload this plugin?",
       onOk: async () => {
         try {
-          const { error } = await supabase.from("plugins").insert({
-            name: props.name,
-            description: props.description || "",
-            version: props.version || "1.0.0",
-            content: content,
-          });
-
-          if (error) {
-            throw error;
-          }
-
-          cmd.message(
-            "plugin uploaded successfully, waiting for review",
-            "success",
-          );
+          await plugin.uploadToMarket(content);
+          toast.success("plugin uploaded successfully, waiting for review");
         } catch (error) {
           console.error("failed to upload plugin:", error);
-          cmd.message(
+          toast.error(
             `failed to upload plugin: ${
               error instanceof Error ? error.message : String(error)
             }`,
-            "error",
           );
         }
       },

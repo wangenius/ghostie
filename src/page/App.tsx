@@ -38,11 +38,13 @@ function App() {
   }, []);
 
   return (
-    <div id="app" className="h-full w-full bg-background">
-      <Page name="main" component={<MainView />} />
-      <Page name="settings" component={<SettingsPage />} />
-      <Page name="history" component={<HistoryPage />} />
-    </div>
+    <>
+      <div id="app" className="h-full w-full bg-background">
+        <Page name="main" component={<MainView />} />
+        <Page name="settings" component={<SettingsPage />} />
+        <Page name="history" component={<HistoryPage />} />
+      </div>
+    </>
   );
 }
 

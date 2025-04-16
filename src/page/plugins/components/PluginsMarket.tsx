@@ -1,13 +1,12 @@
 import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ToolPlugin } from "@/plugin/ToolPlugin";
+import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
 import { PluginMarketProps } from "@/plugin/types";
 import { UserMananger } from "@/settings/User";
-import { cmd } from "@/utils/shell";
-import { supabase } from "@/utils/supabase";
 import { useEffect, useState } from "react";
 import {
+  TbCheck,
   TbChevronLeft,
   TbChevronRight,
   TbDownload,
@@ -17,6 +16,7 @@ import {
   TbSearch,
   TbTrash,
 } from "react-icons/tb";
+import { toast } from "sonner";
 
 export const PluginsMarket = () => {
   const [plugins, setPlugins] = useState<PluginMarketProps[]>([]);
@@ -28,34 +28,20 @@ export const PluginsMarket = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const itemsPerPage = 10;
   const user = UserMananger.use();
+  const pls = PluginStore.use();
 
   // Fetch plugins from Supabase - paginated
   const fetchPlugins = async (page = 1) => {
     try {
       setLoading(true);
-
-      // Get current page data
-      const start = (page - 1) * itemsPerPage;
-      const end = start + itemsPerPage - 1;
-
-      const { data, error } = await supabase
-        .from("plugins")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .range(start, end);
-
-      if (error) {
-        throw error;
-      }
-
+      const data = await ToolPlugin.fetchMarketData(page, itemsPerPage);
       setPlugins(data || []);
       setCurrentPage(page);
-
       // If we got less items than itemsPerPage, there's no next page
       setHasNextPage((data?.length || 0) >= itemsPerPage);
     } catch (error) {
       console.error("Failed to fetch plugins:", error);
-      cmd.message("Failed to fetch plugins", "error");
+      toast.error("Failed to fetch plugins");
     } finally {
       setLoading(false);
     }
@@ -65,20 +51,14 @@ export const PluginsMarket = () => {
   const handleInstall = async (plugin: PluginMarketProps) => {
     try {
       setInstalling(plugin.id);
-      const newPlugin = await ToolPlugin.create({
-        name: plugin.name,
-        description: plugin.description,
-      });
-      await newPlugin.updateContent(plugin.content.trim());
-
-      cmd.message(`成功安装插件: ${plugin.name}`, "success");
+      await ToolPlugin.installFromMarket(plugin);
+      toast.success(`Successfully installed plugin: ${plugin.name}`);
     } catch (error) {
       console.error("Failed to install plugin:", error);
-      cmd.message(
-        `安装插件失败: ${
+      toast.error(
+        `Failed to install plugin: ${
           error instanceof Error ? error.message : String(error)
         }`,
-        "error",
       );
     } finally {
       setInstalling(null);
@@ -89,25 +69,16 @@ export const PluginsMarket = () => {
   const handleDelete = async (plugin: PluginMarketProps) => {
     try {
       setDeleting(plugin.id);
-      const { error } = await supabase
-        .from("plugins")
-        .delete()
-        .eq("id", plugin.id);
-
-      if (error) {
-        throw error;
-      }
-
+      await ToolPlugin.uninstallFromMarket(plugin.id);
       // Update current page data
       fetchPlugins(currentPage);
-      cmd.message(`成功删除插件: ${plugin.name}`, "success");
+      toast.success(`Successfully deleted plugin: ${plugin.name}`);
     } catch (error) {
       console.error("Failed to delete plugin:", error);
-      cmd.message(
+      toast.error(
         `删除插件失败: ${
           error instanceof Error ? error.message : String(error)
         }`,
-        "error",
       );
     } finally {
       setDeleting(null);
@@ -118,7 +89,6 @@ export const PluginsMarket = () => {
   const showPluginDetails = (plugin: PluginMarketProps) => {
     dialog({
       title: plugin.name,
-      description: `版本: ${plugin.version}`,
       className: "md:max-w-[600px]",
       content: (close) => (
         <div className="flex flex-col gap-4 p-2">
@@ -157,21 +127,29 @@ export const PluginsMarket = () => {
                 删除
               </Button>
             )}
-            <Button
-              className="flex items-center gap-1"
-              onClick={() => {
-                close();
-                handleInstall(plugin);
-              }}
-              disabled={installing === plugin.id}
-            >
-              {installing === plugin.id ? (
-                <TbLoader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <TbDownload className="w-4 h-4" />
-              )}
-              安装
-            </Button>
+            {!pls[plugin.id] && (
+              <Button
+                className="flex items-center gap-1"
+                onClick={() => {
+                  close();
+                  handleInstall(plugin);
+                }}
+                disabled={installing === plugin.id}
+              >
+                {installing === plugin.id ? (
+                  <TbLoader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <TbDownload className="w-4 h-4" />
+                )}
+                安装
+              </Button>
+            )}{" "}
+            {!!pls[plugin.id] && (
+              <Button className="flex items-center gap-1" disabled>
+                <TbCheck className="w-4 h-4" />
+                已安装
+              </Button>
+            )}
           </div>
         </div>
       ),
@@ -263,9 +241,6 @@ export const PluginsMarket = () => {
                       </span>
                       {plugin.name}
                     </h3>
-                    <div className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
-                      v{plugin.version}
-                    </div>
                   </div>
 
                   <p className="text-sm text-muted-foreground line-clamp-1 mb-3 flex-grow">
@@ -276,23 +251,31 @@ export const PluginsMarket = () => {
                     <div className="text-xs text-muted-foreground">
                       点击查看详情
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleInstall(plugin);
-                      }}
-                      disabled={installing === plugin.id}
-                    >
-                      {installing === plugin.id ? (
-                        <TbLoader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                      ) : (
-                        <TbDownload className="w-3.5 h-3.5 mr-1" />
-                      )}
-                      安装
-                    </Button>
+                    {!pls[plugin.id] && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleInstall(plugin);
+                        }}
+                        disabled={installing === plugin.id}
+                      >
+                        {installing === plugin.id ? (
+                          <TbLoader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                        ) : (
+                          <TbDownload className="w-3.5 h-3.5 mr-1" />
+                        )}
+                        安装
+                      </Button>
+                    )}
+                    {!!pls[plugin.id] && (
+                      <Button className="flex items-center gap-1" disabled>
+                        <TbCheck className="w-4 h-4" />
+                        已安装
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

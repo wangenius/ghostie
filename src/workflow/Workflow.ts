@@ -107,6 +107,8 @@ export class Workflow {
       };
     }
   }
+
+  static async uploadToMarket() {}
 }
 /* 当前工作流 */
 export const CurrentWorkflow = new Echoa<Workflow>(new Workflow());

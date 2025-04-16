@@ -21,7 +21,6 @@ import { ImageModelManager } from "@/model/image/ImageModelManager";
 import { VisionModelManager } from "@/model/vision/VisionModelManager";
 import { PluginStore } from "@/plugin/ToolPlugin";
 import { PluginProps, ToolProps } from "@/plugin/types";
-import { supabase } from "@/utils/supabase";
 import { WorkflowsStore } from "@/workflow/Workflow";
 import { useCallback } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
@@ -47,14 +46,7 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
       content: "Are you sure you want to upload this agent?",
       onOk: async () => {
         try {
-          // 上传到 Supabase
-          const { error } = await supabase.from("agents").insert({
-            name: props.name,
-            system: props.system,
-            description: props.description || props.system,
-          });
-
-          if (error) throw error;
+          await agent.uploadToMarket();
           toast.success("Successfully uploaded agent to market");
         } catch (error) {
           toast.error(`Upload agent failed: ${error}`);

@@ -1,18 +1,17 @@
-import { PluginProps } from "@/plugin/types";
+import { PluginMarketProps, PluginProps } from "@/plugin/types";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
 import { Echo } from "echo-state";
 import { parsePluginFromString } from "./parser";
 import * as ts from "typescript";
+import { supabase } from "@/utils/supabase";
 
 /* 默认 */
 export const DEFAULT_PLUGIN: PluginProps = {
   id: "",
   name: "",
   description: "",
-  version: "",
   tools: [],
-  user_id: "",
 };
 export const PLUGIN_DATABASE_INDEX = "plugins_index";
 export const PLUGIN_DATABASE_CONTENT = "plugins_content";
@@ -177,7 +176,7 @@ export class ToolPlugin {
         compilerOptions: {
           module: ts.ModuleKind.ESNext,
           target: ts.ScriptTarget.ES2020,
-          moduleResolution: ts.ModuleResolutionKind.NodeJs,
+          moduleResolution: ts.ModuleResolutionKind.Node10,
           esModuleInterop: true,
         },
       });
@@ -187,5 +186,57 @@ export class ToolPlugin {
       console.error("编译TypeScript代码时出错:", error);
       throw new Error("TypeScript编译失败");
     }
+  }
+
+  static async fetchMarketData(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<PluginMarketProps[]> {
+    // Get current page data
+    const start = (page - 1) * limit;
+    const end = start + limit - 1;
+
+    const { data, error } = await supabase
+      .from("plugins")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(start, end);
+
+    if (error) {
+      throw error;
+    }
+    return (data as PluginMarketProps[]) || [];
+  }
+
+  static async installFromMarket(data: PluginMarketProps) {
+    const plugin = new ToolPlugin({
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      tools: data.tools,
+    });
+    await plugin.updateContent(data.content.trim());
+    return plugin;
+  }
+
+  static async uninstallFromMarket(id: string) {
+    const { error } = await supabase.from("plugins").delete().eq("id", id);
+    if (error) {
+      throw error;
+    }
+  }
+
+  async uploadToMarket(content: string) {
+    console.log(this.props);
+    const { error } = await supabase.from("plugins").insert({
+      id: this.props.id,
+      name: this.props.name,
+      description: this.props.description,
+      content: content,
+    });
+    if (error) {
+      throw error;
+    }
+    return;
   }
 }

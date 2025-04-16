@@ -61,10 +61,6 @@ export interface PluginProps {
   name: string;
   /* 插件描述 */
   description: string;
-  /* 插件版本 */
-  version: string;
-  /* 插件作者 */
-  user_id: string;
   /* 工具列表 */
   tools: ToolProps[];
 }
@@ -76,4 +72,6 @@ export interface PluginMarketProps extends PluginProps {
   updated_at: string;
   /* 插件内容 */
   content: string;
+  /* 插件作者 */
+  user_id: string;
 }

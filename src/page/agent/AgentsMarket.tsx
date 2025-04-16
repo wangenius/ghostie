@@ -1,23 +1,22 @@
 import { AgentMarketProps } from "@/agent/types/agent";
+import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { UserMananger } from "@/settings/User";
 import { cmd } from "@/utils/shell";
-import { supabase } from "@/utils/supabase";
 import { useEffect, useState } from "react";
 import {
-  TbLoader2,
-  TbTrash,
-  TbDownload,
-  TbInfoCircle,
-  TbSearch,
-  TbRefresh,
   TbChevronLeft,
   TbChevronRight,
+  TbDownload,
+  TbInfoCircle,
+  TbLoader2,
+  TbRefresh,
+  TbSearch,
+  TbTrash,
 } from "react-icons/tb";
-import { UserMananger } from "@/settings/User";
-import { Agent } from "../../agent/Agent";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import { dialog } from "@/components/custom/DialogModal";
+import { Agent } from "../../agent/Agent";
 
 export const AgentsMarket = () => {
   const [agents, setAgents] = useState<AgentMarketProps[]>([]);
@@ -27,36 +26,19 @@ export const AgentsMarket = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const itemsPerPage = 10;
   const user = UserMananger.use();
 
   // 从 Supabase 获取机器人列表 - 分页处理
   const fetchAgents = async (page = 1) => {
     try {
       setLoading(true);
-
-      // 获取当前页数据
-      const start = (page - 1) * itemsPerPage;
-      const end = start + itemsPerPage - 1;
-
-      const { data, error } = await supabase
-        .from("agents")
-        .select("*")
-        .order("inserted_at", { ascending: false })
-        .range(start, end);
-
-      if (error) {
-        throw error;
-      }
-
-      setAgents(data || []);
+      const data = await Agent.fetchMarketData(page, 10);
+      setAgents(data);
       setCurrentPage(page);
-
       // 如果获取的项目数少于itemsPerPage，说明没有下一页
-      setHasNextPage((data?.length || 0) >= itemsPerPage);
+      setHasNextPage((data?.length || 0) >= 10);
     } catch (error) {
       console.error("Get agents list failed:", error);
-      cmd.message("Get agents list failed", "error");
     } finally {
       setLoading(false);
     }
@@ -66,13 +48,7 @@ export const AgentsMarket = () => {
   const handleInstall = async (agent: AgentMarketProps) => {
     try {
       setInstalling(agent.id);
-
-      // 添加到机器人管理器
-      await Agent.create({
-        name: agent.name,
-        system: agent.system,
-      });
-
+      await Agent.installFromMarket(agent);
       toast.success(`Successfully installed agent: ${agent.name}`);
     } catch (error) {
       console.error("Install agent failed:", error);
@@ -86,14 +62,7 @@ export const AgentsMarket = () => {
   const handleDelete = async (agent: AgentMarketProps) => {
     try {
       setDeleting(agent.id);
-      const { error } = await supabase
-        .from("agents")
-        .delete()
-        .eq("id", agent.id);
-
-      if (error) {
-        throw error;
-      }
+      await Agent.uninstallFromMarket(agent.id);
 
       // 更新当前页数据
       fetchAgents(currentPage);
@@ -123,7 +92,7 @@ export const AgentsMarket = () => {
             <h3 className="text-lg font-medium mb-2">System Prompt</h3>
             <div className="max-h-[300px] overflow-y-auto rounded p-3">
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {agent.system || "No system prompt"}
+                {agent.body.system || "No system prompt"}
               </p>
             </div>
           </div>
@@ -190,7 +159,7 @@ export const AgentsMarket = () => {
     ? agents.filter(
         (agent) =>
           agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (agent.system || "")
+          (agent.body.system || "")
             .toLowerCase()
             .includes(searchQuery.toLowerCase()),
       )
@@ -261,7 +230,7 @@ export const AgentsMarket = () => {
                   </div>
 
                   <p className="text-sm text-muted-foreground line-clamp-1 mb-3 flex-grow">
-                    {agent.system || "无系统提示词"}
+                    {agent.body.system || "无系统提示词"}
                   </p>
 
                   <div className="flex justify-between items-center mt-auto pt-2 border-t">
