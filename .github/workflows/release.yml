@@ -58,3 +58,15 @@ jobs:
           releaseBody: ${{ steps.release_notes.outputs.notes }}
           releaseDraft: false
           prerelease: false
+
+      - name: Create Release in ghostie-releases
+        uses: softprops/action-gh-release@v1
+        with:
+          files: src-tauri/target/release/bundle/**/*
+          repository: wangenius/ghostie-releases
+          tag_name: v${{ steps.get_version.outputs.version }}
+          name: "Ghostie v${{ steps.get_version.outputs.version }}"
+          body: ${{ steps.release_notes.outputs.notes }}
+          draft: false
+          prerelease: false
+          token: ${{ secrets.RELEASE_REPO_TOKEN }}
