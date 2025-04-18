@@ -137,8 +137,6 @@ async fn main() {
             utils::file::read_file_text,
             utils::file::get_file_drop_list,
             utils::window::open_config_dir,
-            utils::update::check_update,
-            utils::update::install_update,
             node::plugin_execute,
             node::env_list,
             node::env_save,

@@ -21,6 +21,7 @@ import {
 } from "react-icons/tb";
 import { SettingsManager } from "../../../settings/SettingsManager";
 import { SettingItem } from "./SettingItem";
+import { toast } from "sonner";
 
 export function ThemeSettings() {
   const settings = SettingsManager.use();
@@ -253,24 +254,42 @@ export function UpdateSettings() {
       const update = await check();
       console.log("update", update);
       if (update?.version) {
-        setNewVersion(update.version);
-        setUpdateState("downloading");
-        await update.downloadAndInstall();
-
-        const confirm = await cmd.confirm(
-          `已下载更新版本 ${update.version}，是否立即更新？`,
-        );
+        const confirm = await cmd.confirm(`Ready to download the update?`);
         if (confirm) {
-          await relaunch();
+          setNewVersion(update.version);
+          setUpdateState("downloading");
+          let total = 100;
+          let current = 0;
+          await update.download((progress) => {
+            if (progress.event === "Started") {
+              total = progress.data.contentLength || 10000000;
+            } else if (progress.event === "Progress") {
+              current += progress.data.chunkLength;
+            }
+            setProgress(Math.round((current / total) * 100));
+          });
+          const confirmInstall = await cmd.confirm(
+            `Ready to install the update?`,
+          );
+          if (confirmInstall) {
+            await update.install();
+            await relaunch();
+          } else {
+            setUpdateState("idle");
+          }
+        } else {
+          setUpdateState("idle");
         }
       } else {
-        await cmd.message(`当前已是最新版本 ${PACKAGE_VERSION}`, "确认");
+        toast.success(
+          `Current version is the latest version ${PACKAGE_VERSION}`,
+        );
         setUpdateState("idle");
       }
       return update;
     } catch (error) {
-      console.error("更新检查失败:", error);
-      await cmd.message(`检查更新失败，请稍后重试`, "确认");
+      console.error("Update check failed:", error);
+      toast.error(`Update check failed, please try again later`);
       setUpdateState("idle");
       return false;
     }
@@ -291,15 +310,15 @@ export function UpdateSettings() {
           }`}
         />
       }
-      title="检查更新"
+      title="Check for updates"
       description={
         updateState === "idle"
-          ? `当前版本: ${PACKAGE_VERSION}`
+          ? `Current version: ${PACKAGE_VERSION}`
           : updateState === "checking"
-            ? "正在检查更新..."
+            ? "Checking for updates..."
             : updateState === "downloading"
-              ? `正在下载更新 v${newVersion} (${progress}%)`
-              : `更新已准备完毕 v${newVersion}，点击重启应用`
+              ? `Downloading update v${newVersion} (${progress}%)`
+              : `Update is ready v${newVersion}, click to restart`
       }
       action={
         <>
@@ -314,7 +333,7 @@ export function UpdateSettings() {
               {updateState === "checking" && (
                 <TbLoader2 className="w-4 h-4 animate-spin" />
               )}
-              {updateState === "checking" ? "检查中..." : "检查更新"}
+              {updateState === "checking" ? "Checking..." : "Check for updates"}
             </Button>
           ) : updateState === "downloading" ? (
             <div className="w-32">
@@ -326,7 +345,7 @@ export function UpdateSettings() {
               variant="destructive"
               size="sm"
             >
-              立即重启
+              Restart
             </Button>
           )}
         </>
