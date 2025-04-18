@@ -255,7 +255,6 @@ export function UpdateSettings() {
       if (update?.version) {
         setNewVersion(update.version);
         setUpdateState("downloading");
-
         await update.downloadAndInstall();
 
         const confirm = await cmd.confirm(

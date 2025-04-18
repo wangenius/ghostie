@@ -59,7 +59,7 @@ jobs:
           releaseDraft: false
           prerelease: false
 
-      - name: Fix latest.json repository path
+      - name: Fix latest.json repository url
         shell: powershell
         run: |
           $version = "${{ steps.get_version.outputs.version }}"
