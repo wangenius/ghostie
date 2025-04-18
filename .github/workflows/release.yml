@@ -62,7 +62,9 @@ jobs:
       - name: Create Release in ghostie-releases
         uses: softprops/action-gh-release@v1
         with:
-          files: src-tauri/target/release/bundle/**/*
+          files: |
+            src-tauri/target/release/bundle/**/*
+            latest.json
           repository: wangenius/ghostie-releases
           tag_name: v${{ steps.get_version.outputs.version }}
           name: "Ghostie v${{ steps.get_version.outputs.version }}"
