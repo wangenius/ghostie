@@ -10,6 +10,10 @@
   font-family: "harmony";
 }
 
+[data-font=mono] * {
+  font-family: "mono";
+}
+
 .mono {
   font-family: "mono" !important;
 }

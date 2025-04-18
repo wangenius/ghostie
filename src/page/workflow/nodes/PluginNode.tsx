@@ -167,6 +167,7 @@ export class PluginNodeExecutor extends NodeExecutor {
       const pluginResult = await (
         await ToolPlugin.get(plugin.props.id)
       ).execute(pluginConfig.tool, processedArgs);
+      console.log("pluginResult", pluginResult);
 
       if (!pluginResult) {
         throw new Error("Plugin execution result is empty");

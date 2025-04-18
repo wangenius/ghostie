@@ -1,3 +1,4 @@
+use base64::Engine;
 use futures_util::StreamExt;
 use once_cell::sync::Lazy;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
@@ -5,12 +6,9 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::{Emitter, Runtime};
 use tokio::sync::{mpsc, oneshot};
-use base64::Engine;
 
 static CANCEL_CHANNELS: Lazy<Mutex<HashMap<String, oneshot::Sender<()>>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
-
-
 
 #[tauri::command]
 pub async fn chat_stream<R: Runtime>(
@@ -42,7 +40,10 @@ pub async fn chat_stream<R: Runtime>(
         .await
         .map_err(|e| {
             println!("请求发送失败: {}", e);
-            window.clone().emit(&format!("chat-stream-error-{}", request_id), e.to_string()).unwrap();
+            window
+                .clone()
+                .emit(&format!("chat-stream-error-{}", request_id), e.to_string())
+                .unwrap();
             e.to_string()
         })?;
 
@@ -134,10 +135,7 @@ pub async fn image_generate(
         AUTHORIZATION,
         HeaderValue::from_str(&format!("Bearer {}", api_key)).map_err(|e| e.to_string())?,
     );
-    headers.insert(
-        "X-DashScope-Async",
-        HeaderValue::from_static("enable"),
-    );
+    headers.insert("X-DashScope-Async", HeaderValue::from_static("enable"));
 
     println!("正在发送图像生成请求到: {}", api_url);
     let response = client
@@ -154,7 +152,10 @@ pub async fn image_generate(
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().await.map_err(|e| e.to_string())?;
-        println!("图像生成请求失败，状态码: {}, 错误信息: {}", status, error_text);
+        println!(
+            "图像生成请求失败，状态码: {}, 错误信息: {}",
+            status, error_text
+        );
         return Err(format!("请求失败: {} - {}", status, error_text));
     }
 
@@ -163,10 +164,7 @@ pub async fn image_generate(
 }
 
 #[tauri::command]
-pub async fn image_result(
-    api_url: String,
-    api_key: String,
-) -> Result<serde_json::Value, String> {
+pub async fn image_result(api_url: String, api_key: String) -> Result<serde_json::Value, String> {
     let client = reqwest::Client::builder()
         .build()
         .map_err(|e| e.to_string())?;
@@ -192,12 +190,15 @@ pub async fn image_result(
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().await.map_err(|e| e.to_string())?;
-        println!("获取图像生成结果失败，状态码: {}, 错误信息: {}", status, error_text);
+        println!(
+            "获取图像生成结果失败，状态码: {}, 错误信息: {}",
+            status, error_text
+        );
         return Err(format!("请求失败: {} - {}", status, error_text));
     }
 
     let mut response_json: serde_json::Value = response.json().await.map_err(|e| e.to_string())?;
-    
+
     // 如果任务成功完成，获取图片并转换为base64
     if let Some(output) = response_json.get("output") {
         if let Some(task_status) = output.get("task_status") {
@@ -211,19 +212,24 @@ pub async fn image_result(
                                 .send()
                                 .await
                                 .map_err(|e| e.to_string())?;
-                            
-                            let image_bytes = image_response.bytes().await.map_err(|e| e.to_string())?;
-                            
+
+                            let image_bytes =
+                                image_response.bytes().await.map_err(|e| e.to_string())?;
+
                             // 转换为base64
-                            let base64_image = base64::engine::general_purpose::STANDARD.encode(&image_bytes);
+                            let base64_image =
+                                base64::engine::general_purpose::STANDARD.encode(&image_bytes);
                             let data_url = format!("data:image/png;base64,{}", base64_image);
-                            
+
                             // 创建新的结果对象
                             if let Some(output) = response_json.get_mut("output") {
                                 if let Some(results) = output.get_mut("results") {
                                     if let Some(first_result) = results.get_mut(0) {
                                         if let Some(obj) = first_result.as_object_mut() {
-                                            obj.insert("base64".to_string(), serde_json::Value::String(data_url));
+                                            obj.insert(
+                                                "base64".to_string(),
+                                                serde_json::Value::String(data_url),
+                                            );
                                         }
                                     }
                                 }
@@ -234,6 +240,6 @@ pub async fn image_result(
             }
         }
     }
-    
+
     Ok(response_json)
 }
