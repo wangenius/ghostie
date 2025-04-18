@@ -59,6 +59,20 @@ jobs:
           releaseDraft: false
           prerelease: false
 
+      - name: Fix latest.json repository path
+        shell: powershell
+        run: |
+          $version = "${{ steps.get_version.outputs.version }}"
+          $latestJsonFiles = Get-ChildItem -Path . -Filter "latest.json" -Recurse -File
+          foreach ($file in $latestJsonFiles) {
+            $content = Get-Content -Path $file.FullName -Raw | ConvertFrom-Json
+            if ($content.platforms.'windows-x86_64'.url -match "github.com/wangenius/ghostie/") {
+              $content.platforms.'windows-x86_64'.url = $content.platforms.'windows-x86_64'.url -replace "github.com/wangenius/ghostie/", "github.com/wangenius/ghostie-releases/"
+              $content | ConvertTo-Json -Depth 10 | Set-Content -Path $file.FullName
+              Write-Host "Updated repository path in $($file.FullName)"
+            }
+          }
+
       - name: Create Release in ghostie-releases
         uses: softprops/action-gh-release@v1
         with:

@@ -6,6 +6,8 @@ import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { cmd } from "@/utils/shell";
 import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { check } from "@tauri-apps/plugin-updater";
 import { useEffect, useState } from "react";
 import {
   TbAutomation,
@@ -240,35 +242,45 @@ export function DenoSettings() {
 }
 
 export function UpdateSettings() {
-  const [checking, setChecking] = useState(false);
+  const [updateState, setUpdateState] = useState<
+    "idle" | "checking" | "downloading" | "ready"
+  >("idle");
+  const [progress, setProgress] = useState(0);
+  const [newVersion, setNewVersion] = useState<string | null>(null);
 
   const checkForUpdates = async () => {
     try {
-      const hasUpdate = await cmd.invoke<boolean>("check_update");
-      if (hasUpdate) {
-        await cmd.invoke("install_update");
-        await cmd.invoke("relaunch");
+      const update = await check();
+      console.log("update", update);
+      if (update?.version) {
+        setNewVersion(update.version);
+        setUpdateState("downloading");
+
+        await update.downloadAndInstall();
+
+        const confirm = await cmd.confirm(
+          `已下载更新版本 ${update.version}，是否立即更新？`,
+        );
+        if (confirm) {
+          await relaunch();
+        }
+      } else {
+        await cmd.message(`当前已是最新版本 ${PACKAGE_VERSION}`, "确认");
+        setUpdateState("idle");
       }
-      return hasUpdate;
+      return update;
     } catch (error) {
-      console.error("Update check failed:", error);
+      console.error("更新检查失败:", error);
+      await cmd.message(`检查更新失败，请稍后重试`, "确认");
+      setUpdateState("idle");
       return false;
     }
   };
 
   const checkUpdate = async () => {
-    setChecking(true);
-    try {
-      const hasUpdate = await checkForUpdates();
-      if (!hasUpdate) {
-        await cmd.message(
-          `Already the latest version ${PACKAGE_VERSION}`,
-          "Confirm",
-        );
-      }
-    } finally {
-      setChecking(false);
-    }
+    setUpdateState("checking");
+    setProgress(0);
+    await checkForUpdates();
   };
 
   return (
@@ -276,21 +288,49 @@ export function UpdateSettings() {
       icon={
         <TbRotate
           className={`w-[18px] h-[18px] ${
-            checking ? "animate-spin-reverse" : ""
+            updateState === "checking" ? "animate-spin-reverse" : ""
           }`}
         />
       }
-      title="Check Updates"
-      description={`Current version: ${PACKAGE_VERSION}`}
+      title="检查更新"
+      description={
+        updateState === "idle"
+          ? `当前版本: ${PACKAGE_VERSION}`
+          : updateState === "checking"
+            ? "正在检查更新..."
+            : updateState === "downloading"
+              ? `正在下载更新 v${newVersion} (${progress}%)`
+              : `更新已准备完毕 v${newVersion}，点击重启应用`
+      }
       action={
-        <Button
-          onClick={checkUpdate}
-          disabled={checking}
-          variant="primary"
-          size="sm"
-        >
-          {checking ? "Checking..." : "Check Updates"}
-        </Button>
+        <>
+          {updateState === "idle" || updateState === "checking" ? (
+            <Button
+              onClick={checkUpdate}
+              disabled={updateState !== "idle"}
+              variant="primary"
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              {updateState === "checking" && (
+                <TbLoader2 className="w-4 h-4 animate-spin" />
+              )}
+              {updateState === "checking" ? "检查中..." : "检查更新"}
+            </Button>
+          ) : updateState === "downloading" ? (
+            <div className="w-32">
+              <Progress value={progress} className="h-2" />
+            </div>
+          ) : (
+            <Button
+              onClick={async () => await relaunch()}
+              variant="destructive"
+              size="sm"
+            >
+              立即重启
+            </Button>
+          )}
+        </>
       }
     />
   );

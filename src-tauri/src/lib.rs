@@ -8,6 +8,12 @@ pub mod utils;
 pub fn run() {
     // 创建默认的 Tauri 应用程序构建器
     tauri::Builder::default()
+        .setup(|app| {
+            #[cfg(desktop)]
+            app.handle()
+                .plugin(tauri_plugin_updater::Builder::new().build())?;
+            Ok(())
+        })
         // 运行应用程序
         // generate_context! 宏用于生成应用程序上下文
         .run(tauri::generate_context!())
