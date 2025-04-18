@@ -91,8 +91,16 @@ pub async fn node_install(window: tauri::Window) -> Result<bool> {
     #[cfg(windows)]
     cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
 
+    #[cfg(not(windows))]
+    let mut cmd = Command::new("sh");
+
+    #[cfg(windows)]
+    let args = &["-Command", "scoop install nodejs"];
+    #[cfg(not(windows))]
+    let args = &["-c", "brew install node"]; // macOS使用Homebrew安装Node.js
+
     let mut child = cmd
-        .args(&["-Command", "scoop install nodejs"])
+        .args(args)
         .stdout(std::process::Stdio::piped())
         .spawn()?;
 

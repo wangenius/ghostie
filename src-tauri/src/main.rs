@@ -77,6 +77,16 @@ async fn main() {
             let shortcut = Shortcut::new(Some(Modifiers::ALT), Code::Space);
             app.global_shortcut().register(shortcut)?;
 
+            // 确保主窗口在应用启动时显示，特别是在macOS上
+            if let Some(window) = app.get_webview_window("main") {
+                #[cfg(target_os = "macos")]
+                {
+                    println!("正在macOS上显示主窗口");
+                    window.show().unwrap();
+                    window.set_focus().unwrap();
+                }
+            }
+
             // 创建托盘图标
             let menu = Menu::with_items(
                 app,
@@ -131,6 +141,7 @@ async fn main() {
             chat::cancel_stream,
             chat::image_result,
             chat::image_generate,
+            chat::print_api_keys,
             utils::file::open_files_path,
             utils::file::open_file,
             utils::file::save_file,
@@ -157,20 +168,30 @@ async fn main() {
         .expect("error while building tauri application");
 
     app.run(|app, event| {
-        if let tauri::RunEvent::WindowEvent {
-            label,
-            event: tauri::WindowEvent::CloseRequested { api, .. },
-            ..
-        } = event
-        {
-            if label == "main" {
+        match event {
+            tauri::RunEvent::Ready => {
+                // 应用程序已准备好，显示主窗口
                 if let Some(window) = app.get_webview_window("main") {
-                    if window.is_visible().unwrap_or(false) {
-                        api.prevent_close();
-                        let _ = window.hide();
+                    println!("应用程序已准备好，显示主窗口");
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+            tauri::RunEvent::WindowEvent {
+                label,
+                event: tauri::WindowEvent::CloseRequested { api, .. },
+                ..
+            } => {
+                if label == "main" {
+                    if let Some(window) = app.get_webview_window("main") {
+                        if window.is_visible().unwrap_or(false) {
+                            api.prevent_close();
+                            let _ = window.hide();
+                        }
                     }
                 }
             }
+            _ => {}
         }
     });
 }

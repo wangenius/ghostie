@@ -22,7 +22,7 @@
         "label": "main",
         "center": true,
         "url": "/",
-        "visible": false,
+        "visible": true,
         "focus": true,
         "acceptFirstMouse": true,
         "devtools": true,
