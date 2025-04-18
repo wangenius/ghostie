@@ -64,7 +64,7 @@ jobs:
         with:
           files: |
             src-tauri/target/release/bundle/**/*
-            latest.json
+            ./**/latest.json
           repository: wangenius/ghostie-releases
           tag_name: v${{ steps.get_version.outputs.version }}
           name: "Ghostie v${{ steps.get_version.outputs.version }}"
