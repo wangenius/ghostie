@@ -3,6 +3,7 @@ import { AgentMCPProps, AgentProps, AgentToolProps } from "@/agent/types/agent";
 import {
   AGENT_TOOL_NAME_PREFIX,
   KNOWLEDGE_TOOL_NAME_PREFIX,
+  SKILL_TOOL_NAME_PREFIX,
   TOOL_NAME_SPLIT,
   WORKFLOW_BODY_DATABASE,
   WORKFLOW_TOOL_NAME_PREFIX,
@@ -22,6 +23,8 @@ import {
   ToolRequestBody,
 } from "../types/chatModel";
 import { VisionModel } from "../vision/VisionModel";
+import { SkillManager } from "@/skills/SkillManager";
+import { ChatModel } from "./ChatModel";
 
 export class ToolsHandler {
   static async transformAgentToolToModelFormat(
@@ -235,9 +238,35 @@ export class ToolsHandler {
     return toolRequestBody;
   }
 
+  static async transformSkillToModelFormat(
+    skills: string[],
+  ): Promise<ToolRequestBody> {
+    const toolRequestBody: ToolRequestBody = [];
+    if (skills.length) {
+      /* 获取代理 */
+      const list = SkillManager.getSkills();
+
+      /* 将知识库变成工具 */
+      skills.forEach((skill) => {
+        const skillDoc = list[skill];
+        if (!skillDoc) return;
+        toolRequestBody.push({
+          type: "function",
+          function: {
+            name: `${SKILL_TOOL_NAME_PREFIX}${TOOL_NAME_SPLIT}${skill}`,
+            description: skillDoc.description,
+            parameters: skillDoc.params,
+          },
+        });
+      });
+    }
+    return toolRequestBody;
+  }
+
   static async call(
     tool_call: ToolCallReply,
     otherModels: AgentProps["models"],
+    chatModel: ChatModel,
   ): Promise<FunctionCallResult | undefined> {
     if (!tool_call) return;
 
@@ -343,7 +372,14 @@ export class ToolsHandler {
           result,
         };
       }
-
+      if (firstName === SKILL_TOOL_NAME_PREFIX) {
+        const result = await SkillManager.execute(secondName, query, chatModel);
+        return {
+          name: tool_call.function.name,
+          arguments: tool_call.function.arguments,
+          result,
+        };
+      }
       if (firstName === KNOWLEDGE_TOOL_NAME_PREFIX) {
         if (!query.query) {
           return {
@@ -400,6 +436,13 @@ export class ToolsHandler {
       return {
         type: "agent",
         name: `calling agent: ${list[secondName].name}`,
+      };
+    }
+    if (firstName === SKILL_TOOL_NAME_PREFIX) {
+      const list = SkillManager.getSkills();
+      return {
+        type: "skill",
+        name: `calling skill: ${list[secondName].name}`,
       };
     }
 

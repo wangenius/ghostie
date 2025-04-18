@@ -1,22 +1,42 @@
-import { Skill } from "./Skill";
+/* 技能方法接口 */
+import { ChatModel } from "@/model/chat/ChatModel";
+import { ToolParameters } from "@/plugin/types";
 
-export interface SkillProps {
+/** 方法元数据 */
+export interface Skill {
   name: string;
   description: string;
+  params: ToolParameters;
+  execute: (params: Record<string, any>, chatModel: ChatModel) => any;
 }
 
-/** Skill 管理器 */
-export class SkillManager {
-  /** 已注册的 Engine */
-  private static readonly skills: Record<string, Skill> = {};
+/** 方法管理器 */
+export const SkillManager = {
+  /** 已注册的方法 */
+  skills: {} as Record<string, Skill>,
 
-  /** 注册 Engine */
-  public static register(type: string, skill: Skill): void {
+  /** 获取所有已注册的技能 */
+  getSkills(): Record<string, Skill> {
+    return this.skills;
+  },
+  /** 注册技能 */
+  register(type: string, skill: Skill): void {
     this.skills[type] = skill;
-  }
-
-  /** 获取指定的 Engine */
-  public static getSkill(type: string): Skill | undefined {
+  },
+  /** 获取指定的技能 */
+  getSkill(type: string): Skill | undefined {
     return this.skills[type];
-  }
-}
+  },
+  /** 执行指定方法 */
+  execute(
+    skillType: string,
+    params: Record<string, any> = {},
+    chatModel: ChatModel,
+  ): any {
+    const skill = this.getSkill(skillType);
+    if (!skill) {
+      throw new Error(`技能 ${skillType} 不存在`);
+    }
+    return skill.execute(params, chatModel);
+  },
+};

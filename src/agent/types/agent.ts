@@ -64,6 +64,8 @@ export interface AgentProps {
   workflows: string[];
   /* 允许调用的其他agents */
   agents: string[];
+  /* 可调用的技能 */
+  skills: string[];
   /* 配置 */
   configs?: {
     /* 温度 */

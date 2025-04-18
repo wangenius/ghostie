@@ -10,6 +10,7 @@ import "./model/chat/provider";
 import "./model/embedding/provider";
 import "./model/image/provider";
 import "./model/vision/provider";
+import "./skills/instance";
 import App from "./page/App";
 
 const element = document.getElementById("root") as HTMLElement;

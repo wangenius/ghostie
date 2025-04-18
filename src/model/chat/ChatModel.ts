@@ -267,7 +267,11 @@ export class ChatModel {
               created_at: Date.now(),
             },
           ]);
-          toolResult = await ToolsHandler.call(tool_call, this.otherModels);
+          toolResult = await ToolsHandler.call(
+            tool_call,
+            this.otherModels,
+            this,
+          );
           console.log(toolResult);
 
           if (

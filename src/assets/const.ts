@@ -2,6 +2,7 @@ export const TOOL_NAME_SPLIT = "--";
 export const WORKFLOW_TOOL_NAME_PREFIX = "executeFlow";
 export const KNOWLEDGE_TOOL_NAME_PREFIX = "knowledge";
 export const AGENT_TOOL_NAME_PREFIX = "agent";
+export const SKILL_TOOL_NAME_PREFIX = "skill";
 export const WORKFLOW_BODY_DATABASE = "workflow_bodies";
 export const WORKFLOW_DATABASE = "workflows";
 export const KNOWLEDGE_DATABASE = "knowledge";

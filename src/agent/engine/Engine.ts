@@ -93,6 +93,7 @@ export class Engine {
         ...(await ToolsHandler.transformKnowledgeToModelFormat(
           props.knowledges || [],
         )),
+        ...(await ToolsHandler.transformSkillToModelFormat(props.skills)),
       ]);
 
     // 初始化内存和上下文

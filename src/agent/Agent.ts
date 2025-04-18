@@ -27,6 +27,7 @@ export const DEFAULT_AGENT: AgentProps = {
   knowledges: [],
   workflows: [],
   agents: [],
+  skills: [],
 };
 
 export const AgentStore = new Echo<Record<string, AgentProps>>({}).indexed({

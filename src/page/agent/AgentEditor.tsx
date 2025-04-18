@@ -26,6 +26,7 @@ import { TbListSearch, TbUpload } from "react-icons/tb";
 import { toast } from "sonner";
 import { MCPTool, MCP_Actived } from "../mcp/MCP";
 import { SettingItem } from "../settings/components/SettingItem";
+import { SkillManager } from "@/skills/SkillManager";
 
 export const AgentEditor = ({ agent }: { agent: Agent }) => {
   const list = KnowledgesStore.use();
@@ -295,6 +296,24 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
                 }
                 multiple
                 placeholder="Select MCP..."
+              />
+              <DrawerSelector
+                title="Select Skill"
+                value={props.skills}
+                items={Object.entries(SkillManager.getSkills()).map(
+                  ([id, skill]) => ({
+                    label: skill.name,
+                    value: id,
+                    description: skill.description,
+                  }),
+                )}
+                onSelect={(value) =>
+                  agent.update({
+                    skills: value,
+                  })
+                }
+                multiple
+                placeholder="Select Skill..."
               />
               <DrawerSelector
                 title="Select Knowledge"
