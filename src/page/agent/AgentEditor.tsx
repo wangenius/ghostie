@@ -1,8 +1,6 @@
 import { Agent, AgentStore } from "@/agent/Agent";
 import { EngineManager } from "@/agent/engine/EngineManager";
 import { dialog } from "@/components/custom/DialogModal";
-import { Prose } from "@/components/editor/Prose";
-import { SimpleSlate } from "@/components/editor/SimpleSlate";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { Button } from "@/components/ui/button";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
@@ -36,6 +34,7 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
   const plugins = PluginStore.use();
   const engines = EngineManager.getEngines();
   const actived_mcps = MCP_Actived.use();
+  const agents = AgentStore.use();
 
   // 上传机器人
   const handleUpload = useCallback(async () => {
@@ -115,7 +114,7 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
               })
             }
             className="resize-none"
-            placeholder="Please enter the description..."
+            placeholder="Enter the description, this will be work as a description for other agent call this agent"
           />
           {/* 模型部分 */}
           <section className="space-y-4">
@@ -182,18 +181,16 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
           {/* 系统提示词 */}
           <section className="space-y-2">
             <h3 className="text-lg font-medium">System Prompt</h3>
-            <div className="bg-muted-foreground/5 rounded-2xl p-4">
-              <SimpleSlate
-                defaultValue={Prose.sharpen(props.system.trim() || "")}
-                onChange={(e) =>
-                  agent.update({
-                    system: Prose.flatten(e).trim(),
-                  })
-                }
-                className="resize-none outline-none"
-                placeholder="Please enter the system prompt..."
-              />
-            </div>
+            <AutoResizeTextarea
+              defaultValue={props.system}
+              onValueChange={(e) =>
+                agent.update({
+                  system: e.target.value,
+                })
+              }
+              className="resize-none outline-none"
+              placeholder="Please enter the system prompt..."
+            />
           </section>
 
           {/* 功能扩展 */}
@@ -214,6 +211,27 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
                     />
                   </div>
                 }
+              />
+              <DrawerSelector
+                title="Select Sub-Agents"
+                value={props.agents}
+                items={Object.values(agents)
+                  .map((agent) => {
+                    if (agent.id === props.id) return null;
+                    return {
+                      label: agent.name,
+                      value: agent.id,
+                      description: agent.description,
+                    };
+                  })
+                  .filter((item) => item !== null)}
+                onSelect={(value) =>
+                  agent.update({
+                    agents: value,
+                  })
+                }
+                multiple
+                placeholder="Select Sub-Agents..."
               />
               <DrawerSelector
                 title="Select Plugin"

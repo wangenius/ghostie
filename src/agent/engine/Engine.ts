@@ -88,6 +88,7 @@ export class Engine {
           props.workflows || [],
         )),
         ...(await ToolsHandler.transformModelToModelFormat(props.models)),
+        ...(await ToolsHandler.transformAgentToModelFormat(props.agents)),
         ...(await ToolsHandler.transformMCPToModelFormat(props.mcps)),
         ...(await ToolsHandler.transformKnowledgeToModelFormat(
           props.knowledges || [],

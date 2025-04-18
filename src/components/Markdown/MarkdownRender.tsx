@@ -2,11 +2,13 @@ import ReactMarkdown, { Components } from "react-markdown";
 import { CodeBlock } from "../custom/CodeBlock";
 import { TbExternalLink } from "react-icons/tb";
 import { cmd } from "@/utils/shell";
+import remarkGfm from "remark-gfm";
 
 export const MarkdownRender = ({ children }: { children: string }) => {
   return (
     <ReactMarkdown
       className="text-primary px-2"
+      remarkPlugins={[remarkGfm]}
       components={{
         code: CodeBlock,
         a: CustomLink,
@@ -23,6 +25,11 @@ export const MarkdownRender = ({ children }: { children: string }) => {
         blockquote: CustomBlockquote,
         hr: CustomHr,
         table: CustomTable,
+        thead: CustomThead,
+        tbody: CustomTbody,
+        tr: CustomTr,
+        th: CustomTh,
+        td: CustomTd,
       }}
     >
       {children}
@@ -114,10 +121,40 @@ const CustomHr: Components["hr"] = () => {
 
 const CustomTable: Components["table"] = ({ children }) => {
   return (
-    <div className="overflow-x-auto my-4">
-      <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
-        {children}
-      </table>
+    <div className="my-4 w-full overflow-auto">
+      <table className="w-full caption-bottom text-sm">{children}</table>
     </div>
+  );
+};
+
+const CustomThead: Components["thead"] = ({ children }) => {
+  return <thead className="[&_tr]:border-b">{children}</thead>;
+};
+
+const CustomTbody: Components["tbody"] = ({ children }) => {
+  return <tbody className="[&_tr:last-child]:border-0">{children}</tbody>;
+};
+
+const CustomTr: Components["tr"] = ({ children }) => {
+  return (
+    <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+      {children}
+    </tr>
+  );
+};
+
+const CustomTh: Components["th"] = ({ children }) => {
+  return (
+    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+      {children}
+    </th>
+  );
+};
+
+const CustomTd: Components["td"] = ({ children }) => {
+  return (
+    <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+      {children}
+    </td>
   );
 };

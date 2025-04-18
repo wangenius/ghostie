@@ -62,6 +62,8 @@ export interface AgentProps {
   knowledges: string[];
   /* 工作流 */
   workflows: string[];
+  /* 允许调用的其他agents */
+  agents: string[];
   /* 配置 */
   configs?: {
     /* 温度 */

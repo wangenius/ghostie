@@ -26,6 +26,7 @@ export const DEFAULT_AGENT: AgentProps = {
   engine: "react",
   knowledges: [],
   workflows: [],
+  agents: [],
 };
 
 export const AgentStore = new Echo<Record<string, AgentProps>>({}).indexed({

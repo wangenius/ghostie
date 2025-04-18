@@ -1,5 +1,7 @@
+import { Agent, AgentStore } from "@/agent/Agent";
 import { AgentMCPProps, AgentProps, AgentToolProps } from "@/agent/types/agent";
 import {
+  AGENT_TOOL_NAME_PREFIX,
   KNOWLEDGE_TOOL_NAME_PREFIX,
   TOOL_NAME_SPLIT,
   WORKFLOW_BODY_DATABASE,
@@ -199,6 +201,39 @@ export class ToolsHandler {
     }
     return toolRequestBody;
   }
+  static async transformAgentToModelFormat(
+    agents: string[],
+  ): Promise<ToolRequestBody> {
+    const toolRequestBody: ToolRequestBody = [];
+    if (agents.length) {
+      /* 获取代理 */
+      const list = await AgentStore.getCurrent();
+
+      /* 将知识库变成工具 */
+      agents.forEach((agent) => {
+        const agentDoc = list[agent];
+        if (!agentDoc) return;
+        toolRequestBody.push({
+          type: "function",
+          function: {
+            name: `${AGENT_TOOL_NAME_PREFIX}${TOOL_NAME_SPLIT}${agent}`,
+            description: `${agentDoc.description}`,
+            parameters: {
+              type: "object",
+              properties: {
+                query: {
+                  type: "string",
+                  description: "调用该Agent的用户提示词",
+                },
+              },
+              required: ["query"],
+            },
+          },
+        });
+      });
+    }
+    return toolRequestBody;
+  }
 
   static async call(
     tool_call: ToolCallReply,
@@ -292,6 +327,23 @@ export class ToolsHandler {
           result,
         };
       }
+      if (firstName === AGENT_TOOL_NAME_PREFIX) {
+        const agent = await Agent.get(secondName);
+        if (!agent) {
+          return {
+            name: tool_call.function.name,
+            arguments: tool_call.function.arguments,
+            result: "the called agent not found",
+          };
+        }
+        const result = await agent.chat(query.query);
+        return {
+          name: tool_call.function.name,
+          arguments: tool_call.function.arguments,
+          result,
+        };
+      }
+
       if (firstName === KNOWLEDGE_TOOL_NAME_PREFIX) {
         if (!query.query) {
           return {
@@ -343,6 +395,14 @@ export class ToolsHandler {
     const firstName = toolName.split(TOOL_NAME_SPLIT)[0];
     const secondName = toolName.split(TOOL_NAME_SPLIT)[1];
 
+    if (firstName === AGENT_TOOL_NAME_PREFIX) {
+      const list = await AgentStore.getCurrent();
+      return {
+        type: "agent",
+        name: `calling agent: ${list[secondName].name}`,
+      };
+    }
+
     if (firstName === WORKFLOW_TOOL_NAME_PREFIX) {
       const list = await WorkflowsStore.getCurrent();
       return {
@@ -362,8 +422,8 @@ export class ToolsHandler {
     const plugins = await PluginStore.getCurrent();
     const plugin = plugins[secondName];
     return {
-      type: plugin.name,
-      name: `calling tool: ${plugin.tools.find((item) => item.name === firstName)?.name || firstName}`,
+      type: plugin?.name,
+      name: `calling tool: ${plugin?.tools.find((item) => item.name === firstName)?.name || firstName}`,
     };
   }
 }
