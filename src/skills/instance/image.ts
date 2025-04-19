@@ -1,7 +1,7 @@
 import { ImageManager } from "@/resources/Image";
 import { SkillManager } from "../SkillManager";
 import { gen } from "@/utils/generator";
-import { readFile, writeFile } from "@tauri-apps/plugin-fs";
+import { cmd } from "@/utils/shell";
 
 /** 将本地图片转换为base64 */
 SkillManager.register("imageLoading", {
@@ -22,8 +22,8 @@ SkillManager.register("imageLoading", {
     const id = gen.id();
 
     try {
-      // 读取文件内容
-      const binaryData = await readFile(path);
+      // 通过后端读取文件内容
+      const binaryData = await cmd.invoke<Uint8Array>("read_file", { path });
 
       // 将二进制数据转换为base64
       const base64String = btoa(
@@ -118,8 +118,12 @@ SkillManager.register("imageSave", {
           .map((char) => char.charCodeAt(0)),
       );
 
-      // 使用writeFile保存二进制数据
-      await writeFile(path + "." + fileExtension, binaryData);
+      // 通过后端保存文件
+      const fullPath = `${path}.${fileExtension}`;
+      await cmd.invoke("write_file", {
+        path: fullPath,
+        data: Array.from(binaryData), // 转换为普通数组以便序列化
+      });
 
       return `图片已成功保存到: ${path}`;
     } catch (error) {

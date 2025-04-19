@@ -220,3 +220,19 @@ pub async fn get_file_drop_list() -> Result<Vec<String>, String> {
         Err("此功能仅支持Windows系统".to_string())
     }
 }
+
+#[tauri::command]
+pub async fn read_file(path: String) -> Result<Vec<u8>, String> {
+    match fs::read(&path) {
+        Ok(data) => Ok(data),
+        Err(e) => Err(format!("读取文件失败: {}", e)),
+    }
+}
+
+#[tauri::command]
+pub async fn write_file(path: String, data: Vec<u8>) -> Result<bool, String> {
+    match fs::write(&path, data) {
+        Ok(_) => Ok(true),
+        Err(e) => Err(format!("写入文件失败: {}", e)),
+    }
+}
