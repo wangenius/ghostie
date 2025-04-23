@@ -2,20 +2,21 @@ import { AgentMarketProps } from "@/agent/types/agent";
 import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserMananger } from "@/settings/User";
+import { UserMananger } from "@/services/user/User";
+import Avatar from "boring-avatars";
 import { useEffect, useState } from "react";
 import {
+  TbCheck,
   TbChevronLeft,
   TbChevronRight,
   TbDownload,
-  TbInfoCircle,
   TbLoader2,
   TbRefresh,
   TbSearch,
   TbTrash,
 } from "react-icons/tb";
 import { toast } from "sonner";
-import { Agent } from "../../agent/Agent";
+import { Agent, AgentStore } from "../../agent/Agent";
 
 export const AgentsMarket = () => {
   const [agents, setAgents] = useState<AgentMarketProps[]>([]);
@@ -26,6 +27,9 @@ export const AgentsMarket = () => {
   const [hasNextPage, setHasNextPage] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const user = UserMananger.use();
+  const CurrentAgents = AgentStore.use();
+
+  console.log(CurrentAgents);
 
   // 从 Supabase 获取机器人列表 - 分页处理
   const fetchAgents = async (page = 1) => {
@@ -110,21 +114,29 @@ export const AgentsMarket = () => {
                 Delete
               </Button>
             )}
-            <Button
-              className="flex items-center gap-1"
-              onClick={() => {
-                close();
-                handleInstall(agent);
-              }}
-              disabled={installing === agent.id}
-            >
-              {installing === agent.id ? (
-                <TbLoader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <TbDownload className="w-4 h-4" />
-              )}
-              Install
-            </Button>
+            {!CurrentAgents[agent.id] && (
+              <Button
+                className="flex items-center gap-1"
+                onClick={() => {
+                  close();
+                  handleInstall(agent);
+                }}
+                disabled={installing === agent.id}
+              >
+                {installing === agent.id ? (
+                  <TbLoader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <TbDownload className="w-4 h-4" />
+                )}
+                安装
+              </Button>
+            )}
+            {!!CurrentAgents[agent.id] && (
+              <Button className="flex items-center gap-1" disabled>
+                <TbCheck className="w-4 h-4" />
+                已安装
+              </Button>
+            )}
           </div>
         </div>
       ),
@@ -211,13 +223,25 @@ export const AgentsMarket = () => {
                 onClick={() => showAgentDetails(agent)}
               >
                 <div className="flex flex-col h-full">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-medium text-sm text-card-foreground flex items-center gap-1.5">
-                      <span className="bg-primary/10 text-primary p-1 rounded">
-                        <TbInfoCircle className="w-3.5 h-3.5" />
-                      </span>
-                      {agent.name}
-                    </h3>
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex-1 flex items-center gap-2">
+                      <Avatar
+                        size={32}
+                        name={agent.id}
+                        variant="beam"
+                        colors={[
+                          "#92A1C6",
+                          "#146A7C",
+                          "#F0AB3D",
+                          "#C271B4",
+                          "#C20D90",
+                        ]}
+                        square={false}
+                      />
+                      <h3 className="font-medium text-sm text-card-foreground flex items-center gap-1.5">
+                        {agent.name}
+                      </h3>
+                    </div>
                     <div className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
                       {new Date(agent.inserted_at).toLocaleDateString()}
                     </div>
@@ -231,23 +255,31 @@ export const AgentsMarket = () => {
                     <div className="text-xs text-muted-foreground">
                       点击查看详情
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleInstall(agent);
-                      }}
-                      disabled={installing === agent.id}
-                    >
-                      {installing === agent.id ? (
-                        <TbLoader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                      ) : (
-                        <TbDownload className="w-3.5 h-3.5 mr-1" />
-                      )}
-                      安装
-                    </Button>
+                    {!CurrentAgents[agent.id] && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleInstall(agent);
+                        }}
+                        disabled={installing === agent.id}
+                      >
+                        {installing === agent.id ? (
+                          <TbLoader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                        ) : (
+                          <TbDownload className="w-3.5 h-3.5 mr-1" />
+                        )}
+                        安装
+                      </Button>
+                    )}
+                    {!!CurrentAgents[agent.id] && (
+                      <Button className="flex items-center gap-1" disabled>
+                        <TbCheck className="w-4 h-4" />
+                        已安装
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

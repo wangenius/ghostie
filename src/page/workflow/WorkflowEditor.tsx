@@ -23,7 +23,7 @@ export const WorkflowEditor = () => {
           <motion.div
             layout
             className={cn("flex flex-col overflow-hidden", {
-              "fixed inset-0 top-12 z-50 bg-background": isFullscreen,
+              "fixed inset-0 top-10 z-50 bg-background": isFullscreen,
               "relative w-full h-full": !isFullscreen,
             })}
             initial={false}

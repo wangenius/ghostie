@@ -85,7 +85,13 @@ export function dialog({
     return createPortal(
       <AnimatePresence mode="wait" onExitComplete={handleAnimationComplete}>
         {isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+          >
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

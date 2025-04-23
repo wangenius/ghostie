@@ -10,8 +10,9 @@ import "./model/chat/provider";
 import "./model/embedding/provider";
 import "./model/image/provider";
 import "./model/vision/provider";
-import "./skills/instance";
 import App from "./page/App";
+import "./skills/instance";
+import { Scheduler } from "./page/schedule/Scheduler";
 
 const element = document.getElementById("root") as HTMLElement;
 createRoot(element).render(<App />);
@@ -31,3 +32,5 @@ createRoot(ToastProvider).render(
     }}
   />,
 );
+// 初始化调度器
+Scheduler.init();

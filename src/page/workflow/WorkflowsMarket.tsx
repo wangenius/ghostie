@@ -1,10 +1,11 @@
 import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserMananger } from "@/settings/User";
-import { Workflow } from "@/workflow/Workflow";
+import { UserMananger } from "@/services/user/User";
+import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
 import { useEffect, useState } from "react";
 import {
+  TbCheck,
   TbChevronLeft,
   TbChevronRight,
   TbDownload,
@@ -36,6 +37,7 @@ export const WorkflowsMarket = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const itemsPerPage = 10;
   const user = UserMananger.use();
+  const CurrentWorkflows = WorkflowsStore.use();
 
   // 从 Supabase 获取工作流列表 - 分页处理
   const fetchWorkflows = async (page = 1) => {
@@ -125,21 +127,29 @@ export const WorkflowsMarket = () => {
                 删除
               </Button>
             )}
-            <Button
-              className="flex items-center gap-1"
-              onClick={() => {
-                close();
-                handleInstall(workflow);
-              }}
-              disabled={installing === workflow.id}
-            >
-              {installing === workflow.id ? (
-                <TbLoader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <TbDownload className="w-4 h-4" />
-              )}
-              安装
-            </Button>
+            {!!CurrentWorkflows[workflow.id] && (
+              <Button className="flex items-center gap-1" disabled>
+                <TbCheck className="w-4 h-4" />
+                已安装
+              </Button>
+            )}
+            {!CurrentWorkflows[workflow.id] && (
+              <Button
+                className="flex items-center gap-1"
+                onClick={() => {
+                  close();
+                  handleInstall(workflow);
+                }}
+                disabled={installing === workflow.id}
+              >
+                {installing === workflow.id ? (
+                  <TbLoader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <TbDownload className="w-4 h-4" />
+                )}
+                安装
+              </Button>
+            )}
           </div>
         </div>
       ),
@@ -248,23 +258,31 @@ export const WorkflowsMarket = () => {
                     <div className="text-xs text-muted-foreground">
                       点击查看详情
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleInstall(workflow);
-                      }}
-                      disabled={installing === workflow.id}
-                    >
-                      {installing === workflow.id ? (
-                        <TbLoader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                      ) : (
-                        <TbDownload className="w-3.5 h-3.5 mr-1" />
-                      )}
-                      安装
-                    </Button>
+                    {!CurrentWorkflows[workflow.id] && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleInstall(workflow);
+                        }}
+                        disabled={installing === workflow.id}
+                      >
+                        {installing === workflow.id ? (
+                          <TbLoader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                        ) : (
+                          <TbDownload className="w-3.5 h-3.5 mr-1" />
+                        )}
+                        安装
+                      </Button>
+                    )}
+                    {!!CurrentWorkflows[workflow.id] && (
+                      <Button className="flex items-center gap-1" disabled>
+                        <TbCheck className="w-4 h-4" />
+                        已安装
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

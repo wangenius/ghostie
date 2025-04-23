@@ -6,11 +6,11 @@ import { Button } from "../ui/button";
 interface SettingsListItemProps {
   id: string;
   title: string | React.ReactNode;
-  description: string | React.ReactNode;
+  description?: string | React.ReactNode;
   icon?: React.ReactNode;
   onClick: (id: string) => void;
   actived: boolean;
-  onRemove: () => void;
+  onRemove?: () => void;
   noRemove?: boolean;
 }
 interface SettingsListProps {
@@ -98,7 +98,7 @@ export function SettingsListItem({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              onRemove();
+              onRemove?.();
             }}
           >
             <TbTrash className="w-4 h-4" />

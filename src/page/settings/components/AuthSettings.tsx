@@ -3,7 +3,7 @@ import { FormContainer, FormInput } from "@/components/custom/FormWrapper";
 import { Button } from "@/components/ui/button";
 import { TbLoader2, TbUser } from "react-icons/tb";
 import { SettingItem } from "./SettingItem";
-import { UserMananger } from "../../../settings/User";
+import { UserMananger } from "../../../services/user/User";
 import { useState } from "react";
 import { cmd } from "@/utils/shell";
 

@@ -16,6 +16,7 @@ import {
   KnowledgeModelSettings,
   KnowledgeThresholdSettings,
 } from "./components/KnowledgeSettings";
+import ShortcutsTab from "./ShortcutsTab";
 
 export function GeneralSettingsPage() {
   return (
@@ -36,6 +37,8 @@ export function GeneralSettingsPage() {
       <h3 className="text-lg font-bold pt-6">Knowledge</h3>
       <KnowledgeModelSettings />
       <KnowledgeThresholdSettings />
+      <h3 className="text-lg font-bold pt-6">Shortcuts</h3>
+      <ShortcutsTab />
     </div>
   );
 }

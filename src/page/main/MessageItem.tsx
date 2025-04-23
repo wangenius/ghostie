@@ -55,21 +55,24 @@ export function ChatMessageItem({
   }
   if (message.tool_call_id && !message.images?.length) {
     return (
-      <div
-        className={cn(
-          "border-0 p-1 h-10 flex gap-2 transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2",
-          {
-            "rounded-b-3xl":
-              message.role === "tool" && nextMessageType === undefined,
-          },
-          {
-            hidden: message.role === "tool" && nextMessageType === "assistant",
-          },
-        )}
-      >
-        <div className="flex items-center gap-2 px-3 rounded-md text-primary text-sm py-2">
-          <TbLoader2 className="h-3.5 w-3.5 animate-spin" />
-          <span className="text-muted-foreground">loading...</span>
+      <div className="w-full flex">
+        <div
+          className={cn(
+            "border-0 p-1 h-10 flex gap-2 transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2 max-w-[85%]",
+            {
+              "rounded-b-3xl":
+                message.role === "tool" && nextMessageType === undefined,
+            },
+            {
+              hidden:
+                message.role === "tool" && nextMessageType === "assistant",
+            },
+          )}
+        >
+          <div className="flex items-center gap-2 px-3 rounded-md text-primary text-sm py-2">
+            <TbLoader2 className="h-3.5 w-3.5 animate-spin" />
+            <span className="text-muted-foreground">loading...</span>
+          </div>
         </div>
       </div>
     );
@@ -120,7 +123,8 @@ export function ChatMessageItem({
       <>
         <div
           className={cn(
-            "border-0 px-3 py-1 mt-2 rounded-3xl transition-colors group overflow-hidden text-muted-foreground text-sm",
+            "w-fit border-0 px-4 py-1.5 mt-2 rounded-3xl rounded-tr-none transition-colors group overflow-hidden text-sm ml-auto max-w-[85%]",
+            "text-muted-foreground border",
           )}
         >
           {message.content && <span className="block">{message.content}</span>}
@@ -155,7 +159,7 @@ export function ChatMessageItem({
   return (
     <div
       className={cn(
-        "border-0 p-3 rounded-3xl transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2",
+        "border-0 p-3 rounded-3xl rounded-tl-none transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2",
         {
           "!rounded-t-none pt-0":
             message.role === "assistant" && lastMessageType === "tool",

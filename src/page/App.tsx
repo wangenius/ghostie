@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { SettingsManager } from "../settings/SettingsManager";
 import { Page } from "../utils/PageRouter";
-import { HistoryPage } from "./history/HistoryPage";
 import { MainView } from "./main/MainView";
-import { SettingsPage } from "./settings/SettingsPage";
+import { UserMananger } from "@/services/user/User";
+import { LoginPage } from "./auth/LoginPage";
 
 /* 主应用,提供路由 */
 function App() {
@@ -11,6 +11,7 @@ function App() {
   const theme = SettingsManager.use((selector) => selector.theme);
   /* 字体 */
   const font = SettingsManager.use((selector) => selector.font);
+  const user = UserMananger.use();
 
   useEffect(() => {
     document.body.setAttribute("data-theme", theme.name);
@@ -38,13 +39,9 @@ function App() {
   }, []);
 
   return (
-    <>
-      <div id="app" className="h-full w-full bg-background">
-        <Page name="main" component={<MainView />} />
-        <Page name="settings" component={<SettingsPage />} />
-        <Page name="history" component={<HistoryPage />} />
-      </div>
-    </>
+    <div id="app" className="h-full w-full bg-background">
+      {user ? <MainView /> : <LoginPage />}
+    </div>
   );
 }
 

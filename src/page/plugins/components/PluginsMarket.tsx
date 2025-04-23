@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { parsePluginFromString } from "@/plugin/parser";
 import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
 import { PluginMarketProps } from "@/plugin/types";
-import { UserMananger } from "@/settings/User";
+import { UserMananger } from "@/services/user/User";
 import { useEffect, useState } from "react";
 import {
   TbCheck,

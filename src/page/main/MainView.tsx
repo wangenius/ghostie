@@ -1,90 +1,73 @@
-import { Agent, AgentStore } from "@/agent/Agent";
-import { LogoIcon } from "@/components/custom/LogoIcon";
-import { ImageElement } from "@/components/editor/elements/image";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { ChatHistory } from "@/model/chat/Message";
 import { Page } from "@/utils/PageRouter";
-import { LogicalSize, Window } from "@tauri-apps/api/window";
-import { Echoa } from "echo-state";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Window } from "@tauri-apps/api/window";
+import { useCallback, useEffect, useRef } from "react";
 import {
-  TbArrowLeft,
-  TbCapture,
+  TbBook2,
+  TbBox,
+  TbClock,
   TbDatabase,
-  TbDeviceAudioTape,
-  TbHistory,
-  TbPhoto,
+  TbMessage,
   TbScript,
+  TbServer,
   TbSettings,
   TbShape3,
-  TbSquareRoundedLetterL,
+  TbX,
 } from "react-icons/tb";
-import { Descendant } from "slate";
-import { ChatMessageItem } from "./MessageItem";
-import { TypeArea } from "./TypeArea";
+import { AgentsTab } from "../agent/AgentsTab";
+import { KnowledgeTab } from "../knowledge/KnowledgeTab";
+import { MCPTab } from "../mcp/MCPManagerTab";
+import { ModelsTab } from "../model/ModelsTab";
+import { PluginsTab } from "../plugins/PluginsTab";
+import { GeneralSettingsPage } from "../settings/GeneralSettingsPage";
+import WorkflowsTab from "../workflow/WorkflowsTab";
+import { DatabaseTab } from "../database/Database";
+import { SchedulesTab } from "../schedule/SchedulesTab";
 
-// 定义 MentionElement 接口
-interface MentionElement {
-  type: "mention";
-  id: string;
-  children: { text: string }[];
-}
+export type SettingsTab = (typeof SETTINGS_NAV_ITEMS)[number]["id"];
 
-export const plainText = (value: Descendant[]) =>
-  value
-    .map((node) => {
-      // 处理普通文本节点
-      if (!("type" in node)) {
-        return node.text;
-      }
-
-      // 处理包含子节点的节点
-      if ("children" in node) {
-        return node.children
-          .map((child) => {
-            if (child.type === "file") {
-              return `[file](${child.path})`;
-            }
-            if (child.type === "mention") {
-              return "";
-            }
-            if (child.type === "image") {
-              return "";
-            }
-            return "text" in child ? child.text : "";
-          })
-          .join("");
-      }
-
-      return "";
-    })
-    .join("")
-    .trim();
-
-/* 当前对话的agent */
-export const CurrentTalkAgent = new Echoa<Agent>(new Agent());
+export const SETTINGS_NAV_ITEMS = [
+  { id: "agents", label: "Agents", icon: TbMessage },
+  { id: "schedules", label: "Schedules", icon: TbClock },
+  { id: "database", label: "Database", icon: TbDatabase },
+  { id: "models", label: "Models", icon: TbBox },
+  { id: "plugins", label: "Plugins", icon: TbScript },
+  { id: "workflows", label: "Workflows", icon: TbShape3 },
+  { id: "knowledge", label: "Knowledge", icon: TbBook2 },
+  { id: "mcp", label: "MCP", icon: TbServer },
+  { id: "general", label: "General", icon: TbSettings },
+] as const;
 
 /* 主界面 */
 export function MainView() {
-  const agent = CurrentTalkAgent.use();
-  const [errorInfo, setErrorInfo] = useState<string>("");
-  const props = AgentStore.use((selector) => selector[agent.props.id]);
+  const { settingsTab } = Page.use();
   const list = ChatHistory.use();
-  const [loading, setLoading] = useState(false);
-  const message = list[agent.engine.model?.Message.id];
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<{ focus: () => void }>(null);
-  const [value, setValue] = useState<Descendant[]>([
-    {
-      type: "paragraph",
-      children: [
-        {
-          text: "",
-        },
-      ],
-    },
-  ]);
+  const renderContent = () => {
+    switch (settingsTab) {
+      case "agents":
+        return <AgentsTab />;
+      case "schedules":
+        return <SchedulesTab />;
+      case "models":
+        return <ModelsTab />;
+      case "plugins":
+        return <PluginsTab />;
+      case "knowledge":
+        return <KnowledgeTab />;
+      case "workflows":
+        return <WorkflowsTab />;
+      case "database":
+        return <DatabaseTab />;
+      case "mcp":
+        return <MCPTab />;
+      default:
+        return <GeneralSettingsPage />;
+    }
+  };
 
   // 当消息更新时滚动到底部
   useEffect(() => {
@@ -100,279 +83,51 @@ export function MainView() {
     }
   }, [list]);
 
-  useEffect(() => {
-    if (props?.id) {
-      Window.getByLabel("main").then((window) => {
-        window?.setSize(new LogicalSize(600, 800));
-        window?.center();
-      });
-    } else {
-      Window.getByLabel("main").then((window) => {
-        window?.setSize(new LogicalSize(600, 200));
-        window?.center();
-      });
-    }
-  }, [props]);
-
-  const handleSettingsClick = useCallback(() => {
-    Page.to("settings");
+  const handleCloseClick = useCallback(() => {
+    Window.getByLabel("main").then((window) => {
+      window?.hide();
+    });
   }, []);
-
-  const handleHistoryClick = useCallback(() => {
-    Page.to("history");
-  }, []);
-
-  const handleActionClick = useCallback(() => {
-    if (agent.props.id) {
-      if (loading) {
-        agent.stop();
-      } else {
-        CurrentTalkAgent.set(new Agent(), { replace: true });
-      }
-    }
-  }, [loading, agent]);
-
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key.toLowerCase() === "h") {
-        e.preventDefault();
-        Page.to("history");
-      }
-      if (e.ctrlKey && e.key.toLowerCase() === "o") {
-        e.preventDefault();
-        handleActionClick();
-      }
-      if (e.ctrlKey && e.key === ",") {
-        e.preventDefault();
-        Page.to("settings");
-      }
-    };
-
-    document.addEventListener("keydown", handleGlobalKeyDown);
-    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [handleActionClick]);
-
-  const handleSubmit = useCallback(
-    async (value: Descendant[]) => {
-      console.log(value);
-
-      if (loading) {
-        agent.stop();
-        return;
-      }
-
-      // 提取所有 mention 元素和图片元素
-      const mentions: { id: string; text: string }[] = [];
-      const images: { contentType: string; base64Image: string }[] = [];
-
-      // 遍历所有节点寻找 mention 和 image 类型的元素
-      const extractElements = (nodes: Descendant[]) => {
-        for (const node of nodes) {
-          // 判断节点是否为 mention 类型
-          if ("type" in node) {
-            if (node.type === "mention" && "id" in node) {
-              const mentionNode = node as MentionElement;
-              mentions.push({
-                id: mentionNode.id,
-                text: mentionNode.children[0].text,
-              });
-            } else if (node.type === "image") {
-              const imageNode = node as ImageElement;
-              images.push({
-                contentType: imageNode.contentType,
-                base64Image: imageNode.base64Image,
-              });
-            }
-          }
-
-          // 递归遍历子节点
-          if ("children" in node && Array.isArray(node.children)) {
-            extractElements(node.children);
-          }
-        }
-      };
-
-      extractElements(value);
-      console.log(mentions, images, props);
-
-      if (mentions.length === 0 && !props?.id) {
-        setErrorInfo("please select agent first");
-      }
-
-      // 如果有提取到 mention，进行处理
-      if (mentions.length > 1) {
-        setErrorInfo("current version only support one agent call");
-      }
-
-      if (props?.id) {
-        setErrorInfo("");
-        setValue([
-          {
-            type: "paragraph",
-            children: [{ text: "" }],
-          },
-        ]);
-        setLoading(true);
-        await CurrentTalkAgent.current.chat(plainText(value), { images });
-        setLoading(false);
-      } else {
-        const agent = await Agent.get(mentions[0].id);
-        CurrentTalkAgent.set(agent, { replace: true });
-        setErrorInfo("");
-        setValue([
-          {
-            type: "paragraph",
-            children: [{ text: "" }],
-          },
-        ]);
-        setLoading(true);
-        await agent.chat(plainText(value), { images });
-        setLoading(false);
-      }
-    },
-    [props, agent, loading],
-  );
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <div className="px-1.5 draggable">
-        <div className="mx-auto flex items-center justify-between h-10">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" className="no-drag rounded-full">
-              <LogoIcon className="w-4 h-4" />
-              {props?.name || "Ghostie"}
-            </Button>
-
-            {props?.id && (
-              <Button
-                variant="ghost"
-                className="no-drag rounded-full"
-                onClick={() => {
-                  agent.stop();
-                  CurrentTalkAgent.set(new Agent(), { replace: true });
-                }}
-              >
-                <TbArrowLeft className="w-4 h-4" />
-                Back
-              </Button>
-            )}
-            <span className="text-xs text-muted-foreground flex items-center gap-0.5">
-              {props?.models?.text?.name && (
-                <Button
-                  variant="ghost"
-                  className="rounded-[8px]"
-                  size="icon"
-                  title="text model"
-                >
-                  <TbSquareRoundedLetterL className="w-4 h-4" />
-                </Button>
-              )}
-              {props?.models?.image?.name && (
-                <Button
-                  variant="ghost"
-                  className="rounded-[8px]"
-                  size="icon"
-                  title="image model"
-                >
-                  <TbPhoto className="w-4 h-4" />
-                </Button>
-              )}
-              {props?.models?.vision?.name && (
-                <Button
-                  variant="ghost"
-                  className="rounded-[8px]"
-                  size="icon"
-                  title="vision model"
-                >
-                  <TbCapture className="w-4 h-4" />
-                </Button>
-              )}
-              {props?.models?.audio?.name && (
-                <Button
-                  variant="ghost"
-                  className="rounded-[8px]"
-                  size="icon"
-                  title="audio model"
-                >
-                  <TbDeviceAudioTape className="w-4 h-4" />
-                </Button>
-              )}
-              {props?.tools?.length > 0 && (
-                <Button
-                  variant="ghost"
-                  className="rounded-[8px]"
-                  size="icon"
-                  title="tool"
-                >
-                  <TbScript className="w-4 h-4" />
-                </Button>
-              )}
-              {props?.workflows?.length > 0 && (
-                <Button
-                  variant="ghost"
-                  className="rounded-[8px]"
-                  size="icon"
-                  title="workflow"
-                >
-                  <TbShape3 className="w-4 h-4" />
-                </Button>
-              )}
-              {props?.knowledges?.length > 0 && (
-                <Button
-                  variant="ghost"
-                  className="rounded-[8px]"
-                  size="icon"
-                  title="knowledge"
-                >
-                  <TbDatabase className="w-4 h-4" />
-                </Button>
-              )}
-            </span>
-            <small className="text-yellow-600">{errorInfo}</small>
-          </div>
-          <div className="flex items-center gap-0.5">
-            <Button
-              size={"icon"}
-              className="rounded-[8px]"
-              onClick={handleHistoryClick}
-            >
-              <TbHistory className="h-4 w-4" />
-            </Button>
-            <Button
-              size={"icon"}
-              className="rounded-[8px]"
-              onClick={handleSettingsClick}
-            >
-              <TbSettings className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+      <div className="px-1.5 draggable m-full flex items-center justify-between h-10">
+        <span className="text-xs pl-2 text-muted-foreground">
+          <img src="/icon.png" className="w-6 h-6" />
+        </span>
+        <Button
+          size={"icon"}
+          className="rounded-[8px]"
+          onClick={handleCloseClick}
+        >
+          <TbX className="h-4 w-4" />
+        </Button>
       </div>
-      <main className="flex-1 overflow-hidden flex flex-col justify-between">
-        {props?.id && (
-          <div
-            ref={messagesContainerRef}
-            className="px-4 w-full overflow-y-auto flex-1"
-          >
-            {message?.list.map((msg, index) => (
-              <ChatMessageItem
-                key={props.id + index}
-                message={msg}
-                lastMessageType={message?.list[index - 1]?.role}
-                nextMessageType={message?.list[index + 1]?.role}
+      <main className="flex-1 overflow-hidden flex justify-between p-3 pt-0 gap-3">
+        <div className="flex flex-col space-y-1">
+          {SETTINGS_NAV_ITEMS.map(({ id, icon: Icon }) => (
+            <Button
+              key={id}
+              onClick={() => Page.settings(id as SettingsTab)}
+              variant="ghost"
+              className={cn(
+                `group relative flex items-center justify-center gap-3 p-1 size-10 text-sm transition-all duration-200
+                    rounded-sm hover:bg-muted
+                  `,
+                settingsTab === id && "bg-muted-foreground/10",
+              )}
+            >
+              <Icon
+                className={`size-5 transition-colors ${
+                  settingsTab === id
+                    ? "text-primary"
+                    : "text-muted-foreground group-hover:text-foreground"
+                }`}
               />
-            ))}
-            <div className="h-4" ref={messagesEndRef} />
-          </div>
-        )}
-        <TypeArea
-          value={value}
-          onChange={setValue}
-          onSubmit={handleSubmit}
-          editorRef={editorRef}
-          currentAgent={props?.id}
-          loading={loading}
-        />
+            </Button>
+          ))}
+        </div>
+        <div className="flex-1 min-w-0 overflow-hidden">{renderContent()}</div>
       </main>
     </div>
   );

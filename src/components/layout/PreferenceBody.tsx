@@ -29,7 +29,7 @@ export function PreferenceBody({
     );
   }
   return (
-    <div className="flex-1 flex flex-col px-4 overflow-hidden h-full gap-3">
+    <div className="flex-1 flex flex-col overflow-hidden h-full gap-3">
       <div className="flex items-center justify-between">{header}</div>
       <div
         className={cn(

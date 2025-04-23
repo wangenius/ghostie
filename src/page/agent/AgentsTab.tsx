@@ -1,5 +1,4 @@
 import { Agent, AgentStore } from "@/agent/Agent";
-import { AgentProps } from "@/agent/types/agent";
 import { dialog } from "@/components/custom/DialogModal";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
@@ -12,41 +11,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cmd } from "@utils/shell";
+import Avatar from "boring-avatars";
 import { Echo } from "echo-state";
-import { useEffect, useState } from "react";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
-import {
-  TbCapture,
-  TbDatabase,
-  TbDeviceAudioTape,
-  TbDownload,
-  TbGhost3,
-  TbPhoto,
-  TbPlus,
-  TbScript,
-  TbShape3,
-  TbSquareRoundedLetterL,
-  TbUpload,
-} from "react-icons/tb";
-import { AgentEditor } from "./AgentEditor";
+import { TbDownload, TbGhost3, TbPlus, TbUpload } from "react-icons/tb";
+import { AgentChat } from "./AgentChat";
 import { AgentsMarket } from "./AgentsMarket";
 
-export const CurrentSelectedAgent = new Echo<string>("");
+export const ActiveAgents = new Map<string, Agent>();
+export const CurrentAgent = new Echo<string>("");
+export const LoadingAgents = new Echo<Record<string, boolean>>({});
 
 /** AgentsTab */
 export function AgentsTab() {
-  const selectedId = CurrentSelectedAgent.use();
+  const activeAgents = CurrentAgent.use();
   const agents = AgentStore.use();
-  const [agent, setAgent] = useState<Agent>(new Agent());
-
-  useEffect(() => {
-    if (selectedId) {
-      Agent.get(selectedId).then((agent) => {
-        setAgent(agent);
-      });
-    }
-  }, [selectedId]);
-  /* Current Agent */
+  const activeAgent = ActiveAgents.get(activeAgents);
 
   /* 创建机器人 */
   const handleCreateAgent = async () => {
@@ -54,22 +34,6 @@ export function AgentsTab() {
       await Agent.create();
     } catch (error) {
       console.error("add agent error:", error);
-    }
-  };
-
-  const handleDeleteAgent = async (agent: AgentProps) => {
-    const answer = await cmd.confirm(
-      `Are you sure you want to delete the assistant "${agent.name}"?`,
-    );
-    if (answer) {
-      try {
-        Agent.delete(agent.id);
-        if (selectedId === agent.id) {
-          CurrentSelectedAgent.reset();
-        }
-      } catch (error) {
-        console.error("delete agent error:", error);
-      }
     }
   };
 
@@ -131,7 +95,7 @@ export function AgentsTab() {
             className="bg-muted-foreground/10 hover:bg-muted-foreground/20"
           >
             <PiStorefrontDuotone className="w-4 h-4" />
-            Agents Market
+            数字员工市场
           </Button>
         }
         right={
@@ -146,13 +110,11 @@ export function AgentsTab() {
                   <PiDotsThreeBold className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={handleImport}>
                   <TbUpload className="w-4 h-4 mr-2" />
                   <span>Import</span>
                 </DropdownMenuItem>
-
                 <DropdownMenuItem onClick={handleExport}>
                   <TbDownload className="w-4 h-4 mr-2" />
                   <span>Export</span>
@@ -170,96 +132,36 @@ export function AgentsTab() {
             return {
               id: agent.id,
               title: (
-                <span className="flex items-center">
-                  <span>{agent.name || "Unnamed Agent"}</span>
-                  <small className="ml-2 text-[12px] text-muted bg-primary/80 px-2 rounded-xl">
-                    {agent.engine}
-                  </small>
+                <span className="flex items-center space-x-3">
+                  <Avatar
+                    size={32}
+                    name={agent.id}
+                    variant="beam"
+                    colors={[
+                      "#92A1C6",
+                      "#146A7C",
+                      "#F0AB3D",
+                      "#C271B4",
+                      "#C20D90",
+                    ]}
+                    square={false}
+                  />
+                  <span>{agent.name || "未命名助手"}</span>
                 </span>
               ),
-              description: (
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  {agent.models?.text?.name && (
-                    <Button
-                      variant="ghost"
-                      className="rounded-[8px]"
-                      size="icon"
-                      title="text model"
-                    >
-                      <TbSquareRoundedLetterL className="w-4 h-4" />
-                    </Button>
-                  )}
-                  {agent.models?.image?.name && (
-                    <Button
-                      variant="ghost"
-                      className="rounded-[8px]"
-                      size="icon"
-                      title="image model"
-                    >
-                      <TbPhoto className="w-4 h-4" />
-                    </Button>
-                  )}
-                  {agent.models?.vision?.name && (
-                    <Button
-                      variant="ghost"
-                      className="rounded-[8px]"
-                      size="icon"
-                      title="vision model"
-                    >
-                      <TbCapture className="w-4 h-4" />
-                    </Button>
-                  )}
-                  {agent.models?.audio?.name && (
-                    <Button
-                      variant="ghost"
-                      className="rounded-[8px]"
-                      size="icon"
-                      title="audio model"
-                    >
-                      <TbDeviceAudioTape className="w-4 h-4" />
-                    </Button>
-                  )}
-                  {agent.tools.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      className="rounded-[8px]"
-                      size="icon"
-                      title="tool"
-                    >
-                      <TbScript className="w-4 h-4" />
-                    </Button>
-                  )}
-                  {agent.workflows?.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      className="rounded-[8px]"
-                      size="icon"
-                      title="workflow"
-                    >
-                      <TbShape3 className="w-4 h-4" />
-                    </Button>
-                  )}
-                  {agent.knowledges?.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      className="rounded-[8px]"
-                      size="icon"
-                      title="knowledge"
-                    >
-                      <TbDatabase className="w-4 h-4" />
-                    </Button>
-                  )}
-                </span>
-              ),
-              onClick: () => {
-                CurrentSelectedAgent.set(agent.id);
+              onClick: async () => {
+                if (ActiveAgents.has(agent.id)) {
+                } else {
+                  ActiveAgents.set(agent.id, await Agent.get(agent.id));
+                }
+                CurrentAgent.set(agent.id);
               },
-              actived: selectedId === agent.id,
-              onRemove: () => handleDeleteAgent(agent),
+              actived: activeAgent?.props.id === agent.id,
+              noRemove: true,
             };
           })
           .filter((item) => item !== null)}
-        emptyText="Please select an assistant or click the add button to create a new assistant"
+        emptyText="请选择一个助手或点击添加按钮创建新助手"
         EmptyIcon={TbGhost3}
       />
 
@@ -267,9 +169,14 @@ export function AgentsTab() {
       <PreferenceBody
         emptyText="Please select an assistant or click the add button to create a new assistant"
         EmptyIcon={TbGhost3}
-        isEmpty={!selectedId}
+        isEmpty={!activeAgent?.props.id}
       >
-        <AgentEditor agent={agent} />
+        {activeAgent && (
+          <AgentChat
+            agent={activeAgent}
+            close={() => ActiveAgents.delete(activeAgent.props.id)}
+          />
+        )}
       </PreferenceBody>
     </PreferenceLayout>
   );

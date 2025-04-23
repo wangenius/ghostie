@@ -1,42 +1,16 @@
-import { SETTINGS_NAV_ITEMS, SettingsTab } from "@/page/settings/SettingsPage";
-import { LogicalSize, Window } from "@tauri-apps/api/window";
+import { SETTINGS_NAV_ITEMS, SettingsTab } from "@/page/main/MainView";
 import { Echo } from "echo-state";
 import { Fragment, ReactNode } from "react";
 
 const PageStore = new Echo<{
-  page: "main" | "history" | "settings";
   settingsTab: SettingsTab;
   data: Record<string, any>;
 }>({
-  page: "main",
   settingsTab: SETTINGS_NAV_ITEMS[0].id,
   data: {},
 }).localStorage({ name: "page" });
 
-export const Page = ({
-  name,
-  component,
-}: {
-  name: "main" | "history" | "settings";
-  component: ReactNode;
-}) => {
-  const { page } = PageStore.use();
-  if (page !== name) return null;
-  if (name === "main") {
-    Window.getByLabel("main").then((window) => {
-      window?.setSize(new LogicalSize(600, 200));
-      window?.center();
-      window?.setResizable(false);
-      window?.setMinSize(new LogicalSize(600, 200));
-      window?.setMaxSize(new LogicalSize(600, 200));
-    });
-  } else {
-    Window.getByLabel("main").then((window) => {
-      window?.setSize(new LogicalSize(1200, 800));
-      window?.center();
-      window?.setResizable(true);
-    });
-  }
+export const Page = ({ component }: { component: ReactNode }) => {
   return <Fragment>{component}</Fragment>;
 };
 

@@ -5,8 +5,37 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { memo } from "react";
 import { Descendant } from "slate";
-import { plainText } from "./MainView";
 import { TbCornerRightUp, TbLoader } from "react-icons/tb";
+export const plainText = (value: Descendant[]) =>
+  value
+    .map((node) => {
+      // 处理普通文本节点
+      if (!("type" in node)) {
+        return node.text;
+      }
+
+      // 处理包含子节点的节点
+      if ("children" in node) {
+        return node.children
+          .map((child) => {
+            if (child.type === "file") {
+              return `[file](${child.path})`;
+            }
+            if (child.type === "mention") {
+              return "";
+            }
+            if (child.type === "image") {
+              return "";
+            }
+            return "text" in child ? child.text : "";
+          })
+          .join("");
+      }
+
+      return "";
+    })
+    .join("")
+    .trim();
 
 export const TypeArea = memo(
   (props: {
@@ -20,11 +49,11 @@ export const TypeArea = memo(
     loading?: boolean;
   }) => {
     return (
-      <div className="flex flex-col relative h-full max-h-[160px]">
+      <div className="flex flex-col relative h-[120px] border rounded-2xl">
         <div
-          className={cn("flex flex-1 flex-col relative overflow-y-auto px-3", {
-            "bg-background border-t border-border pt-3": !!props.currentAgent,
-          })}
+          className={cn(
+            "flex flex-1 flex-col relative overflow-y-auto px-3 py-2",
+          )}
         >
           <SlateEditor
             value={props.value}

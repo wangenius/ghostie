@@ -1,7 +1,7 @@
 import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserMananger } from "@/settings/User";
+import { UserMananger } from "@/services/user/User";
 import { cmd } from "@/utils/shell";
 import { supabase } from "@/utils/supabase";
 import { useEffect, useState } from "react";

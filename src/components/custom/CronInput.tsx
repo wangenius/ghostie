@@ -4,6 +4,8 @@ import { CronExpressionParser } from "cron-parser";
 import { memo, useCallback, useState } from "react";
 import { TbInfoCircle } from "react-icons/tb";
 import { Tickie } from "tickie";
+import { Drawer } from "../ui/drawer";
+import { Label } from "../ui/label";
 
 /**
  * Cron表达式格式说明：
@@ -482,6 +484,16 @@ export const CronInput = memo(
 
     return (
       <div className="space-y-2">
+        <div className="flex items-center gap-2 justify-between">
+          <Label>Cron 表达式</Label>
+          <div
+            onClick={() => setOpen(true)}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:cursor-pointer hover:text-primary hover:underline transition-colors rounded-md hover:bg-muted/50"
+          >
+            <TbInfoCircle className="h-4 w-4" />
+            <span>Cron documentation</span>
+          </div>
+        </div>
         <div className="space-y-2">
           <Input
             value={customExpression}
@@ -510,15 +522,7 @@ export const CronInput = memo(
           </div>
         )}
 
-        <div className="bg-muted text-xs text-muted-foreground space-y-4 p-3 rounded-lg">
-          <div
-            onClick={() => setOpen((prev) => !prev)}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:cursor-pointer hover:text-primary hover:underline transition-colors rounded-md hover:bg-muted/50"
-          >
-            <TbInfoCircle className="h-4 w-4" />
-            <span>Cron expression format description</span>
-          </div>
-
+        <Drawer open={open} onOpenChange={setOpen} className="w-[400px]">
           <div className={cn("space-y-3", open ? "block" : "hidden")}>
             <div>
               <h4 className="font-medium text-foreground mb-2">
@@ -559,7 +563,10 @@ export const CronInput = memo(
                     char: "?",
                     desc: "Represents no specified value (same as *)",
                   },
-                  { char: ",", desc: "Represents multiple values, e.g. 1,3,5" },
+                  {
+                    char: ",",
+                    desc: "Represents multiple values, e.g. 1,3,5",
+                  },
                   { char: "-", desc: "Represents a range, e.g. 1-5" },
                   { char: "/", desc: "Represents a step, e.g. */5" },
                   {
@@ -629,7 +636,7 @@ export const CronInput = memo(
               </div>
             </div>
           </div>
-        </div>
+        </Drawer>
       </div>
     );
   },

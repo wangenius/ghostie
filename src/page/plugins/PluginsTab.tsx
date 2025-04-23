@@ -257,7 +257,7 @@ export function PluginsTab() {
       <motion.div
         layout
         className={cn("flex flex-1 flex-col h-full overflow-hidden", {
-          "fixed inset-0 top-12 z-50 bg-background h-auto": isFullscreen,
+          "fixed inset-3 top-10 z-50 bg-background h-auto": isFullscreen,
         })}
         initial={false}
         animate={{
@@ -274,9 +274,7 @@ export function PluginsTab() {
           emptyText="Please select a plugin or click the add button to create a new plugin"
           EmptyIcon={TbPlug}
           isEmpty={!props?.id}
-          className={cn("rounded-xl flex-1", {
-            "mb-4": isFullscreen,
-          })}
+          className={cn("rounded-xl flex-1")}
           header={
             <div className="flex items-center justify-between w-full">
               <h3 className="text-base font-semibold">

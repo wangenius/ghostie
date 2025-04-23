@@ -49,14 +49,29 @@ export class Message implements HistoryItem {
    * @returns 模型实例
    */
   async switch(id: string): Promise<this> {
+    // 保存之前的ID，用于判断是否发生切换
+    const previousId = this.id;
+    // 更新当前ID
     this.id = id;
+
     const history = await ChatHistory.getCurrent();
     if (!history) {
       throw new Error("History not found");
     }
-    this.system = history[id].system;
-    this.list = history[id].list;
-    this.agent = history[id].agent;
+
+    // 如果历史记录中存在该ID的消息，则加载它
+    if (history[id]) {
+      this.system = history[id].system;
+      this.list = history[id].list;
+      this.agent = history[id].agent;
+    }
+    // 如果历史记录中不存在该ID的消息，并且是新ID（不是重复调用），则清空消息列表
+    else if (previousId !== id) {
+      // 保持system和agent不变，只清空消息列表
+      this.list = [];
+    }
+    // 如果是相同ID的重复调用，则保持当前状态不变
+
     return this;
   }
 

@@ -1,15 +1,7 @@
 import { Agent, AgentStore } from "@/agent/Agent";
 import { EngineManager } from "@/agent/engine/EngineManager";
-import { dialog } from "@/components/custom/DialogModal";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
-import { Button } from "@/components/ui/button";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -19,14 +11,11 @@ import { ImageModelManager } from "@/model/image/ImageModelManager";
 import { VisionModelManager } from "@/model/vision/VisionModelManager";
 import { PluginStore } from "@/plugin/ToolPlugin";
 import { PluginProps, ToolProps } from "@/plugin/types";
+import { SkillManager } from "@/skills/SkillManager";
 import { WorkflowsStore } from "@/workflow/Workflow";
-import { useCallback } from "react";
-import { PiDotsThreeBold } from "react-icons/pi";
-import { TbListSearch, TbUpload } from "react-icons/tb";
-import { toast } from "sonner";
+import { TbListSearch } from "react-icons/tb";
 import { MCPTool, MCP_Actived } from "../mcp/MCP";
 import { SettingItem } from "../settings/components/SettingItem";
-import { SkillManager } from "@/skills/SkillManager";
 
 export const AgentEditor = ({ agent }: { agent: Agent }) => {
   const list = KnowledgesStore.use();
@@ -37,30 +26,13 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
   const actived_mcps = MCP_Actived.use();
   const agents = AgentStore.use();
 
-  // 上传机器人
-  const handleUpload = useCallback(async () => {
-    if (!props) return;
-
-    dialog.confirm({
-      title: "Upload Agent",
-      content: "Are you sure you want to upload this agent?",
-      onOk: async () => {
-        try {
-          await agent.uploadToMarket();
-          toast.success("Successfully uploaded agent to market");
-        } catch (error) {
-          toast.error(`Upload agent failed: ${error}`);
-        }
-      },
-    });
-  }, [props]);
-
   if (!props) return null;
 
   return (
     <div key={props.id} className="flex-1 overflow-y-auto">
-      <div className="sticky top-0 z-10 bg-background flex items-center justify-between px-8 gap-4 overflow-hidden flex-col">
-        <div className="flex items-center justify-between w-full gap-4">
+      {/* 主内容区 */}
+      <div className="px-8 py-8">
+        <div className="space-y-6">
           <Input
             type="text"
             defaultValue={props?.name}
@@ -70,27 +42,7 @@ export const AgentEditor = ({ agent }: { agent: Agent }) => {
               })
             }
             placeholder="Assistant Name"
-            className="text-xl border-none bg-transparent focus-visible:ring-0"
           />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <PiDotsThreeBold className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleUpload}>
-                <TbUpload className="w-4 h-4 mr-2" />
-                Upload Agent
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {/* 主内容区 */}
-      <div className="px-8 py-8">
-        <div className="space-y-6">
           <DrawerSelector
             title="Agent Mode"
             value={[props.engine]}

@@ -3,8 +3,6 @@ import { TbCommand, TbKeyboard } from "react-icons/tb";
 export default function ShortcutsTab() {
   return (
     <div className="space-y-6 p-4">
-      <h1 className="text-xl font-medium mb-6">Shortcut Settings</h1>
-
       <div className="space-y-4">
         <div className="text-sm font-medium text-muted-foreground mb-2">
           Global Shortcuts

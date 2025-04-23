@@ -9,7 +9,7 @@ import {
   AgentNodeConfig,
   WorkflowNode,
 } from "../page/workflow/types/nodes";
-import { Scheduler } from "./Scheduler";
+import { Scheduler } from "../page/schedule/Scheduler";
 import { WORKFLOW_BODY_DATABASE, WORKFLOW_DATABASE } from "@/assets/const";
 import { WorkflowExecutor } from "./execute/WorkflowExecutor";
 import { supabase } from "@/utils/supabase";
