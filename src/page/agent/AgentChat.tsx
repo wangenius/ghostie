@@ -1,5 +1,4 @@
 import { Agent } from "@/agent/Agent";
-import { CONTEXT_RUNTIME_DATABASE } from "@/assets/const";
 import { dialog } from "@/components/custom/DialogModal";
 import { ImageElement } from "@/components/editor/elements/image";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AgentMarket } from "@/market/agents";
-import { AgentStore } from "@/store/agents";
+import {
+  AgentStore,
+  CurrentAgentContextRuntime,
+  LoadingAgents,
+} from "@/store/agents";
 import { cmd } from "@/utils/shell";
 import Avatar from "boring-avatars";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -21,7 +24,6 @@ import { toast } from "sonner";
 import { ChatMessageItem } from "../main/MessageItem";
 import { plainText, TypeArea } from "../main/TypeArea";
 import { AgentEditor } from "./AgentEditor";
-import { ContextRuntimesEchos, LoadingAgents } from "./AgentsTab";
 
 // 定义 MentionElement 接口
 interface MentionElement {
@@ -51,9 +53,7 @@ export const AgentChat = ({
   ]);
 
   // 使用自定义的ContextRuntime实例
-  const context = ContextRuntimesEchos.use();
-
-  console.log(context);
+  const context = CurrentAgentContextRuntime.use();
 
   // 获取当前Agent的loading状态
   const loading = loadingState[agent.props.id] || false;
@@ -283,8 +283,11 @@ export const AgentChat = ({
                     </p>
                   </div>
                 )}
+
                 {/* 显示更多按钮 */}
-                {Object.values(context).length > historyLimit && (
+                {Object.values(context).filter(
+                  (item) => item.id !== agent.context.runtime.info.id,
+                ).length > historyLimit && (
                   <div className="flex justify-center mb-4">
                     <Button
                       variant="outline"
@@ -297,7 +300,9 @@ export const AgentChat = ({
                   </div>
                 )}
 
+                {/* 历史对话 */}
                 {Object.values(context)
+                  .filter((item) => item.id !== agent.context.runtime.info.id)
                   ?.sort(
                     (a, b) =>
                       new Date(b.created_at).getTime() -
@@ -338,7 +343,7 @@ export const AgentChat = ({
                   <div className="flex items-center gap-2 mb-2">
                     <div className="h-[1px] flex-1 bg-border"></div>
                     <span className="text-xs text-muted-foreground font-mono">
-                      当前对话 -{" "}
+                      当前对话 -
                       {new Date(
                         context[agent.context.runtime.info.id].created_at,
                       ).toLocaleString("zh-CN", {

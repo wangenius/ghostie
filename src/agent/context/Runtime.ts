@@ -1,7 +1,7 @@
 import { MessageItem } from "@/model/types/chatModel";
-import { ContextRuntimesEchos } from "@/page/agent/AgentsTab";
 import { gen } from "@/utils/generator";
 import { Agent } from "../Agent";
+import { CurrentAgentContextRuntime } from "@/store/agents";
 
 export interface ContextRuntimeProps {
   id: string;
@@ -32,8 +32,8 @@ export class ContextRuntime {
 
   // 属性变化时自动调用的方法
   protected sync() {
-    if (ContextRuntimesEchos.getKeyName() === this.agent.props.id) {
-      ContextRuntimesEchos.set({
+    if (CurrentAgentContextRuntime.getKeyName() === this.agent.props.id) {
+      CurrentAgentContextRuntime.set({
         [this.props.id]: { ...this.props, updated_at: Date.now() },
       });
     }

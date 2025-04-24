@@ -1,5 +1,5 @@
 /**
- * Echo 状态管理类
+ * Echoi 状态管理类
  * 一个轻量级的状态管理库，支持多种存储模式和状态管理功能
  *
  * 特性：
@@ -10,13 +10,11 @@
  * - 支持选择器
  */
 import { useEffect, useState } from "react";
-import { IndexedDBAdapter } from "../storage/IndexedDBAdapter";
-import { LocalStorageAdapter } from "../storage/LocalStorageAdapter";
+import { IndexedDBAdapter } from "./IndexedDBAdapter";
 import {
   IndexedDBConfig,
   SetOptions,
   StateUpdater,
-  StorageAdapter,
   StorageConfig,
 } from "./types";
 
@@ -34,7 +32,7 @@ type Listener<T> = (state: T) => void;
  * - 支持状态订阅
  * - 支持选择器
  */
-export class Echo<T extends Record<string, any> | null | string | number> {
+export class Echoi<T extends Record<string, any> | null | string | number> {
   /** 当前状态 */
   protected state: T;
   /** 初始化完成的Promise */
@@ -44,7 +42,7 @@ export class Echo<T extends Record<string, any> | null | string | number> {
   /** 监听器集合 */
   protected listeners: Set<Listener<T>> = new Set();
   /** 存储适配器 */
-  protected storageAdapter: StorageAdapter<T> | null = null;
+  protected storageAdapter: IndexedDBAdapter<T> | null = null;
   /** 跨窗口同步通道 */
   protected syncChannel: BroadcastChannel | null = null;
   /** 是否正在恢复状态 */
@@ -61,16 +59,19 @@ export class Echo<T extends Record<string, any> | null | string | number> {
    */
   public static get<
     T extends Record<string, any> | null | string | number,
-  >(config: { database: string; objectstore?: string; name: string }): Echo<T> {
+  >(config: {
+    database: string;
+    objectstore?: string;
+    name: string;
+  }): Echoi<T> {
     // 当 name 为空字符串时，使用临时存储
     if (config.name === "") {
-      return new Echo<T>(null as T).temporary();
+      return new Echoi<T>(null as T).temporary();
     }
-    return new Echo<T>(null as T).indexed({
+    return new Echoi<T>(null as T).indexed({
       database: config.database,
       object: config.objectstore || "echo-state",
       name: config.name,
-      sync: true,
     });
   }
 
@@ -492,26 +493,6 @@ export class Echo<T extends Record<string, any> | null | string | number> {
       .catch((error) => {
         console.error("Echo Core: 切换存储键名失败", error);
       });
-
-    return this;
-  }
-
-  /**
-   * 使用 LocalStorage 模式
-   * @param config 存储配置
-   */
-  public localStorage(config: StorageConfig): this {
-    // 当 name 为空字符串时，使用临时存储
-    if (config.name === "") {
-      return this.temporary();
-    }
-    this.cleanup();
-    this.storageAdapter = new LocalStorageAdapter<T>(config);
-    this.readyPromise = this.hydrate();
-
-    if (config.sync) {
-      this.initSync(config.name);
-    }
 
     return this;
   }

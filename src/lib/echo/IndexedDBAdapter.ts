@@ -1,4 +1,4 @@
-import { StorageAdapter, IndexedDBConfig } from "../core/types";
+import { StorageAdapter, IndexedDBConfig } from "./types";
 
 /**
  * IndexedDB 存储适配器

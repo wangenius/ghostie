@@ -10,26 +10,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Echo } from "@/lib/echo/core/Echo";
-import { AgentStore } from "@/store/agents";
+import {
+  ActiveAgents,
+  AgentStore,
+  CurrentAgentContextRuntime,
+  CurrentAgent,
+} from "@/store/agents";
 import { cmd } from "@utils/shell";
 import Avatar from "boring-avatars";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 import { TbDownload, TbGhost3, TbPlus, TbUpload } from "react-icons/tb";
 import { AgentChat } from "./AgentChat";
 import { AgentsMarket } from "./AgentsMarket";
-import { ContextRuntimeProps } from "@/agent/context/Runtime";
 import { CONTEXT_RUNTIME_DATABASE } from "@/assets/const";
-
-export const ActiveAgents = new Echo<Record<string, Agent>>({});
-export const CurrentAgent = new Echo<string>("");
-export const LoadingAgents = new Echo<Record<string, boolean>>({});
-export const ContextRuntimesEchos = new Echo<
-  Record<string, ContextRuntimeProps>
->({}).indexed({
-  database: CONTEXT_RUNTIME_DATABASE,
-  name: "",
-});
 
 /** AgentsTab */
 export function AgentsTab() {
@@ -166,7 +159,7 @@ export function AgentsTab() {
                     (await AgentStore.getCurrent())[agent.id],
                   );
                 }
-                await ContextRuntimesEchos.temporary()
+                await CurrentAgentContextRuntime.temporary()
                   .indexed({
                     database: CONTEXT_RUNTIME_DATABASE,
                     name: agent.id || "",
