@@ -1,4 +1,4 @@
-import { AgentModelProps } from "@/agent/types/agent";
+import { ModelItem } from "@/agent/types/agent";
 import { ModelKey } from "../key/ModelKey";
 import { ModelProvider, ModelProviderList } from "../types/model";
 import { AudioModel } from "./AudioModel";
@@ -47,9 +47,7 @@ export class AudioModelManager {
     return this.providers[provider];
   }
 
-  static getModel(
-    { provider, name }: AgentModelProps = { provider: "", name: "" },
-  ) {
+  static getModel({ provider, name }: ModelItem = { provider: "", name: "" }) {
     return this.providers[provider]?.models[name];
   }
 

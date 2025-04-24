@@ -1,11 +1,11 @@
-import { Agent, AgentStore } from "@/agent/Agent";
+import { Agent } from "@/agent/Agent";
 import { EngineManager } from "@/agent/engine/EngineManager";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { KnowledgeMeta, KnowledgesStore } from "@/knowledge/Knowledge";
+import { KnowledgeMeta } from "@/knowledge/Knowledge";
 import { ChatModelManager } from "@/model/chat/ChatModelManager";
 import { ImageModelManager } from "@/model/image/ImageModelManager";
 import { VisionModelManager } from "@/model/vision/VisionModelManager";
@@ -16,6 +16,8 @@ import { WorkflowsStore } from "@/workflow/Workflow";
 import { TbListSearch } from "react-icons/tb";
 import { MCPTool, MCP_Actived } from "../mcp/MCP";
 import { SettingItem } from "../settings/components/SettingItem";
+import { AgentStore } from "@/store/agents";
+import { KnowledgesStore } from "@/store/knowledges";
 
 export const AgentEditor = ({ agent }: { agent: Agent }) => {
   const list = KnowledgesStore.use();

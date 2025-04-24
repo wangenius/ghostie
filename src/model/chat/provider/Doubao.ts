@@ -19,7 +19,7 @@ export class Doubao extends ChatModel {
    * @param body 基础请求体
    * @returns 处理后的请求体
    */
-  protected prepareRequestBody(
+  protected RequestBodyAdapter(
     body: ChatModelRequestBody,
   ): ChatModelRequestBody {
     // 豆包使用OpenAI兼容的API格式，可能需要一些特殊处理

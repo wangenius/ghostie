@@ -1,4 +1,4 @@
-import { AgentModelProps } from "@/agent/types/agent";
+import { ModelItem } from "@/agent/types/agent";
 import {
   ImageModelGetResponse,
   ImageModelGetResultError,
@@ -29,7 +29,7 @@ export class ImageModel {
    * @param modelwithprovider 模型名称 openai:dall-e-3
    * @returns 模型实例
    */
-  static create(model?: AgentModelProps) {
+  static create(model?: ModelItem) {
     if (model?.provider) {
       const provider = ImageModelManager.get(model.provider);
       if (!provider) {

@@ -2,7 +2,9 @@ import { AgentMarketProps } from "@/agent/types/agent";
 import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AgentMarket } from "@/market/agents";
 import { UserMananger } from "@/services/user/User";
+import { AgentStore } from "@/store/agents";
 import Avatar from "boring-avatars";
 import { useEffect, useState } from "react";
 import {
@@ -16,7 +18,6 @@ import {
   TbTrash,
 } from "react-icons/tb";
 import { toast } from "sonner";
-import { Agent, AgentStore } from "../../agent/Agent";
 
 export const AgentsMarket = () => {
   const [agents, setAgents] = useState<AgentMarketProps[]>([]);
@@ -35,7 +36,7 @@ export const AgentsMarket = () => {
   const fetchAgents = async (page = 1) => {
     try {
       setLoading(true);
-      const data = await Agent.fetchMarketData(page, 10);
+      const data = await AgentMarket.fetchMarketData(page, 10);
       setAgents(data);
       setCurrentPage(page);
       // 如果获取的项目数少于itemsPerPage，说明没有下一页
@@ -51,7 +52,7 @@ export const AgentsMarket = () => {
   const handleInstall = async (agent: AgentMarketProps) => {
     try {
       setInstalling(agent.id);
-      await Agent.installFromMarket(agent);
+      await AgentMarket.installFromMarket(agent);
       toast.success(`Successfully installed agent: ${agent.name}`);
     } catch (error) {
       console.error("Install agent failed:", error);
@@ -65,7 +66,7 @@ export const AgentsMarket = () => {
   const handleDelete = async (agent: AgentMarketProps) => {
     try {
       setDeleting(agent.id);
-      await Agent.uninstallFromMarket(agent.id);
+      await AgentMarket.uninstallFromMarket(agent.id);
 
       // 更新当前页数据
       fetchAgents(currentPage);

@@ -1,24 +1,27 @@
+import { ContextRuntimeProps } from "@/agent/context/Runtime";
+import { CONTEXT_RUNTIME_DATABASE } from "@/assets/const";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChatHistory, HistoryItem, Message } from "@/model/chat/Message";
+import { Echo } from "echo-state";
 import { TbClock, TbMessageCircle, TbTrash } from "react-icons/tb";
 
 export const HistoryPage = ({
   onClick,
   agent,
 }: {
-  onClick: (item: HistoryItem) => void;
+  onClick: (item: ContextRuntimeProps) => void;
   agent: string;
 }) => {
-  const history = ChatHistory.use();
-
   return (
     <div className="flex flex-col h-full">
       <Button
         variant="destructive"
         className="flex-none"
         onClick={() => {
-          Message.clearAll();
+          Echo.get<Record<string, ContextRuntimeProps>>({
+            database: CONTEXT_RUNTIME_DATABASE,
+            name: agent,
+          }).discard();
         }}
       >
         <TbTrash className="h-4 w-4" />
@@ -29,8 +32,8 @@ export const HistoryPage = ({
         .filter(([_, value]) => value.agent === agent)
         .sort(
           (a, b) =>
-            new Date(b[1].system.created_at).getTime() -
-            new Date(a[1].system.created_at).getTime(),
+            new Date(b[1].created_at).getTime() -
+            new Date(a[1].created_at).getTime(),
         )
         .map(([key, value]) => (
           <div
@@ -47,7 +50,7 @@ export const HistoryPage = ({
               <div className="flex items-center gap-2 text-muted-foreground">
                 <TbClock className="h-4 w-4" />
                 <span className="text-xs">
-                  {new Date(value.system.created_at).toLocaleString("zh-CN", {
+                  {new Date(value.created_at).toLocaleString("zh-CN", {
                     month: "2-digit",
                     day: "2-digit",
                     hour: "2-digit",
@@ -56,9 +59,14 @@ export const HistoryPage = ({
                 </span>
               </div>
               <Button
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation();
-                  Message.deleteHistory(key);
+                  const echo = Echo.get<Record<string, ContextRuntimeProps>>({
+                    database: CONTEXT_RUNTIME_DATABASE,
+                    name: agent,
+                  });
+                  await echo.ready();
+                  echo.delete(key);
                 }}
                 variant="ghost"
                 size="icon"
@@ -68,11 +76,11 @@ export const HistoryPage = ({
               </Button>
             </div>
             <h3 className="text-xs my-1 font-medium line-clamp-2 ">
-              {value.list[0]?.content}
+              {value.messages[0]?.content}
             </h3>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <TbMessageCircle className="h-3.5 w-3.5" />
-              <span>{value.list.length} messages</span>
+              <span>{value.messages.length} messages</span>
             </div>
           </div>
         ))}

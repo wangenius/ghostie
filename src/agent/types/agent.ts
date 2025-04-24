@@ -1,5 +1,5 @@
 /** 模型配置*/
-export interface AgentModelProps {
+export interface ModelItem {
   /* 模型提供商 */
   provider: string;
   /* 模型名称 */
@@ -37,7 +37,7 @@ export interface AgentMCPProps {
  * @param model 模型
  * @param plugins 插件
  */
-export interface AgentProps {
+export interface AgentInfos {
   /* 助手id */
   id: string;
   /* 名称 */
@@ -52,7 +52,7 @@ export interface AgentProps {
   engine?: string;
   /* 模型能力 */
   models?: {
-    [key in ModelType]?: AgentModelProps;
+    [key in ModelType]?: ModelItem;
   };
   /* 可调用的工具 */
   tools: AgentToolProps[];
@@ -98,5 +98,18 @@ export interface AgentMarketProps {
   /* 助手描述 */
   description: string;
   /* 助手配置 */
-  body: AgentProps;
+  body: AgentInfos;
 }
+
+export const DEFAULT_AGENT: AgentInfos = {
+  id: "",
+  name: "",
+  system: "",
+  engine: "react",
+  tools: [],
+  mcps: [],
+  knowledges: [],
+  workflows: [],
+  agents: [],
+  skills: [],
+};

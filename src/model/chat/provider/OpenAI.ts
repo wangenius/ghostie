@@ -19,7 +19,7 @@ export class OpenAI extends ChatModel {
    * @param body 基础请求体
    * @returns 处理后的请求体
    */
-  protected prepareRequestBody(
+  protected RequestBodyAdapter(
     body: ChatModelRequestBody,
   ): ChatModelRequestBody {
     return body;

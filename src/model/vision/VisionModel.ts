@@ -1,5 +1,5 @@
 /** 视觉模型 */
-import { AgentModelProps } from "@/agent/types/agent";
+import { ModelItem } from "@/agent/types/agent";
 import {
   VisionMessage as VisionMessageType,
   VisionModelInfo,
@@ -34,7 +34,7 @@ export class VisionModel {
    * @param modelwithprovider 模型名称 openai:gpt-4-vision-preview
    * @returns 模型实例
    */
-  static create(model?: AgentModelProps) {
+  static create(model?: ModelItem) {
     if (model?.provider) {
       return VisionModelManager.get(model.provider).create(model.name);
     }

@@ -1,4 +1,4 @@
-import { AgentModelProps } from "@/agent/types/agent";
+import { ModelItem } from "@/agent/types/agent";
 import { AgentNode } from "@/page/workflow/nodes/AgentNode";
 import { ChatNode } from "@/page/workflow/nodes/ChatNode";
 import { CodeNode } from "@/page/workflow/nodes/CodeNode";
@@ -265,7 +265,7 @@ export interface ChatNodeConfig extends BaseNodeConfig {
   system: string;
   user: string;
   temperature: number;
-  model: AgentModelProps;
+  model: ModelItem;
 }
 
 export interface ImageNodeConfig extends BaseNodeConfig {
@@ -273,7 +273,7 @@ export interface ImageNodeConfig extends BaseNodeConfig {
   prompt: string;
   negative_prompt?: string;
   image?: string;
-  model: AgentModelProps;
+  model: ModelItem;
 }
 
 export interface AgentNodeConfig extends BaseNodeConfig {

@@ -1,4 +1,4 @@
-import { AgentModelProps } from "@/agent/types/agent";
+import { ModelItem } from "@/agent/types/agent";
 import {
   AudioModelInfo,
   AudioModelRequestBody,
@@ -35,7 +35,7 @@ export class AudioModel {
    * @param modelwithprovider 模型名称 openai:tts-1
    * @returns 模型实例
    */
-  static create(model?: AgentModelProps) {
+  static create(model?: ModelItem) {
     if (model?.provider) {
       const provider = AudioModelManager.get(model.provider);
       if (!provider) {

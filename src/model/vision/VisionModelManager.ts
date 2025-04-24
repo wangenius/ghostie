@@ -1,5 +1,5 @@
 /** 视觉模型管理器 */
-import { AgentModelProps } from "@/agent/types/agent";
+import { ModelItem } from "@/agent/types/agent";
 import { ModelKey } from "../key/ModelKey";
 import {
   VisionModelProvider,
@@ -39,7 +39,7 @@ export class VisionModelManager {
    * @returns 模型实例
    */
   static getModel(
-    { provider, name }: AgentModelProps = { provider: "", name: "" },
+    { provider, name }: ModelItem = { provider: "", name: "" },
   ): VisionModel {
     return this.get(provider).create(name);
   }

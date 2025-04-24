@@ -1,4 +1,4 @@
-import { AgentModelProps } from "@/agent/types/agent";
+import { ModelItem } from "@/agent/types/agent";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,7 +17,7 @@ const ChatNodeComponent = (props: NodeProps<ChatNodeConfig>) => {
   const { updateNodeData } = useFlow();
 
   const handleModelChange = useCallback(
-    (model: AgentModelProps) => {
+    (model: ModelItem) => {
       updateNodeData<ChatNodeConfig>(props.id, {
         model: model,
       });
@@ -123,15 +123,13 @@ export class ChatNodeExecutor extends NodeExecutor {
 
       const model = ChatModel.create(chatConfig.model);
 
-      model.Message.setSystem(parsedSystem);
-      model.Message.push([
+      const res = await model.stream([
+        { role: "system", content: parsedSystem },
         {
           role: "user",
           content: parsedUser,
-          created_at: Date.now(),
         },
       ]);
-      const res = await model.stream();
 
       if (!res?.body) {
         throw new Error("Chat response is empty");

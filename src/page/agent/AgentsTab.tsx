@@ -1,4 +1,4 @@
-import { Agent, AgentStore } from "@/agent/Agent";
+import { Agent } from "@/agent/Agent";
 import { dialog } from "@/components/custom/DialogModal";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
@@ -17,8 +17,9 @@ import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 import { TbDownload, TbGhost3, TbPlus, TbUpload } from "react-icons/tb";
 import { AgentChat } from "./AgentChat";
 import { AgentsMarket } from "./AgentsMarket";
+import { AgentStore } from "@/store/agents";
 
-export const ActiveAgents = new Map<string, Agent>();
+export const ActiveAgents = new Echo<Record<string, Agent>>({});
 export const CurrentAgent = new Echo<string>("");
 export const LoadingAgents = new Echo<Record<string, boolean>>({});
 
@@ -26,7 +27,7 @@ export const LoadingAgents = new Echo<Record<string, boolean>>({});
 export function AgentsTab() {
   const activeAgents = CurrentAgent.use();
   const agents = AgentStore.use();
-  const activeAgent = ActiveAgents.get(activeAgents);
+  const activeAgent = ActiveAgents.use((selector) => selector[activeAgents]);
 
   /* 创建机器人 */
   const handleCreateAgent = async () => {
@@ -126,7 +127,7 @@ export function AgentsTab() {
         items={Object.values(agents)
           .map((agent) => {
             if (!agent.id) {
-              Agent.delete(agent.id);
+              AgentStore.delete(agent.id);
               return null;
             }
             return {
@@ -150,9 +151,11 @@ export function AgentsTab() {
                 </span>
               ),
               onClick: async () => {
-                if (ActiveAgents.has(agent.id)) {
+                if (ActiveAgents.current[agent.id]) {
                 } else {
-                  ActiveAgents.set(agent.id, await Agent.get(agent.id));
+                  ActiveAgents.current[agent.id] = new Agent(
+                    (await AgentStore.getCurrent())[agent.id],
+                  );
                 }
                 CurrentAgent.set(agent.id);
               },
@@ -173,6 +176,7 @@ export function AgentsTab() {
       >
         {activeAgent && (
           <AgentChat
+            key={activeAgents}
             agent={activeAgent}
             close={() => ActiveAgents.delete(activeAgent.props.id)}
           />

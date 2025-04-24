@@ -20,7 +20,7 @@ export class Tongyi extends ChatModel {
    * @param body 基础请求体
    * @returns 处理后的请求体
    */
-  protected prepareRequestBody(
+  protected RequestBodyAdapter(
     body: ChatModelRequestBody,
   ): ChatModelRequestBody {
     // 通义特有的请求体处理，例如添加特定参数或调整请求结构

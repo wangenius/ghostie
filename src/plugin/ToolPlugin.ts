@@ -1,10 +1,10 @@
 import { PluginMarketProps, PluginProps } from "@/plugin/types";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
-import { Echo } from "echo-state";
-import { parsePluginFromString } from "./parser";
-import * as ts from "typescript";
 import { supabase } from "@/utils/supabase";
+import { Echo } from "echo-state";
+import ts from "typescript";
+import { parsePluginFromString } from "./parser";
 
 /* 默认 */
 export const DEFAULT_PLUGIN: PluginProps = {

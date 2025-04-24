@@ -16,9 +16,9 @@ import {
   Knowledge,
   KnowledgeBody,
   KnowledgeMeta,
-  KnowledgesStore,
   type SearchResult,
 } from "@/knowledge/Knowledge";
+import { KnowledgesStore } from "@/store/knowledges";
 import { cmd } from "@utils/shell";
 import { Echo, Echoa } from "echo-state";
 import { useState } from "react";

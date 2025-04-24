@@ -19,7 +19,9 @@ import {
   PLUGIN_DATABASE_CONTENT,
   PluginStore,
 } from "@/plugin/ToolPlugin";
-import { Agent, AgentStore } from "@/agent/Agent";
+import { Agent } from "@/agent/Agent";
+import { AgentStore } from "@/store/agents";
+import { AgentMarket } from "@/market/agents";
 
 /* 工作流列表 */
 export const WorkflowsStore = new Echo<Record<string, WorkflowMeta>>(
@@ -167,11 +169,11 @@ export class Workflow {
 
         if (!processedAgents.has(agentId)) {
           try {
-            const agent = await Agent.get(agentId);
+            const agent = new Agent((await AgentStore.getCurrent())[agentId]);
 
             // 尝试上传代理，如果失败则检查是否是因为已存在
             try {
-              await agent.uploadToMarket();
+              await AgentMarket.uploadToMarket(agent.props);
               console.log(`代理 ${agentId} 上传成功`);
             } catch (uploadError) {
               // 如果是已存在的错误，则忽略并继续
@@ -299,7 +301,7 @@ export class Workflow {
 
           if (data) {
             // 安装代理
-            await Agent.installFromMarket(data);
+            await AgentMarket.installFromMarket(data);
             console.log(`成功安装代理: ${data.name}`);
           }
         } catch (error) {

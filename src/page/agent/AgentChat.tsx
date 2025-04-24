@@ -1,4 +1,6 @@
 import { Agent } from "@/agent/Agent";
+import { ContextRuntimeProps } from "@/agent/context/Runtime";
+import { CONTEXT_RUNTIME_DATABASE } from "@/assets/const";
 import { dialog } from "@/components/custom/DialogModal";
 import { ImageElement } from "@/components/editor/elements/image";
 import { Button } from "@/components/ui/button";
@@ -9,9 +11,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChatHistory, Message } from "@/model/chat/Message";
+import { AgentMarket } from "@/market/agents";
+import { AgentStore } from "@/store/agents";
 import { cmd } from "@/utils/shell";
 import Avatar from "boring-avatars";
+import { Echo } from "echo-state";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
 import {
@@ -37,6 +41,13 @@ interface MentionElement {
   children: { text: string }[];
 }
 
+const ContextRuntime = new Echo<Record<string, ContextRuntimeProps>>(
+  {},
+).indexed({
+  database: CONTEXT_RUNTIME_DATABASE,
+  name: "",
+});
+
 export const AgentChat = ({
   agent,
   close,
@@ -44,20 +55,28 @@ export const AgentChat = ({
   agent: Agent;
   close: () => void;
 }) => {
-  // 使用ChatHistory来监听全局变化
-  const historyStore = ChatHistory.use();
   const loadingState = LoadingAgents.use();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const editorRef = useRef<{ focus: () => void }>(null);
   const [mode, setMode] = useState<"chat" | "edit">("chat");
+  const [historyLimit, setHistoryLimit] = useState(3);
   const [value, setValue] = useState<Descendant[]>([
     {
       type: "paragraph",
       children: [{ text: "" }],
     },
   ]);
+
+  const context = ContextRuntime.use();
+
+  useEffect(() => {
+    ContextRuntime.indexed({
+      database: CONTEXT_RUNTIME_DATABASE,
+      name: agent.props.id,
+    });
+  }, [agent.props.id]);
 
   // 获取当前Agent的loading状态
   const loading = loadingState[agent.props.id] || false;
@@ -73,53 +92,25 @@ export const AgentChat = ({
     [agent.props.id, loadingState],
   );
 
-  // 获取当前消息ID
-  const messageId = agent.engine.model?.Message.id;
-
   // 从historyStore中获取当前消息
-  const currentChat = messageId ? historyStore[messageId] : null;
-
-  // 初始化聊天 - 当打开Agent但没有当前聊天时创建新聊天
-  useEffect(() => {
-    const initializeChat = async () => {
-      // 如果agent已加载但没有当前消息ID或者当前消息不存在，则创建新消息
-      if (
-        agent &&
-        agent.engine &&
-        agent.engine.model &&
-        (!messageId || !currentChat)
-      ) {
-        console.log("初始化Agent聊天:", agent.props.name);
-
-        // 创建新消息，使用agent的系统提示词
-        const newMessage = Message.create(agent.props.system, agent.props.name);
-        try {
-          await agent.engine.model.Message.switch(newMessage.id);
-        } catch (error) {
-          console.error("初始化聊天失败:", error);
-        }
-      }
-    };
-
-    initializeChat();
-  }, [agent, messageId, currentChat]);
+  const currentChat = context
+    ? context[agent.context.runtime.info.id]?.messages
+    : null;
 
   // 自动滚动到底部
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [currentChat?.list]);
+  }, [currentChat]);
 
   // 创建新对话
   const handleNewChat = useCallback(async () => {
     // 创建新消息实例，传入agent的系统提示词
-    const newMessage = Message.create(agent.props.system, agent.props.name);
+    agent.createNewContext();
 
     // 切换Agent的消息模型到新消息
     try {
-      await agent.engine.model.Message.switch(newMessage.id);
-
       // 重置loading状态
       setLoading(false);
 
@@ -144,8 +135,6 @@ export const AgentChat = ({
   const handleSwitchHistory = useCallback(
     async (historyId: string) => {
       try {
-        await agent.engine.model.Message.switch(historyId);
-
         // 重置loading状态
         setLoading(false);
 
@@ -173,7 +162,7 @@ export const AgentChat = ({
     );
     if (answer) {
       try {
-        Agent.delete(agent.props.id);
+        AgentStore.delete(agent.props.id);
         close();
       } catch (error) {
         console.error("delete agent error:", error);
@@ -256,7 +245,7 @@ export const AgentChat = ({
       content: "Are you sure you want to upload this agent?",
       onOk: async () => {
         try {
-          await agent.uploadToMarket();
+          await AgentMarket.uploadToMarket(agent.props);
           toast.success("Successfully uploaded agent to market");
         } catch (error) {
           toast.error(`Upload agent failed: ${error}`);
@@ -265,7 +254,10 @@ export const AgentChat = ({
     });
   }, [agent]);
   return (
-    <div className="flex flex-col h-full border-none shadow-none bg-background/50">
+    <div
+      key={agent.props.id}
+      className="flex flex-col h-full border-none shadow-none bg-background/50"
+    >
       {/* Agent信息头部 */}
       <div className="space-y-0 flex flex-row items-center justify-between px-4">
         <div className="flex items-center space-x-3">
@@ -387,7 +379,7 @@ export const AgentChat = ({
                   scrollbarColor: "var(--border) transparent",
                 }}
               >
-                {(!currentChat?.list || currentChat.list.length === 0) && (
+                {Object.values(context).length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full text-center p-4">
                     <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
                       <TbBrandWechat className="w-7 h-7 text-muted-foreground" />
@@ -400,18 +392,97 @@ export const AgentChat = ({
                     </p>
                   </div>
                 )}
-
-                {currentChat?.list?.map((msg, index) => (
-                  <ChatMessageItem
-                    key={`msg-${messageId}-${index}`}
-                    message={msg}
-                    lastMessageType={currentChat.list[index - 1]?.role}
-                    nextMessageType={currentChat.list[index + 1]?.role}
-                  />
-                ))}
-                {currentChat?.list && currentChat?.list?.length > 0 && (
-                  <div className="h-4" ref={messagesEndRef} />
+                {/* 显示更多按钮 */}
+                {Object.values(context).length > historyLimit && (
+                  <div className="flex justify-center mb-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs text-muted-foreground"
+                      onClick={() => setHistoryLimit((prev) => prev + 3)}
+                    >
+                      显示更多历史对话
+                    </Button>
+                  </div>
                 )}
+
+                {Object.values(context)
+                  ?.sort(
+                    (a, b) =>
+                      new Date(b.created_at).getTime() -
+                      new Date(a.created_at).getTime(),
+                  )
+                  .slice(0, historyLimit)
+                  .reverse()
+                  .map((history) => (
+                    <div key={`history-${history.id}`} className="mb-6">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="h-[1px] flex-1 bg-border"></div>
+                        <span className="text-xs text-muted-foreground font-mono">
+                          {new Date(history.created_at).toLocaleString(
+                            "zh-CN",
+                            {
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}
+                        </span>
+                        <div className="h-[1px] flex-1 bg-border"></div>
+                      </div>
+                      {history.messages.map((msg, index) => (
+                        <ChatMessageItem
+                          key={`history-msg-${history.id}-${index}`}
+                          message={msg}
+                          lastMessageType={history.messages[index - 1]?.role}
+                          nextMessageType={history.messages[index + 1]?.role}
+                        />
+                      ))}
+                    </div>
+                  ))}
+
+                {/* 当前聊天分隔线 */}
+                {currentChat && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-[1px] flex-1 bg-border"></div>
+                    <span className="text-xs text-muted-foreground font-mono">
+                      当前对话 -{" "}
+                      {new Date(
+                        context[agent.context.runtime.info.id].created_at,
+                      ).toLocaleString("zh-CN", {
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                    <div className="h-[1px] flex-1 bg-border"></div>
+                  </div>
+                )}
+
+                {/* 当前聊天消息 */}
+                {context[agent.context.runtime.info.id]?.messages.map(
+                  (msg, index) => (
+                    <ChatMessageItem
+                      key={`msg-${context.id}-${index}`}
+                      message={msg}
+                      lastMessageType={
+                        context[agent.context.runtime.info.id].messages[
+                          index - 1
+                        ]?.role
+                      }
+                      nextMessageType={
+                        context[agent.context.runtime.info.id].messages[
+                          index + 1
+                        ]?.role
+                      }
+                    />
+                  ),
+                )}
+
+                {context[agent.context.runtime.info.id]?.messages.length >
+                  0 && <div className="h-4" ref={messagesEndRef} />}
               </div>
             )}
           </div>

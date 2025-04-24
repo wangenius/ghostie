@@ -1,4 +1,4 @@
-import { AgentProps } from "@/agent/types/agent";
+import { AgentInfos } from "@/agent/types/agent";
 import { cn } from "@/lib/utils";
 import { TbGhost3 } from "react-icons/tb";
 import { Editor, Node, Transforms } from "slate";
@@ -54,7 +54,7 @@ export const withMentions = (editor: Editor) => {
   return editor;
 };
 
-export const insertMention = (editor: any, character: AgentProps) => {
+export const insertMention = (editor: any, character: AgentInfos) => {
   const mention: MentionElement = {
     type: "mention",
     id: character.id,

@@ -1,19 +1,16 @@
 /** Chat模型 */
-import { AgentModelProps, AgentProps } from "@/agent/types/agent";
+import { ModelItem } from "@/agent/types/agent";
 import {
   ChatModelRequestBody,
   ChatModelResponse,
-  MessagePrototype,
+  CompletionMessage,
+  FunctionCallResult,
   ToolCallReply,
   ToolRequestBody,
 } from "@/model/types/chatModel";
-import { ImageManager } from "@/resources/Image";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
-import { ImageModel } from "../image/ImageModel";
 import { ChatModelManager } from "./ChatModelManager";
-import { Message } from "./Message";
-import { ToolsHandler } from "./ToolsHandler";
 
 interface ChatModelInfo {
   model: string;
@@ -21,21 +18,21 @@ interface ChatModelInfo {
   api_url: string;
 }
 
+type OnChunk = (chunk: { completion?: string; reasoner?: string }) => void;
+type OnToolCall = (chunk: { tool_call?: ToolCallReply }) => any;
+
 /** Chat模型, 用于与模型进行交互
  *
  */
 export class ChatModel {
+  /** 模型信息 */
   public info: ChatModelInfo;
-  /** 模型用于存储的上下文内容 */
-  public Message: Message = Message.create();
   /** 工具 */
   protected tools?: ToolRequestBody;
   /** 当前请求ID */
   protected currentRequestId: string | undefined;
   /** 温度 */
   protected temperature: number = 1;
-  /** 其他模型 */
-  protected otherModels?: AgentProps["models"];
 
   /** 构造函数
    * @param config 模型配置
@@ -48,7 +45,7 @@ export class ChatModel {
    * @param modelwithprovider 模型名称 openai:gpt-4
    * @returns 模型实例
    */
-  static create(model?: AgentModelProps) {
+  static create(model?: ModelItem) {
     if (model?.provider) {
       return ChatModelManager.get(model.provider).create(model.name);
     }
@@ -61,11 +58,6 @@ export class ChatModel {
 
   setTemperature(temperature: number): this {
     this.temperature = temperature;
-    return this;
-  }
-
-  setOtherModels(models: AgentProps["models"]): this {
-    this.otherModels = models;
     return this;
   }
 
@@ -86,11 +78,11 @@ export class ChatModel {
   }
 
   /**
-   * 准备请求体，允许子类重写以添加特定参数
+   * 请求体适配器,允许子类重写以添加特定参数
    * @param body 基础请求体
    * @returns 处理后的请求体
    */
-  protected prepareRequestBody(
+  protected RequestBodyAdapter(
     body: ChatModelRequestBody,
   ): ChatModelRequestBody {
     // 默认实现直接返回原始请求体
@@ -102,7 +94,7 @@ export class ChatModel {
    * @param payload 原始响应数据字符串
    * @returns 解析后的内容、推理和工具调用
    */
-  protected parseResponseBody(payload: string): {
+  protected ResponseBodyAdapter(payload: string): {
     completion?: string;
     reasoner?: string;
     tool_call?: ToolCallReply;
@@ -137,7 +129,11 @@ export class ChatModel {
    * @param prompt 提示词，如果为空，则使用历史消息，因为可能存在assistant的消息
    * @returns 流式生成结果
    */
-  public async stream(): Promise<ChatModelResponse<string>> {
+  public async stream(
+    message: CompletionMessage[],
+    onChunk?: OnChunk,
+    onToolCall?: OnToolCall,
+  ): Promise<ChatModelResponse<string>> {
     // 如果有正在进行的请求，先停止它
     if (this.currentRequestId) {
       await this.stop();
@@ -145,12 +141,8 @@ export class ChatModel {
 
     /* 生成请求ID */
     this.currentRequestId = gen.id();
-    /* 内容 */
-    let completionContent = "";
-    let reasonerContent = "";
-
     /* 消息 */
-    let messages: MessagePrototype[] = this.Message.listWithOutType();
+    let messages: CompletionMessage[] = message;
     /* 工具调用 */
     let tool_calls: ToolCallReply[] = [];
 
@@ -164,59 +156,37 @@ export class ChatModel {
         tools: this.tools,
       };
 
-      this.Message.push([
-        {
-          role: "assistant",
-          loading: true,
-          content: "",
-          created_at: Date.now(),
-        },
-      ]);
-
       /* 适配子类请求体 */
-      requestBody = this.prepareRequestBody(requestBody);
+      requestBody = this.RequestBodyAdapter(requestBody);
 
-      console.log(requestBody);
-
+      let completionContent = "";
       // 监听流式响应事件
       const unlistenStream = await cmd.listen(
         `chat-stream-${this.currentRequestId}`,
         (event) => {
           if (!event.payload) return;
           /* 适配子类不同的相应格式 */
-          const { completion, reasoner, tool_call } = this.parseResponseBody(
-            event.payload,
-          );
+          const chunk = this.ResponseBodyAdapter(event.payload);
+          console.log(chunk);
 
-          if (reasoner) {
-            reasonerContent += reasoner;
-            this.Message.updateLastMessage({
-              reasoner: reasonerContent,
-            });
-          }
+          /* 内容 */
+          completionContent += chunk.completion || "";
+          onChunk?.({ completion: chunk.completion, reasoner: chunk.reasoner });
 
-          /* 如果返回的是正文 */
-          if (completion) {
-            /* 如果存在推理内容，则清空推理内容 */
-            completionContent += completion;
-            this.Message.updateLastMessage({
-              content: completionContent,
-            });
-          }
-
-          if (tool_call) {
-            if (tool_call.id) {
-              tool_calls[tool_call.index] = {
-                ...tool_call,
+          /* 工具调用解析：todo: 目前存在问题，需要优化 */
+          if (chunk.tool_call) {
+            if (chunk.tool_call.id) {
+              tool_calls[chunk.tool_call.index] = {
+                ...chunk.tool_call,
                 function: {
-                  ...tool_call.function,
-                  arguments: tool_call.function.arguments || "",
+                  ...chunk.tool_call.function,
+                  arguments: chunk.tool_call.function.arguments || "",
                 },
               };
-            } else if (tool_call.function.arguments) {
+            } else if (chunk.tool_call.function.arguments) {
               if (tool_calls[tool_calls.length - 1]) {
                 tool_calls[tool_calls.length - 1].function.arguments +=
-                  tool_call.function.arguments;
+                  chunk.tool_call.function.arguments;
               }
             }
           }
@@ -227,9 +197,6 @@ export class ChatModel {
       const unlistenError = await cmd.listen(
         `chat-stream-error-${this.currentRequestId}`,
         (event) => {
-          this.Message.updateLastMessage({
-            error: `请求失败: ${event.payload}`,
-          });
           throw new Error(event.payload);
         },
       );
@@ -246,93 +213,12 @@ export class ChatModel {
       unlistenStream();
       unlistenError();
 
-      if (tool_calls.length > 0) {
-        this.Message.updateLastMessage({
-          tool_calls,
-        });
-      }
-
-      let toolResult;
+      let toolResult: FunctionCallResult | undefined;
       if (tool_calls.length > 0) {
         for (const tool_call of tool_calls) {
-          this.Message.updateLastMessage({
-            loading: false,
-          });
-          this.Message.push([
-            {
-              role: "tool",
-              tool_call_id: tool_call.id,
-              content: "",
-              tool_loading: true,
-              created_at: Date.now(),
-            },
-          ]);
-          toolResult = await ToolsHandler.call(
-            tool_call,
-            this.otherModels,
-            this,
-          );
-          console.log(toolResult);
-
-          if (
-            toolResult?.name === "IMAGE" &&
-            typeof toolResult.result === "string"
-          ) {
-            this.Message.updateLastMessage({
-              images: [toolResult.result],
-            });
-            const newImage = ImageModel.create(this.otherModels?.image);
-            newImage.setTaskId(toolResult.result);
-
-            // 轮询检查图片生成状态
-            let result;
-            while (true) {
-              result = await newImage.getResult();
-              if (
-                result.output.task_status === "SUCCEEDED" &&
-                "results" in result.output &&
-                result.output.results[0]?.base64
-              ) {
-                const base64Image = result.output.results[0].base64;
-                await ImageManager.setImage(
-                  toolResult.result,
-                  base64Image,
-                  "image/png",
-                );
-                await ImageManager.setImageTaskId(
-                  toolResult.result,
-                  toolResult.result,
-                );
-
-                this.Message.updateLastMessage({
-                  tool_loading: false,
-                  content: `图片已生成, 请返回结束语。图片的ID为${toolResult.result}。`,
-                });
-                break;
-              } else if (result.output.task_status === "FAILED") {
-                this.Message.updateLastMessage({
-                  tool_loading: false,
-                  error: "图片生成失败",
-                });
-                break;
-              }
-              // 等待3秒后再次检查
-              await new Promise((resolve) => setTimeout(resolve, 3000));
-            }
-          } else if (toolResult) {
-            this.Message.updateLastMessage({
-              content:
-                typeof toolResult.result === "string"
-                  ? toolResult.result
-                  : JSON.stringify(toolResult.result),
-              tool_loading: false,
-            });
-          }
+          toolResult = await onToolCall?.({ tool_call });
         }
       }
-      this.Message.updateLastMessage({
-        loading: false,
-      });
 
       return {
         body: completionContent,

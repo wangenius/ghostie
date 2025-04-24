@@ -20,7 +20,7 @@ export class Gemini extends ChatModel {
    * @param body 基础请求体
    * @returns 处理后的请求体
    */
-  protected prepareRequestBody(
+  protected RequestBodyAdapter(
     body: ChatModelRequestBody,
   ): ChatModelRequestBody {
     // Gemini使用特殊的API格式，需要调整
@@ -37,7 +37,7 @@ export class Gemini extends ChatModel {
    * @param payload 原始响应数据字符串
    * @returns 统一格式的解析结果
    */
-  protected parseResponseBody(payload: string): {
+  protected ResponseBodyAdapter(payload: string): {
     content?: string;
     reasoner?: string;
     tool_call?: ToolCallReply;

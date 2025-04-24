@@ -1,4 +1,4 @@
-import { AgentModelProps } from "@/agent/types/agent";
+import { ModelItem } from "@/agent/types/agent";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,7 +27,7 @@ const ImageNodeComponet = (props: NodeProps<ImageNodeConfig>) => {
   const images = ImagesStore.use();
 
   const handleModelChange = useCallback(
-    (model: AgentModelProps) => {
+    (model: ModelItem) => {
       updateNodeData<ImageNodeConfig>(props.id, {
         model: model,
       });

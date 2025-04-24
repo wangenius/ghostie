@@ -1,15 +1,12 @@
-import { FileMetadata } from "@/page/knowledge/KnowledgeCreator";
+import { KNOWLEDGE_BODY_DATABASE, KNOWLEDGE_VERSION } from "@/assets/const";
 import { EmbeddingModelManager } from "@/model/embedding/EmbeddingModelManger";
+import { FileMetadata } from "@/page/knowledge/KnowledgeCreator";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
 import { splitTextIntoChunks } from "@/utils/text";
 import { Echo } from "echo-state";
 import { SettingsManager } from "../settings/SettingsManager";
-import {
-  KNOWLEDGE_BODY_DATABASE,
-  KNOWLEDGE_DATABASE,
-  KNOWLEDGE_VERSION,
-} from "@/assets/const";
+import { KnowledgesStore } from "@/store/knowledges";
 
 /* 文本块元数据 */
 export interface TextChunkMetadata {
@@ -99,13 +96,6 @@ export interface ProgressCallback {
   /* 当前处理的文件名 */
   currentFile?: string;
 }
-
-export const KnowledgesStore = new Echo<Record<string, KnowledgeMeta>>(
-  {},
-).indexed({
-  database: KNOWLEDGE_DATABASE,
-  name: KNOWLEDGE_DATABASE,
-});
 
 export class Knowledge {
   meta: KnowledgeMeta;

@@ -25,7 +25,7 @@ export interface ToolCallReply {
 }
 
 /** 消息原型,一般用于调用的接口 */
-export interface MessagePrototype {
+export interface CompletionMessage {
   /* 角色 */
   role: MessageRole;
   /* 内容 */
@@ -36,7 +36,7 @@ export interface MessagePrototype {
   tool_call_id?: string;
 }
 /** 消息接口 */
-export interface MessageItem extends MessagePrototype {
+export interface MessageItem extends CompletionMessage {
   /* 是否隐藏 */
   hidden?: boolean;
   /* loading */
@@ -78,7 +78,7 @@ export interface ChatModelRequestBody {
   /* 模型 */
   model: string;
   /* 消息 */
-  messages: MessagePrototype[];
+  messages: CompletionMessage[];
   /* 流式 */
   stream?: boolean;
   /* 工具 */

@@ -7,7 +7,7 @@ import { Editor, Range, Transforms } from "slate";
 import { useSlate } from "slate-react";
 import { Portal } from ".";
 import { insertMention } from "../elements/mention";
-import { AgentStore } from "@/agent/Agent";
+import { AgentStore } from "@/store/agents";
 
 /** 目标提及下拉菜单 */
 export const MentionDrop = () => {

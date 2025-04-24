@@ -1,4 +1,3 @@
-import { AgentStore } from "@/agent/Agent";
 import { CronInput } from "@/components/custom/CronInput";
 import { dialog } from "@/components/custom/DialogModal";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
@@ -49,6 +48,7 @@ import {
   TbScriptPlus,
   TbTrash,
 } from "react-icons/tb";
+import { AgentStore } from "@/store/agents";
 
 export const HistoryStore = new Echo<Record<string, ExecutionHistory>>({});
 

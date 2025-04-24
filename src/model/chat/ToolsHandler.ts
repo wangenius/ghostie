@@ -1,5 +1,5 @@
-import { Agent, AgentStore } from "@/agent/Agent";
-import { AgentMCPProps, AgentProps, AgentToolProps } from "@/agent/types/agent";
+import { Agent } from "@/agent/Agent";
+import { AgentMCPProps, AgentInfos, AgentToolProps } from "@/agent/types/agent";
 import {
   AGENT_TOOL_NAME_PREFIX,
   KNOWLEDGE_TOOL_NAME_PREFIX,
@@ -8,7 +8,7 @@ import {
   WORKFLOW_BODY_DATABASE,
   WORKFLOW_TOOL_NAME_PREFIX,
 } from "@/assets/const";
-import { Knowledge, KnowledgesStore } from "@/knowledge/Knowledge";
+import { Knowledge } from "@/knowledge/Knowledge";
 import { MCP, MCP_Actived } from "@/page/mcp/MCP";
 import { StartNodeConfig, WorkflowBody } from "@/page/workflow/types/nodes";
 import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
@@ -25,6 +25,8 @@ import {
 import { VisionModel } from "../vision/VisionModel";
 import { SkillManager } from "@/skills/SkillManager";
 import { ChatModel } from "./ChatModel";
+import { KnowledgesStore } from "@/store/knowledges";
+import { AgentStore } from "@/store/agents";
 
 export class ToolsHandler {
   static async transformAgentToolToModelFormat(
@@ -72,7 +74,7 @@ export class ToolsHandler {
   }
 
   static async transformModelToModelFormat(
-    models: AgentProps["models"],
+    models: AgentInfos["models"],
   ): Promise<ToolRequestBody> {
     const toolRequestBody: ToolRequestBody = [];
     if (models?.vision) {
@@ -265,8 +267,7 @@ export class ToolsHandler {
 
   static async call(
     tool_call: ToolCallReply,
-    otherModels: AgentProps["models"],
-    chatModel: ChatModel,
+    agent: Agent,
   ): Promise<FunctionCallResult | undefined> {
     if (!tool_call) return;
 
@@ -284,7 +285,7 @@ export class ToolsHandler {
           query: string;
         };
         console.log(image, queryContent);
-        const vision = VisionModel.create(otherModels?.vision);
+        const vision = VisionModel.create(agent.props.models?.vision);
         const result = await vision.execute(image, queryContent);
         return {
           name: tool_call.function.name,
@@ -298,7 +299,7 @@ export class ToolsHandler {
           prompt: string;
           negative_prompt: string;
         };
-        const image = ImageModel.create(otherModels?.image);
+        const image = ImageModel.create(agent.props.models?.image);
         console.log(image);
         const result = await image.generate(prompt, negative_prompt);
         console.log(result);
@@ -307,6 +308,25 @@ export class ToolsHandler {
           const task_id = result.output.task_id;
           await ImageManager.setImage(task_id, "", "image/png");
           await ImageManager.setImageTaskId(task_id, task_id);
+
+          // 轮询检查图片生成状态
+          let generateResult;
+          while (true) {
+            generateResult = await image.getResult();
+            if (
+              generateResult.output.task_status === "SUCCEEDED" &&
+              "results" in generateResult.output &&
+              generateResult.output.results[0]?.base64
+            ) {
+              const base64Image = generateResult.output.results[0].base64;
+              await ImageManager.setImage(task_id, base64Image, "image/png");
+              break;
+            } else if (generateResult.output.task_status === "FAILED") {
+              break;
+            }
+            // 等待3秒后再次检查
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+          }
           return {
             name: tool_call.function.name,
             arguments: tool_call.function.arguments,
@@ -357,7 +377,7 @@ export class ToolsHandler {
         };
       }
       if (firstName === AGENT_TOOL_NAME_PREFIX) {
-        const agent = await Agent.get(secondName);
+        const agent = new Agent((await AgentStore.getCurrent())[secondName]);
         if (!agent) {
           return {
             name: tool_call.function.name,
@@ -373,7 +393,11 @@ export class ToolsHandler {
         };
       }
       if (firstName === SKILL_TOOL_NAME_PREFIX) {
-        const result = await SkillManager.execute(secondName, query, chatModel);
+        const result = await SkillManager.execute(
+          secondName,
+          query,
+          ChatModel.create(agent.props.models?.text),
+        );
         return {
           name: tool_call.function.name,
           arguments: tool_call.function.arguments,

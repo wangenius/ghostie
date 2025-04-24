@@ -1,9 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChatHistory } from "@/model/chat/Message";
 import { Page } from "@/utils/PageRouter";
 import { Window } from "@tauri-apps/api/window";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback } from "react";
 import {
   TbBook2,
   TbBox,
@@ -17,14 +16,14 @@ import {
   TbX,
 } from "react-icons/tb";
 import { AgentsTab } from "../agent/AgentsTab";
+import { DatabaseTab } from "../database/Database";
 import { KnowledgeTab } from "../knowledge/KnowledgeTab";
 import { MCPTab } from "../mcp/MCPManagerTab";
 import { ModelsTab } from "../model/ModelsTab";
 import { PluginsTab } from "../plugins/PluginsTab";
+import { SchedulesTab } from "../schedule/SchedulesTab";
 import { GeneralSettingsPage } from "../settings/GeneralSettingsPage";
 import WorkflowsTab from "../workflow/WorkflowsTab";
-import { DatabaseTab } from "../database/Database";
-import { SchedulesTab } from "../schedule/SchedulesTab";
 
 export type SettingsTab = (typeof SETTINGS_NAV_ITEMS)[number]["id"];
 
@@ -43,9 +42,7 @@ export const SETTINGS_NAV_ITEMS = [
 /* 主界面 */
 export function MainView() {
   const { settingsTab } = Page.use();
-  const list = ChatHistory.use();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
   const renderContent = () => {
     switch (settingsTab) {
       case "agents":
@@ -68,20 +65,6 @@ export function MainView() {
         return <GeneralSettingsPage />;
     }
   };
-
-  // 当消息更新时滚动到底部
-  useEffect(() => {
-    if (!messagesContainerRef.current) return;
-
-    const container = messagesContainerRef.current;
-    const isNearBottom =
-      container.scrollHeight - container.scrollTop - container.clientHeight <
-      100;
-
-    if (isNearBottom) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [list]);
 
   const handleCloseClick = useCallback(() => {
     Window.getByLabel("main").then((window) => {

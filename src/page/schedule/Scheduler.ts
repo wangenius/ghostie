@@ -4,6 +4,7 @@ import { Echo, LocalEcho } from "echo-state";
 import { toast } from "sonner";
 import { Tickie } from "tickie";
 import { Workflow } from "../../workflow/Workflow";
+import { AgentStore } from "@/store/agents";
 
 /**
  * 执行历史记录
@@ -307,7 +308,9 @@ export class Scheduler {
                 break;
               case "agent":
                 if (schedule.agentId) {
-                  const agent = await Agent.get(schedule.agentId);
+                  const agent = new Agent(
+                    (await AgentStore.getCurrent())[schedule.agentId],
+                  );
                   targetName = agent.props.name || "";
                   // 如果设置了输入内容，使用设置的内容；否则使用默认消息
                   const input = schedule.agentInput || "定时任务自动触发";

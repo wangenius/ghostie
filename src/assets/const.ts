@@ -10,3 +10,5 @@ export const KNOWLEDGE_BODY_DATABASE = "knowledge_bodies";
 export const AGENT_DATABASE = "agents";
 export const KNOWLEDGE_VERSION = "1.0.0";
 export const CHAT_HISTORY_DATABASE = "chat_history";
+export const AGENT_MEMORY_DATABASE = "context_memory";
+export const CONTEXT_RUNTIME_DATABASE = "context_runtime";
