@@ -10,18 +10,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Echo } from "@/lib/echo/core/Echo";
+import { AgentStore } from "@/store/agents";
 import { cmd } from "@utils/shell";
 import Avatar from "boring-avatars";
-import { Echo } from "echo-state";
 import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
 import { TbDownload, TbGhost3, TbPlus, TbUpload } from "react-icons/tb";
 import { AgentChat } from "./AgentChat";
 import { AgentsMarket } from "./AgentsMarket";
-import { AgentStore } from "@/store/agents";
+import { ContextRuntimeProps } from "@/agent/context/Runtime";
+import { CONTEXT_RUNTIME_DATABASE } from "@/assets/const";
 
 export const ActiveAgents = new Echo<Record<string, Agent>>({});
 export const CurrentAgent = new Echo<string>("");
 export const LoadingAgents = new Echo<Record<string, boolean>>({});
+export const ContextRuntimesEchos = new Echo<
+  Record<string, ContextRuntimeProps>
+>({}).indexed({
+  database: CONTEXT_RUNTIME_DATABASE,
+  name: "",
+});
 
 /** AgentsTab */
 export function AgentsTab() {
@@ -152,11 +160,19 @@ export function AgentsTab() {
               ),
               onClick: async () => {
                 if (ActiveAgents.current[agent.id]) {
+                  ActiveAgents.current[agent.id].createNewContext();
                 } else {
                   ActiveAgents.current[agent.id] = new Agent(
                     (await AgentStore.getCurrent())[agent.id],
                   );
                 }
+                await ContextRuntimesEchos.temporary()
+                  .indexed({
+                    database: CONTEXT_RUNTIME_DATABASE,
+                    name: agent.id || "",
+                  })
+                  .ready();
+
                 CurrentAgent.set(agent.id);
               },
               actived: activeAgent?.props.id === agent.id,
@@ -176,7 +192,7 @@ export function AgentsTab() {
       >
         {activeAgent && (
           <AgentChat
-            key={activeAgents}
+            key={`${activeAgent.props.id}-${Date.now()}`}
             agent={activeAgent}
             close={() => ActiveAgents.delete(activeAgent.props.id)}
           />

@@ -1,10 +1,8 @@
 import { Agent } from "@/agent/Agent";
-import { ContextRuntimeProps } from "@/agent/context/Runtime";
 import { CONTEXT_RUNTIME_DATABASE } from "@/assets/const";
 import { dialog } from "@/components/custom/DialogModal";
 import { ImageElement } from "@/components/editor/elements/image";
 import { Button } from "@/components/ui/button";
-import { Drawer } from "@/components/ui/drawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,24 +13,15 @@ import { AgentMarket } from "@/market/agents";
 import { AgentStore } from "@/store/agents";
 import { cmd } from "@/utils/shell";
 import Avatar from "boring-avatars";
-import { Echo } from "echo-state";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
-import {
-  TbBrandWechat,
-  TbHistory,
-  TbPencil,
-  TbPlus,
-  TbTrash,
-  TbUpload,
-} from "react-icons/tb";
+import { TbBrandWechat, TbPencil, TbTrash, TbUpload } from "react-icons/tb";
 import { Descendant } from "slate";
 import { toast } from "sonner";
-import { HistoryPage } from "../history/HistoryPage";
 import { ChatMessageItem } from "../main/MessageItem";
 import { plainText, TypeArea } from "../main/TypeArea";
 import { AgentEditor } from "./AgentEditor";
-import { LoadingAgents } from "./AgentsTab";
+import { ContextRuntimesEchos, LoadingAgents } from "./AgentsTab";
 
 // 定义 MentionElement 接口
 interface MentionElement {
@@ -40,13 +29,6 @@ interface MentionElement {
   id: string;
   children: { text: string }[];
 }
-
-const ContextRuntime = new Echo<Record<string, ContextRuntimeProps>>(
-  {},
-).indexed({
-  database: CONTEXT_RUNTIME_DATABASE,
-  name: "",
-});
 
 export const AgentChat = ({
   agent,
@@ -58,7 +40,6 @@ export const AgentChat = ({
   const loadingState = LoadingAgents.use();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
   const editorRef = useRef<{ focus: () => void }>(null);
   const [mode, setMode] = useState<"chat" | "edit">("chat");
   const [historyLimit, setHistoryLimit] = useState(3);
@@ -69,14 +50,10 @@ export const AgentChat = ({
     },
   ]);
 
-  const context = ContextRuntime.use();
+  // 使用自定义的ContextRuntime实例
+  const context = ContextRuntimesEchos.use();
 
-  useEffect(() => {
-    ContextRuntime.indexed({
-      database: CONTEXT_RUNTIME_DATABASE,
-      name: agent.props.id,
-    });
-  }, [agent.props.id]);
+  console.log(context);
 
   // 获取当前Agent的loading状态
   const loading = loadingState[agent.props.id] || false;
@@ -92,10 +69,11 @@ export const AgentChat = ({
     [agent.props.id, loadingState],
   );
 
-  // 从historyStore中获取当前消息
-  const currentChat = context
-    ? context[agent.context.runtime.info.id]?.messages
-    : null;
+  // 从context中获取当前消息
+  const currentChat =
+    context && context[agent.context.runtime.info.id]
+      ? context[agent.context.runtime.info.id]?.messages
+      : null;
 
   // 自动滚动到底部
   useEffect(() => {
@@ -104,58 +82,6 @@ export const AgentChat = ({
     }
   }, [currentChat]);
 
-  // 创建新对话
-  const handleNewChat = useCallback(async () => {
-    // 创建新消息实例，传入agent的系统提示词
-    agent.createNewContext();
-
-    // 切换Agent的消息模型到新消息
-    try {
-      // 重置loading状态
-      setLoading(false);
-
-      // 重置输入框
-      setValue([
-        {
-          type: "paragraph",
-          children: [{ text: "" }],
-        },
-      ]);
-
-      // 聚焦输入框
-      setTimeout(() => {
-        editorRef.current?.focus();
-      }, 100);
-    } catch (error) {
-      console.error("创建新对话失败:", error);
-    }
-  }, [agent, setLoading]);
-
-  // 切换到指定历史记录
-  const handleSwitchHistory = useCallback(
-    async (historyId: string) => {
-      try {
-        // 重置loading状态
-        setLoading(false);
-
-        // 重置输入框
-        setValue([
-          {
-            type: "paragraph",
-            children: [{ text: "" }],
-          },
-        ]);
-
-        // 聚焦输入框
-        setTimeout(() => {
-          editorRef.current?.focus();
-        }, 100);
-      } catch (error) {
-        console.error("切换历史记录失败:", error);
-      }
-    },
-    [agent, setLoading],
-  );
   const handleDeleteAgent = async () => {
     const answer = await cmd.confirm(
       `Are you sure you want to delete the assistant "${agent.props.name}"?`,
@@ -255,7 +181,7 @@ export const AgentChat = ({
   }, [agent]);
   return (
     <div
-      key={agent.props.id}
+      key={`${agent.props.id}`}
       className="flex flex-col h-full border-none shadow-none bg-background/50"
     >
       {/* Agent信息头部 */}
@@ -288,44 +214,6 @@ export const AgentChat = ({
         <div className="flex items-center gap-1">
           {mode === "chat" ? (
             <>
-              <Button
-                onClick={handleNewChat}
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-              >
-                <TbPlus className="h-4 w-4 text-muted-foreground" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setOpen(true)}
-              >
-                <TbHistory className="h-4 w-4" />
-              </Button>
-              <Drawer
-                direction="right"
-                open={open}
-                onOpenChange={setOpen}
-                className="w-[480px]"
-                title={
-                  <div className="p-2 w-full">
-                    <div className="flex items-center justify-between w-full">
-                      <h3 className="text-lg font-semibold">历史记录</h3>
-                    </div>
-                  </div>
-                }
-              >
-                <HistoryPage
-                  agent={agent.props.id}
-                  onClick={(item) => {
-                    handleSwitchHistory(item.id);
-                    setOpen(false);
-                  }}
-                />
-              </Drawer>
-
               <Button
                 variant="ghost"
                 size="icon"
@@ -367,7 +255,10 @@ export const AgentChat = ({
       </div>
 
       {/* 聊天区域 */}
-      <div className="flex-1 p-0 overflow-hidden">
+      <div
+        key={`chat-${agent.props.id}`}
+        className="flex-1 p-0 overflow-hidden"
+      >
         {mode === "chat" && (
           <div className="flex flex-col h-full">
             {agent?.props.id && (
@@ -495,7 +386,7 @@ export const AgentChat = ({
       </div>
 
       {mode === "chat" && (
-        <div key={agent.props.id}>
+        <div key={`type-area-${agent.props.id}`}>
           <TypeArea
             value={value}
             onChange={setValue}

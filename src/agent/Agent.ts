@@ -77,6 +77,12 @@ export class Agent {
   }
 
   createNewContext() {
+    // 创建新的上下文
     this.context = Context.create(this);
+    // 确保引擎使用新的上下文
+    this.engine.context = this.context;
+    // 如果需要重新初始化引擎，可以在这里执行
+    this.engine = Engine.create(this);
+    return this;
   }
 }

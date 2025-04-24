@@ -29,7 +29,7 @@ export class Engine {
 
   async init(agent: Agent) {
     const props = agent.props;
-    this.context = new Context(agent);
+    this.context = agent.context;
     this.model
       .setTemperature(props.configs?.temperature || 1)
       .setTools(await this.generateTools(agent));
