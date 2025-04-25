@@ -2,12 +2,8 @@
   font-family: "mono";
   src: url("JetBrainsMono-Regular.ttf") format("opentype");
 }
-@font-face {
-  font-family: "harmony";
-  src: url("HarmonyOS_Sans_SC_Regular.ttf") format("opentype");
-}
 [data-font=harmony] * {
-  font-family: "harmony";
+  font-family: "mono";
 }
 
 [data-font=mono] * {

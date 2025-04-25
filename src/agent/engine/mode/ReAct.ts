@@ -1,4 +1,5 @@
 import { Agent } from "@/agent/Agent";
+import { ExecuteOptions } from "@/agent/types/agent";
 import { ToolsHandler } from "@/model/chat/ToolsHandler";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { Engine } from "../Engine";
@@ -10,7 +11,7 @@ export class ReAct extends Engine {
   }
 
   /* 执行 */
-  async execute(input: string, props?: { images?: string[]; extra?: string }) {
+  async execute(input: string, options?: ExecuteOptions) {
     try {
       await this.ensureInitialized();
 
@@ -18,45 +19,74 @@ export class ReAct extends Engine {
 
       let iterations = 0;
       let MAX_ITERATIONS = SettingsManager.getReactMaxIterations();
-      // 思考和行动阶段：让模型生成响应和可能的工具调用
-      this.context.setSystem(this.agent.props.system);
+      /* 添加用户消息 */
       this.context.runtime.push({
         role: "user",
         content: content,
         created_at: Date.now(),
-        images: props?.images,
-        extra: props?.extra,
+        images: options?.images,
+        extra: options?.extra,
       });
+      /* 开始迭代 */
       while (iterations < MAX_ITERATIONS) {
         iterations++;
         let content = "";
         let reasoner = "";
+        /* 添加助手消息 */
         this.context.runtime.addLastMessage({
           role: "assistant",
           content: "",
           created_at: Date.now(),
+          loading: true,
         });
+        /* 生成响应 */
         const response = await this.model.stream(
           this.context.getCompletionMessages(),
           (chunk) => {
             content += chunk.completion || "";
             reasoner += chunk.reasoner || "";
-            if (chunk.completion) {
-              this.context.runtime.updateLastMessage({
-                content,
-                reasoner,
-              });
-            }
+            this.context.runtime.updateLastMessage({
+              content,
+              reasoner,
+            });
           },
-          (tool) => {
-            if (tool.tool_call) {
-              ToolsHandler.call(tool.tool_call, this.agent);
+          async (tool) => {
+            if (tool.tool_call?.id) {
+              this.context.runtime.updateLastMessage({
+                tool_calls: [tool.tool_call],
+                tool_call_id: tool.tool_call.id,
+                tool_loading: true,
+              });
+              const toolResult = await ToolsHandler.call(
+                tool.tool_call,
+                this.agent,
+              );
+
+              this.context.runtime.updateLastMessage({
+                tool_loading: false,
+                loading: false,
+              });
+
+              this.context.runtime.addLastMessage({
+                role: "tool",
+                content:
+                  typeof toolResult?.result === "string"
+                    ? toolResult?.result
+                    : JSON.stringify(toolResult?.result),
+                tool_loading: false,
+                created_at: Date.now(),
+              });
+              return toolResult;
             }
           },
         );
 
+        console.log(response);
         // 如果没有工具调用，说明对话可以结束
-        if (!response.tool) {
+        if (response.tool.length === 0) {
+          this.context.runtime.updateLastMessage({
+            loading: false,
+          });
           break;
         }
 
@@ -73,6 +103,12 @@ export class ReAct extends Engine {
         });
         let content = "";
         let reasoner = "";
+        this.context.runtime.addLastMessage({
+          role: "assistant",
+          content: "",
+          created_at: Date.now(),
+          loading: true,
+        });
         await this.model.stream(
           this.context.getCompletionMessages(),
           (chunk) => {
@@ -84,6 +120,9 @@ export class ReAct extends Engine {
             });
           },
         );
+        this.context.runtime.updateLastMessage({
+          loading: false,
+        });
       }
 
       return this.context.runtime.getLastMessage();

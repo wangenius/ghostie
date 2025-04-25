@@ -1,8 +1,8 @@
-import ReactMarkdown, { Components } from "react-markdown";
-import { CodeBlock } from "../custom/CodeBlock";
-import { TbExternalLink } from "react-icons/tb";
 import { cmd } from "@/utils/shell";
+import { TbExternalLink } from "react-icons/tb";
+import ReactMarkdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { CodeBlock } from "../custom/CodeBlock";
 
 export const MarkdownRender = ({ children }: { children: string }) => {
   return (

@@ -18,7 +18,7 @@ export type ModelType =
 export interface AgentChatOptions {
   images?: { contentType: string; base64Image: string }[];
 }
-export interface EngineOptions {
+export interface ExecuteOptions {
   images?: string[];
   extra?: string;
 }

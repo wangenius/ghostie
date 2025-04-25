@@ -7,6 +7,7 @@ import { ImageManager } from "@/resources/Image";
 import { gen } from "@/utils/generator";
 import { Context } from "./context/Context";
 import { Engine } from "./engine/Engine";
+import { AgentStore } from "@/store/agents";
 
 /** Agent类 */
 export class Agent {
@@ -26,13 +27,17 @@ export class Agent {
   }
 
   /** 创建代理 */
-  static async create(config: Partial<AgentInfos> = {}): Promise<Agent> {
+  static new(config: Partial<AgentInfos> = {}): Agent {
     /* 生成ID */
     const id = gen.id();
     /* 创建代理 */
     const agent = new Agent({ ...config, id });
     /* 返回代理 */
     return agent;
+  }
+
+  async sync() {
+    AgentStore.set({ [this.props.id]: this.props });
   }
 
   /* 更新机器人元数据 */
@@ -43,6 +48,7 @@ export class Agent {
     /* 实例 */
     this.props = { ...this.props, ...data };
     this.engine = Engine.create(this);
+    this.sync();
     return this;
   }
 

@@ -112,5 +112,5 @@ export interface ChatModelResponse<
   /* 停止方法 */
   stop: () => void;
   /* 工具调用结果 */
-  tool?: FunctionCallResult<ToolArguments, ToolResult>;
+  tool: FunctionCallResult<ToolArguments, ToolResult>[];
 }

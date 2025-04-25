@@ -159,7 +159,7 @@ export function ChatMessageItem({
   return (
     <div
       className={cn(
-        "border-0 p-3 rounded-3xl rounded-tl-none transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2",
+        "border-0 p-3 rounded-3xl transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2",
         {
           "!rounded-t-none pt-0":
             message.role === "assistant" && lastMessageType === "tool",

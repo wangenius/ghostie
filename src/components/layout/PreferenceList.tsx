@@ -45,7 +45,7 @@ export function PreferenceList({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto pr-1">
+      <div className="flex-1 overflow-y-auto space-y-0.5 pr-1">
         {items?.length ? (
           items.map((item) => <SettingsListItem key={item.id} {...item} />)
         ) : (
@@ -75,7 +75,7 @@ export function SettingsListItem({
   return (
     <div
       className={cn(
-        "group relative px-4 py-3 rounded-sm transition-all hover:bg-muted-foreground/10 select-none cursor-pointer",
+        "group relative px-3 py-2 rounded-sm transition-all hover:bg-muted-foreground/10 select-none cursor-pointer",
         actived ? "bg-muted-foreground/10" : "bg-transparent",
       )}
       onClick={() => onClick(id)}

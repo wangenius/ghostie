@@ -3,15 +3,6 @@
   src: url("JetBrainsMono-Regular.ttf") format("opentype");
 }
 
-@font-face {
-  font-family: "harmony";
-  src: url("HarmonyOS_Sans_SC_Regular.ttf") format("opentype");
-}
-
-[data-font="harmony"] * {
-  font-family: "harmony";
-}
-
 [data-font="mono"] * {
   font-family: "mono";
 }

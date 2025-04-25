@@ -54,9 +54,8 @@ export function ThemeSettings() {
 export function FontSettings() {
   const settings = SettingsManager.use();
   const fonts = [
-    { name: "mono", label: "jetbrains" },
-    { name: "harmony", label: "harmony" },
     { name: "default", label: "default" },
+    { name: "mono", label: "jetbrains" },
   ];
 
   return (

@@ -19,7 +19,9 @@ interface ChatModelInfo {
 }
 
 type OnChunk = (chunk: { completion?: string; reasoner?: string }) => void;
-type OnToolCall = (chunk: { tool_call?: ToolCallReply }) => any;
+type OnToolCall = (chunk: {
+  tool_call?: ToolCallReply;
+}) => Promise<FunctionCallResult | undefined>;
 
 /** Chat模型, 用于与模型进行交互
  *
@@ -125,6 +127,42 @@ export class ChatModel {
     }
   }
 
+  /**
+   * 工具调用适配器，处理工具调用的解析和合并
+   * @param chunk 当前响应块中的工具调用
+   * @param tool_calls 已收集的工具调用数组
+   * @returns 更新后的工具调用数组
+   */
+  protected ToolCallAdapter(
+    chunk: ToolCallReply | undefined,
+    tool_calls: ToolCallReply[],
+  ): ToolCallReply[] {
+    if (!chunk) return tool_calls;
+
+    // 复制当前工具调用数组
+    const updatedToolCalls = [...tool_calls];
+
+    // 如果有ID，说明是新的工具调用
+    if (chunk.id) {
+      updatedToolCalls[chunk.index] = {
+        ...chunk,
+        function: {
+          ...chunk.function,
+          arguments: chunk.function.arguments || "",
+        },
+      };
+    }
+    // 没有ID但有参数内容，将参数追加到最后一个工具调用
+    else if (chunk.function.arguments) {
+      if (updatedToolCalls.length > 0) {
+        const lastToolCall = updatedToolCalls[updatedToolCalls.length - 1];
+        lastToolCall.function.arguments += chunk.function.arguments;
+      }
+    }
+
+    return updatedToolCalls;
+  }
+
   /** 流式生成
    * @param prompt 提示词，如果为空，则使用历史消息，因为可能存在assistant的消息
    * @returns 流式生成结果
@@ -143,8 +181,8 @@ export class ChatModel {
     this.currentRequestId = gen.id();
     /* 消息 */
     let messages: CompletionMessage[] = message;
-    /* 工具调用 */
-    let tool_calls: ToolCallReply[] = [];
+    /* 工具调用收集 */
+    let rawToolCalls: ToolCallReply[] = [];
 
     try {
       /* 创建请求体 */
@@ -167,28 +205,14 @@ export class ChatModel {
           if (!event.payload) return;
           /* 适配子类不同的相应格式 */
           const chunk = this.ResponseBodyAdapter(event.payload);
-          console.log(chunk);
 
           /* 内容 */
           completionContent += chunk.completion || "";
           onChunk?.({ completion: chunk.completion, reasoner: chunk.reasoner });
 
-          /* 工具调用解析：todo: 目前存在问题，需要优化 */
+          /* 收集工具调用 */
           if (chunk.tool_call) {
-            if (chunk.tool_call.id) {
-              tool_calls[chunk.tool_call.index] = {
-                ...chunk.tool_call,
-                function: {
-                  ...chunk.tool_call.function,
-                  arguments: chunk.tool_call.function.arguments || "",
-                },
-              };
-            } else if (chunk.tool_call.function.arguments) {
-              if (tool_calls[tool_calls.length - 1]) {
-                tool_calls[tool_calls.length - 1].function.arguments +=
-                  chunk.tool_call.function.arguments;
-              }
-            }
+            rawToolCalls.push(chunk.tool_call);
           }
         },
       );
@@ -213,17 +237,26 @@ export class ChatModel {
       unlistenStream();
       unlistenError();
 
-      let toolResult: FunctionCallResult | undefined;
+      // 统一处理所有收集到的工具调用
+      let tool_calls: ToolCallReply[] = [];
+      let tool_results: FunctionCallResult[] = [];
+      for (const toolCallChunk of rawToolCalls) {
+        tool_calls = this.ToolCallAdapter(toolCallChunk, tool_calls);
+      }
+
       if (tool_calls.length > 0) {
         for (const tool_call of tool_calls) {
-          toolResult = await onToolCall?.({ tool_call });
+          const toolResult = await onToolCall?.({ tool_call });
+          if (toolResult) {
+            tool_results.push(toolResult);
+          }
         }
       }
 
       return {
         body: completionContent,
         stop: () => this.stop(),
-        tool: toolResult,
+        tool: tool_results,
       };
     } catch (error) {
       this.currentRequestId = undefined;
@@ -231,6 +264,7 @@ export class ChatModel {
       return {
         body: String(error),
         stop: () => this.stop(),
+        tool: [],
       };
     }
   }

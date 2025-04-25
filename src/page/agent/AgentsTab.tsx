@@ -33,7 +33,8 @@ export function AgentsTab() {
   /* 创建机器人 */
   const handleCreateAgent = async () => {
     try {
-      await Agent.create();
+      const agent = Agent.new();
+      AgentStore.set({ [agent.props.id]: agent.props });
     } catch (error) {
       console.error("add agent error:", error);
     }
@@ -152,9 +153,7 @@ export function AgentsTab() {
                 </span>
               ),
               onClick: async () => {
-                if (ActiveAgents.current[agent.id]) {
-                  ActiveAgents.current[agent.id].createNewContext();
-                } else {
+                if (!ActiveAgents.current[agent.id]) {
                   ActiveAgents.current[agent.id] = new Agent(
                     (await AgentStore.getCurrent())[agent.id],
                   );

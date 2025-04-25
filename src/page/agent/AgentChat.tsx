@@ -18,7 +18,13 @@ import { cmd } from "@/utils/shell";
 import Avatar from "boring-avatars";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
-import { TbBrandWechat, TbPencil, TbTrash, TbUpload } from "react-icons/tb";
+import {
+  TbArrowLeft,
+  TbBrandWechat,
+  TbPencil,
+  TbTrash,
+  TbUpload,
+} from "react-icons/tb";
 import { Descendant } from "slate";
 import { toast } from "sonner";
 import { ChatMessageItem } from "../main/MessageItem";
@@ -80,7 +86,7 @@ export const AgentChat = ({
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [currentChat]);
+  }, [context, currentChat]);
 
   const handleDeleteAgent = async () => {
     const answer = await cmd.confirm(
@@ -241,13 +247,8 @@ export const AgentChat = ({
               </DropdownMenu>
             </>
           ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setMode("chat")}
-              className="gap-1"
-            >
-              <TbBrandWechat className="h-4 w-4" />
+            <Button size="sm" onClick={() => setMode("chat")} className="gap-1">
+              <TbArrowLeft className="h-4 w-4" />
               返回聊天
             </Button>
           )}
@@ -377,8 +378,9 @@ export const AgentChat = ({
                   ),
                 )}
 
-                {context[agent.context.runtime.info.id]?.messages.length >
-                  0 && <div className="h-4" ref={messagesEndRef} />}
+                {Object.values(context).length !== 0 && (
+                  <div className="h-4" ref={messagesEndRef} />
+                )}
               </div>
             )}
           </div>

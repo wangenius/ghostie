@@ -2,7 +2,7 @@ import { ChatModel } from "@/model/chat/ChatModel";
 import { ToolsHandler } from "@/model/chat/ToolsHandler";
 import { Agent } from "../Agent";
 import { Context } from "../context/Context";
-import { EngineOptions } from "../types/agent";
+import { ExecuteOptions } from "../types/agent";
 import { EngineManager } from "./EngineManager";
 
 /* Agent 框架父类 */
@@ -47,12 +47,11 @@ export class Engine {
     /* 输入 */
     input: string,
     /* 选项 */
-    props?: EngineOptions,
+    options?: ExecuteOptions,
   ): Promise<{ content: string }> {
     console.log(
-      `执行 ${input}, images: ${props?.images}, extra: ${props?.extra}`,
+      `执行 ${input}, images: ${options?.images}, extra: ${options?.extra}`,
     );
-    // 确保初始化已完成
     await this.ensureInitialized();
     throw new Error("Not implemented");
   }
