@@ -20,7 +20,7 @@ import {
   PluginStore,
 } from "@/plugin/ToolPlugin";
 import { Agent } from "@/agent/Agent";
-import { AgentStore } from "@/store/agents";
+import { AgentsListStore } from "@/store/agents";
 import { AgentMarket } from "@/market/agents";
 
 /* 工作流列表 */
@@ -169,7 +169,9 @@ export class Workflow {
 
         if (!processedAgents.has(agentId)) {
           try {
-            const agent = new Agent((await AgentStore.getCurrent())[agentId]);
+            const agent = new Agent(
+              (await AgentsListStore.getCurrent())[agentId],
+            );
 
             // 尝试上传代理，如果失败则检查是否是因为已存在
             try {
@@ -230,7 +232,7 @@ export class Workflow {
 
       // 获取现有的插件和代理，用于检查是否已安装
       const existingPlugins = await PluginStore.getCurrent();
-      const existingAgents = await AgentStore.getCurrent();
+      const existingAgents = await AgentsListStore.getCurrent();
 
       // 处理所有节点，检查是否需要安装插件和代理
       for (const node of Object.values(

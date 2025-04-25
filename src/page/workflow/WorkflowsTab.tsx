@@ -68,8 +68,16 @@ export default function WorkflowsTab() {
         tips="Support workflows: Create and manage automated workflows through visual orchestration. Supports multiple node types and conditional branches."
         items={Object.entries(workflows).map(([id, workflow]) => ({
           id,
-          title: workflow.name || "Unnamed Workflow",
-          description: workflow.description || "No description",
+          content: (
+            <div className="flex flex-col items-start gap-1">
+              <span className="font-bold text-sm truncate">
+                {workflow.name || "Unnamed Workflow"}
+              </span>
+              <span className="text-xs text-muted-foreground line-clamp-1">
+                {workflow.description || "No description"}
+              </span>
+            </div>
+          ),
           onClick: async () => await handleWorkflowSelect(id),
           actived: contextWorkflowId === id,
           onRemove: () => {

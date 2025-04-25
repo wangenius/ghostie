@@ -4,11 +4,23 @@ use once_cell::sync::Lazy;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use std::collections::HashMap;
 use std::sync::Mutex;
+use std::time::Duration;
 use tauri::{Emitter, Runtime};
 use tokio::sync::oneshot;
 
 static CANCEL_CHANNELS: Lazy<Mutex<HashMap<String, oneshot::Sender<()>>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
+
+// 全局HTTP客户端，避免每次请求都创建新客户端
+static HTTP_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
+    reqwest::Client::builder()
+        .pool_max_idle_per_host(10) // 连接池设置
+        .timeout(Duration::from_secs(30)) // 整体超时
+        .connect_timeout(Duration::from_secs(10)) // 连接超时
+        .tcp_keepalive(Some(Duration::from_secs(60))) // TCP保持活跃
+        .build()
+        .expect("Failed to create HTTP client")
+});
 
 #[tauri::command]
 pub async fn chat_stream<R: Runtime>(
@@ -18,12 +30,10 @@ pub async fn chat_stream<R: Runtime>(
     request_id: String,
     request_body: serde_json::Value,
 ) -> Result<(), String> {
-    let client = reqwest::Client::builder()
-        .build()
-        .map_err(|e| e.to_string())?;
+    // 使用全局客户端而不是每次创建新的
+    let client = &*HTTP_CLIENT;
 
-    println!("request_body: {:#?}", request_body);
-
+    // 构建请求头
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
     headers.insert(
@@ -31,24 +41,24 @@ pub async fn chat_stream<R: Runtime>(
         HeaderValue::from_str(&format!("Bearer {}", api_key)).map_err(|e| e.to_string())?,
     );
 
-    println!("正在发送请求到: {}", api_url);
-    let response = client
+    // 预先构建请求，可以提前开始DNS解析和连接建立
+    let request_builder = client
         .post(&api_url)
         .headers(headers)
         .json(&request_body)
-        .send()
-        .await
-        .map_err(|e| {
-            println!("请求发送失败: {}", e);
-            window
-                .clone()
-                .emit(&format!("chat-stream-error-{}", request_id), e.to_string())
-                .unwrap();
-            e.to_string()
-        })?;
+        .timeout(Duration::from_secs(60)); // 为这个特定请求设置更长的超时
 
-    println!("response: {:#?}", response);
+    println!("正在发送请求到: {}", api_url);
+    let response = request_builder.send().await.map_err(|e| {
+        println!("请求发送失败: {}", e);
+        window
+            .clone()
+            .emit(&format!("chat-stream-error-{}", request_id), e.to_string())
+            .unwrap();
+        e.to_string()
+    })?;
 
+    // 检查响应状态
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().await.map_err(|e| e.to_string())?;
@@ -65,6 +75,9 @@ pub async fn chat_stream<R: Runtime>(
         .unwrap()
         .insert(request_id.clone(), cancel_tx);
 
+    // 使用缓冲处理以提高性能
+    let mut buffer = Vec::new();
+
     // 直接处理流数据
     while let Some(chunk_result) = tokio::select! {
         chunk = stream.next() => chunk,
@@ -72,16 +85,27 @@ pub async fn chat_stream<R: Runtime>(
     } {
         match chunk_result {
             Ok(chunk) => {
-                let text = String::from_utf8_lossy(&chunk);
+                // 积累数据到缓冲区
+                buffer.extend_from_slice(&chunk);
+
+                // 找到所有完整的行
+                let mut processed = 0;
+                let text = String::from_utf8_lossy(&buffer);
                 let lines: Vec<&str> = text.split('\n').collect();
 
-                for line in lines {
+                // 处理所有完整的行，除了最后一行（可能不完整）
+                for line in lines.iter().take(lines.len() - 1) {
                     if !line.is_empty() {
-                        println!("line: {}", line);
                         if let Err(e) = window.emit(&format!("chat-stream-{}", request_id), line) {
                             eprintln!("Failed to emit event: {}", e);
                         }
                     }
+                    processed += line.len() + 1; // +1 for the newline
+                }
+
+                // 保留未处理的数据
+                if processed > 0 {
+                    buffer.drain(0..processed);
                 }
             }
             Err(e) => {
@@ -91,6 +115,17 @@ pub async fn chat_stream<R: Runtime>(
                     eprintln!("Failed to emit error event: {}", emit_err);
                 }
                 break;
+            }
+        }
+    }
+
+    // 处理缓冲区中的最后一行（如果有）
+    if !buffer.is_empty() {
+        let last_line = String::from_utf8_lossy(&buffer);
+        if !last_line.is_empty() {
+            if let Err(e) = window.emit(&format!("chat-stream-{}", request_id), last_line.as_ref())
+            {
+                eprintln!("Failed to emit event: {}", e);
             }
         }
     }
@@ -114,9 +149,8 @@ pub async fn image_generate(
     api_key: String,
     request_body: serde_json::Value,
 ) -> Result<serde_json::Value, String> {
-    let client = reqwest::Client::builder()
-        .build()
-        .map_err(|e| e.to_string())?;
+    // 使用全局客户端
+    let client = &*HTTP_CLIENT;
 
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
@@ -154,9 +188,8 @@ pub async fn image_generate(
 
 #[tauri::command]
 pub async fn image_result(api_url: String, api_key: String) -> Result<serde_json::Value, String> {
-    let client = reqwest::Client::builder()
-        .build()
-        .map_err(|e| e.to_string())?;
+    // 使用全局客户端
+    let client = &*HTTP_CLIENT;
 
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));

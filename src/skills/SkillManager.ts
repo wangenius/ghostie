@@ -1,13 +1,13 @@
 /* 技能方法接口 */
-import { ChatModel } from "@/model/chat/ChatModel";
 import { ToolParameters } from "@/plugin/types";
+import { Agent } from "@/agent/Agent";
 
 /** 方法元数据 */
 export interface Skill {
   name: string;
   description: string;
   params: ToolParameters;
-  execute: (params: Record<string, any>, chatModel: ChatModel) => any;
+  execute: (params: Record<string, any>, agent: Agent) => any;
 }
 
 /** 方法管理器 */
@@ -31,12 +31,12 @@ export const SkillManager = {
   execute(
     skillType: string,
     params: Record<string, any> = {},
-    chatModel: ChatModel,
+    agent: Agent,
   ): any {
     const skill = this.getSkill(skillType);
     if (!skill) {
       throw new Error(`技能 ${skillType} 不存在`);
     }
-    return skill.execute(params, chatModel);
+    return skill.execute(params, agent);
   },
 };

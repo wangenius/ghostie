@@ -13,15 +13,24 @@ export class Context {
   memory: ContextMemory;
   /** 运行时上下文 */
   runtime: ContextRuntime;
+
   /**
    * 构造函数
    */
   constructor(agent: Agent) {
     this.agent = agent;
     this.memory = new ContextMemory();
+    // 构造函数中创建一个新的运行时上下文
     this.runtime = new ContextRuntime(agent);
   }
 
+  setRuntime(runtime: ContextRuntime) {
+    this.runtime = runtime;
+  }
+
+  /**
+   * 创建上下文的静态方法
+   */
   static create(agent: Agent) {
     return new Context(agent);
   }

@@ -15,19 +15,27 @@ export class ContextRuntime {
   agent: Agent;
   private props: ContextRuntimeProps;
 
-  constructor(agent: Agent) {
+  constructor(agent: Agent, existingProps?: ContextRuntimeProps) {
     this.agent = agent;
-    this.props = {
-      id: gen.id(),
-      messages: [],
-      system: {
-        role: "system",
-        content: agent.props.system || "",
+    if (existingProps) {
+      // 使用现有的ContextRuntimeProps，但更新updated_at
+      this.props = {
+        ...existingProps,
+      };
+    } else {
+      // 创建新的ContextRuntimeProps
+      this.props = {
+        id: gen.id(),
+        messages: [],
+        system: {
+          role: "system",
+          content: agent.props.system || "",
+          created_at: Date.now(),
+        },
         created_at: Date.now(),
-      },
-      created_at: Date.now(),
-      updated_at: Date.now(),
-    };
+        updated_at: Date.now(),
+      };
+    }
   }
 
   // 属性变化时自动调用的方法

@@ -92,7 +92,7 @@ export const SlateEditor = memo((props: SlateEditorProps) => {
   // 优化键盘事件处理
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
-      if (event.ctrlKey && event.key === "Enter") {
+      if ((event.ctrlKey || event.shiftKey) && event.key === "Enter") {
         onSubmit?.(editor.children);
         event.preventDefault();
         // 提交后聚焦到编辑器末尾

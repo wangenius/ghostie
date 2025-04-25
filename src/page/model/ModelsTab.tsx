@@ -102,7 +102,7 @@ export function ModelsTab() {
         }
         items={items.map((provider) => ({
           id: provider.name,
-          title: (
+          content: (
             <div className="flex items-center justify-between gap-2">
               {provider.icon && (
                 <img
@@ -114,18 +114,14 @@ export function ModelsTab() {
                   alt={provider.name}
                 />
               )}
-              <div className="flex justify-between flex-1 gap-1">
+              <div className="flex flex-col items-start justify-start flex-1 gap-1">
                 <span className="font-bold text-sm truncate">
                   {provider.name}
                 </span>
+                <span className="text-xs text-muted-foreground">
+                  {Object.keys(provider.models).length} models
+                </span>
               </div>
-            </div>
-          ),
-          description: (
-            <div className="text-xs text-muted-foreground">
-              <span className="text-xs text-muted-foreground">
-                {Object.keys(provider.models).length} models
-              </span>
             </div>
           ),
           onClick: () => setSelectedModel(provider),

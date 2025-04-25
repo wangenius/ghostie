@@ -4,8 +4,8 @@ import { SlateEditor } from "@/components/editor/SlateEditor";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { memo } from "react";
-import { Descendant } from "slate";
 import { TbCornerRightUp, TbLoader } from "react-icons/tb";
+import { Descendant } from "slate";
 export const plainText = (value: Descendant[]) =>
   value
     .map((node) => {
@@ -74,7 +74,7 @@ export const TypeArea = memo(
             variant={props.loading ? "primary" : "ghost"}
             disabled={plainText(props.value).trim() === "" && !props.loading}
             className={cn(
-              "no-drag rounded-[8px]",
+              "no-drag rounded-full !h-6 pr-1",
               plainText(props.value).trim() === "" &&
                 !props.loading &&
                 "opacity-50 hover:bg-transparent cursor-default hover:opacity-50",

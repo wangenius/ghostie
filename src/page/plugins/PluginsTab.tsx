@@ -213,8 +213,16 @@ export function PluginsTab() {
         tips="Extend the tools by writing a plugin. Refer to the Documentation for more infos."
         items={Object.values(plugins).map((plugin) => ({
           id: plugin.id,
-          title: plugin.name || "Unnamed Plugin",
-          description: plugin.description || "No description",
+          content: (
+            <div className="flex flex-col items-start gap-1">
+              <span className="font-bold text-sm truncate">
+                {plugin.name || "Unnamed Plugin"}
+              </span>
+              <span className="text-xs text-muted-foreground line-clamp-1">
+                {plugin.description || "No description"}
+              </span>
+            </div>
+          ),
           onClick: () => {
             CurrentPlugin.set(new ToolPlugin(plugin), { replace: true });
             PluginContent.indexed({

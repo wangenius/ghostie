@@ -4,10 +4,10 @@ import {
   DEFAULT_AGENT,
 } from "@/agent/types/agent";
 import { ImageManager } from "@/resources/Image";
+import { AgentsListStore } from "@/store/agents";
 import { gen } from "@/utils/generator";
 import { Context } from "./context/Context";
 import { Engine } from "./engine/Engine";
-import { AgentStore } from "@/store/agents";
 
 /** Agent类 */
 export class Agent {
@@ -17,17 +17,18 @@ export class Agent {
   engine: Engine;
   /* 上下文 */
   context: Context;
+
   /** 构造函数 */
   constructor(agent?: Partial<AgentInfos>) {
     this.props = { ...DEFAULT_AGENT, ...agent };
-    /* 上下文 */
+    /* 创建上下文 */
     this.context = Context.create(this);
     /* 引擎 */
     this.engine = Engine.create(this);
   }
 
   /** 创建代理 */
-  static new(config: Partial<AgentInfos> = {}): Agent {
+  static async create(config: Partial<AgentInfos> = {}): Promise<Agent> {
     /* 生成ID */
     const id = gen.id();
     /* 创建代理 */
@@ -37,7 +38,7 @@ export class Agent {
   }
 
   async sync() {
-    AgentStore.set({ [this.props.id]: this.props });
+    AgentsListStore.set({ [this.props.id]: this.props });
   }
 
   /* 更新机器人元数据 */
@@ -45,7 +46,6 @@ export class Agent {
     if (!this.props.id) {
       return this;
     }
-    /* 实例 */
     this.props = { ...this.props, ...data };
     this.engine = Engine.create(this);
     this.sync();
@@ -80,15 +80,5 @@ export class Agent {
   close() {
     this.engine.close();
     this.props = DEFAULT_AGENT;
-  }
-
-  createNewContext() {
-    // 创建新的上下文
-    this.context = Context.create(this);
-    // 确保引擎使用新的上下文
-    this.engine.context = this.context;
-    // 如果需要重新初始化引擎，可以在这里执行
-    this.engine = Engine.create(this);
-    return this;
   }
 }

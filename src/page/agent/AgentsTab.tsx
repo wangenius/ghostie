@@ -11,10 +11,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  ActiveAgents,
-  AgentStore,
-  CurrentAgent,
+  AgentsListStore,
   CurrentAgentContextRuntime,
+  CurrentAgentChatId,
+  OpenedAgents,
+  OpenedAgentsLoadingState,
 } from "@/store/agents";
 import { cmd } from "@utils/shell";
 import Avatar from "boring-avatars";
@@ -24,15 +25,16 @@ import { AgentChat } from "./AgentChat";
 
 /** AgentsTab */
 export function AgentsTab() {
-  const activeAgents = CurrentAgent.use();
-  const agents = AgentStore.use();
-  const activeAgent = ActiveAgents.use((selector) => selector[activeAgents]);
+  const activeAgents = CurrentAgentChatId.use();
+  const agents = AgentsListStore.use();
+  const loadingState = OpenedAgentsLoadingState.use();
+  const activeAgent = OpenedAgents.get(activeAgents);
 
   /* 创建机器人 */
   const handleCreateAgent = async () => {
     try {
-      const agent = Agent.new();
-      AgentStore.set({ [agent.props.id]: agent.props });
+      const agent = await Agent.create();
+      AgentsListStore.set({ [agent.props.id]: agent.props });
     } catch (error) {
       console.error("add agent error:", error);
     }
@@ -113,13 +115,13 @@ export function AgentsTab() {
         items={Object.values(agents)
           .map((agent) => {
             if (!agent.id) {
-              AgentStore.delete(agent.id);
+              AgentsListStore.delete(agent.id);
               return null;
             }
             return {
               id: agent.id,
-              title: (
-                <span className="flex items-center space-x-3">
+              content: (
+                <div className="flex items-center space-x-3">
                   <Avatar
                     size={32}
                     name={agent.id}
@@ -131,16 +133,36 @@ export function AgentsTab() {
                       "#C271B4",
                       "#C20D90",
                     ]}
+                    className="flex-none"
                     square={false}
                   />
-                  <span>{agent.name || "未命名助手"}</span>
-                </span>
+
+                  <div className="flex flex-col items-start space-y-1 font-normal text-xs overflow-hidden">
+                    <span className="text-sm font-medium">
+                      {agent.name || "未命名助手"}
+                    </span>
+                    {loadingState[agent.id] ? (
+                      <span className="text-xs text-muted-foreground">
+                        typing...
+                      </span>
+                    ) : (
+                      <span className="line-clamp-1 text-xs text-muted-foreground">
+                        {OpenedAgents.get(
+                          agent.id,
+                        )?.context.runtime.getLastMessage()?.content ||
+                          agent.description}
+                      </span>
+                    )}
+                  </div>
+                </div>
               ),
+
               onClick: async () => {
-                if (!ActiveAgents.current[agent.id]) {
-                  ActiveAgents.current[agent.id] = new Agent(
-                    (await AgentStore.getCurrent())[agent.id],
+                if (!OpenedAgents.get(agent.id)) {
+                  const newAgent = new Agent(
+                    (await AgentsListStore.getCurrent())[agent.id],
                   );
+                  OpenedAgents.set(agent.id, newAgent);
                 }
                 await CurrentAgentContextRuntime.temporary()
                   .indexed({
@@ -149,7 +171,7 @@ export function AgentsTab() {
                   })
                   .ready();
 
-                CurrentAgent.set(agent.id);
+                CurrentAgentChatId.set(agent.id);
               },
               actived: activeAgent?.props.id === agent.id,
               noRemove: true,
@@ -166,13 +188,7 @@ export function AgentsTab() {
         EmptyIcon={TbGhost3}
         isEmpty={!activeAgent?.props.id}
       >
-        {activeAgent && (
-          <AgentChat
-            key={`${activeAgent.props.id}-${Date.now()}`}
-            agent={activeAgent}
-            close={() => ActiveAgents.delete(activeAgent.props.id)}
-          />
-        )}
+        {activeAgent && <AgentChat />}
       </PreferenceBody>
     </PreferenceLayout>
   );

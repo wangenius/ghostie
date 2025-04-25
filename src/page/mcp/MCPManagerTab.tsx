@@ -46,7 +46,7 @@ export function MCPTab() {
         tips="mcp目前仅支持npx环境的stdio方式的mcp服务, 可能需要提前配置环境和网络服务。您可前往第三方MCP市场获取更多资源。"
         items={Object.values(mcps).map((mcp) => ({
           id: mcp.id,
-          title: (
+          content: (
             <div className="flex items-center gap-2">
               {mcp.name || "未命名MCP"}
               {mcp.opened && (

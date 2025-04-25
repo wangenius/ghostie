@@ -1,4 +1,4 @@
-import { ChatModel } from "@/model/chat/ChatModel";
+import { Agent } from "@/agent/Agent";
 import { ToolsHandler } from "@/model/chat/ToolsHandler";
 import { PluginStore } from "@/plugin/ToolPlugin";
 import { SkillManager } from "../SkillManager";
@@ -45,9 +45,9 @@ SkillManager.register("registerPlugin", {
     },
     required: ["plugin", "tool"],
   },
-  execute: async (params: Record<string, any>, chatModel: ChatModel) => {
+  execute: async (params: Record<string, any>, agent: Agent) => {
     const { plugin, tool } = params;
-    chatModel.addTools(
+    agent.engine.model.addTools(
       await ToolsHandler.transformAgentToolToModelFormat([
         {
           plugin,

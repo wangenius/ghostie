@@ -1,5 +1,5 @@
 import { Agent } from "@/agent/Agent";
-import { AgentMCPProps, AgentInfos, AgentToolProps } from "@/agent/types/agent";
+import { AgentInfos, AgentMCPProps, AgentToolProps } from "@/agent/types/agent";
 import {
   AGENT_TOOL_NAME_PREFIX,
   KNOWLEDGE_TOOL_NAME_PREFIX,
@@ -14,6 +14,9 @@ import { StartNodeConfig, WorkflowBody } from "@/page/workflow/types/nodes";
 import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
 import { ToolParameters } from "@/plugin/types";
 import { ImageManager } from "@/resources/Image";
+import { SkillManager } from "@/skills/SkillManager";
+import { AgentsListStore } from "@/store/agents";
+import { KnowledgesStore } from "@/store/knowledges";
 import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
 import { Echo } from "echo-state";
 import { ImageModel } from "../image/ImageModel";
@@ -23,10 +26,6 @@ import {
   ToolRequestBody,
 } from "../types/chatModel";
 import { VisionModel } from "../vision/VisionModel";
-import { SkillManager } from "@/skills/SkillManager";
-import { ChatModel } from "./ChatModel";
-import { KnowledgesStore } from "@/store/knowledges";
-import { AgentStore } from "@/store/agents";
 
 export class ToolsHandler {
   static async transformAgentToolToModelFormat(
@@ -58,7 +57,7 @@ export class ToolsHandler {
     const toolRequestBody: ToolRequestBody = [];
     for (const mcp of mcps) {
       const tools = MCP_Actived.current[mcp.server];
-      const targetTool = tools.find((item) => item.name === mcp.tool);
+      const targetTool = tools?.find((item) => item.name === mcp.tool);
 
       if (targetTool)
         toolRequestBody.push({
@@ -212,7 +211,7 @@ export class ToolsHandler {
     const toolRequestBody: ToolRequestBody = [];
     if (agents.length) {
       /* 获取代理 */
-      const list = await AgentStore.getCurrent();
+      const list = await AgentsListStore.getCurrent();
 
       /* 将知识库变成工具 */
       agents.forEach((agent) => {
@@ -377,7 +376,10 @@ export class ToolsHandler {
         };
       }
       if (firstName === AGENT_TOOL_NAME_PREFIX) {
-        const agent = new Agent((await AgentStore.getCurrent())[secondName]);
+        const agent = new Agent(
+          (await AgentsListStore.getCurrent())[secondName],
+        );
+
         if (!agent) {
           return {
             name: tool_call.function.name,
@@ -393,11 +395,7 @@ export class ToolsHandler {
         };
       }
       if (firstName === SKILL_TOOL_NAME_PREFIX) {
-        const result = await SkillManager.execute(
-          secondName,
-          query,
-          ChatModel.create(agent.props.models?.text),
-        );
+        const result = await SkillManager.execute(secondName, query, agent);
         return {
           name: tool_call.function.name,
           arguments: tool_call.function.arguments,
@@ -456,7 +454,7 @@ export class ToolsHandler {
     const secondName = toolName.split(TOOL_NAME_SPLIT)[1];
 
     if (firstName === AGENT_TOOL_NAME_PREFIX) {
-      const list = await AgentStore.getCurrent();
+      const list = await AgentsListStore.getCurrent();
       return {
         type: "agent",
         name: `calling agent: ${list[secondName].name}`,

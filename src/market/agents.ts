@@ -8,7 +8,7 @@ import {
 } from "@/plugin/ToolPlugin";
 import { Echo } from "echo-state";
 import { MCP, MCPStore } from "@/page/mcp/MCP";
-import { AgentStore } from "@/store/agents";
+import { AgentsListStore } from "@/store/agents";
 
 export class AgentMarket {
   static async uploadToMarket(agent: AgentInfos) {
@@ -224,7 +224,7 @@ export class AgentMarket {
     }
 
     /* 保存代理 */
-    AgentStore.set({
+    AgentsListStore.set({
       [data.id]: data.body,
     });
     return;

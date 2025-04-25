@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AgentMarket } from "@/market/agents";
 import { UserMananger } from "@/services/user/User";
-import { AgentStore } from "@/store/agents";
+import { AgentsListStore } from "@/store/agents";
 import Avatar from "boring-avatars";
 import { useEffect, useState } from "react";
 import {
@@ -28,7 +28,7 @@ export const AgentsMarket = () => {
   const [hasNextPage, setHasNextPage] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const user = UserMananger.use();
-  const CurrentAgents = AgentStore.use();
+  const CurrentAgents = AgentsListStore.use();
 
   console.log(CurrentAgents);
 

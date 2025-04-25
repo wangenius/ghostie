@@ -1,35 +1,45 @@
 import { Agent } from "@/agent/Agent";
+import { ContextRuntime } from "@/agent/context/Runtime";
 import { dialog } from "@/components/custom/DialogModal";
 import { ImageElement } from "@/components/editor/elements/image";
 import { Button } from "@/components/ui/button";
+import { Drawer } from "@/components/ui/drawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Echoi } from "@/lib/echo/Echo";
 import { AgentMarket } from "@/market/agents";
 import {
-  AgentStore,
+  AgentsListStore,
   CurrentAgentContextRuntime,
-  LoadingAgents,
+  CurrentAgentChatId,
+  OpenedAgents,
+  OpenedAgentsLoadingState,
 } from "@/store/agents";
 import { cmd } from "@/utils/shell";
 import Avatar from "boring-avatars";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
 import {
   TbArrowLeft,
   TbBrandWechat,
+  TbHistory,
   TbPencil,
+  TbPlus,
   TbTrash,
   TbUpload,
 } from "react-icons/tb";
 import { Descendant } from "slate";
 import { toast } from "sonner";
+import { AgentEditor } from "./AgentEditor";
+import { HistoryPage } from "./HistoryDrawer";
 import { ChatMessageItem } from "./MessageItem";
 import { plainText, TypeArea } from "./TypeArea";
-import { AgentEditor } from "./AgentEditor";
+
+const ChatViewMode = new Echoi<"chat" | "edit">("chat");
 
 // 定义 MentionElement 接口
 interface MentionElement {
@@ -38,19 +48,14 @@ interface MentionElement {
   children: { text: string }[];
 }
 
-export const AgentChat = ({
-  agent,
-  close,
-}: {
-  agent: Agent;
-  close: () => void;
-}) => {
-  const loadingState = LoadingAgents.use();
+export const AgentChat = memo(() => {
+  const id = CurrentAgentChatId.use();
+  const agent = OpenedAgents.get(id) || new Agent();
+  const loadingState = OpenedAgentsLoadingState.use();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<{ focus: () => void }>(null);
-  const [mode, setMode] = useState<"chat" | "edit">("chat");
-  const [historyLimit, setHistoryLimit] = useState(3);
+  const mode = ChatViewMode.use();
   const [value, setValue] = useState<Descendant[]>([
     {
       type: "paragraph",
@@ -60,14 +65,14 @@ export const AgentChat = ({
 
   // 使用自定义的ContextRuntime实例
   const context = CurrentAgentContextRuntime.use();
-
+  const [historyOpen, setHistoryOpen] = useState(false);
   // 获取当前Agent的loading状态
   const loading = loadingState[agent.props.id] || false;
 
   // 设置loading状态的函数
   const setLoading = useCallback(
     (isLoading: boolean) => {
-      LoadingAgents.set({
+      OpenedAgentsLoadingState.set({
         ...loadingState,
         [agent.props.id]: isLoading,
       });
@@ -94,7 +99,7 @@ export const AgentChat = ({
     );
     if (answer) {
       try {
-        AgentStore.delete(agent.props.id);
+        AgentsListStore.delete(agent.props.id);
         close();
       } catch (error) {
         console.error("delete agent error:", error);
@@ -224,7 +229,42 @@ export const AgentChat = ({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => setMode("edit")}
+                onClick={() => {
+                  const runtime = new ContextRuntime(agent);
+                  agent.context.setRuntime(runtime);
+                }}
+              >
+                <TbPlus className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={() => setHistoryOpen(true)}
+                size="sm"
+                className="text-xs text-muted-foreground"
+              >
+                <TbHistory className="h-4 w-4" />
+                历史
+              </Button>
+              <Drawer
+                open={historyOpen}
+                onOpenChange={setHistoryOpen}
+                children={
+                  <HistoryPage
+                    onClick={async (item) => {
+                      setHistoryOpen(false);
+                      const runtime = new ContextRuntime(
+                        agent,
+                        context[item.id],
+                      );
+                      agent.context.setRuntime(runtime);
+                    }}
+                  />
+                }
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => ChatViewMode.set("edit")}
               >
                 <TbPencil className="h-4 w-4" />
               </Button>
@@ -247,7 +287,11 @@ export const AgentChat = ({
               </DropdownMenu>
             </>
           ) : (
-            <Button size="sm" onClick={() => setMode("chat")} className="gap-1">
+            <Button
+              size="sm"
+              onClick={() => ChatViewMode.set("chat")}
+              className="gap-1"
+            >
               <TbArrowLeft className="h-4 w-4" />
               返回聊天
             </Button>
@@ -285,65 +329,9 @@ export const AgentChat = ({
                   </div>
                 )}
 
-                {/* 显示更多按钮 */}
-                {Object.values(context).filter(
-                  (item) => item.id !== agent.context.runtime.info.id,
-                ).length > historyLimit && (
-                  <div className="flex justify-center mb-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs text-muted-foreground"
-                      onClick={() => setHistoryLimit((prev) => prev + 3)}
-                    >
-                      显示更多历史对话
-                    </Button>
-                  </div>
-                )}
-
-                {/* 历史对话 */}
-                {Object.values(context)
-                  .filter((item) => item.id !== agent.context.runtime.info.id)
-                  ?.sort(
-                    (a, b) =>
-                      new Date(b.created_at).getTime() -
-                      new Date(a.created_at).getTime(),
-                  )
-                  .slice(0, historyLimit)
-                  .reverse()
-                  .map((history) => (
-                    <div key={`history-${history.id}`} className="mb-6">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="h-[1px] flex-1 bg-border"></div>
-                        <span className="text-xs text-muted-foreground font-mono">
-                          {new Date(history.created_at).toLocaleString(
-                            "zh-CN",
-                            {
-                              month: "2-digit",
-                              day: "2-digit",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            },
-                          )}
-                        </span>
-                        <div className="h-[1px] flex-1 bg-border"></div>
-                      </div>
-                      {history.messages.map((msg, index) => (
-                        <ChatMessageItem
-                          key={`history-msg-${history.id}-${index}`}
-                          message={msg}
-                          lastMessage={history.messages[index - 1]}
-                          nextMessage={history.messages[index + 1]}
-                        />
-                      ))}
-                    </div>
-                  ))}
-
                 {currentChat && (
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="h-[1px] flex-1 bg-border"></div>
-                    <span className="text-xs text-muted-foreground font-mono">
-                      当前对话 -
+                    <span className="text-xs mx-auto text-muted-foreground font-mono">
                       {new Date(
                         context[agent.context.runtime.info.id].created_at,
                       ).toLocaleString("zh-CN", {
@@ -353,7 +341,6 @@ export const AgentChat = ({
                         minute: "2-digit",
                       })}
                     </span>
-                    <div className="h-[1px] flex-1 bg-border"></div>
                   </div>
                 )}
 
@@ -386,7 +373,7 @@ export const AgentChat = ({
         )}
         {mode === "edit" && (
           <div className="flex flex-col h-full">
-            <AgentEditor agent={agent} />
+            <AgentEditor />
           </div>
         )}
       </div>
@@ -405,4 +392,4 @@ export const AgentChat = ({
       )}
     </div>
   );
-};
+});

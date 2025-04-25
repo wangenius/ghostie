@@ -1,45 +1,45 @@
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import {
+  TbBook2,
+  TbGhost3,
+  TbScript,
+  TbServer,
+  TbShape3,
+} from "react-icons/tb";
 import { AgentsMarket } from "./AgentsMarket";
 import { MCPMarket } from "./MCPMarket";
 import { PluginsMarket } from "./PluginsMarket";
 import { WorkflowsMarket } from "./WorkflowsMarket";
-import { Button } from "@/components/ui/button";
-import {
-  TbMessage,
-  TbScript,
-  TbShape3,
-  TbServer,
-  TbBook2,
-} from "react-icons/tb";
 
 const tabs = [
   {
     id: "agents",
     name: "员工市场",
-    icon: <TbMessage className="h-5 w-5" />,
+    icon: TbGhost3,
   },
   {
     id: "plugins",
     name: "插件市场",
-    icon: <TbScript className="h-5 w-5" />,
+    icon: TbScript,
   },
   {
     id: "workflows",
     name: "工作流市场",
-    icon: <TbShape3 className="h-5 w-5" />,
+    icon: TbShape3,
   },
   {
     id: "mcp",
     name: "MCP市场",
-    icon: <TbServer className="h-5 w-5" />,
+    icon: TbServer,
   },
   {
     id: "knowledge",
     name: "知识库市场",
-    icon: <TbBook2 className="h-5 w-5" />,
+    icon: TbBook2,
   },
 ];
 
@@ -62,15 +62,15 @@ export const MarketTab = () => {
         items={tabs.map((tab) => {
           return {
             id: tab.id,
-            title: (
-              <span className="flex items-center space-x-3 font-medium transition-colors hover:text-primary">
-                {tab.icon}
-                <span
-                  className={`${tab.id === activeTab ? "text-primary font-semibold" : "text-muted-foreground"}`}
-                >
-                  {tab.name}
-                </span>
-              </span>
+            content: (
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon">
+                  <tab.icon className="h-4 w-4" />
+                </Button>
+                <div className="flex flex-col items-start gap-1">
+                  <span className="font-bold text-sm truncate">{tab.name}</span>
+                </div>
+              </div>
             ),
             onClick: () => {
               setActiveTab(tab.id);

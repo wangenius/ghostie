@@ -5,9 +5,7 @@ import { Button } from "../ui/button";
 
 interface SettingsListItemProps {
   id: string;
-  title: string | React.ReactNode;
-  description?: string | React.ReactNode;
-  icon?: React.ReactNode;
+  content: string | React.ReactNode;
   onClick: (id: string) => void;
   actived: boolean;
   onRemove?: () => void;
@@ -65,8 +63,7 @@ export function PreferenceList({
 
 export function SettingsListItem({
   id,
-  title,
-  description,
+  content,
   onClick,
   actived,
   onRemove,
@@ -81,14 +78,7 @@ export function SettingsListItem({
       onClick={() => onClick(id)}
     >
       <div className="flex items-center gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-sm truncate">{title}</span>
-          </div>
-          <div className="mt-1 text-xs text-muted-foreground truncate">
-            {description}
-          </div>
-        </div>
+        <div className="flex-1 min-w-0 font-bold text-sm">{content}</div>
 
         {!noRemove && (
           <Button
