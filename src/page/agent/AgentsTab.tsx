@@ -1,5 +1,4 @@
 import { Agent } from "@/agent/Agent";
-import { CONTEXT_RUNTIME_DATABASE } from "@/assets/const";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
@@ -10,13 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AgentsListStore,
-  CurrentAgentContextRuntime,
-  CurrentAgentChatId,
-  OpenedAgents,
-  OpenedAgentsLoadingState,
-} from "@/store/agents";
+import { AgentManager } from "@/store/AgentManager";
 import { cmd } from "@utils/shell";
 import Avatar from "boring-avatars";
 import { PiDotsThreeBold } from "react-icons/pi";
@@ -25,16 +18,18 @@ import { AgentChat } from "./AgentChat";
 
 /** AgentsTab */
 export function AgentsTab() {
-  const activeAgents = CurrentAgentChatId.use();
-  const agents = AgentsListStore.use();
-  const loadingState = OpenedAgentsLoadingState.use();
-  const activeAgent = OpenedAgents.get(activeAgents);
+  const activeAgents = AgentManager.currentOpenedAgent.use();
+  const agents = AgentManager.list.use();
+  const loadingState = AgentManager.loadingState.use();
+  const activeAgent = AgentManager.OPENED_AGENTS.get(activeAgents);
+
+  console.log(activeAgents);
 
   /* 创建机器人 */
   const handleCreateAgent = async () => {
     try {
       const agent = await Agent.create();
-      AgentsListStore.set({ [agent.props.id]: agent.props });
+      AgentManager.list.set({ [agent.infos.id]: agent.infos });
     } catch (error) {
       console.error("add agent error:", error);
     }
@@ -115,7 +110,7 @@ export function AgentsTab() {
         items={Object.values(agents)
           .map((agent) => {
             if (!agent.id) {
-              AgentsListStore.delete(agent.id);
+              AgentManager.list.delete(agent.id);
               return null;
             }
             return {
@@ -147,7 +142,7 @@ export function AgentsTab() {
                       </span>
                     ) : (
                       <span className="line-clamp-1 text-xs text-muted-foreground">
-                        {OpenedAgents.get(
+                        {AgentManager.OPENED_AGENTS.get(
                           agent.id,
                         )?.context.runtime.getLastMessage()?.content ||
                           agent.description}
@@ -158,22 +153,13 @@ export function AgentsTab() {
               ),
 
               onClick: async () => {
-                if (!OpenedAgents.get(agent.id)) {
-                  const newAgent = new Agent(
-                    (await AgentsListStore.getCurrent())[agent.id],
-                  );
-                  OpenedAgents.set(agent.id, newAgent);
+                if (!AgentManager.OPENED_AGENTS.get(agent.id)) {
+                  const newAgent = await AgentManager.getFromLocal(agent.id);
+                  AgentManager.OPENED_AGENTS.set(agent.id, newAgent);
                 }
-                await CurrentAgentContextRuntime.temporary()
-                  .indexed({
-                    database: CONTEXT_RUNTIME_DATABASE,
-                    name: agent.id || "",
-                  })
-                  .ready();
-
-                CurrentAgentChatId.set(agent.id);
+                AgentManager.currentOpenedAgent.set(agent.id);
               },
-              actived: activeAgent?.props.id === agent.id,
+              actived: activeAgent?.infos.id === agent.id,
               noRemove: true,
             };
           })
@@ -186,7 +172,7 @@ export function AgentsTab() {
       <PreferenceBody
         emptyText="Please select an assistant or click the add button to create a new assistant"
         EmptyIcon={TbGhost3}
-        isEmpty={!activeAgent?.props.id}
+        isEmpty={!activeAgent?.infos.id}
       >
         {activeAgent && <AgentChat />}
       </PreferenceBody>

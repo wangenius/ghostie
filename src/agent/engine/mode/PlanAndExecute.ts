@@ -13,7 +13,7 @@ export class PlanAndExecute extends Engine {
     try {
       /* 重置上下文 */
       this.context.reset();
-      this.context.runtime.setSystem(this.agent.props.system);
+      this.context.runtime.setSystem(this.agent.infos.system);
       this.context.runtime.push({
         role: "user",
         content: `基于用户输入"${input}"，请制定一个详细的执行计划。

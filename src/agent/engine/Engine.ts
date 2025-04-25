@@ -21,14 +21,14 @@ export class Engine {
   constructor(agent: Agent) {
     this.agent = agent;
     this.context = this.agent.context;
-    this.model = ChatModel.create(agent.props.models?.text);
+    this.model = ChatModel.create(agent.infos.models?.text);
     this.initPromise = this.init(agent).then(() => {
       this.isInitialized = true;
     });
   }
 
   async init(agent: Agent) {
-    const props = agent.props;
+    const props = agent.infos;
     this.context = agent.context;
     this.model
       .setTemperature(props.configs?.temperature || 1)
@@ -62,6 +62,7 @@ export class Engine {
 
   close() {
     this.model.stop();
+    this.context.reset();
   }
 
   /** 创建 Engine 实例 */
@@ -73,18 +74,18 @@ export class Engine {
   private async generateTools(agent: Agent) {
     const tools = [
       ...(await ToolsHandler.transformAgentToolToModelFormat(
-        agent.props.tools,
+        agent.infos.tools,
       )),
       ...(await ToolsHandler.transformWorkflowToModelFormat(
-        agent.props.workflows || [],
+        agent.infos.workflows || [],
       )),
-      ...(await ToolsHandler.transformModelToModelFormat(agent.props.models)),
-      ...(await ToolsHandler.transformAgentToModelFormat(agent.props.agents)),
-      ...(await ToolsHandler.transformMCPToModelFormat(agent.props.mcps)),
+      ...(await ToolsHandler.transformModelToModelFormat(agent.infos.models)),
+      ...(await ToolsHandler.transformAgentToModelFormat(agent.infos.agents)),
+      ...(await ToolsHandler.transformMCPToModelFormat(agent.infos.mcps)),
       ...(await ToolsHandler.transformKnowledgeToModelFormat(
-        agent.props.knowledges || [],
+        agent.infos.knowledges || [],
       )),
-      ...(await ToolsHandler.transformSkillToModelFormat(agent.props.skills)),
+      ...(await ToolsHandler.transformSkillToModelFormat(agent.infos.skills)),
     ];
     return tools;
   }

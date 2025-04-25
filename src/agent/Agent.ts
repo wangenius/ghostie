@@ -4,7 +4,6 @@ import {
   DEFAULT_AGENT,
 } from "@/agent/types/agent";
 import { ImageManager } from "@/resources/Image";
-import { AgentsListStore } from "@/store/agents";
 import { gen } from "@/utils/generator";
 import { Context } from "./context/Context";
 import { Engine } from "./engine/Engine";
@@ -12,43 +11,37 @@ import { Engine } from "./engine/Engine";
 /** Agent类 */
 export class Agent {
   /* Agent配置 */
-  props: AgentInfos;
+  infos!: AgentInfos;
   /* Agent引擎 */
-  engine: Engine;
+  engine!: Engine;
   /* 上下文 */
-  context: Context;
+  context!: Context;
 
   /** 构造函数 */
-  constructor(agent?: Partial<AgentInfos>) {
-    this.props = { ...DEFAULT_AGENT, ...agent };
-    /* 创建上下文 */
-    this.context = Context.create(this);
-    /* 引擎 */
-    this.engine = Engine.create(this);
+  private constructor(infos: AgentInfos) {
+    this.infos = infos;
   }
 
   /** 创建代理 */
-  static async create(config: Partial<AgentInfos> = {}): Promise<Agent> {
+  static create(config: Partial<AgentInfos> = {}): Agent {
     /* 生成ID */
     const id = gen.id();
     /* 创建代理 */
-    const agent = new Agent({ ...config, id });
+    const agent = new Agent({ ...DEFAULT_AGENT, ...config, id });
+    agent.context = Context.create(agent);
+    agent.engine = Engine.create(agent);
     /* 返回代理 */
     return agent;
   }
 
-  async sync() {
-    AgentsListStore.set({ [this.props.id]: this.props });
-  }
-
   /* 更新机器人元数据 */
   async update(data: Partial<Omit<AgentInfos, "id">>) {
-    if (!this.props.id) {
+    if (!this.infos.id) {
       return this;
     }
-    this.props = { ...this.props, ...data };
+    this.infos = { ...this.infos, ...data };
+    /* update之后更新引擎 */
     this.engine = Engine.create(this);
-    this.sync();
     return this;
   }
 
@@ -79,6 +72,6 @@ export class Agent {
 
   close() {
     this.engine.close();
-    this.props = DEFAULT_AGENT;
+    this.infos = DEFAULT_AGENT;
   }
 }

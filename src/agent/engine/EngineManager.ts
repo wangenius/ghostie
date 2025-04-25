@@ -32,7 +32,7 @@ export class EngineManager {
 
   /** 创建 Engine 实例 */
   public static create(agent: Agent): Engine {
-    const props = agent.props;
+    const props = agent.infos;
     const EngineClass = this.getEngine(props.engine || "react");
     if (!EngineClass) {
       throw new Error(`Engine ${props.engine} not found`);

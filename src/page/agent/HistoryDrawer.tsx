@@ -1,8 +1,8 @@
 import { ContextRuntimeProps } from "@/agent/context/Runtime";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CurrentAgentContextRuntime } from "@/store/agents";
 import { TbClock, TbMessageCircle, TbTrash } from "react-icons/tb";
+import { CurrentAgentContextRuntime } from "./AgentChat";
 
 export const HistoryPage = ({
   onClick,

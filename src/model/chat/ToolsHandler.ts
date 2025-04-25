@@ -15,7 +15,6 @@ import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
 import { ToolParameters } from "@/plugin/types";
 import { ImageManager } from "@/resources/Image";
 import { SkillManager } from "@/skills/SkillManager";
-import { AgentsListStore } from "@/store/agents";
 import { KnowledgesStore } from "@/store/knowledges";
 import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
 import { Echo } from "echo-state";
@@ -26,6 +25,7 @@ import {
   ToolRequestBody,
 } from "../types/chatModel";
 import { VisionModel } from "../vision/VisionModel";
+import { AgentManager } from "@/store/AgentManager";
 
 export class ToolsHandler {
   static async transformAgentToolToModelFormat(
@@ -211,7 +211,7 @@ export class ToolsHandler {
     const toolRequestBody: ToolRequestBody = [];
     if (agents.length) {
       /* 获取代理 */
-      const list = await AgentsListStore.getCurrent();
+      const list = await AgentManager.list.getCurrent();
 
       /* 将知识库变成工具 */
       agents.forEach((agent) => {
@@ -284,7 +284,7 @@ export class ToolsHandler {
           query: string;
         };
         console.log(image, queryContent);
-        const vision = VisionModel.create(agent.props.models?.vision);
+        const vision = VisionModel.create(agent.infos.models?.vision);
         const result = await vision.execute(image, queryContent);
         return {
           name: tool_call.function.name,
@@ -298,7 +298,7 @@ export class ToolsHandler {
           prompt: string;
           negative_prompt: string;
         };
-        const image = ImageModel.create(agent.props.models?.image);
+        const image = ImageModel.create(agent.infos.models?.image);
         console.log(image);
         const result = await image.generate(prompt, negative_prompt);
         console.log(result);
@@ -377,9 +377,7 @@ export class ToolsHandler {
         };
       }
       if (firstName === AGENT_TOOL_NAME_PREFIX) {
-        const agent = new Agent(
-          (await AgentsListStore.getCurrent())[secondName],
-        );
+        const agent = await AgentManager.getFromLocal(secondName);
 
         if (!agent) {
           return {
@@ -455,7 +453,7 @@ export class ToolsHandler {
     const secondName = toolName.split(TOOL_NAME_SPLIT)[1];
 
     if (firstName === AGENT_TOOL_NAME_PREFIX) {
-      const list = await AgentsListStore.getCurrent();
+      const list = await AgentManager.list.getCurrent();
       return {
         type: "agent",
         name: `calling agent: ${list[secondName].name}`,

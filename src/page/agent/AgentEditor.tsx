@@ -11,37 +11,32 @@ import { VisionModelManager } from "@/model/vision/VisionModelManager";
 import { PluginStore } from "@/plugin/ToolPlugin";
 import { PluginProps, ToolProps } from "@/plugin/types";
 import { SkillManager } from "@/skills/SkillManager";
-import {
-  AgentsListStore,
-  CurrentAgentChatId,
-  OpenedAgents,
-} from "@/store/agents";
 import { KnowledgesStore } from "@/store/knowledges";
 import { WorkflowsStore } from "@/workflow/Workflow";
 import { TbListSearch } from "react-icons/tb";
 import { MCPTool, MCP_Actived } from "../mcp/MCP";
 import { SettingItem } from "../settings/components/SettingItem";
-
+import { AgentManager } from "@/store/AgentManager";
 export const AgentEditor = () => {
   const list = KnowledgesStore.use();
   const workflows = WorkflowsStore.use();
-  const id = CurrentAgentChatId.use();
-  const agent = OpenedAgents.get(id);
+  const id = AgentManager.currentOpenedAgent.use();
+  const agent = AgentManager.OPENED_AGENTS.get(id);
   const plugins = PluginStore.use();
   const engines = EngineManager.getEngines();
   const actived_mcps = MCP_Actived.use();
-  const agents = AgentsListStore.use();
+  const agents = AgentManager.list.use();
 
   if (!agent) return null;
 
   return (
-    <div key={agent.props.id} className="flex-1 overflow-y-auto">
+    <div key={agent.infos.id} className="flex-1 overflow-y-auto">
       {/* 主内容区 */}
       <div className="px-8 py-8">
         <div className="space-y-6">
           <Input
             type="text"
-            defaultValue={agent.props.name}
+            defaultValue={agent.infos.name}
             onChange={(e) =>
               agent.update({
                 name: e.target.value,
@@ -51,7 +46,7 @@ export const AgentEditor = () => {
           />
           <DrawerSelector
             title="Agent Mode"
-            value={[agent.props.engine]}
+            value={[agent.infos.engine]}
             items={Object.entries(engines).map(([key, engine]) => ({
               label: engine.name,
               value: key,
@@ -65,8 +60,8 @@ export const AgentEditor = () => {
             }
           />
           <AutoResizeTextarea
-            defaultValue={agent.props.description}
-            key={agent.props.id}
+            defaultValue={agent.infos.description}
+            key={agent.infos.id}
             onValueChange={(e) =>
               agent.update({
                 description: e.target.value,
@@ -81,7 +76,7 @@ export const AgentEditor = () => {
 
             <DrawerSelector
               title="Text Model"
-              value={[agent.props.models?.text]}
+              value={[agent.infos.models?.text]}
               items={Object.values(ChatModelManager.getProviders()).flatMap(
                 (provider) => {
                   const key = ChatModelManager.getApiKey(provider.name);
@@ -103,7 +98,7 @@ export const AgentEditor = () => {
               onSelect={([value]) =>
                 agent.update({
                   models: {
-                    ...agent.props.models,
+                    ...agent.infos.models,
                     text: value,
                   },
                 })
@@ -116,11 +111,11 @@ export const AgentEditor = () => {
                   Temperature
                 </label>
                 <span className="text-sm tabular-nums">
-                  {agent.props.configs?.temperature?.toFixed(1)}
+                  {agent.infos.configs?.temperature?.toFixed(1)}
                 </span>
               </div>
               <Slider
-                value={[agent.props.configs?.temperature || 0]}
+                value={[agent.infos.configs?.temperature || 0]}
                 min={0}
                 max={2}
                 step={0.1}
@@ -128,7 +123,7 @@ export const AgentEditor = () => {
                 onValueChange={(value) => {
                   agent.update({
                     configs: {
-                      ...agent.props.configs,
+                      ...agent.infos.configs,
                       temperature: value[0],
                     },
                   });
@@ -141,7 +136,7 @@ export const AgentEditor = () => {
           <section className="space-y-2">
             <h3 className="text-lg font-medium">System Prompt</h3>
             <AutoResizeTextarea
-              defaultValue={agent.props.system}
+              defaultValue={agent.infos.system}
               onValueChange={(e) =>
                 agent.update({
                   system: e.target.value,
@@ -173,10 +168,10 @@ export const AgentEditor = () => {
               />
               <DrawerSelector
                 title="Select Sub-Agents"
-                value={agent.props.agents}
+                value={agent.infos.agents}
                 items={Object.values(agents)
                   .map((item) => {
-                    if (item.id === agent.props.id) return null;
+                    if (item.id === agent.infos.id) return null;
                     return {
                       label: item.name,
                       value: item.id,
@@ -194,7 +189,7 @@ export const AgentEditor = () => {
               />
               <DrawerSelector
                 title="Select Plugin"
-                value={agent.props.tools}
+                value={agent.infos.tools}
                 items={Object.values(plugins).flatMap((plugin: PluginProps) =>
                   plugin.tools.map((tool: ToolProps) => ({
                     label: tool.name,
@@ -217,7 +212,7 @@ export const AgentEditor = () => {
 
               <DrawerSelector
                 title="Select Workflow"
-                value={agent.props.workflows || []}
+                value={agent.infos.workflows || []}
                 items={Object.values(workflows).map((workflow) => ({
                   label: workflow.name,
                   value: workflow.id,
@@ -233,7 +228,7 @@ export const AgentEditor = () => {
               />
               <DrawerSelector
                 title="Select MCP"
-                value={agent.props.mcps}
+                value={agent.infos.mcps}
                 items={Object.entries(actived_mcps)
                   .flatMap(([id, tools]) =>
                     tools?.map((tool: MCPTool) => ({
@@ -257,7 +252,7 @@ export const AgentEditor = () => {
               />
               <DrawerSelector
                 title="Select Skill"
-                value={agent.props.skills}
+                value={agent.infos.skills}
                 items={Object.entries(SkillManager.getSkills()).map(
                   ([id, skill]) => ({
                     label: skill.name,
@@ -275,7 +270,7 @@ export const AgentEditor = () => {
               />
               <DrawerSelector
                 title="Select Knowledge"
-                value={agent.props.knowledges || []}
+                value={agent.infos.knowledges || []}
                 items={Object.values(list).map((k: KnowledgeMeta) => ({
                   label: k.name + "(" + k.version + ")",
                   value: k.id,
@@ -296,7 +291,7 @@ export const AgentEditor = () => {
             <div className="space-y-4">
               <DrawerSelector
                 title="Vision Model"
-                value={[agent.props.models?.vision]}
+                value={[agent.infos.models?.vision]}
                 items={Object.values(VisionModelManager.getProviders()).flatMap(
                   (provider) => {
                     const key = VisionModelManager.getApiKey(provider.name);
@@ -318,7 +313,7 @@ export const AgentEditor = () => {
                 onSelect={([value]) =>
                   agent.update({
                     models: {
-                      ...agent.props.models,
+                      ...agent.infos.models,
                       vision: value,
                     },
                   })
@@ -326,7 +321,7 @@ export const AgentEditor = () => {
               />
               <DrawerSelector
                 title="Image Model"
-                value={[agent.props.models?.image]}
+                value={[agent.infos.models?.image]}
                 items={Object.values(ImageModelManager.getProviders()).flatMap(
                   (provider) => {
                     const key = ImageModelManager.getApiKey(provider.name);
@@ -348,7 +343,7 @@ export const AgentEditor = () => {
                 onSelect={([value]) =>
                   agent.update({
                     models: {
-                      ...agent.props.models,
+                      ...agent.infos.models,
                       image: value,
                     },
                   })

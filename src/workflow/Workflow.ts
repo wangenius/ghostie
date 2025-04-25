@@ -1,27 +1,25 @@
-import { gen } from "@/utils/generator";
-import { Echo, Echoa } from "echo-state";
-import {
-  INITIAL_WORKFLOW,
-  NodeResult,
-  WorkflowBody,
-  WorkflowMeta,
-  PluginNodeConfig,
-  AgentNodeConfig,
-  WorkflowNode,
-} from "../page/workflow/types/nodes";
-import { Scheduler } from "../page/schedule/Scheduler";
 import { WORKFLOW_BODY_DATABASE, WORKFLOW_DATABASE } from "@/assets/const";
-import { WorkflowExecutor } from "./execute/WorkflowExecutor";
-import { supabase } from "@/utils/supabase";
 import { WorkflowMarketProps } from "@/page/market/WorkflowsMarket";
 import {
-  ToolPlugin,
   PLUGIN_DATABASE_CONTENT,
   PluginStore,
+  ToolPlugin,
 } from "@/plugin/ToolPlugin";
-import { Agent } from "@/agent/Agent";
-import { AgentsListStore } from "@/store/agents";
-import { AgentMarket } from "@/market/agents";
+import { AgentManager } from "@/store/AgentManager";
+import { gen } from "@/utils/generator";
+import { supabase } from "@/utils/supabase";
+import { Echo, Echoa } from "echo-state";
+import { Scheduler } from "../page/schedule/Scheduler";
+import {
+  AgentNodeConfig,
+  INITIAL_WORKFLOW,
+  NodeResult,
+  PluginNodeConfig,
+  WorkflowBody,
+  WorkflowMeta,
+  WorkflowNode,
+} from "../page/workflow/types/nodes";
+import { WorkflowExecutor } from "./execute/WorkflowExecutor";
 
 /* 工作流列表 */
 export const WorkflowsStore = new Echo<Record<string, WorkflowMeta>>(
@@ -169,13 +167,11 @@ export class Workflow {
 
         if (!processedAgents.has(agentId)) {
           try {
-            const agent = new Agent(
-              (await AgentsListStore.getCurrent())[agentId],
-            );
+            const agent = await AgentManager.getFromLocal(agentId);
 
             // 尝试上传代理，如果失败则检查是否是因为已存在
             try {
-              await AgentMarket.uploadToMarket(agent.props);
+              await AgentManager.uploadToMarket(agent.infos);
               console.log(`代理 ${agentId} 上传成功`);
             } catch (uploadError) {
               // 如果是已存在的错误，则忽略并继续
@@ -232,7 +228,7 @@ export class Workflow {
 
       // 获取现有的插件和代理，用于检查是否已安装
       const existingPlugins = await PluginStore.getCurrent();
-      const existingAgents = await AgentsListStore.getCurrent();
+      const existingAgents = await AgentManager.list.getCurrent();
 
       // 处理所有节点，检查是否需要安装插件和代理
       for (const node of Object.values(
@@ -303,7 +299,7 @@ export class Workflow {
 
           if (data) {
             // 安装代理
-            await AgentMarket.installFromMarket(data);
+            await AgentManager.installFromMarket(data);
             console.log(`成功安装代理: ${data.name}`);
           }
         } catch (error) {

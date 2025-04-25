@@ -1,10 +1,9 @@
-import { Agent } from "@/agent/Agent";
 import { ToolPlugin } from "@/plugin/ToolPlugin";
+import { AgentManager } from "@/store/AgentManager";
 import { Echo, LocalEcho } from "echo-state";
 import { toast } from "sonner";
 import { Tickie } from "tickie";
 import { Workflow } from "../../workflow/Workflow";
-import { AgentsListStore } from "@/store/agents";
 
 /**
  * 执行历史记录
@@ -308,10 +307,10 @@ export class Scheduler {
                 break;
               case "agent":
                 if (schedule.agentId) {
-                  const agent = new Agent(
-                    (await AgentsListStore.getCurrent())[schedule.agentId],
+                  const agent = await AgentManager.getFromLocal(
+                    schedule.agentId,
                   );
-                  targetName = agent.props.name || "";
+                  targetName = agent.infos.name || "";
                   // 如果设置了输入内容，使用设置的内容；否则使用默认消息
                   const input = schedule.agentInput || "定时任务自动触发";
                   result = await agent.chat(input);

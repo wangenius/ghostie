@@ -1,7 +1,6 @@
 import { MessageItem } from "@/model/types/chatModel";
 import { gen } from "@/utils/generator";
 import { Agent } from "../Agent";
-import { CurrentAgentContextRuntime } from "@/store/agents";
 
 export interface ContextRuntimeProps {
   id: string;
@@ -14,7 +13,6 @@ export interface ContextRuntimeProps {
 export class ContextRuntime {
   agent: Agent;
   private props: ContextRuntimeProps;
-
   constructor(agent: Agent, existingProps?: ContextRuntimeProps) {
     this.agent = agent;
     if (existingProps) {
@@ -29,7 +27,7 @@ export class ContextRuntime {
         messages: [],
         system: {
           role: "system",
-          content: agent.props.system || "",
+          content: agent.infos.system || "",
           created_at: Date.now(),
         },
         created_at: Date.now(),
@@ -38,19 +36,9 @@ export class ContextRuntime {
     }
   }
 
-  // 属性变化时自动调用的方法
-  protected sync() {
-    if (CurrentAgentContextRuntime.getKeyName() === this.agent.props.id) {
-      CurrentAgentContextRuntime.set({
-        [this.props.id]: { ...this.props, updated_at: Date.now() },
-      });
-    }
-  }
-
   update(messages: MessageItem[]) {
     this.props.messages = messages;
     this.props.updated_at = Date.now();
-    this.sync();
   }
 
   getMessages() {
@@ -64,7 +52,6 @@ export class ContextRuntime {
   addLastMessage(message: MessageItem) {
     this.props.messages.push(message);
     this.props.updated_at = Date.now();
-    this.sync();
   }
 
   updateLastMessage(message: Partial<MessageItem>) {
@@ -73,7 +60,6 @@ export class ContextRuntime {
       ...message,
     } as MessageItem;
     this.props.updated_at = Date.now();
-    this.sync();
   }
 
   get info() {
@@ -86,16 +72,13 @@ export class ContextRuntime {
       content: system,
       created_at: Date.now(),
     };
-    this.sync();
   }
 
   push(message: MessageItem) {
     this.props.messages.push(message);
-    this.sync();
   }
 
   reset() {
     this.props.messages = [];
-    this.sync();
   }
 }

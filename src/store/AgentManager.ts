@@ -1,16 +1,31 @@
-import { supabase } from "@/utils/supabase";
-import { AgentMarketProps, AgentInfos } from "../agent/types/agent";
-import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
+import { AGENT_DATABASE } from "@/assets/const";
+import { Echoi } from "@/lib/echo/Echo";
+import { MCP, MCPStore } from "@/page/mcp/MCP";
 import {
   PLUGIN_DATABASE_CONTENT,
   PluginStore,
   ToolPlugin,
 } from "@/plugin/ToolPlugin";
+import { supabase } from "@/utils/supabase";
+import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
 import { Echo } from "echo-state";
-import { MCP, MCPStore } from "@/page/mcp/MCP";
-import { AgentsListStore } from "@/store/agents";
+import { Agent } from "../agent/Agent";
+import { AgentInfos, AgentMarketProps } from "../agent/types/agent";
+export class AgentManager {
+  static list = new Echoi<Record<string, AgentInfos>>({}).indexed({
+    database: AGENT_DATABASE,
+    name: "index",
+  });
 
-export class AgentMarket {
+  static currentOpenedAgent = new Echoi<string>("");
+
+  static loadingState = new Echoi<Record<string, boolean>>({});
+
+  static OPENED_AGENTS = new Map<string, Agent>();
+
+  static async getFromLocal(id: string): Promise<Agent> {
+    return Agent.create((await AgentManager.list.getCurrent())[id]);
+  }
   static async uploadToMarket(agent: AgentInfos) {
     const { data } = await supabase
       .from("agents")
@@ -224,7 +239,7 @@ export class AgentMarket {
     }
 
     /* 保存代理 */
-    AgentsListStore.set({
+    AgentManager.list.set({
       [data.id]: data.body,
     });
     return;

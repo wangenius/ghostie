@@ -1,13 +1,13 @@
 import { Menu, MenuItemProps } from "@/components/ui/menu";
 
 import { Positioner } from "@/components/editor/position";
+import { AgentManager } from "@/store/AgentManager";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TbGhost3 } from "react-icons/tb";
 import { Editor, Range, Transforms } from "slate";
 import { useSlate } from "slate-react";
 import { Portal } from ".";
 import { insertMention } from "../elements/mention";
-import { AgentsListStore } from "@/store/agents";
 
 /** 目标提及下拉菜单 */
 export const MentionDrop = () => {
@@ -17,7 +17,7 @@ export const MentionDrop = () => {
   const [searchText, setSearchText] = useState("");
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  const agents = AgentsListStore.use();
+  const agents = AgentManager.list.use();
 
   const position = Positioner.range(editor, actantRange, menuRef);
 

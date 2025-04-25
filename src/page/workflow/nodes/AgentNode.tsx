@@ -1,16 +1,15 @@
-import { Agent } from "@/agent/Agent";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Textarea } from "@/components/ui/textarea";
+import { AgentManager } from "@/store/AgentManager";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
-import { useFlow } from "../context/FlowContext";
 import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
+import { useFlow } from "../context/FlowContext";
 import { AgentNodeConfig, NodeState, WorkflowNode } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
-import { AgentsListStore } from "@/store/agents";
 
 const AgentNodeComponent = (props: NodeProps<AgentNodeConfig>) => {
-  const agents = AgentsListStore.use();
+  const agents = AgentManager.list.use();
   const [prompt, setPrompt] = useState(props.data.prompt);
   const { updateNodeData } = useFlow();
 
@@ -78,9 +77,7 @@ export class AgentNodeExecutor extends NodeExecutor {
         throw new Error("Agent not configured");
       }
 
-      const agent = new Agent(
-        (await AgentsListStore.getCurrent())[agentConfig.agent],
-      );
+      const agent = await AgentManager.getFromLocal(agentConfig.agent);
       if (!agent) {
         throw new Error(`Agent not found: ${agentConfig.agent}`);
       }

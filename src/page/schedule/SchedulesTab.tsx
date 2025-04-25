@@ -48,7 +48,7 @@ import {
   TbScriptPlus,
   TbTrash,
 } from "react-icons/tb";
-import { AgentsListStore } from "@/store/agents";
+import { AgentManager } from "@/store/AgentManager";
 
 export const HistoryStore = new Echo<Record<string, ExecutionHistory>>({});
 
@@ -57,7 +57,7 @@ export const SchedulesTab = () => {
   const schedulesData = Scheduler.use();
   const workflows = WorkflowsStore.use();
   const plugins = PluginStore.use();
-  const agents = AgentsListStore.use();
+  const agents = AgentManager.list.use();
   const [selectedSchedule, setSelectedSchedule] = useState<string>("");
   const currentSchedule = schedulesData[selectedSchedule];
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
@@ -418,7 +418,7 @@ export const SchedulesTab = () => {
 
     return {
       id: schedule.id,
-      title: (
+      content: (
         <div className="flex items-center gap-2">
           {schedule.name || "未命名计划"}
           {isRunning && (
