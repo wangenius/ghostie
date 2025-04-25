@@ -85,7 +85,9 @@ const H6: Components["h6"] = ({ children }) => {
 
 const CustomParagraph: Components["p"] = ({ children }) => {
   return (
-    <p className="my-2 text-muted-foreground leading-relaxed">{children}</p>
+    <p className="my-2 text-muted-foreground leading-relaxed whitespace-pre-line">
+      {children}
+    </p>
   );
 };
 
@@ -104,12 +106,12 @@ const CustomOl: Components["ol"] = ({ children }) => {
 };
 
 const CustomListItem: Components["li"] = ({ children }) => {
-  return <li className="my-0.5">{children}</li>;
+  return <li className="my-0.5 whitespace-pre-line">{children}</li>;
 };
 
 const CustomBlockquote: Components["blockquote"] = ({ children }) => {
   return (
-    <blockquote className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 my-4 italic text-gray-600 dark:text-gray-400">
+    <blockquote className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 my-4 italic text-gray-600 dark:text-gray-400 whitespace-pre-line">
       {children}
     </blockquote>
   );
@@ -153,7 +155,7 @@ const CustomTh: Components["th"] = ({ children }) => {
 
 const CustomTd: Components["td"] = ({ children }) => {
   return (
-    <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+    <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 whitespace-pre-line">
       {children}
     </td>
   );

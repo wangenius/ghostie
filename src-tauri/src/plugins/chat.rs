@@ -15,7 +15,6 @@ static CANCEL_CHANNELS: Lazy<Mutex<HashMap<String, oneshot::Sender<()>>>> =
 static HTTP_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
     reqwest::Client::builder()
         .pool_max_idle_per_host(10) // 连接池设置
-        .timeout(Duration::from_secs(30)) // 整体超时
         .connect_timeout(Duration::from_secs(10)) // 连接超时
         .tcp_keepalive(Some(Duration::from_secs(60))) // TCP保持活跃
         .build()

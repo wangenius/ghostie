@@ -353,6 +353,7 @@ export class ToolsHandler {
           };
         }
         const result = await (await MCP.get(server)).run(firstName, query);
+        console.log("result", result);
         return {
           name: tool_call.function.name,
           arguments: tool_call.function.arguments,

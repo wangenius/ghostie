@@ -33,16 +33,16 @@ export class ReAct extends Engine {
         iterations++;
         let content = "";
         let reasoner = "";
-        /* 添加助手消息 */
         this.context.runtime.addLastMessage({
           role: "assistant",
-          content: "",
+          content: content,
+          reasoner: reasoner,
           created_at: Date.now(),
           loading: true,
         });
         /* 生成响应 */
         const response = await this.model.stream(
-          this.context.getCompletionMessages(),
+          this.context.getCompletionMessages().slice(0, -1),
           (chunk) => {
             content += chunk.completion || "";
             reasoner += chunk.reasoner || "";

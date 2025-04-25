@@ -100,6 +100,7 @@ export class ChatModel {
     try {
       // 默认OpenAI格式解析
       const data = JSON.parse(payload.replace("data: ", ""));
+      console.log("data", data);
       const delta = data.choices?.[0]?.delta;
       // 提取内容
       const completion = delta?.content;
@@ -210,7 +211,6 @@ export class ChatModel {
         `chat-stream-${this.currentRequestId}`,
         (event) => {
           if (!event.payload) return;
-          console.log("event.payload", event.payload);
           /* 适配子类不同的相应格式 */
           const chunk = this.ResponseBodyAdapter(event.payload);
 
@@ -233,13 +233,16 @@ export class ChatModel {
         },
       );
 
-      // 发起流式请求
-      await cmd.invoke("chat_stream", {
+      const body = {
         apiUrl: this.info.api_url,
         apiKey: this.info.api_key,
         requestId: this.currentRequestId,
         requestBody,
-      });
+      };
+      console.log("requestBody", body);
+
+      // 发起流式请求
+      await cmd.invoke("chat_stream", body);
 
       // 清理事件监听器
       unlistenStream();
