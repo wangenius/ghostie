@@ -5,7 +5,7 @@ use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::{Emitter, Runtime};
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::oneshot;
 
 static CANCEL_CHANNELS: Lazy<Mutex<HashMap<String, oneshot::Sender<()>>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
@@ -57,7 +57,6 @@ pub async fn chat_stream<R: Runtime>(
     }
 
     let mut stream = response.bytes_stream();
-    let (tx, mut rx) = mpsc::channel(100);
     let (cancel_tx, mut cancel_rx) = oneshot::channel();
 
     // 存储取消通道
@@ -66,48 +65,38 @@ pub async fn chat_stream<R: Runtime>(
         .unwrap()
         .insert(request_id.clone(), cancel_tx);
 
-    // 在新线程中处理流数据
-    let window_clone = window.clone();
-    tokio::spawn(async move {
-        loop {
-            tokio::select! {
-                chunk_option = stream.next() => {
-                    match chunk_option {
-                        Some(chunk_result) => {
-                            match chunk_result {
-                                Ok(chunk) => {
-                                    let text = String::from_utf8_lossy(&chunk);
-                                    let lines: Vec<&str> = text.split('\n').collect();
+    // 直接处理流数据
+    while let Some(chunk_result) = tokio::select! {
+        chunk = stream.next() => chunk,
+        _ = &mut cancel_rx => None,
+    } {
+        match chunk_result {
+            Ok(chunk) => {
+                let text = String::from_utf8_lossy(&chunk);
+                let lines: Vec<&str> = text.split('\n').collect();
 
-                                    for line in lines {
-                                        if let Err(e) = window_clone.emit(&format!("chat-stream-{}", request_id), line) {
-                                                eprintln!("Failed to emit event: {}", e);
-                                            }
-                                    }
-                                }
-                                Err(e) => {
-                                    if let Err(emit_err) = window_clone.emit(&format!("chat-stream-error-{}", request_id), e.to_string()) {
-                                        eprintln!("Failed to emit error event: {}", emit_err);
-                                    }
-                                    break;
-                                }
-                            }
+                for line in lines {
+                    if !line.is_empty() {
+                        println!("line: {}", line);
+                        if let Err(e) = window.emit(&format!("chat-stream-{}", request_id), line) {
+                            eprintln!("Failed to emit event: {}", e);
                         }
-                        None => break,
                     }
                 }
-                _ = &mut cancel_rx => {
-                    break;
+            }
+            Err(e) => {
+                if let Err(emit_err) =
+                    window.emit(&format!("chat-stream-error-{}", request_id), e.to_string())
+                {
+                    eprintln!("Failed to emit error event: {}", emit_err);
                 }
+                break;
             }
         }
-        // 清理取消通道
-        CANCEL_CHANNELS.lock().unwrap().remove(&request_id);
-        let _ = tx.send(()).await;
-    });
+    }
 
-    // 等待流处理完成
-    let _ = rx.recv().await;
+    // 清理取消通道
+    CANCEL_CHANNELS.lock().unwrap().remove(&request_id);
     Ok(())
 }
 

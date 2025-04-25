@@ -1,11 +1,12 @@
 import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MCP } from "@/page/mcp/MCP";
 import { UserMananger } from "@/services/user/User";
-import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
+import { cmd } from "@/utils/shell";
+import { supabase } from "@/utils/supabase";
 import { useEffect, useState } from "react";
 import {
-  TbCheck,
   TbChevronLeft,
   TbChevronRight,
   TbDownload,
@@ -15,20 +16,20 @@ import {
   TbSearch,
   TbTrash,
 } from "react-icons/tb";
-import { toast } from "sonner";
 
-export interface WorkflowMarketProps {
+interface MCPMarketProps {
   id: string;
   name: string;
-  description: string;
-  body: any;
-  inserted_at: string;
-  updated_at: string;
   user_id: string;
+  server: string;
+  description: string;
+  type: "stdio" | "sse";
+  created_at: string;
+  updated_at: string;
 }
 
-export const WorkflowsMarket = () => {
-  const [workflows, setWorkflows] = useState<WorkflowMarketProps[]>([]);
+export const MCPMarket = () => {
+  const [mcps, setMcps] = useState<MCPMarketProps[]>([]);
   const [loading, setLoading] = useState(false);
   const [installing, setInstalling] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -37,89 +38,116 @@ export const WorkflowsMarket = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const itemsPerPage = 10;
   const user = UserMananger.use();
-  const CurrentWorkflows = WorkflowsStore.use();
 
-  // 从 Supabase 获取工作流列表 - 分页处理
-  const fetchWorkflows = async (page = 1) => {
+  // Fetch plugins from Supabase - paginated
+  const fetchMcps = async (page = 1) => {
     try {
       setLoading(true);
-      const data = await Workflow.fetchFromMarket(page, itemsPerPage);
-      setWorkflows(data || []);
+
+      // Get current page data
+      const start = (page - 1) * itemsPerPage;
+      const end = start + itemsPerPage - 1;
+
+      const { data, error } = await supabase
+        .from("mcp")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .range(start, end);
+
+      if (error) {
+        throw error;
+      }
+
+      setMcps(data || []);
       setCurrentPage(page);
-      // 如果获取的项目数少于itemsPerPage，说明没有下一页
+
+      // If we got less items than itemsPerPage, there's no next page
       setHasNextPage((data?.length || 0) >= itemsPerPage);
     } catch (error) {
-      toast.error(`获取工作流列表失败:${error}`);
+      console.error("Failed to fetch mcps:", error);
+      cmd.message("Failed to fetch mcps", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  // 安装工作流
-  const handleInstall = async (workflow: WorkflowMarketProps) => {
+  // Install plugin
+  const handleInstall = async (mcp: MCPMarketProps) => {
     try {
-      setInstalling(workflow.id);
-      await Workflow.installFromMarket(workflow);
-      toast.success(`成功安装工作流: ${workflow.name}`);
+      setInstalling(mcp.id);
+      console.log(mcp);
+      await MCP.create({
+        name: mcp.name,
+        description: mcp.description,
+        server: mcp.server,
+      });
+
+      cmd.message(`成功安装MCP: ${mcp.name}`, "success");
     } catch (error) {
-      toast.error(`安装工作流失败:${error}`);
+      console.error("Failed to install mcp:", error);
+      cmd.message(
+        `安装MCP失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        "error",
+      );
     } finally {
       setInstalling(null);
     }
   };
 
-  // 删除工作流
-  const handleDelete = async (workflow: WorkflowMarketProps) => {
+  // Delete plugin
+  const handleDelete = async (mcp: MCPMarketProps) => {
     try {
-      setDeleting(workflow.id);
-      await Workflow.uninstallFromMarket(workflow.id);
-      // 更新当前页数据
-      fetchWorkflows(currentPage);
-      toast.success(`成功删除工作流: ${workflow.name}`);
+      setDeleting(mcp.id);
+      const { error } = await supabase.from("mcp").delete().eq("id", mcp.id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update current page data
+      fetchMcps(currentPage);
+      cmd.message(`成功删除MCP: ${mcp.name}`, "success");
     } catch (error) {
-      toast.error(`删除工作流失败:${error}`);
+      console.error("Failed to delete plugin:", error);
+      cmd.message(
+        `删除MCP失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        "error",
+      );
     } finally {
       setDeleting(null);
     }
   };
 
-  // 显示工作流详情
-  const showWorkflowDetails = (workflow: WorkflowMarketProps) => {
+  // Show plugin details
+  const showMCPDetails = (mcp: MCPMarketProps) => {
     dialog({
-      title: workflow.name || "未命名工作流",
-      description: `更新时间: ${new Date(workflow.updated_at).toLocaleString()}`,
+      title: mcp.name,
       className: "md:max-w-[600px]",
       content: (close) => (
         <div className="flex flex-col gap-4 p-2">
           <div className="bg-muted/50 p-4 rounded-lg">
-            <h3 className="text-lg font-medium mb-2">工作流描述</h3>
+            <h3 className="text-lg font-medium mb-2">MCP描述</h3>
             <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-              {workflow.description || "无描述"}
+              {mcp.description}
             </p>
           </div>
 
-          {workflow.body && (
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium mb-2">工作流数据</h3>
-              <div className="max-h-[300px] overflow-y-auto rounded p-3">
-                一共有 {Object.keys(workflow.body.nodes).length}
-                个节点
-              </div>
-            </div>
-          )}
-
           <div className="flex justify-end gap-2 mt-2">
-            {user?.id === workflow.user_id && (
+            {user?.id === mcp.user_id && (
               <Button
                 variant="destructive"
                 className="flex items-center gap-1"
                 onClick={() => {
                   close();
-                  handleDelete(workflow);
+                  handleDelete(mcp);
                 }}
-                disabled={deleting === workflow.id}
+                disabled={deleting === mcp.id}
               >
-                {deleting === workflow.id ? (
+                {deleting === mcp.id ? (
                   <TbLoader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <TbTrash className="w-4 h-4" />
@@ -127,77 +155,65 @@ export const WorkflowsMarket = () => {
                 删除
               </Button>
             )}
-            {!!CurrentWorkflows[workflow.id] && (
-              <Button className="flex items-center gap-1" disabled>
-                <TbCheck className="w-4 h-4" />
-                已安装
-              </Button>
-            )}
-            {!CurrentWorkflows[workflow.id] && (
-              <Button
-                className="flex items-center gap-1"
-                onClick={() => {
-                  close();
-                  handleInstall(workflow);
-                }}
-                disabled={installing === workflow.id}
-              >
-                {installing === workflow.id ? (
-                  <TbLoader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <TbDownload className="w-4 h-4" />
-                )}
-                安装
-              </Button>
-            )}
+            <Button
+              className="flex items-center gap-1"
+              onClick={() => {
+                close();
+                handleInstall(mcp);
+              }}
+              disabled={installing === mcp.id}
+            >
+              {installing === mcp.id ? (
+                <TbLoader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <TbDownload className="w-4 h-4" />
+              )}
+              安装
+            </Button>
           </div>
         </div>
       ),
     });
   };
 
-  // 页面导航
+  // Page navigation
   const handleNextPage = () => {
     if (hasNextPage) {
-      fetchWorkflows(currentPage + 1);
+      fetchMcps(currentPage + 1);
     }
   };
 
   const handlePrevPage = () => {
     if (currentPage > 1) {
-      fetchWorkflows(currentPage - 1);
+      fetchMcps(currentPage - 1);
     }
   };
 
-  // 初始加载
+  // Initial load
   useEffect(() => {
-    fetchWorkflows(1);
+    fetchMcps(1);
   }, []);
 
-  const filteredWorkflows = searchQuery
-    ? workflows.filter(
-        (workflow) =>
-          (workflow.name || "")
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          (workflow.description || "")
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()),
+  const filteredMcps = searchQuery
+    ? mcps.filter(
+        (mcp) =>
+          mcp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          mcp.description.toLowerCase().includes(searchQuery.toLowerCase()),
       )
-    : workflows;
+    : mcps;
 
   return (
-    <div className="h-[600px] max-h-full w-full flex flex-col gap-3">
-      {/* 标题栏与搜索 */}
+    <div className="h-full max-h-full w-full flex flex-col gap-3">
+      {/* Header with search */}
       <div className="flex-none">
         <div className="flex flex-col sm:flex-row gap-3 items-center justify-between pl-4">
-          <h2 className="text-lg font-semibold">Workflows Market</h2>
+          <h2 className="text-lg font-semibold">MCP Market</h2>
           <div className="flex items-center gap-2 w-full sm:w-auto max-w-[300px]">
             <div className="relative flex-1">
               <TbSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 className="pl-8 h-9 text-sm"
-                placeholder="搜索工作流..."
+                placeholder="Search mcps..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -205,7 +221,7 @@ export const WorkflowsMarket = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => fetchWorkflows(1)}
+              onClick={() => fetchMcps(1)}
               disabled={loading}
               className="h-9"
             >
@@ -214,28 +230,28 @@ export const WorkflowsMarket = () => {
               ) : (
                 <TbRefresh className="w-4 h-4" />
               )}
-              <span className="ml-1 hidden sm:inline">刷新</span>
+              <span className="ml-1 hidden sm:inline">Refresh</span>
             </Button>
           </div>
         </div>
       </div>
 
-      {/* 内容区域 - 工作流卡片 */}
+      {/* Content area - plugin cards */}
       <div className="flex-grow overflow-auto px-2">
         {loading ? (
           <div className="flex justify-center items-center h-full">
             <div className="animate-spin mr-2">
               <TbLoader2 className="w-6 h-6" />
             </div>
-            <span>加载工作流中...</span>
+            <span>加载MCP中...</span>
           </div>
-        ) : filteredWorkflows.length > 0 ? (
+        ) : filteredMcps.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredWorkflows.map((workflow) => (
+            {filteredMcps.map((mcp) => (
               <div
-                key={workflow.id}
+                key={mcp.id}
                 className="border rounded-xl p-4 bg-card hover:border-primary/50 hover:shadow-md transition-all duration-200 cursor-pointer"
-                onClick={() => showWorkflowDetails(workflow)}
+                onClick={() => showMCPDetails(mcp)}
               >
                 <div className="flex flex-col h-full">
                   <div className="flex justify-between items-start mb-2">
@@ -243,46 +259,35 @@ export const WorkflowsMarket = () => {
                       <span className="bg-primary/10 text-primary p-1 rounded">
                         <TbInfoCircle className="w-3.5 h-3.5" />
                       </span>
-                      {workflow.name || "未命名工作流"}
+                      {mcp.name}
                     </h3>
-                    <div className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
-                      {new Date(workflow.updated_at).toLocaleDateString()}
-                    </div>
                   </div>
 
                   <p className="text-sm text-muted-foreground line-clamp-1 mb-3 flex-grow">
-                    {workflow.description || "无描述"}
+                    {mcp.description}
                   </p>
 
                   <div className="flex justify-between items-center mt-auto pt-2 border-t">
                     <div className="text-xs text-muted-foreground">
                       点击查看详情
                     </div>
-                    {!CurrentWorkflows[workflow.id] && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 px-2 text-xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleInstall(workflow);
-                        }}
-                        disabled={installing === workflow.id}
-                      >
-                        {installing === workflow.id ? (
-                          <TbLoader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                        ) : (
-                          <TbDownload className="w-3.5 h-3.5 mr-1" />
-                        )}
-                        安装
-                      </Button>
-                    )}
-                    {!!CurrentWorkflows[workflow.id] && (
-                      <Button className="flex items-center gap-1" disabled>
-                        <TbCheck className="w-4 h-4" />
-                        已安装
-                      </Button>
-                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleInstall(mcp);
+                      }}
+                      disabled={installing === mcp.id}
+                    >
+                      {installing === mcp.id ? (
+                        <TbLoader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                      ) : (
+                        <TbDownload className="w-3.5 h-3.5 mr-1" />
+                      )}
+                      安装
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -291,7 +296,7 @@ export const WorkflowsMarket = () => {
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
             <div className="text-4xl mb-4">🔍</div>
-            <p>未找到匹配的工作流</p>
+            <p>未找到匹配的MCP</p>
             {searchQuery && (
               <Button
                 variant="link"
@@ -305,8 +310,8 @@ export const WorkflowsMarket = () => {
         )}
       </div>
 
-      {/* 分页控制 */}
-      {filteredWorkflows.length > 0 && !searchQuery && (
+      {/* Pagination controls */}
+      {filteredMcps.length > 0 && !searchQuery && (
         <div className="flex-none">
           <div className="flex justify-center items-center h-full">
             <Button

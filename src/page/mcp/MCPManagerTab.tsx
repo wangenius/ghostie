@@ -1,4 +1,3 @@
-import { dialog } from "@/components/custom/DialogModal";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
@@ -6,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { PiStorefrontDuotone } from "react-icons/pi";
 import {
   TbDatabaseCog,
   TbLoader2,
@@ -18,7 +16,6 @@ import {
 } from "react-icons/tb";
 import { EnvEditor } from "../plugins/EnvEditor";
 import { MCP, MCP_Actived, MCPStore } from "./MCP";
-import { MCPMarket } from "./MCPMarket";
 
 export function MCPTab() {
   const mcps = MCPStore.use();
@@ -29,20 +26,6 @@ export function MCPTab() {
   return (
     <PreferenceLayout>
       <PreferenceList
-        left={
-          <Button
-            onClick={() => {
-              dialog({
-                closeIconHide: true,
-                content: <MCPMarket />,
-              });
-            }}
-            className="bg-muted-foreground/10 hover:bg-muted-foreground/20"
-          >
-            <PiStorefrontDuotone className="w-4 h-4" />
-            MCP 市场
-          </Button>
-        }
         right={
           <>
             <Button onClick={() => EnvEditor.open()}>

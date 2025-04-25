@@ -1,11 +1,18 @@
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { CronExpressionParser } from "cron-parser";
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { TbInfoCircle } from "react-icons/tb";
 import { Tickie } from "tickie";
 import { Drawer } from "../ui/drawer";
 import { Label } from "../ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 /**
  * Cron表达式格式说明：
@@ -31,44 +38,125 @@ import { Label } from "../ui/label";
 // 常用表达式配置
 const COMMON_EXPRESSIONS = [
   {
-    label: "Every minute",
+    label: "每分钟",
     value: "0 * * * * *",
-    description: "Every minute",
+    description: "每分钟执行一次",
   },
   {
-    label: "Every hour",
+    label: "每小时",
     value: "0 0 * * * *",
-    description: "Every hour",
+    description: "每小时执行一次",
   },
   {
-    label: "Every day at 9:00",
+    label: "每天上午9点",
     value: "0 0 9 * * *",
-    description: "Every day at 9:00",
+    description: "每天上午9点执行",
   },
   {
-    label: "Every Monday at 9:00",
+    label: "每周一上午9点",
     value: "0 0 9 * * 1",
-    description: "Every Monday at 9:00",
+    description: "每周一上午9点执行",
   },
   {
-    label: "Every Monday to Friday at 9:00",
+    label: "每周一至周五上午9点",
     value: "0 0 9 * * 1-5",
-    description: "Every Monday to Friday at 9:00",
+    description: "每周一至周五上午9点执行",
   },
   {
-    label: "Every first day of the month at 9:00",
+    label: "每月1日上午9点",
     value: "0 0 9 1 * *",
-    description: "Every first day of the month at 9:00",
+    description: "每月1日上午9点执行",
   },
   {
-    label: "Every last day of the month at 9:00",
+    label: "每月最后一天上午9点",
     value: "0 0 9 L * *",
-    description: "Every last day of the month at 9:00",
+    description: "每月最后一天上午9点执行",
   },
   {
-    label: "Every last Friday of the month at 9:00",
+    label: "每月最后一个周五上午9点",
     value: "0 0 9 * * 5L",
-    description: "Every last Friday of the month at 9:00",
+    description: "每月最后一个周五上午9点执行",
+  },
+];
+
+// Cron字段配置
+const CRON_FIELDS = [
+  {
+    name: "秒",
+    placeholder: "0-59",
+    options: [
+      { value: "*", label: "每秒 (*)" },
+      { value: "0", label: "0秒" },
+      { value: "*/5", label: "每5秒" },
+      { value: "*/10", label: "每10秒" },
+      { value: "*/30", label: "每30秒" },
+    ],
+  },
+  {
+    name: "分钟",
+    placeholder: "0-59",
+    options: [
+      { value: "*", label: "每分钟 (*)" },
+      { value: "0", label: "0分" },
+      { value: "*/5", label: "每5分钟" },
+      { value: "*/10", label: "每10分钟" },
+      { value: "*/15", label: "每15分钟" },
+      { value: "*/30", label: "每30分钟" },
+    ],
+  },
+  {
+    name: "小时",
+    placeholder: "0-23",
+    options: [
+      { value: "*", label: "每小时 (*)" },
+      { value: "0", label: "0点" },
+      { value: "9", label: "9点" },
+      { value: "12", label: "12点" },
+      { value: "18", label: "18点" },
+      { value: "*/2", label: "每2小时" },
+      { value: "*/4", label: "每4小时" },
+      { value: "*/6", label: "每6小时" },
+      { value: "*/12", label: "每12小时" },
+    ],
+  },
+  {
+    name: "日期",
+    placeholder: "1-31",
+    options: [
+      { value: "*", label: "每日 (*)" },
+      { value: "1", label: "1日" },
+      { value: "15", label: "15日" },
+      { value: "L", label: "最后一天 (L)" },
+      { value: "1W", label: "最接近1日的工作日" },
+      { value: "15W", label: "最接近15日的工作日" },
+    ],
+  },
+  {
+    name: "月份",
+    placeholder: "1-12",
+    options: [
+      { value: "*", label: "每月 (*)" },
+      { value: "1", label: "1月" },
+      { value: "6", label: "6月" },
+      { value: "12", label: "12月" },
+      { value: "*/3", label: "每季度" },
+      { value: "*/6", label: "每半年" },
+    ],
+  },
+  {
+    name: "星期",
+    placeholder: "0-7",
+    options: [
+      { value: "*", label: "每星期 (*)" },
+      { value: "0", label: "星期日" },
+      { value: "1", label: "星期一" },
+      { value: "5", label: "星期五" },
+      { value: "1-5", label: "星期一至五" },
+      { value: "1L", label: "本月最后一个星期一" },
+      { value: "5L", label: "本月最后一个星期五" },
+      { value: "1#1", label: "本月第一个星期一" },
+      { value: "5#3", label: "本月第三个星期五" },
+    ],
   },
 ];
 
@@ -87,15 +175,15 @@ const getScheduleDescription = (
 
     // 预定义的常见cron表达式模式
     const commonPatterns: Record<string, string> = {
-      "* * * * * *": "Every second",
-      "0 * * * * *": "Every minute",
-      "0 0 * * * *": "Every hour",
-      "0 0 0 * * *": "Every day at midnight",
-      "0 0 0 * * 1": "Every Monday at midnight",
-      "0 0 9 * * 1-5": "Every Monday to Friday at 9:00",
-      "0 0 0 1 * *": "Every first day of the month at midnight",
-      "0 0 0 L * *": "Every last day of the month at midnight",
-      "0 0 0 * * 5L": "Every last Friday of the month at midnight",
+      "* * * * * *": "每秒执行一次",
+      "0 * * * * *": "每分钟执行一次",
+      "0 0 * * * *": "每小时执行一次",
+      "0 0 0 * * *": "每天凌晨执行",
+      "0 0 0 * * 1": "每周一凌晨执行",
+      "0 0 9 * * 1-5": "每周一至周五上午9点执行",
+      "0 0 0 1 * *": "每月1日凌晨执行",
+      "0 0 0 L * *": "每月最后一天凌晨执行",
+      "0 0 0 * * 5L": "每月最后一个周五凌晨执行",
     };
 
     // 检查是否匹配常见模式
@@ -120,7 +208,7 @@ const getScheduleDescription = (
       second = "0";
       [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
     } else {
-      return ["Invalid cron expression", ""];
+      return ["无效的cron表达式", ""];
     }
 
     // 构建描述
@@ -145,16 +233,16 @@ const getScheduleDescription = (
       } else if (dateDesc) {
         description = `${dateDesc}`;
       } else if (timeDesc) {
-        description = `Every day at ${timeDesc}`;
+        description = `每天${timeDesc}`;
       } else {
-        description = "Execution time not defined";
+        description = "执行时间未定义";
       }
     }
 
     return [description, formatNextRunTime(nextDate, timeZone)];
   } catch (err) {
     console.error("Parse cron expression error:", err);
-    return ["Invalid cron expression", ""];
+    return ["无效的cron表达式", ""];
   }
 };
 
@@ -180,45 +268,45 @@ const getTimeDescription = (
 ): string => {
   // Handle "Every second" case
   if (second === "*" && minute === "*" && hour === "*") {
-    return "Every second";
+    return "每秒执行";
   }
 
   // Handle minute intervals
   if (second === "0" && hour === "*") {
     if (minute.includes("/")) {
       const interval = minute.split("/")[1];
-      return `Every ${interval} minutes`;
+      return `每${interval}分钟执行`;
     }
     if (minute.includes("-")) {
       const [start, end] = minute.split("-");
-      return `Every minute from ${start} to ${end}`;
+      return `每小时的第${start}分钟到第${end}分钟执行`;
     }
     if (minute.includes(",")) {
       const minutes = minute
         .split(",")
-        .map((m) => `${m} minutes`)
+        .map((m) => `${m}分钟`)
         .join(", ");
-      return `Every hour at ${minutes}`;
+      return `每小时的第${minutes}执行`;
     }
-    return minute === "0" ? "Every hour" : `Every hour at ${minute} minutes`;
+    return minute === "0" ? "每小时整点执行" : `每小时的第${minute}分钟执行`;
   }
 
   // Handle hour ranges and intervals
   let hourDesc = "";
   if (hour.includes("-")) {
     const [start, end] = hour.split("-");
-    hourDesc = `from ${start}:00 to ${end}:00`;
+    hourDesc = `${start}点至${end}点`;
   } else if (hour.includes(",")) {
     const hours = hour
       .split(",")
-      .map((h) => `${h}:00`)
+      .map((h) => `${h}点`)
       .join(", ");
-    hourDesc = `at ${hours}`;
+    hourDesc = `在${hours}`;
   } else if (hour.includes("/")) {
     const interval = hour.split("/")[1];
-    hourDesc = `every ${interval} hours`;
+    hourDesc = `每${interval}小时`;
   } else if (hour !== "*") {
-    hourDesc = `at ${hour}:00`;
+    hourDesc = `在${hour}点`;
   }
 
   // Handle seconds consistently
@@ -228,29 +316,18 @@ const getTimeDescription = (
   } else if (second.includes(",")) {
     const seconds = second
       .split(",")
-      .map((s) => `${s} seconds`)
+      .map((s) => `${s}秒`)
       .join(", ");
     secondDesc = seconds;
   } else if (second.includes("/")) {
     const interval = second.split("/")[1];
-    secondDesc = `every ${interval} seconds`;
+    secondDesc = `每${interval}秒`;
   } else if (second !== "*") {
-    secondDesc = `${second} seconds`;
+    secondDesc = `${second}秒`;
   }
 
   // Combine descriptions
   return [hourDesc, secondDesc].filter(Boolean).join(" ");
-};
-
-// Helper function for ordinal suffixes
-const getOrdinalSuffix = (n: string): string => {
-  const num = parseInt(n);
-  const j = num % 10;
-  const k = num % 100;
-  if (j === 1 && k !== 11) return "st";
-  if (j === 2 && k !== 12) return "nd";
-  if (j === 3 && k !== 13) return "rd";
-  return "th";
 };
 
 // 获取日期描述
@@ -260,62 +337,56 @@ const getDateDescription = (
   dayOfWeek: string,
 ): string => {
   const weekMap: Record<string, string> = {
-    "0": "Sunday",
-    "1": "Monday",
-    "2": "Tuesday",
-    "3": "Wednesday",
-    "4": "Thursday",
-    "5": "Friday",
-    "6": "Saturday",
-    "7": "Sunday",
+    "0": "星期日",
+    "1": "星期一",
+    "2": "星期二",
+    "3": "星期三",
+    "4": "星期四",
+    "5": "星期五",
+    "6": "星期六",
+    "7": "星期日",
   };
 
   // Handle day ranges
   if (dayOfMonth !== "*") {
     if (dayOfMonth === "L") {
-      return "On the last day of the month";
+      return "每月最后一天";
     }
     if (dayOfMonth.includes("-")) {
       const [start, end] = dayOfMonth.split("-");
-      return `From the ${start}${getOrdinalSuffix(
-        start,
-      )} to the ${end}${getOrdinalSuffix(end)} day of the month`;
+      return `每月${start}日至${end}日`;
     }
     if (dayOfMonth.includes("W")) {
       const day = dayOfMonth.replace("W", "");
-      return day === "1"
-        ? "On the first working day of the month"
-        : `On the ${day}${getOrdinalSuffix(day)} working day of the month`;
+      return day === "1" ? "每月第一个工作日" : `每月${day}日附近的工作日`;
     }
     if (dayOfMonth.includes(",")) {
       const days = dayOfMonth
         .split(",")
-        .map((d) => `${d}${getOrdinalSuffix(d)}`)
+        .map((d) => `${d}日`)
         .join(", ");
-      return `On the ${days} day of the month`;
+      return `每月${days}`;
     }
     if (dayOfMonth.includes("/")) {
       const interval = dayOfMonth.split("/")[1];
-      return `Every ${interval} days of the month`;
+      return `每月每隔${interval}天`;
     }
-    return `On the ${dayOfMonth}${getOrdinalSuffix(
-      dayOfMonth,
-    )} day of the month`;
+    return `每月${dayOfMonth}日`;
   }
 
   // Handle weekdays
   if (dayOfWeek !== "*" && dayOfWeek !== "?") {
     if (dayOfWeek.includes("-")) {
       const [start, end] = dayOfWeek.split("-");
-      return `Every ${weekMap[start]} to ${weekMap[end]}`;
+      return `每${weekMap[start]}至${weekMap[end]}`;
     } else if (dayOfWeek.includes(",")) {
       const weekdays = dayOfWeek
         .split(",")
         .map((d) => weekMap[d])
         .join(", ");
-      return `Every ${weekdays}`;
+      return `每${weekdays}`;
     } else if (!dayOfWeek.includes("L") && !dayOfWeek.includes("#")) {
-      return `Every ${weekMap[dayOfWeek]}`;
+      return `每${weekMap[dayOfWeek]}`;
     }
   }
 
@@ -323,37 +394,35 @@ const getDateDescription = (
   if (month !== "*") {
     const monthNames = [
       "",
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
+      "一月",
+      "二月",
+      "三月",
+      "四月",
+      "五月",
+      "六月",
+      "七月",
+      "八月",
+      "九月",
+      "十月",
+      "十一月",
+      "十二月",
     ];
     if (month.includes("-")) {
       const [start, end] = month.split("-");
-      return `From ${monthNames[parseInt(start)]} to ${
-        monthNames[parseInt(end)]
-      }`;
+      return `${monthNames[parseInt(start)]}至${monthNames[parseInt(end)]}`;
     }
     if (month.includes(",")) {
       const months = month
         .split(",")
         .map((m) => monthNames[parseInt(m)])
         .join(", ");
-      return `In ${months}`;
+      return `在${months}`;
     }
     if (month.includes("/")) {
       const interval = month.split("/")[1];
-      return `Every ${interval} months`;
+      return `每隔${interval}个月`;
     }
-    return `In ${monthNames[parseInt(month)]}`;
+    return `在${monthNames[parseInt(month)]}`;
   }
 
   return "";
@@ -367,35 +436,35 @@ const getLastWeekdayDescription = (
   dayOfWeek: string,
 ): string => {
   const weekMap: Record<string, string> = {
-    "0L": "Sunday",
-    "1L": "Monday",
-    "2L": "Tuesday",
-    "3L": "Wednesday",
-    "4L": "Thursday",
-    "5L": "Friday",
-    "6L": "Saturday",
-    "7L": "Sunday",
-    "0": "Sunday",
-    "1": "Monday",
-    "2": "Tuesday",
-    "3": "Wednesday",
-    "4": "Thursday",
-    "5": "Friday",
-    "6": "Saturday",
-    "7": "Sunday",
+    "0L": "星期日",
+    "1L": "星期一",
+    "2L": "星期二",
+    "3L": "星期三",
+    "4L": "星期四",
+    "5L": "星期五",
+    "6L": "星期六",
+    "7L": "星期日",
+    "0": "星期日",
+    "1": "星期一",
+    "2": "星期二",
+    "3": "星期三",
+    "4": "星期四",
+    "5": "星期五",
+    "6": "星期六",
+    "7": "星期日",
   };
 
   const day = dayOfWeek.replace("L", "");
-  let description = `Every last ${weekMap[day]}`;
+  let description = `每月最后一个${weekMap[day]}`;
 
   if (second === "0" && minute === "0" && hour === "0") {
-    description += " at 00:00:00";
+    description += " 00:00:00";
   } else if (second === "0" && minute === "0") {
-    description += ` at ${hour}:00`;
+    description += ` ${hour}:00`;
   } else if (second === "0") {
-    description += ` at ${hour}:${minute}:00`;
+    description += ` ${hour}:${minute}:00`;
   } else {
-    description += ` at ${hour}:${minute}:${second}`;
+    description += ` ${hour}:${minute}:${second}`;
   }
 
   return description;
@@ -409,29 +478,29 @@ const getNthWeekdayDescription = (
   dayOfWeek: string,
 ): string => {
   const weekMap: Record<string, string> = {
-    "0": "Sunday",
-    "1": "Monday",
-    "2": "Tuesday",
-    "3": "Wednesday",
-    "4": "Thursday",
-    "5": "Friday",
-    "6": "Saturday",
-    "7": "Sunday",
+    "0": "星期日",
+    "1": "星期一",
+    "2": "星期二",
+    "3": "星期三",
+    "4": "星期四",
+    "5": "星期五",
+    "6": "星期六",
+    "7": "星期日",
   };
 
   const [day, nth] = dayOfWeek.split("#");
-  const ordinals = ["", "first", "second", "third", "fourth", "fifth"];
+  const ordinals = ["", "第一个", "第二个", "第三个", "第四个", "第五个"];
 
-  let description = `Every ${ordinals[parseInt(nth)]} ${weekMap[day]}`;
+  let description = `每月${ordinals[parseInt(nth)]}${weekMap[day]}`;
 
   if (second === "0" && minute === "0" && hour === "0") {
-    description += " at 00:00:00";
+    description += " 00:00:00";
   } else if (second === "0" && minute === "0") {
-    description += ` at ${hour}:00`;
+    description += ` ${hour}:00`;
   } else if (second === "0") {
-    description += ` at ${hour}:${minute}:00`;
+    description += ` ${hour}:${minute}:00`;
   } else {
-    description += ` at ${hour}:${minute}:${second}`;
+    description += ` ${hour}:${minute}:${second}`;
   }
 
   return description;
@@ -445,11 +514,28 @@ export const CronInput = memo(
     value: string;
     onChange: (value: string) => void;
   }) => {
-    const [customExpression, setCustomExpression] = useState(
-      value || "0 * * * * *",
-    );
-    const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [cronParts, setCronParts] = useState<string[]>([
+      "0",
+      "*",
+      "*",
+      "*",
+      "*",
+      "*",
+    ]);
+
+    // 初始化时解析传入的value
+    useEffect(() => {
+      if (value) {
+        const parts = value.split(" ");
+        if (parts.length === 6) {
+          setCronParts(parts);
+        } else if (parts.length === 5) {
+          setCronParts(["0", ...parts]);
+        }
+      }
+    }, []);
 
     // 验证 cron 表达式
     const validateCronExpression = useCallback(
@@ -459,65 +545,102 @@ export const CronInput = memo(
           setError(null);
           return true;
         } catch (err) {
-          setError(
-            err instanceof Error ? err.message : "Invalid cron expression",
-          );
+          setError(err instanceof Error ? err.message : "无效的cron表达式");
           return false;
         }
       },
       [],
     );
 
-    // 处理自定义表达式变更
-    const handleCustomExpressionChange = useCallback(
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newValue = e.target.value;
-        setCustomExpression(newValue);
-        if (validateCronExpression(newValue)) {
-          onChange(newValue);
+    // 更新某个字段的值
+    const updateCronPart = useCallback(
+      (index: number, value: string) => {
+        const newParts = [...cronParts];
+        newParts[index] = value;
+        setCronParts(newParts);
+
+        const newCronExpression = newParts.join(" ");
+        if (validateCronExpression(newCronExpression)) {
+          onChange(newCronExpression);
+        }
+      },
+      [cronParts, onChange, validateCronExpression],
+    );
+
+    // 设置预定义表达式
+    const setPresetExpression = useCallback(
+      (expression: string) => {
+        const parts = expression.split(" ");
+        if (parts.length === 6) {
+          setCronParts(parts);
+          if (validateCronExpression(expression)) {
+            onChange(expression);
+          }
         }
       },
       [onChange, validateCronExpression],
     );
 
-    const description = getScheduleDescription(customExpression);
+    const description = getScheduleDescription(cronParts.join(" "));
 
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-2 justify-between">
-          <Label>Cron 表达式</Label>
-          <div
-            onClick={() => setOpen(true)}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:cursor-pointer hover:text-primary hover:underline transition-colors rounded-md hover:bg-muted/50"
-          >
-            <TbInfoCircle className="h-4 w-4" />
-            <span>Cron documentation</span>
-          </div>
+        <div className="grid grid-cols-6 gap-2">
+          {CRON_FIELDS.map((field, index) => (
+            <div
+              key={index}
+              className="space-y-1 w-full flex flex-col justify-center"
+            >
+              <Label className="text-xs text-center">{field.name}</Label>
+              <div className="flex flex-col space-y-1">
+                <Select
+                  value={cronParts[index]}
+                  onValueChange={(value) => updateCronPart(index, value)}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder={field.name} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {field.options.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  value={cronParts[index]}
+                  onChange={(e) => updateCronPart(index, e.target.value)}
+                  placeholder={field.placeholder}
+                  className="font-mono h-9"
+                />
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="space-y-2">
-          <Input
-            value={customExpression}
-            onChange={handleCustomExpressionChange}
-            placeholder="Enter cron expression, e.g. 0 0 0 * * *"
-            className="font-mono"
-          />
-          {error && <p className="text-xs text-destructive">{error}</p>}
-        </div>
+
+        {error && <p className="text-xs text-destructive">{error}</p>}
+
         {description && (
           <div className="bg-muted-foreground/10 p-4 rounded-lg">
-            <div className="space-y-2 border-primary/20">
-              <div className="flex flex-col">
-                <span className="text-xs text-muted-foreground">
-                  Execution rule
-                </span>
+            <div className="border-primary/20 flex justify-between">
+              <div className="flex flex-col flex-1">
+                <span className="text-xs text-muted-foreground">执行规则</span>
                 <p className="text-sm font-medium">{description[0]}</p>
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col flex-1">
                 <span className="text-xs text-muted-foreground">
-                  Next execution time
+                  下次执行时间
                 </span>
                 <p className="text-sm font-medium">{description[1]}</p>
               </div>
+            </div>
+            <div
+              onClick={() => setOpen(true)}
+              className="flex items-center mt-4 gap-1.5 text-sm text-muted-foreground hover:cursor-pointer hover:text-primary hover:underline transition-colors rounded-md hover:bg-muted/50"
+            >
+              <TbInfoCircle className="h-4 w-4" />
+              <span>Cron文档</span>
             </div>
           </div>
         )}
@@ -526,58 +649,56 @@ export const CronInput = memo(
           <div className={cn("space-y-3", open ? "block" : "hidden")}>
             <div>
               <h4 className="font-medium text-foreground mb-2">
-                Cron expression format
+                Cron表达式格式
               </h4>
               <ul className="text-xs text-muted-foreground">
                 <li>
-                  <span className="font-bold">1</span> = seconds (0-59)
+                  <span className="font-bold">1</span> = 秒 (0-59)
                 </li>
                 <li>
-                  <span className="font-bold">2</span> = minutes (0-59)
+                  <span className="font-bold">2</span> = 分钟 (0-59)
                 </li>
                 <li>
-                  <span className="font-bold">3</span> = hours (0-23)
+                  <span className="font-bold">3</span> = 小时 (0-23)
                 </li>
                 <li>
-                  <span className="font-bold">4</span> = day of month (1-31,
-                  L)(L last day of month)
+                  <span className="font-bold">4</span> = 日期 (1-31,
+                  L)(L表示月份的最后一天)
                 </li>
                 <li>
-                  <span className="font-bold">5</span> = month (1-12)
+                  <span className="font-bold">5</span> = 月份 (1-12)
                 </li>
                 <li>
-                  <span className="font-bold">6</span> = day of week (0-7) (0,7
-                  means Sunday)(optional)
+                  <span className="font-bold">6</span> = 星期 (0-7) (0,7
+                  表示星期日)(可选)
                 </li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-medium text-foreground mb-2">
-                Special character description
-              </h4>
+              <h4 className="font-medium text-foreground mb-2">特殊字符说明</h4>
               <div>
                 {[
-                  { char: "*", desc: "Represents any value" },
+                  { char: "*", desc: "表示所有可能的值" },
                   {
                     char: "?",
-                    desc: "Represents no specified value (same as *)",
+                    desc: "表示未指定值（与*相同）",
                   },
                   {
                     char: ",",
-                    desc: "Represents multiple values, e.g. 1,3,5",
+                    desc: "表示多个值，例如 1,3,5",
                   },
-                  { char: "-", desc: "Represents a range, e.g. 1-5" },
-                  { char: "/", desc: "Represents a step, e.g. */5" },
+                  { char: "-", desc: "表示一个范围，例如 1-5" },
+                  { char: "/", desc: "表示一个间隔，例如 */5" },
                   {
                     char: "L",
-                    desc: "Represents the last, e.g. 5L represents the last Friday",
+                    desc: "表示最后，例如 5L表示最后一个星期五",
                   },
                   {
                     char: "#",
-                    desc: "Represents the nth, e.g. 6#3 represents the third Saturday",
+                    desc: "表示第几个，例如 6#3表示第三个星期六",
                   },
-                  { char: "W", desc: "Represents the nearest working day" },
+                  { char: "W", desc: "表示最接近指定日期的工作日" },
                 ].map((item, index) => (
                   <div
                     key={index}
@@ -593,19 +714,14 @@ export const CronInput = memo(
             </div>
 
             <div>
-              <h4 className="font-medium text-foreground mb-2">
-                Common expressions
-              </h4>
+              <h4 className="font-medium text-foreground mb-2">常用表达式</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {COMMON_EXPRESSIONS.map((item) => (
                   <div
                     key={item.value}
                     className="flex items-center gap-2 p-2 rounded-md hover:bg-primary/5 hover:cursor-pointer transition-colors group"
                     onClick={() => {
-                      setCustomExpression(item.value);
-                      if (validateCronExpression(item.value)) {
-                        onChange(item.value);
-                      }
+                      setPresetExpression(item.value);
                     }}
                   >
                     <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center bg-primary/10 text-primary rounded-md">

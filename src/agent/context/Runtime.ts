@@ -22,7 +22,7 @@ export class ContextRuntime {
       messages: [],
       system: {
         role: "system",
-        content: "",
+        content: agent.props.system || "",
         created_at: Date.now(),
       },
       created_at: Date.now(),
@@ -83,7 +83,6 @@ export class ContextRuntime {
 
   push(message: MessageItem) {
     this.props.messages.push(message);
-    console.log("push", this.props.messages);
     this.sync();
   }
 

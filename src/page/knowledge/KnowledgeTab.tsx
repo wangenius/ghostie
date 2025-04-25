@@ -1,3 +1,4 @@
+import { KNOWLEDGE_BODY_DATABASE } from "@/assets/const";
 import { dialog } from "@/components/custom/DialogModal";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
@@ -22,13 +23,12 @@ import { KnowledgesStore } from "@/store/knowledges";
 import { cmd } from "@utils/shell";
 import { Echo, Echoa } from "echo-state";
 import { useState } from "react";
-import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
+import { PiDotsThreeBold } from "react-icons/pi";
 import { TbDatabasePlus, TbDownload, TbUpload } from "react-icons/tb";
 import { FileDrawer } from "./components/FileDrawer";
 import { FileList } from "./components/FileList";
 import { SearchResults } from "./components/SearchResults";
 import { KnowledgeCreator } from "./KnowledgeCreator";
-import { KNOWLEDGE_BODY_DATABASE } from "@/assets/const";
 
 const CurrentKnowledge = new Echoa(new Knowledge());
 const CurrentKnowledgeBody = new Echo<KnowledgeBody>({}).indexed({
@@ -144,15 +144,6 @@ export function KnowledgeTab() {
   return (
     <PreferenceLayout>
       <PreferenceList
-        left={
-          <Button
-            onClick={() => KnowledgeCreator.open()}
-            className="bg-muted-foreground/10 hover:bg-muted-foreground/20"
-          >
-            <PiStorefrontDuotone className="w-4 h-4" />
-            Knowledges Market
-          </Button>
-        }
         right={
           <>
             <Button className="flex-1" onClick={() => KnowledgeCreator.open()}>

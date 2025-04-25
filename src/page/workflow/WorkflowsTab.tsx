@@ -1,3 +1,4 @@
+import { WORKFLOW_BODY_DATABASE } from "@/assets/const";
 import { dialog } from "@/components/custom/DialogModal";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
@@ -9,17 +10,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
+import { PiDotsThreeBold } from "react-icons/pi";
 import { TbDownload, TbPlus, TbShape3 } from "react-icons/tb";
 import {
   CurrentWorkflow,
   Workflow,
   WorkflowsStore,
 } from "../../workflow/Workflow";
-import { WorkflowsMarket } from "./WorkflowsMarket";
 import { WorkflowEditor } from "./WorkflowEditor";
 import { CurrentEditWorkflow } from "./context/FlowContext";
-import { WORKFLOW_BODY_DATABASE } from "@/assets/const";
 
 /* 工作流列表 */
 export default function WorkflowsTab() {
@@ -40,26 +39,10 @@ export default function WorkflowsTab() {
     await Workflow.create();
   };
 
-  const handleOpenMarket = () => {
-    dialog({
-      closeIconHide: true,
-      content: <WorkflowsMarket />,
-    });
-  };
-
   return (
     <PreferenceLayout>
       {/* 左侧列表 */}
       <PreferenceList
-        left={
-          <Button
-            onClick={handleOpenMarket}
-            className="bg-muted-foreground/10 hover:bg-muted-foreground/20"
-          >
-            <PiStorefrontDuotone className="w-4 h-4" />
-            Workflows Market
-          </Button>
-        }
         right={
           <>
             <Button className="flex-1" onClick={handleCreateWorkflow}>

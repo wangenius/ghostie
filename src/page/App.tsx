@@ -1,9 +1,8 @@
+import { UserMananger } from "@/services/user/User";
 import { useEffect } from "react";
 import { SettingsManager } from "../settings/SettingsManager";
-import { Page } from "../utils/PageRouter";
-import { MainView } from "./main/MainView";
-import { UserMananger } from "@/services/user/User";
 import { LoginPage } from "./auth/LoginPage";
+import { MainView } from "./main/MainView";
 
 /* 主应用,提供路由 */
 function App() {
@@ -25,11 +24,6 @@ function App() {
       }
       if (e.key.toLowerCase() === "r" && e.ctrlKey) {
         e.preventDefault();
-      }
-
-      if (e.ctrlKey && e.key === "m") {
-        e.preventDefault();
-        Page.to("main");
       }
     };
     window.addEventListener("keydown", handleKeyDown);

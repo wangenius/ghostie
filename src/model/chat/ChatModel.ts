@@ -4,7 +4,6 @@ import {
   ChatModelRequestBody,
   ChatModelResponse,
   CompletionMessage,
-  FunctionCallResult,
   ToolCallReply,
   ToolRequestBody,
 } from "@/model/types/chatModel";
@@ -19,9 +18,6 @@ interface ChatModelInfo {
 }
 
 type OnChunk = (chunk: { completion?: string; reasoner?: string }) => void;
-type OnToolCall = (chunk: {
-  tool_call?: ToolCallReply;
-}) => Promise<FunctionCallResult | undefined>;
 
 /** Chat模型, 用于与模型进行交互
  *
@@ -129,38 +125,50 @@ export class ChatModel {
 
   /**
    * 工具调用适配器，处理工具调用的解析和合并
-   * @param chunk 当前响应块中的工具调用
-   * @param tool_calls 已收集的工具调用数组
-   * @returns 更新后的工具调用数组
+   * @param rawToolCalls 收集到的原始工具调用数组
+   * @returns 处理后的工具调用数组
    */
-  protected ToolCallAdapter(
-    chunk: ToolCallReply | undefined,
-    tool_calls: ToolCallReply[],
-  ): ToolCallReply[] {
-    if (!chunk) return tool_calls;
+  protected ToolCallAdapter(rawToolCalls: ToolCallReply[]): ToolCallReply[] {
+    if (!rawToolCalls.length) return [];
 
-    // 复制当前工具调用数组
-    const updatedToolCalls = [...tool_calls];
+    const callsMap = new Map<string, ToolCallReply>();
 
-    // 如果有ID，说明是新的工具调用
-    if (chunk.id) {
-      updatedToolCalls[chunk.index] = {
-        ...chunk,
-        function: {
-          ...chunk.function,
-          arguments: chunk.function.arguments || "",
-        },
-      };
-    }
-    // 没有ID但有参数内容，将参数追加到最后一个工具调用
-    else if (chunk.function.arguments) {
-      if (updatedToolCalls.length > 0) {
-        const lastToolCall = updatedToolCalls[updatedToolCalls.length - 1];
-        lastToolCall.function.arguments += chunk.function.arguments;
+    for (const chunk of rawToolCalls) {
+      // 如果有ID，说明是新的工具调用或者已存在调用的更新
+      if (chunk.id) {
+        const key = `${chunk.id}-${chunk.index}`;
+        const existingCall = callsMap.get(key);
+
+        if (existingCall) {
+          // 更新已存在的调用
+          existingCall.function.arguments += chunk.function.arguments || "";
+        } else {
+          // 创建新的调用
+          const newCall: ToolCallReply = {
+            ...chunk,
+            function: {
+              ...chunk.function,
+              arguments: chunk.function.arguments || "",
+            },
+          };
+          callsMap.set(key, newCall);
+        }
+      }
+      // 没有ID但有参数内容，将参数追加到最后一个处理的工具调用
+      else if (chunk.function.arguments) {
+        // 获取最后一个添加的工具调用
+        const lastAddedKey = Array.from(callsMap.keys()).pop();
+        if (lastAddedKey) {
+          const lastCall = callsMap.get(lastAddedKey);
+          if (lastCall) {
+            lastCall.function.arguments += chunk.function.arguments;
+          }
+        }
       }
     }
 
-    return updatedToolCalls;
+    // 将Map转换为数组，并按index排序
+    return Array.from(callsMap.values()).sort((a, b) => a.index - b.index);
   }
 
   /** 流式生成
@@ -170,7 +178,6 @@ export class ChatModel {
   public async stream(
     message: CompletionMessage[],
     onChunk?: OnChunk,
-    onToolCall?: OnToolCall,
   ): Promise<ChatModelResponse<string>> {
     // 如果有正在进行的请求，先停止它
     if (this.currentRequestId) {
@@ -183,6 +190,7 @@ export class ChatModel {
     let messages: CompletionMessage[] = message;
     /* 工具调用收集 */
     let rawToolCalls: ToolCallReply[] = [];
+    let completionContent = "";
 
     try {
       /* 创建请求体 */
@@ -197,12 +205,12 @@ export class ChatModel {
       /* 适配子类请求体 */
       requestBody = this.RequestBodyAdapter(requestBody);
 
-      let completionContent = "";
       // 监听流式响应事件
       const unlistenStream = await cmd.listen(
         `chat-stream-${this.currentRequestId}`,
         (event) => {
           if (!event.payload) return;
+          console.log("event.payload", event.payload);
           /* 适配子类不同的相应格式 */
           const chunk = this.ResponseBodyAdapter(event.payload);
 
@@ -237,34 +245,21 @@ export class ChatModel {
       unlistenStream();
       unlistenError();
 
-      // 统一处理所有收集到的工具调用
-      let tool_calls: ToolCallReply[] = [];
-      let tool_results: FunctionCallResult[] = [];
-      for (const toolCallChunk of rawToolCalls) {
-        tool_calls = this.ToolCallAdapter(toolCallChunk, tool_calls);
-      }
-
-      if (tool_calls.length > 0) {
-        for (const tool_call of tool_calls) {
-          const toolResult = await onToolCall?.({ tool_call });
-          if (toolResult) {
-            tool_results.push(toolResult);
-          }
-        }
-      }
+      // 直接处理所有收集到的工具调用
+      const tool_calls = this.ToolCallAdapter(rawToolCalls);
 
       return {
         body: completionContent,
         stop: () => this.stop(),
-        tool: tool_results,
+        tool: tool_calls,
       };
     } catch (error) {
       this.currentRequestId = undefined;
-
       return {
-        body: String(error),
+        body: completionContent,
+        error: String(error),
         stop: () => this.stop(),
-        tool: [],
+        tool: rawToolCalls,
       };
     }
   }

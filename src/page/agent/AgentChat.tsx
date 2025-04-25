@@ -27,8 +27,8 @@ import {
 } from "react-icons/tb";
 import { Descendant } from "slate";
 import { toast } from "sonner";
-import { ChatMessageItem } from "../main/MessageItem";
-import { plainText, TypeArea } from "../main/TypeArea";
+import { ChatMessageItem } from "./MessageItem";
+import { plainText, TypeArea } from "./TypeArea";
 import { AgentEditor } from "./AgentEditor";
 
 // 定义 MentionElement 接口
@@ -332,14 +332,13 @@ export const AgentChat = ({
                         <ChatMessageItem
                           key={`history-msg-${history.id}-${index}`}
                           message={msg}
-                          lastMessageType={history.messages[index - 1]?.role}
-                          nextMessageType={history.messages[index + 1]?.role}
+                          lastMessage={history.messages[index - 1]}
+                          nextMessage={history.messages[index + 1]}
                         />
                       ))}
                     </div>
                   ))}
 
-                {/* 当前聊天分隔线 */}
                 {currentChat && (
                   <div className="flex items-center gap-2 mb-2">
                     <div className="h-[1px] flex-1 bg-border"></div>
@@ -364,15 +363,15 @@ export const AgentChat = ({
                     <ChatMessageItem
                       key={`msg-${context.id}-${index}`}
                       message={msg}
-                      lastMessageType={
+                      lastMessage={
                         context[agent.context.runtime.info.id].messages[
                           index - 1
-                        ]?.role
+                        ]
                       }
-                      nextMessageType={
+                      nextMessage={
                         context[agent.context.runtime.info.id].messages[
                           index + 1
-                        ]?.role
+                        ]
                       }
                     />
                   ),

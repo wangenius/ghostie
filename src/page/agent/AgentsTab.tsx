@@ -1,5 +1,5 @@
 import { Agent } from "@/agent/Agent";
-import { dialog } from "@/components/custom/DialogModal";
+import { CONTEXT_RUNTIME_DATABASE } from "@/assets/const";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
@@ -13,16 +13,14 @@ import {
 import {
   ActiveAgents,
   AgentStore,
-  CurrentAgentContextRuntime,
   CurrentAgent,
+  CurrentAgentContextRuntime,
 } from "@/store/agents";
 import { cmd } from "@utils/shell";
 import Avatar from "boring-avatars";
-import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
+import { PiDotsThreeBold } from "react-icons/pi";
 import { TbDownload, TbGhost3, TbPlus, TbUpload } from "react-icons/tb";
 import { AgentChat } from "./AgentChat";
-import { AgentsMarket } from "./AgentsMarket";
-import { CONTEXT_RUNTIME_DATABASE } from "@/assets/const";
 
 /** AgentsTab */
 export function AgentsTab() {
@@ -87,20 +85,6 @@ export function AgentsTab() {
     <PreferenceLayout>
       {/* 左侧列表 */}
       <PreferenceList
-        left={
-          <Button
-            onClick={() => {
-              dialog({
-                closeIconHide: true,
-                content: <AgentsMarket />,
-              });
-            }}
-            className="bg-muted-foreground/10 hover:bg-muted-foreground/20"
-          >
-            <PiStorefrontDuotone className="w-4 h-4" />
-            数字员工市场
-          </Button>
-        }
         right={
           <>
             <Button className="flex-1" onClick={handleCreateAgent}>

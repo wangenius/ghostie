@@ -35,8 +35,8 @@ const DoubaoProvider: ChatModelProvider = {
   description: "豆包 (智谱AI大语言模型)",
   icon: "doubao-color.svg",
   models: {
-    "doubao-1.5-pro": {
-      name: "doubao-pro",
+    "doubao-1.5-pro-32k-250115": {
+      name: "doubao-1.5-pro-32k-250115",
       supportJson: true,
       supportStream: true,
       supportToolCalls: true,
@@ -45,8 +45,8 @@ const DoubaoProvider: ChatModelProvider = {
       description:
         "最新一代专业版大模型，单价不提升的同时，模型能力有大幅提升，在知识（MMLU_PRO：80.2； GPQA：66.2）、代码（FullStackBench：65.1）、推理（DROP：92.6）、中文（C-Eval：91.5）等相关的多项测评中获得高分，达到行业SOTA水平。",
     },
-    "doubao-1.5-pro-256k": {
-      name: "doubao-1.5-pro-256k",
+    "doubao-1-5-pro-256k-250115": {
+      name: "doubao-1-5-pro-256k-250115",
       supportJson: true,
       supportStream: true,
       supportToolCalls: true,
@@ -55,8 +55,8 @@ const DoubaoProvider: ChatModelProvider = {
       description:
         "最新一代专业版大模型，单价不提升的同时，模型能力有大幅提升，在知识（MMLU_PRO：80.2； GPQA：66.2）、代码（FullStackBench：65.1）、推理（DROP：92.6）、中文（C-Eval：91.5）等相关的多项测评中获得高分，达到行业SOTA水平。",
     },
-    "doubao-1.5-lite-32k": {
-      name: "doubao-1.5-lite-32k",
+    "doubao-1-5-lite-32k-250115": {
+      name: "doubao-1-5-lite-32k-250115",
       supportJson: true,
       supportStream: true,
       supportToolCalls: false,
@@ -65,8 +65,8 @@ const DoubaoProvider: ChatModelProvider = {
       description:
         "最新一代轻量版大模型，单价不提升的同时，模型能力有大幅提升，模型效果比肩专业版模型doubao-pro-32k-0828，您享受轻量版模型的成本和性能，获得过去专业版模型的效果。",
     },
-    "doubao-pro-32k": {
-      name: "doubao-pro-32k",
+    "doubao-pro-32k-241215": {
+      name: "doubao-pro-32k-241215",
       supportJson: true,
       supportStream: true,
       supportToolCalls: false,
@@ -75,13 +75,13 @@ const DoubaoProvider: ChatModelProvider = {
       description:
         "行业领先的专业版大模型，在参考问答、摘要总结、创作等广泛的应用场景上能提供优质的回答，是同时具备高质量与低成本的极具性价比模型。",
     },
-    "doubao-pro-128k": {
-      name: "doubao-pro-128k",
+    "doubao-pro-256k-241215": {
+      name: "doubao-pro-256k-241215",
       supportJson: true,
       supportStream: true,
       supportToolCalls: false,
       supportReasoner: false,
-      contextWindow: 128000,
+      contextWindow: 256000,
       description:
         "行业领先的专业版大模型，在参考问答、摘要总结、创作等广泛的应用场景上能提供优质的回答，是同时具备高质量与低成本的极具性价比模型。",
     },

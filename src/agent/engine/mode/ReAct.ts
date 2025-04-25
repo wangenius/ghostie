@@ -4,6 +4,7 @@ import { ToolsHandler } from "@/model/chat/ToolsHandler";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { Engine } from "../Engine";
 import { EngineManager } from "../EngineManager";
+import { MessageItem } from "@/model/types/chatModel";
 /* ReAct 引擎 */
 export class ReAct extends Engine {
   constructor(agent: Agent) {
@@ -11,7 +12,7 @@ export class ReAct extends Engine {
   }
 
   /* 执行 */
-  async execute(input: string, options?: ExecuteOptions) {
+  async execute(input: string, options?: ExecuteOptions): Promise<MessageItem> {
     try {
       await this.ensureInitialized();
 
@@ -50,44 +51,52 @@ export class ReAct extends Engine {
               reasoner,
             });
           },
-          async (tool) => {
-            if (tool.tool_call?.id) {
-              this.context.runtime.updateLastMessage({
-                tool_calls: [tool.tool_call],
-                tool_call_id: tool.tool_call.id,
-                tool_loading: true,
-              });
-              const toolResult = await ToolsHandler.call(
-                tool.tool_call,
-                this.agent,
-              );
-
-              this.context.runtime.updateLastMessage({
-                tool_loading: false,
-                loading: false,
-              });
-
-              this.context.runtime.addLastMessage({
-                role: "tool",
-                content:
-                  typeof toolResult?.result === "string"
-                    ? toolResult?.result
-                    : JSON.stringify(toolResult?.result),
-                tool_loading: false,
-                created_at: Date.now(),
-              });
-              return toolResult;
-            }
-          },
         );
 
         console.log(response);
+
+        if (response.error) {
+          console.error(response.error);
+          this.context.runtime.updateLastMessage({
+            error: response.error,
+            loading: false,
+          });
+          break;
+        }
         // 如果没有工具调用，说明对话可以结束
         if (response.tool.length === 0) {
           this.context.runtime.updateLastMessage({
             loading: false,
           });
           break;
+        } else {
+          this.context.runtime.updateLastMessage({
+            tool_calls: response.tool.filter((tool) => tool?.id),
+            tool_loading: false,
+            loading: false,
+          });
+          for (const tool of response.tool) {
+            if (tool?.id) {
+              this.context.runtime.addLastMessage({
+                role: "tool",
+                content: "",
+                tool_call_id: tool.id,
+                created_at: Date.now(),
+                loading: true,
+                tool_loading: true,
+              });
+              const toolResult = await ToolsHandler.call(tool, this.agent);
+              this.context.runtime.updateLastMessage({
+                tool_loading: false,
+                tool_call_id: tool.id,
+                loading: false,
+                content:
+                  typeof toolResult?.result === "string"
+                    ? toolResult?.result
+                    : JSON.stringify(toolResult?.result),
+              });
+            }
+          }
         }
 
         // 重置输入为空,让模型基于历史消息继续对话
@@ -100,6 +109,7 @@ export class ReAct extends Engine {
           role: "user",
           content: "已达到最大迭代次数。基于当前信息，请生成最终总结回应。",
           created_at: Date.now(),
+          hidden: true,
         });
         let content = "";
         let reasoner = "";

@@ -15,7 +15,7 @@ import { EditorView } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
 import { motion } from "framer-motion";
 import { useCallback, useRef, useState } from "react";
-import { PiDotsThreeBold, PiStorefrontDuotone } from "react-icons/pi";
+import { PiDotsThreeBold } from "react-icons/pi";
 import {
   TbCodeAsterisk,
   TbDatabaseCog,
@@ -30,9 +30,8 @@ import {
   TbScriptPlus,
   TbUpload,
 } from "react-icons/tb";
-import { EnvEditor } from "./EnvEditor";
-import { PluginsMarket } from "./components/PluginsMarket";
 import { TestDrawer } from "./components/TestDrawer";
+import { EnvEditor } from "./EnvEditor";
 
 import { dialog } from "@/components/custom/DialogModal";
 import {
@@ -176,20 +175,6 @@ export function PluginsTab() {
   return (
     <PreferenceLayout>
       <PreferenceList
-        left={
-          <Button
-            onClick={() => {
-              dialog({
-                closeIconHide: true,
-                content: <PluginsMarket />,
-              });
-            }}
-            className="bg-muted-foreground/10 hover:bg-muted-foreground/20"
-          >
-            <PiStorefrontDuotone className="w-4 h-4" />
-            Plugins Market
-          </Button>
-        }
         right={
           <>
             <Button className="flex-1" onClick={handleCreate}>

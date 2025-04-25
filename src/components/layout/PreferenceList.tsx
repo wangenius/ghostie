@@ -31,7 +31,7 @@ export function PreferenceList({
   EmptyIcon,
 }: SettingsListProps) {
   return (
-    <div className="w-[320px] bg-muted/50 flex flex-col h-full overflow-auto rounded-2xl p-2 gap-2 flex-none">
+    <div className="w-[320px] bg-muted flex flex-col h-full overflow-auto rounded-2xl p-2 gap-2 flex-none">
       <div className="flex-none flex justify-between items-center">
         <div className="flex items-center gap-1">{left}</div>
         <div className="flex items-center gap-1">{right}</div>

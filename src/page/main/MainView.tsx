@@ -1,43 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Page } from "@/utils/PageRouter";
+import { Page, SETTINGS_NAV_ITEMS, SettingsTab } from "@/utils/PageRouter";
 import { Window } from "@tauri-apps/api/window";
 import { useCallback } from "react";
-import {
-  TbBook2,
-  TbBox,
-  TbClock,
-  TbDatabase,
-  TbMessage,
-  TbScript,
-  TbServer,
-  TbSettings,
-  TbShape3,
-  TbX,
-} from "react-icons/tb";
+import { TbX } from "react-icons/tb";
 import { AgentsTab } from "../agent/AgentsTab";
 import { DatabaseTab } from "../database/Database";
 import { KnowledgeTab } from "../knowledge/KnowledgeTab";
+import { MarketTab } from "../market/MarketTab";
 import { MCPTab } from "../mcp/MCPManagerTab";
 import { ModelsTab } from "../model/ModelsTab";
 import { PluginsTab } from "../plugins/PluginsTab";
 import { SchedulesTab } from "../schedule/SchedulesTab";
 import { GeneralSettingsPage } from "../settings/GeneralSettingsPage";
 import WorkflowsTab from "../workflow/WorkflowsTab";
-
-export type SettingsTab = (typeof SETTINGS_NAV_ITEMS)[number]["id"];
-
-export const SETTINGS_NAV_ITEMS = [
-  { id: "agents", label: "Agents", icon: TbMessage },
-  { id: "schedules", label: "Schedules", icon: TbClock },
-  { id: "database", label: "Database", icon: TbDatabase },
-  { id: "models", label: "Models", icon: TbBox },
-  { id: "plugins", label: "Plugins", icon: TbScript },
-  { id: "workflows", label: "Workflows", icon: TbShape3 },
-  { id: "knowledge", label: "Knowledge", icon: TbBook2 },
-  { id: "mcp", label: "MCP", icon: TbServer },
-  { id: "general", label: "General", icon: TbSettings },
-] as const;
 
 /* 主界面 */
 export function MainView() {
@@ -47,6 +23,8 @@ export function MainView() {
     switch (settingsTab) {
       case "agents":
         return <AgentsTab />;
+      case "market":
+        return <MarketTab />;
       case "schedules":
         return <SchedulesTab />;
       case "models":

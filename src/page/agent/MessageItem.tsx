@@ -14,18 +14,18 @@ import {
   TbMathFunction,
   TbMaximize,
 } from "react-icons/tb";
-import { ImageView } from "./ImageView";
+import { ImageView } from "../main/ImageView";
 
 interface MessageItemProps {
   message: MessageItem;
-  lastMessageType?: string;
-  nextMessageType?: string;
+  lastMessage?: MessageItem;
+  nextMessage?: MessageItem;
 }
 
 export function ChatMessageItem({
   message,
-  lastMessageType,
-  nextMessageType,
+  lastMessage,
+  nextMessage,
 }: MessageItemProps) {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
@@ -49,30 +49,29 @@ export function ChatMessageItem({
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
-  // 如果是隐藏的用户消息或tool:result消息,则不渲染
+  // 消息被主动隐藏，不显示
   if (message.hidden) {
     return null;
   }
+  // 工具调用消息，不显示
   if (message.tool_call_id && !message.images?.length) {
     return (
-      <div className="w-full flex">
-        <div
-          className={cn(
-            "border-0 p-1 h-10 flex gap-2 transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2 max-w-[85%]",
-            {
-              "rounded-b-3xl":
-                message.role === "tool" && nextMessageType === undefined,
-            },
-            {
-              hidden:
-                message.role === "tool" && nextMessageType === "assistant",
-            },
-          )}
-        >
-          <div className="flex items-center gap-2 px-3 rounded-md text-primary text-sm py-2">
-            <TbLoader2 className="h-3.5 w-3.5 animate-spin" />
-            <span className="text-muted-foreground">loading...</span>
-          </div>
+      <div
+        className={cn(
+          "border-0 p-1 h-10 flex gap-2 transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2",
+          {
+            "rounded-b-3xl":
+              message.role === "tool" && nextMessage === undefined,
+          },
+          {
+            hidden:
+              message.role === "tool" && nextMessage?.role === "assistant",
+          },
+        )}
+      >
+        <div className="flex items-center gap-2 px-3 rounded-md text-primary text-sm py-2">
+          <TbLoader2 className="h-3.5 w-3.5 animate-spin" />
+          <span className="text-muted-foreground">loading...</span>
         </div>
       </div>
     );
@@ -158,18 +157,19 @@ export function ChatMessageItem({
 
   return (
     <div
+      data-id={message.role}
       className={cn(
         "border-0 p-3 rounded-3xl transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2",
         {
           "!rounded-t-none pt-0":
-            message.role === "assistant" && lastMessageType === "tool",
+            message.role === "assistant" && lastMessage?.role === "tool",
         },
         {
           "rounded-b-none pb-1":
-            message.role === "assistant" && nextMessageType === "tool",
+            message.role === "assistant" && nextMessage?.role === "tool",
         },
         {
-          "mt-2": message.role === "assistant" && lastMessageType === "user",
+          "mt-2": message.role === "assistant" && lastMessage?.role === "user",
         },
       )}
     >

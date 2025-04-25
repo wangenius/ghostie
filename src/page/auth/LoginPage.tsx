@@ -96,16 +96,15 @@ export function LoginPage() {
               <div className="space-y-2">
                 <Label htmlFor="username">用户名</Label>
                 <div className="relative">
-                  <PersonIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <PersonIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="username"
                     type="text"
-                    className="pl-10"
+                    className="pl-10 h-12"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="请输入用户名"
                     required
-                    autoComplete="username"
                   />
                 </div>
               </div>
@@ -123,16 +122,15 @@ export function LoginPage() {
                   </Button>
                 </div>
                 <div className="relative">
-                  <LockClosedIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <LockClosedIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    className="pl-10 pr-10"
+                    className="pl-10 pr-10 h-12"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="请输入密码"
                     required
-                    autoComplete="current-password"
                   />
                   <Button
                     type="button"

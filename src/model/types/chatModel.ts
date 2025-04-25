@@ -102,15 +102,13 @@ export interface ChatModelRequestBody {
  * @param tool 工具调用
  */
 
-export interface ChatModelResponse<
-  T = string,
-  ToolArguments = any,
-  ToolResult = any,
-> {
+export interface ChatModelResponse<T = string> {
   /* 响应体 */
   body: T;
   /* 停止方法 */
   stop: () => void;
-  /* 工具调用结果 */
-  tool: FunctionCallResult<ToolArguments, ToolResult>[];
+  /* 工具调用 */
+  tool: ToolCallReply[];
+  /* 错误 */
+  error?: string;
 }
