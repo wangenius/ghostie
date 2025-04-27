@@ -14,13 +14,6 @@ import { Drawer } from "@/components/ui/drawer";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { ParamInput } from "@/page/plugins/components/ParamInput";
@@ -33,6 +26,7 @@ import {
 import { StartNodeConfig } from "@/page/workflow/types/nodes";
 import { PluginStore } from "@/plugin/ToolPlugin";
 import { ToolProperty } from "@/plugin/types";
+import { AgentManager } from "@/store/AgentManager";
 import { gen } from "@/utils/generator";
 import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
 import { format } from "date-fns";
@@ -48,7 +42,6 @@ import {
   TbScriptPlus,
   TbTrash,
 } from "react-icons/tb";
-import { AgentManager } from "@/store/AgentManager";
 
 export const HistoryStore = new Echo<Record<string, ExecutionHistory>>({});
 
@@ -742,23 +735,25 @@ export const SchedulesTab = () => {
                       {/* 计划类型选择 */}
                       <div className="space-y-4">
                         <Label>计划类型</Label>
-                        <Select
-                          value={currentSchedule.type}
-                          onValueChange={(value) =>
-                            handleTypeChange(
-                              value as "workflow" | "plugin" | "agent",
-                            )
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="选择计划类型" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="workflow">工作流</SelectItem>
-                            <SelectItem value="plugin">插件</SelectItem>
-                            <SelectItem value="agent">代理</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <DrawerSelector
+                          title="选择计划类型"
+                          value={[currentSchedule.type]}
+                          items={[
+                            {
+                              label: "工作流",
+                              value: "workflow",
+                            },
+                            {
+                              label: "插件",
+                              value: "plugin",
+                            },
+                            {
+                              label: "代理",
+                              value: "agent",
+                            },
+                          ]}
+                          onSelect={([value]) => handleTypeChange(value)}
+                        />
                       </div>
 
                       {/* 根据计划类型显示不同的选择器 */}

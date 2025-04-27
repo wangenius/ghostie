@@ -29,8 +29,6 @@ export const AgentsMarket = () => {
   const user = UserMananger.use();
   const CurrentAgents = AgentManager.list.use();
 
-  console.log(CurrentAgents);
-
   // 从 Supabase 获取机器人列表 - 分页处理
   const fetchAgents = async (page = 1) => {
     try {

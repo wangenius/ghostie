@@ -19,9 +19,9 @@ import {
   TbRotate,
   TbTypography,
 } from "react-icons/tb";
-import { SettingsManager } from "../../../settings/SettingsManager";
-import { SettingItem } from "./SettingItem";
 import { toast } from "sonner";
+import { SettingsManager } from "@/settings/SettingsManager";
+import { SettingItem } from "./SettingItem";
 
 export function ThemeSettings() {
   const settings = SettingsManager.use();

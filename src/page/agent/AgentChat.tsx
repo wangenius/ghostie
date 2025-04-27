@@ -1,6 +1,3 @@
-import { Agent } from "@/agent/Agent";
-import { ContextRuntime, ContextRuntimeProps } from "@/agent/context/Runtime";
-import { CONTEXT_RUNTIME_DATABASE } from "@/assets/const";
 import { dialog } from "@/components/custom/DialogModal";
 import { ImageElement } from "@/components/editor/elements/image";
 import { Button } from "@/components/ui/button";
@@ -15,7 +12,8 @@ import { Echoi } from "@/lib/echo/Echo";
 import { AgentManager } from "@/store/AgentManager";
 import { cmd } from "@/utils/shell";
 import Avatar from "boring-avatars";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { observer } from "mobx-react-lite";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
 import {
   TbArrowLeft,
@@ -32,13 +30,6 @@ import { AgentEditor } from "./AgentEditor";
 import { HistoryPage } from "./HistoryDrawer";
 import { ChatMessageItem } from "./MessageItem";
 import { plainText, TypeArea } from "./TypeArea";
-/* 当前打开的Agent实例的上下文 */
-export const CurrentAgentContextRuntime = new Echoi<
-  Record<string, ContextRuntimeProps>
->({}).indexed({
-  database: CONTEXT_RUNTIME_DATABASE,
-  name: "",
-});
 
 const ChatViewMode = new Echoi<"chat" | "edit">("chat");
 
@@ -49,9 +40,9 @@ interface MentionElement {
   children: { text: string }[];
 }
 
-export const AgentChat = memo(() => {
+export const AgentChat = observer(() => {
   const id = AgentManager.currentOpenedAgent.use();
-  const agent = AgentManager.OPENED_AGENTS.get(id) || Agent.create();
+  const agent = AgentManager.OPENED_AGENTS.get(id);
   const loadingState = AgentManager.loadingState.use();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -66,17 +57,17 @@ export const AgentChat = memo(() => {
 
   const [historyOpen, setHistoryOpen] = useState(false);
   // 获取当前Agent的loading状态
-  const loading = loadingState[agent.infos.id] || false;
+  const loading = loadingState[agent?.infos.id || ""] || false;
 
   // 设置loading状态的函数
   const setLoading = useCallback(
     (isLoading: boolean) => {
       AgentManager.loadingState.set({
         ...loadingState,
-        [agent.infos.id]: isLoading,
+        [agent?.infos.id || ""]: isLoading,
       });
     },
-    [agent.infos.id, loadingState],
+    [agent?.infos.id, loadingState],
   );
 
   // 自动滚动到底部
@@ -84,15 +75,15 @@ export const AgentChat = memo(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [agent.context.runtime.info]);
+  }, [agent?.context.runtime]);
 
   const handleDeleteAgent = async () => {
     const answer = await cmd.confirm(
-      `Are you sure you want to delete the assistant "${agent.infos.name}"?`,
+      `Are you sure you want to delete the assistant "${agent?.infos.name}"?`,
     );
     if (answer) {
       try {
-        AgentManager.list.delete(agent.infos.id);
+        AgentManager.list.delete(agent?.infos.id || "");
         close();
       } catch (error) {
         console.error("delete agent error:", error);
@@ -104,7 +95,7 @@ export const AgentChat = memo(() => {
     async (value: Descendant[]) => {
       // 如果正在加载，停止当前请求
       if (loading) {
-        agent.stop();
+        agent?.stop();
         return;
       }
 
@@ -158,7 +149,7 @@ export const AgentChat = memo(() => {
       // 发送消息并处理响应
       setLoading(true);
       try {
-        await agent.chat(text, { images });
+        await agent?.chat(text, { images });
       } catch (error) {
         console.error("发送消息失败:", error);
       } finally {
@@ -185,7 +176,7 @@ export const AgentChat = memo(() => {
   }, [agent]);
   return (
     <div
-      key={`${agent.infos.id}`}
+      key={`${agent?.infos.id}`}
       className="flex flex-col h-full border-none shadow-none bg-background/50"
     >
       {/* Agent信息头部 */}
@@ -193,14 +184,14 @@ export const AgentChat = memo(() => {
         <div className="flex items-center space-x-3">
           <Avatar
             size={32}
-            name={agent.infos.id}
+            name={agent?.infos.id || ""}
             variant="beam"
             colors={["#92A1C6", "#146A7C", "#F0AB3D", "#C271B4", "#C20D90"]}
             square={false}
           />
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              {agent.infos.name || "未命名助手"}
+              {agent?.infos.name || "未命名助手"}
               {mode === "edit" && (
                 <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
                   编辑模式
@@ -209,7 +200,7 @@ export const AgentChat = memo(() => {
             </div>
             <p className="text-xs line-clamp-1 max-w-[260px]">
               {mode === "chat"
-                ? agent.infos.description || "AI助手随时为您服务"
+                ? agent?.infos.description || "AI助手随时为您服务"
                 : "您正在编辑助手设置，完成后请点击返回"}
             </p>
           </div>
@@ -223,8 +214,11 @@ export const AgentChat = memo(() => {
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => {
-                  const runtime = new ContextRuntime(agent);
-                  agent.context.setRuntime(runtime);
+                  if (!agent) return;
+                  agent?.context.setRuntime();
+                  AgentManager.CurrentContexts.set({
+                    [agent.infos.id]: agent.context.runtime.id,
+                  });
                 }}
               >
                 <TbPlus className="h-4 w-4" />
@@ -244,8 +238,8 @@ export const AgentChat = memo(() => {
                   <HistoryPage
                     onClick={async (item) => {
                       setHistoryOpen(false);
-                      const runtime = new ContextRuntime(agent, item);
-                      agent.context.setRuntime(runtime);
+                      if (!agent) return;
+                      agent?.context.setRuntime(item);
                     }}
                   />
                 }
@@ -291,7 +285,7 @@ export const AgentChat = memo(() => {
 
       {/* 聊天区域 */}
       <div
-        key={`chat-${agent.infos.id}`}
+        key={`chat-${agent?.infos.id}`}
         className="flex-1 p-0 overflow-hidden"
       >
         {mode === "chat" && (
@@ -305,13 +299,13 @@ export const AgentChat = memo(() => {
                   scrollbarColor: "var(--border) transparent",
                 }}
               >
-                {agent.context.runtime.info.messages.length === 0 && (
+                {agent?.context.runtime.messages.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full text-center p-4">
                     <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
                       <TbBrandWechat className="w-7 h-7 text-muted-foreground" />
                     </div>
                     <h3 className="text-base font-medium mb-2">
-                      开始与 {agent.infos.name || "AI助手"} 对话
+                      开始与 {agent?.infos.name || "AI助手"} 对话
                     </h3>
                     <p className="text-sm text-muted-foreground max-w-md">
                       这是您与此助手的新对话。可以询问任何问题，助手将尽力为您提供帮助。
@@ -319,11 +313,11 @@ export const AgentChat = memo(() => {
                   </div>
                 )}
 
-                {agent.context.runtime.info.messages.length > 0 && (
+                {agent?.context.runtime.messages.length > 0 && (
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xs mx-auto text-muted-foreground font-mono">
                       {new Date(
-                        agent.context.runtime.info.created_at,
+                        agent?.context.runtime.created_at || 0,
                       ).toLocaleString("zh-CN", {
                         month: "2-digit",
                         day: "2-digit",
@@ -335,16 +329,16 @@ export const AgentChat = memo(() => {
                 )}
 
                 {/* 当前聊天消息 */}
-                {agent.context.runtime.info.messages.map((msg, index) => (
+                {agent?.context.runtime.messages.map((msg, index) => (
                   <ChatMessageItem
-                    key={`msg-${agent.context.runtime.info.id}-${index}`}
+                    key={`msg-${agent?.context.runtime.id}-${index}`}
                     message={msg}
-                    lastMessage={agent.context.runtime.info.messages[index - 1]}
-                    nextMessage={agent.context.runtime.info.messages[index + 1]}
+                    lastMessage={agent?.context.runtime.messages[index - 1]}
+                    nextMessage={agent?.context.runtime.messages[index + 1]}
                   />
                 ))}
 
-                {agent.context.runtime.info.messages.length !== 0 && (
+                {agent?.context.runtime.messages.length !== 0 && (
                   <div className="h-4" ref={messagesEndRef} />
                 )}
               </div>
@@ -359,13 +353,13 @@ export const AgentChat = memo(() => {
       </div>
 
       {mode === "chat" && (
-        <div key={`type-area-${agent.infos.id}`}>
+        <div key={`type-area-${agent?.infos.id}`}>
           <TypeArea
             value={value}
             onChange={setValue}
             onSubmit={handleSubmit}
             editorRef={editorRef}
-            currentAgent={agent.infos.id}
+            currentAgent={agent?.infos.id || ""}
             loading={loading}
           />
         </div>

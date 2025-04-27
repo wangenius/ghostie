@@ -1,4 +1,5 @@
-import { AGENT_DATABASE } from "@/assets/const";
+import { ContextRuntimeProps } from "@/agent/context/Context";
+import { AGENT_DATABASE, CONTEXT_RUNTIME_DATABASE } from "@/assets/const";
 import { Echoi } from "@/lib/echo/Echo";
 import { MCP, MCPStore } from "@/page/mcp/MCP";
 import {
@@ -12,19 +13,36 @@ import { Echo } from "echo-state";
 import { Agent } from "../agent/Agent";
 import { AgentInfos, AgentMarketProps } from "../agent/types/agent";
 export class AgentManager {
+  /* agents list */
   static list = new Echoi<Record<string, AgentInfos>>({}).indexed({
     database: AGENT_DATABASE,
     name: "index",
   });
 
-  static currentOpenedAgent = new Echoi<string>("");
+  static CurrentContexts = new Echoi<Record<string, string>>({}).indexed({
+    database: CONTEXT_RUNTIME_DATABASE,
+    name: "index",
+  });
 
-  static loadingState = new Echoi<Record<string, boolean>>({});
-
+  /* 当前打开的Agent */
   static OPENED_AGENTS = new Map<string, Agent>();
 
+  /* 当前打开的AgentId */
+  static currentOpenedAgent = new Echoi<string>("");
+
+  /* 当前的Agent是否正在运行 */
+  static loadingState = new Echoi<Record<string, boolean>>({});
+
   static async getFromLocal(id: string): Promise<Agent> {
-    return Agent.create((await AgentManager.list.getCurrent())[id]);
+    const agent = await Agent.create(id);
+    const contexts = await Echoi.get<Record<string, ContextRuntimeProps>>({
+      database: CONTEXT_RUNTIME_DATABASE,
+      name: agent.infos.id,
+    }).getCurrent();
+    const currentContext = await AgentManager.CurrentContexts.getCurrent();
+    const context = contexts?.[currentContext?.[agent.infos.id]];
+    agent.context.setRuntime(context);
+    return agent;
   }
   static async uploadToMarket(agent: AgentInfos) {
     const { data } = await supabase

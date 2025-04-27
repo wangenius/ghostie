@@ -1,14 +1,3 @@
-/**
- * Echoi 状态管理类
- * 一个轻量级的状态管理库，支持多种存储模式和状态管理功能
- *
- * 特性：
- * - 支持多种存储模式（临时、LocalStorage、IndexedDB）
- * - 支持跨窗口状态同步
- * - 支持 React Hooks 集成
- * - 支持状态订阅
- * - 支持选择器
- */
 import { useEffect, useState } from "react";
 import { IndexedDBAdapter } from "./IndexedDBAdapter";
 import {
@@ -21,17 +10,6 @@ import {
 /* 监听器类型 */
 type Listener<T> = (state: T) => void;
 
-/**
- * Echo 状态管理类
- * 一个轻量级的状态管理库，支持多种存储模式和状态管理功能
- *
- * 特性：
- * - 支持多种存储模式（临时、LocalStorage、IndexedDB）
- * - 支持跨窗口状态同步
- * - 支持 React Hooks 集成
- * - 支持状态订阅
- * - 支持选择器
- */
 export class Echoi<T extends Record<string, any> | null | string | number> {
   /** 当前状态 */
   protected state: T;
@@ -115,7 +93,7 @@ export class Echoi<T extends Record<string, any> | null | string | number> {
       }
       this.isInitialized = true;
     } catch (error) {
-      console.error("Echo Core: 状态恢复失败", error);
+      console.error(" Resto: 状态恢复失败", error);
       this.set(this.defaultState, { replace: true });
       this.isInitialized = true;
     }

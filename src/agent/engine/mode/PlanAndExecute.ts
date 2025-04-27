@@ -1,8 +1,7 @@
-import { Agent } from "@/agent/Agent";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { Engine } from "../Engine";
 import { EngineManager } from "../EngineManager";
-
+import { Agent } from "@/agent/Agent";
 export class PlanAndExecute extends Engine {
   constructor(agent: Agent) {
     super(agent);
@@ -13,8 +12,7 @@ export class PlanAndExecute extends Engine {
     try {
       /* 重置上下文 */
       this.context.reset();
-      this.context.runtime.setSystem(this.agent.infos.system);
-      this.context.runtime.push({
+      this.context.pushMessage({
         role: "user",
         content: `基于用户输入"${input}"，请制定一个详细的执行计划。
   计划应包含：
@@ -31,14 +29,14 @@ export class PlanAndExecute extends Engine {
 
       // 4. 总结阶段
       const summaryPrompt =
-        this.context.runtime.messages.length >= MAX_STEPS
+        this.context.getLastMessage().content.length >= MAX_STEPS
           ? "已达到最大步骤数限制。请基于已完成的步骤生成总结报告。"
           : "所有计划步骤已完成。请生成完整的执行总结报告。";
 
-      this.context.runtime.push({
+      this.context.pushMessage({
         role: "user",
         content: `${summaryPrompt}
-  ${this.context.runtime.messages.map((msg) => msg.content).join("\n")}
+  ${this.context.getLastMessage().content}
   
   请提供：
   1. 总体执行情况
@@ -49,16 +47,14 @@ export class PlanAndExecute extends Engine {
       });
       await this.model.stream(this.context.getCompletionMessages());
 
-      return this.context.runtime.messages[
-        this.context.runtime.messages.length - 1
-      ];
+      return this.context.getLastMessage();
     } catch (error: any) {
       // 5. 错误处理
       console.error("Plan execution error:", error);
-      this.context.runtime.push({
+      this.context.pushMessage({
         role: "user",
         content: `执行过程中遇到错误：${error.message}
-  ${this.context.runtime.messages.map((msg) => msg.content).join("\n")}
+  ${this.context.getLastMessage().content}
   
   请提供：
   1. 错误原因分析

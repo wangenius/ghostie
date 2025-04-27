@@ -1,8 +1,5 @@
 /* 存储适配器接口 */
 export interface StorageAdapter<T = any> {
-  /** 获取存储名称 */
-  readonly name: string;
-
   /** 初始化存储 */
   init(): Promise<void>;
 
@@ -40,7 +37,7 @@ export interface IndexedDBConfig extends StorageConfig {
 
 /* 状态更新器类型 - 改进版 */
 export type StateUpdater<T> = (
-  state: T
+  state: T,
 ) => T extends Record<string, any> ? Partial<T> | T : T;
 
 /* 设置选项类型 */

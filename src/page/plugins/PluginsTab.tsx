@@ -175,6 +175,7 @@ export function PluginsTab() {
   return (
     <PreferenceLayout>
       <PreferenceList
+        left={<Button variant="ghost">Plugin</Button>}
         right={
           <>
             <Button className="flex-1" onClick={handleCreate}>
@@ -210,7 +211,6 @@ export function PluginsTab() {
             </DropdownMenu>
           </>
         }
-        tips="Extend the tools by writing a plugin. Refer to the Documentation for more infos."
         items={Object.values(plugins).map((plugin) => ({
           id: plugin.id,
           content: (
@@ -277,7 +277,7 @@ export function PluginsTab() {
                 <Button
                   onClick={() => {
                     cmd.invoke("open_url", {
-                      url: "https://ghostie.wangenius.com/tutorials/plugin",
+                      url: "https://ghostie.wangenius.com/docs/guide/plugin",
                     });
                   }}
                   variant="ghost"

@@ -7,12 +7,12 @@ export class IndexedDBAdapter<T = any> implements StorageAdapter<T> {
   private db: IDBDatabase | null = null;
   private objectStoreName: string;
   private databaseName: string;
-  name: string;
+  private keyName: string;
 
   constructor(config: IndexedDBConfig) {
     this.databaseName = config.database;
     this.objectStoreName = config.object || "echo-state";
-    this.name = config.name;
+    this.keyName = config.name;
   }
 
   /**
@@ -30,7 +30,7 @@ export class IndexedDBAdapter<T = any> implements StorageAdapter<T> {
   }
 
   getKeyName(): string {
-    return this.name;
+    return this.keyName;
   }
 
   async init(): Promise<void> {
@@ -57,7 +57,7 @@ export class IndexedDBAdapter<T = any> implements StorageAdapter<T> {
         "readonly",
       );
       const store = transaction.objectStore(this.objectStoreName);
-      const request = store.get(this.name);
+      const request = store.get(this.keyName);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -71,7 +71,7 @@ export class IndexedDBAdapter<T = any> implements StorageAdapter<T> {
         "readwrite",
       );
       const store = transaction.objectStore(this.objectStoreName);
-      const request = store.put(value, this.name);
+      const request = store.put(value, this.keyName);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
@@ -85,7 +85,7 @@ export class IndexedDBAdapter<T = any> implements StorageAdapter<T> {
         "readwrite",
       );
       const store = transaction.objectStore(this.objectStoreName);
-      const request = store.delete(this.name);
+      const request = store.delete(this.keyName);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
@@ -103,7 +103,7 @@ export class IndexedDBAdapter<T = any> implements StorageAdapter<T> {
         "readwrite",
       );
       const store = transaction.objectStore(this.objectStoreName);
-      const request = store.delete(this.name);
+      const request = store.delete(this.keyName);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });

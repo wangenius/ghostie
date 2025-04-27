@@ -2,26 +2,76 @@ import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Echoi } from "@/lib/echo/Echo";
 import { cn } from "@/lib/utils";
+import { gen } from "@/utils/generator";
 import { motion } from "framer-motion";
-import { TbPlug, TbPlus, TbScriptPlus } from "react-icons/tb";
+import { useState } from "react";
+import { TbDatabasePlus, TbPlug, TbPlus } from "react-icons/tb";
+import { EnvEditor } from "../plugins/EnvEditor";
+
+interface DatabaseProps {
+  id: string;
+  name: string;
+  descriptions: string;
+}
+
+const DatabasesStore = new Echoi<Record<string, DatabaseProps>>({}).indexed({
+  database: "DATABASE_INDEX",
+  name: "index",
+});
+
+const Database = new Echoi<Record<string, any>>({}).indexed({
+  database: "DATABASE_BODY",
+  name: "",
+});
 
 export function DatabaseTab() {
+  const [tab, setTab] = useState("env");
+  const bases = DatabasesStore.use();
   return (
     <PreferenceLayout>
       <PreferenceList
         right={
           <>
-            <Button className="flex-1">
-              <TbScriptPlus className="w-4 h-4" />
-              新建
+            <Button
+              onClick={() => {
+                const id = gen.id();
+                DatabasesStore.set({
+                  [id]: {
+                    id,
+                    name: "",
+                    descriptions: "",
+                  },
+                });
+              }}
+              className="flex-1"
+            >
+              <TbDatabasePlus className="w-4 h-4" />
             </Button>
           </>
         }
-        items={[]}
-        emptyText="暂无计划，点击上方按钮添加新计划"
+        items={[
+          {
+            id: "env",
+            content: "环境变量",
+            actived: tab === "env",
+            onClick() {
+              setTab("env");
+            },
+            noRemove: true,
+          },
+          ...Object.values(bases).map((item) => ({
+            id: item.id,
+            content: item.name,
+            actived: tab === item.id,
+            onClick: () => {
+              setTab(item.id);
+            },
+            noRemove: true,
+          })),
+        ]}
+        emptyText="数据库"
         EmptyIcon={TbPlus}
       />
       <motion.div
@@ -45,28 +95,23 @@ export function DatabaseTab() {
           className={cn("rounded-xl flex-1")}
           header={
             <div className="flex items-center justify-between w-full">
-              <h3 className="text-base font-semibold">未命名计划</h3>
+              <h3 className="text-base font-semibold">数据库</h3>
             </div>
           }
         >
-          <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto">
-              <div className="space-y-6">
-                <div>
-                  <div className="space-y-4">
-                    <Label>触发器描述</Label>
-                    <div className="space-y-2">
-                      <Input
-                        value={""}
-                        onChange={() => {}}
-                        placeholder="输入工作流描述用于LLM触发"
-                        className="resize-none"
-                      />
-                    </div>
-                  </div>
+          <div>
+            {tab === "env" ? (
+              <EnvEditor />
+            ) : (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-semibold">数据库</h3>
+                  <Button>
+                    <TbPlus className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </PreferenceBody>
       </motion.div>

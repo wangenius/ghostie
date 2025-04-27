@@ -1,4 +1,5 @@
 import { Agent } from "@/agent/Agent";
+import { DEFAULT_AGENT } from "@/agent/types/agent";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
@@ -23,13 +24,13 @@ export function AgentsTab() {
   const loadingState = AgentManager.loadingState.use();
   const activeAgent = AgentManager.OPENED_AGENTS.get(activeAgents);
 
-  console.log(activeAgents);
-
   /* 创建机器人 */
   const handleCreateAgent = async () => {
     try {
       const agent = await Agent.create();
-      AgentManager.list.set({ [agent.infos.id]: agent.infos });
+      AgentManager.list.set({
+        [agent.infos.id]: { ...DEFAULT_AGENT, id: agent.infos.id },
+      });
     } catch (error) {
       console.error("add agent error:", error);
     }
@@ -142,10 +143,7 @@ export function AgentsTab() {
                       </span>
                     ) : (
                       <span className="line-clamp-1 text-xs text-muted-foreground">
-                        {AgentManager.OPENED_AGENTS.get(
-                          agent.id,
-                        )?.context.runtime.getLastMessage()?.content ||
-                          agent.description}
+                        {agent.description}
                       </span>
                     )}
                   </div>

@@ -100,7 +100,6 @@ export class ChatModel {
     try {
       // 默认OpenAI格式解析
       const data = JSON.parse(payload.replace("data: ", ""));
-      console.log("data", data);
       const delta = data.choices?.[0]?.delta;
       // 提取内容
       const completion = delta?.content;
@@ -206,6 +205,8 @@ export class ChatModel {
       /* 适配子类请求体 */
       requestBody = this.RequestBodyAdapter(requestBody);
 
+      console.log("requestBody", requestBody);
+
       // 监听流式响应事件
       const unlistenStream = await cmd.listen(
         `chat-stream-${this.currentRequestId}`,
@@ -239,7 +240,6 @@ export class ChatModel {
         requestId: this.currentRequestId,
         requestBody,
       };
-      console.log("requestBody", body);
 
       // 发起流式请求
       await cmd.invoke("chat_stream", body);

@@ -1,10 +1,10 @@
 import { Agent } from "@/agent/Agent";
 import { ExecuteOptions } from "@/agent/types/agent";
 import { ToolsHandler } from "@/model/chat/ToolsHandler";
+import { MessageItem } from "@/model/types/chatModel";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { Engine } from "../Engine";
 import { EngineManager } from "../EngineManager";
-import { MessageItem } from "@/model/types/chatModel";
 /* ReAct 引擎 */
 export class ReAct extends Engine {
   constructor(agent: Agent) {
@@ -20,8 +20,7 @@ export class ReAct extends Engine {
 
       let iterations = 0;
       let MAX_ITERATIONS = SettingsManager.getReactMaxIterations();
-      /* 添加用户消息 */
-      this.context.runtime.push({
+      this.context.pushMessage({
         role: "user",
         content: content,
         created_at: Date.now(),
@@ -33,7 +32,7 @@ export class ReAct extends Engine {
         iterations++;
         let content = "";
         let reasoner = "";
-        this.context.runtime.addLastMessage({
+        this.context.addLastMessage({
           role: "assistant",
           content: content,
           reasoner: reasoner,
@@ -46,7 +45,7 @@ export class ReAct extends Engine {
           (chunk) => {
             content += chunk.completion || "";
             reasoner += chunk.reasoner || "";
-            this.context.runtime.updateLastMessage({
+            this.context.updateLastMessage({
               content,
               reasoner,
             });
@@ -57,7 +56,7 @@ export class ReAct extends Engine {
 
         if (response.error) {
           console.error(response.error);
-          this.context.runtime.updateLastMessage({
+          this.context.updateLastMessage({
             error: response.error,
             loading: false,
           });
@@ -65,19 +64,19 @@ export class ReAct extends Engine {
         }
         // 如果没有工具调用，说明对话可以结束
         if (response.tool.length === 0) {
-          this.context.runtime.updateLastMessage({
+          this.context.updateLastMessage({
             loading: false,
           });
           break;
         } else {
-          this.context.runtime.updateLastMessage({
+          this.context.updateLastMessage({
             tool_calls: response.tool.filter((tool) => tool?.id),
             tool_loading: false,
             loading: false,
           });
           for (const tool of response.tool) {
             if (tool?.id) {
-              this.context.runtime.addLastMessage({
+              this.context.addLastMessage({
                 role: "tool",
                 content: "",
                 tool_call_id: tool.id,
@@ -86,7 +85,7 @@ export class ReAct extends Engine {
                 tool_loading: true,
               });
               const toolResult = await ToolsHandler.call(tool, this.agent);
-              this.context.runtime.updateLastMessage({
+              this.context.updateLastMessage({
                 tool_loading: false,
                 tool_call_id: tool.id,
                 loading: false,
@@ -105,7 +104,7 @@ export class ReAct extends Engine {
 
       // 如果达到最大迭代次数，生成一个说明
       if (iterations >= MAX_ITERATIONS) {
-        this.context.runtime.push({
+        this.context.pushMessage({
           role: "user",
           content: "已达到最大迭代次数。基于当前信息，请生成最终总结回应。",
           created_at: Date.now(),
@@ -113,7 +112,7 @@ export class ReAct extends Engine {
         });
         let content = "";
         let reasoner = "";
-        this.context.runtime.addLastMessage({
+        this.context.addLastMessage({
           role: "assistant",
           content: "",
           created_at: Date.now(),
@@ -124,18 +123,18 @@ export class ReAct extends Engine {
           (chunk) => {
             content += chunk.completion || "";
             reasoner += chunk.reasoner || "";
-            this.context.runtime.updateLastMessage({
+            this.context.updateLastMessage({
               content,
               reasoner,
             });
           },
         );
-        this.context.runtime.updateLastMessage({
+        this.context.updateLastMessage({
           loading: false,
         });
       }
 
-      return this.context.runtime.getLastMessage();
+      return this.context.getLastMessage();
     } catch (error) {
       console.error("Chat error:", error);
       throw error;

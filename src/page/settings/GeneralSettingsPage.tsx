@@ -62,7 +62,7 @@ export function GeneralSettingsPage() {
         left={<div className="flex items-center gap-2">Settings</div>}
         items={items.map((item) => ({
           id: item.name,
-          title: (
+          content: (
             <div className="flex items-center gap-2">
               {item.name || "未命名"}
             </div>
