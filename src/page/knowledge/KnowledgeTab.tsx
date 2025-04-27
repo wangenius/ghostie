@@ -174,8 +174,14 @@ export function KnowledgeTab() {
         tips="Knowledge base supported: You can create a knowledge base by importing a file. Please refer to the development documentation for more information."
         items={Object.entries(documents).map(([id, doc]) => ({
           id,
-          title: doc.name || "Unnamed Knowledge Base",
-          description: doc.description?.slice(0, 50) || "No description",
+          content: (
+            <div className="flex flex-col">
+              <span className="text-sm font-bold">{doc.name}</span>
+              <span className="text-xs text-muted-foreground line-clamp-1">
+                {doc.description}
+              </span>
+            </div>
+          ),
           onClick: async () => {
             CurrentKnowledge.set(await Knowledge.get(id), {
               replace: true,

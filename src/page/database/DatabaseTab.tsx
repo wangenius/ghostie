@@ -745,12 +745,20 @@ export function DatabaseTab() {
         items={Object.values(tables).map((table) => ({
           id: table.id,
           name: table.name,
-          content: table.name,
+          content: (
+            <div className="flex flex-col">
+              <span className="text-sm font-bold">{table.name}</span>
+              <span className="text-xs text-muted-foreground line-clamp-1">
+                {table.description}
+              </span>
+            </div>
+          ),
           actived: table.id === selectedTable,
           onClick() {
             setSelectedTable(table.id);
             setNewTableView(false);
           },
+          noRemove: true,
         }))}
         left={<div className="py-2 px-3 text-xs font-medium">数据表列表</div>}
         right={

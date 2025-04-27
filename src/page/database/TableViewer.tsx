@@ -1,7 +1,7 @@
+import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -23,7 +23,6 @@ import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
 import { TbEdit, TbTrash } from "react-icons/tb";
 import { toast } from "sonner";
-import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 
 interface TableViewerProps {
   tableId: string;
