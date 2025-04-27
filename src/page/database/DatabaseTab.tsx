@@ -266,7 +266,7 @@ export function DatabaseTab() {
   const [columns, setColumns] = useState<ColumnDefinition[]>([]);
   const [settingsDrawerOpen, setSettingsDrawerOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [showAddRecordDialog, setShowAddRecordDialog] =
+  const [showAddRecordDrawer, setShowAddRecordDrawer] =
     useState<boolean>(false);
   const tables = TableStore.use();
   const records = CurrentDataStore.use();
@@ -658,7 +658,7 @@ export function DatabaseTab() {
             </div>
 
             <Button
-              onClick={() => setShowAddRecordDialog(true)}
+              onClick={() => setShowAddRecordDrawer(true)}
               size="sm"
               className="h-8"
             >
@@ -701,8 +701,8 @@ export function DatabaseTab() {
           <TableViewer
             tableId={selectedTable}
             searchQuery={searchQuery}
-            showAddRecordDialog={showAddRecordDialog}
-            onShowAddRecordDialogChange={setShowAddRecordDialog}
+            showAddRecordDrawer={showAddRecordDrawer}
+            onShowAddRecordDrawerChange={setShowAddRecordDrawer}
           />
         </div>
 

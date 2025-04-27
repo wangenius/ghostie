@@ -1,13 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Drawer } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -30,21 +23,22 @@ import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
 import { TbEdit, TbTrash } from "react-icons/tb";
 import { toast } from "sonner";
+import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 
 interface TableViewerProps {
   tableId: string;
   searchQuery?: string;
   pageSize?: number;
-  showAddRecordDialog?: boolean;
-  onShowAddRecordDialogChange?: (open: boolean) => void;
+  showAddRecordDrawer?: boolean;
+  onShowAddRecordDrawerChange?: (open: boolean) => void;
 }
 
 export function TableViewer({
   tableId,
   searchQuery: initialSearchQuery = "",
   pageSize: initialPageSize = 10,
-  showAddRecordDialog,
-  onShowAddRecordDialogChange,
+  showAddRecordDrawer,
+  onShowAddRecordDrawerChange,
 }: TableViewerProps) {
   const records = CurrentDataStore.use();
   const tables = TableStore.use();
@@ -85,21 +79,21 @@ export function TableViewer({
 
   // 监听外部添加记录对话框显示状态变化
   useEffect(() => {
-    if (showAddRecordDialog) {
+    if (showAddRecordDrawer) {
       openAddDialog();
       // 重置父组件的状态
-      if (onShowAddRecordDialogChange) {
-        onShowAddRecordDialogChange(false);
+      if (onShowAddRecordDrawerChange) {
+        onShowAddRecordDrawerChange(false);
       }
     }
-  }, [showAddRecordDialog]);
+  }, [showAddRecordDrawer]);
 
   // 更新记录对话框状态
   useEffect(() => {
-    if (!recordDialog.open && onShowAddRecordDialogChange) {
-      onShowAddRecordDialogChange(false);
+    if (!recordDialog.open && onShowAddRecordDrawerChange) {
+      onShowAddRecordDrawerChange(false);
     }
-  }, [recordDialog.open, onShowAddRecordDialogChange]);
+  }, [recordDialog.open, onShowAddRecordDrawerChange]);
 
   // 加载表数据和结构
   useEffect(() => {
@@ -368,52 +362,51 @@ export function TableViewer({
         </ScrollArea>
       </div>
 
-      {/* 新增/编辑记录对话框 */}
-      <Dialog
+      {/* 新增/编辑记录抽屉 */}
+      <Drawer
+        direction="right"
         open={recordDialog.open}
         onOpenChange={(isOpen: boolean) =>
           setRecordDialog((prev) => ({ ...prev, open: isOpen }))
         }
-      >
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>
+        className="w-[500px]"
+        title={
+          <div className="p-2">
+            <h3 className="text-lg font-semibold">
               {recordDialog.isEditing ? "编辑记录" : "添加新记录"}
-            </DialogTitle>
-            <DialogDescription>
-              {recordDialog.isEditing
-                ? "更新记录信息，完成后点击保存"
-                : "填写新记录的所有字段，然后添加到表中"}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-4 py-4">
-            {table.columns.map((column) => (
-              <div
-                key={column.name}
-                className="grid grid-cols-4 items-center gap-4"
-              >
-                <Label htmlFor={column.name} className="text-right">
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {recordDialog.isEditing ? "更新记录信息" : "填写记录信息"}
+            </p>
+          </div>
+        }
+      >
+        <div className="p-4">
+          <div className="space-y-5">
+            {table?.columns.map((column) => (
+              <div key={column.name} className="space-y-2">
+                <Label htmlFor={column.name}>
                   {column.name}
-                </Label>
-                <div className="col-span-3">
-                  <Input
-                    id={column.name}
-                    value={recordDialog.currentRecord[column.name] || ""}
-                    onChange={(e) => updateField(column.name, e.target.value)}
-                    placeholder={column.description || ""}
-                  />
                   {column.description && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {column.description}
-                    </p>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      ({column.description})
+                    </span>
                   )}
-                </div>
+                </Label>
+                <AutoResizeTextarea
+                  value={recordDialog.currentRecord[column.name] || ""}
+                  onValueChange={(e) => {
+                    updateField(column.name, e.target.value);
+                  }}
+                  placeholder={`请输入${column.name}`}
+                  minRow={1}
+                  className="w-full"
+                />
               </div>
             ))}
           </div>
 
-          <DialogFooter>
+          <div className="flex justify-end space-x-3 mt-6">
             <Button
               variant="outline"
               onClick={() =>
@@ -429,9 +422,9 @@ export function TableViewer({
             <Button onClick={saveRecord}>
               {recordDialog.isEditing ? "保存" : "添加"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      </Drawer>
     </div>
   );
 }
