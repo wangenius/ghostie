@@ -5,7 +5,7 @@ import { Window } from "@tauri-apps/api/window";
 import { useCallback } from "react";
 import { TbX } from "react-icons/tb";
 import { AgentsTab } from "../agent/AgentsTab";
-import { DatabaseTab } from "../database/Database";
+import { DatabaseTab } from "../database/DatabaseTab";
 import { KnowledgeTab } from "../knowledge/KnowledgeTab";
 import { MarketTab } from "../market/MarketTab";
 import { MCPTab } from "../mcp/MCPManagerTab";
