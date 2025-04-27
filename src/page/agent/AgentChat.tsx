@@ -83,8 +83,9 @@ export const AgentChat = observer(() => {
     );
     if (answer) {
       try {
+        AgentManager.OPENED_AGENTS.delete(agent?.infos.id || "");
         AgentManager.list.delete(agent?.infos.id || "");
-        close();
+        toast.success("Successfully deleted agent");
       } catch (error) {
         console.error("delete agent error:", error);
       }

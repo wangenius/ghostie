@@ -162,7 +162,6 @@ export function KnowledgeTab() {
                   <TbUpload className="w-4 h-4 mr-2" />
                   <span>Import</span>
                 </DropdownMenuItem>
-
                 <DropdownMenuItem onClick={handleExport}>
                   <TbDownload className="w-4 h-4 mr-2" />
                   <span>Export</span>
