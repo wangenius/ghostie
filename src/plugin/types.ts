@@ -61,6 +61,8 @@ export interface PluginProps {
   name: string;
   /* 插件描述 */
   description: string;
+  /* version */
+  version: string;
   /* 工具列表 */
   tools: ToolProps[];
 }

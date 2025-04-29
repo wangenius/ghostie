@@ -6,9 +6,9 @@ import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
 import { supabase } from "@/utils/supabase";
 import { Echo } from "echo-state";
+import { makeAutoObservable } from "mobx";
 import ts from "typescript";
 import { parsePluginFromString } from "./parser";
-import { makeAutoObservable } from "mobx";
 
 /* 默认 */
 export const DEFAULT_PLUGIN: PluginProps = {
@@ -16,6 +16,7 @@ export const DEFAULT_PLUGIN: PluginProps = {
   name: "",
   description: "",
   tools: [],
+  version: "0.0.1",
 };
 
 // 插件存储
@@ -75,6 +76,10 @@ export class ToolPlugin {
       throw new Error("Plugin not found");
     }
     const plug = new ToolPlugin(plugin);
+    plug.content = await Echo.get<string>({
+      database: PLUGIN_DATABASE_CONTENT,
+      name: id,
+    }).getCurrent();
     /* 返回插件 */
     return plug;
   }
@@ -84,7 +89,7 @@ export class ToolPlugin {
     if (!this.props.id) return this;
 
     this.props = { ...this.props, ...data };
-    await PluginStore.ready({
+    PluginStore.set({
       [this.props.id]: this.props,
     });
     return this;
@@ -122,7 +127,7 @@ export class ToolPlugin {
         database: PLUGIN_DATABASE_CONTENT,
         name: this.props.id,
       }).ready(content);
-
+      this.content = content;
       // 处理插件内容
       const pluginInfo = await this.processContent(content);
 
@@ -369,10 +374,11 @@ export class ToolPlugin {
   }
 
   static async installFromMarket(data: PluginMarketProps) {
-    const plugin = new ToolPlugin({
+    const plugin = await ToolPlugin.create({
       id: data.id,
       name: data.name,
       description: data.description,
+      version: data.version,
     });
     await plugin.updateContent(data.content.trim());
     return plugin;

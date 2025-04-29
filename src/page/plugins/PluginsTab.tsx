@@ -90,7 +90,7 @@ export function PluginsTab() {
   const handleCreate = useCallback(async () => {
     const plugin = await ToolPlugin.create();
     /* 保存到插件存储 */
-    await PluginStore.ready({
+    PluginStore.set({
       [plugin.props.id]: plugin.props,
     });
     CurrentPlugin.set(plugin, { replace: true });
@@ -216,7 +216,7 @@ export function PluginsTab() {
             </div>
           ),
           onClick: async () => {
-            CurrentPlugin.set(await ToolPlugin.create(plugin), {
+            CurrentPlugin.set(await ToolPlugin.get(plugin.id), {
               replace: true,
             });
           },
