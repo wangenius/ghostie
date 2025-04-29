@@ -42,6 +42,26 @@ const TongyiProvider: ChatModelProvider = {
   description: "阿里通义千问",
   icon: "qwen-color.svg",
   models: {
+    "qwen3-235b-a22b": {
+      name: "qwen3-235b-a22b",
+      supportJson: true,
+      supportStream: true,
+      supportToolCalls: true,
+      supportReasoner: false,
+      contextWindow: 128000,
+      description: "通义千问-Turbo - 入门级模型，适合一般任务",
+    },
+
+    "qwen3-30b-a3b": {
+      name: "qwen3-30b-a3b",
+      supportJson: true,
+      supportStream: true,
+      supportToolCalls: true,
+      supportReasoner: false,
+      contextWindow: 128000,
+      description:
+        "实现思考模式和非思考模式的有效融合，可在对话中切换模式。推理能力以更小参数规模比肩QwQ-32B、通用能力显著超过Qwen2.5-14B，达到同规模业界SOTA水平。",
+    },
     "qwen-turbo": {
       name: "qwen-turbo",
       supportJson: true,

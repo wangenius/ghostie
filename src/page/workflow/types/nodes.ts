@@ -14,6 +14,7 @@ import {
   TbArrowIteration,
   TbBellRinging2,
   TbCode,
+  TbDatabase,
   TbFlag,
   TbGhost3,
   TbMessage,
@@ -29,6 +30,7 @@ import { CustomEdge } from "../components/CustomEdge";
 import { FormatNode } from "../nodes/FormatNode";
 import { ImageNode } from "../nodes/ImageNode";
 import { WorkflowEdge } from "./edges";
+import { DatabaseNode } from "../nodes/DatabaseNode";
 /* 节点类型 */
 export const nodeTypes = {
   /* 开始节点，一个工作流必须有且只有一个开始节点 */
@@ -55,6 +57,8 @@ export const nodeTypes = {
   image: ImageNode,
   /* 格式化节点，用于格式化文本 */
   format: FormatNode,
+  /* 数据库节点，用于执行数据库操作 */
+  database: DatabaseNode,
 } as const;
 
 /* 边类型 */
@@ -117,6 +121,11 @@ export const NODE_TYPES: Record<
     label: "panel",
     icon: TbWallpaper,
     variant: "bg-muted border-muted-foreground/20",
+  },
+  database: {
+    label: "database",
+    icon: TbDatabase,
+    variant: "bg-purple-50 border-purple-200",
   },
   notification: {
     label: "notification",
@@ -312,6 +321,15 @@ export interface SwitchNodeConfig extends BaseNodeConfig {
   condition: string;
 }
 
+export interface DatabaseNodeConfig extends BaseNodeConfig {
+  /* 数据库节点类型 */
+  type: "database";
+  /* 数据库表名 */
+  table: string;
+  /* 数据库查询条件 */
+  condition: string;
+}
+
 export type NodeConfig =
   | StartNodeConfig
   | EndNodeConfig
@@ -323,7 +341,8 @@ export type NodeConfig =
   | IteratorNodeConfig
   | NotificationNodeConfig
   | ImageNodeConfig
-  | FormatNodeConfig;
+  | FormatNodeConfig
+  | DatabaseNodeConfig;
 
 export const INITIAL_WORKFLOW: WorkflowMeta = {
   id: "",

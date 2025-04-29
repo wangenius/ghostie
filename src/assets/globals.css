@@ -60,6 +60,8 @@
   }
   * {
     @apply border-border;
+    margin: 0;
+    padding: 0;
   }
   body {
     @apply bg-transparent text-foreground;

@@ -154,6 +154,7 @@ async fn main() {
             mcp::stop_service,
             mcp::get_service_info,
             mcp::call_tool,
+            node::code_plugins,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

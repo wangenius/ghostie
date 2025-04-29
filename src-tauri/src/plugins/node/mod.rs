@@ -468,3 +468,31 @@ pub async fn node_update_dependencies(window: tauri::Window) -> Result<bool> {
         Ok(false)
     }
 }
+
+/// 代码打开插件位置
+#[tauri::command]
+pub async fn code_plugins() -> Result<()> {
+    let config_dir = crate::utils::file::get_config_dir()
+        .ok_or_else(|| PluginError::Plugin("无法获取配置目录".to_string()))?;
+    let plugins_dir = config_dir.join("plugins");
+
+    #[cfg(windows)]
+    let mut cmd = Command::new("cmd");
+
+    #[cfg(windows)]
+    {
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        cmd.args(["/C", "code"]);
+    }
+
+    cmd.arg(plugins_dir);
+    let status = cmd.status().await?;
+
+    if !status.success() {
+        return Err(PluginError::Plugin(
+            "无法使用VS Code打开插件目录".to_string(),
+        ));
+    }
+
+    Ok(())
+}

@@ -269,7 +269,6 @@ export function DatabaseTab() {
   const [showAddRecordDrawer, setShowAddRecordDrawer] =
     useState<boolean>(false);
   const tables = TableStore.use();
-  const records = CurrentDataStore.use();
 
   // 选择表时加载数据
   useEffect(() => {
@@ -617,19 +616,21 @@ export function DatabaseTab() {
     const table = tables[selectedTable];
     if (!table) return null;
 
-    // 获取当前选中表的记录
-    const tableRecords = records || {};
-    const totalRecords = Object.keys(tableRecords).length;
-
     return (
       <div className="w-full h-full overflow-hidden flex flex-col">
         {/* 顶部工具栏 */}
         <div className="flex justify-between items-center mb-4">
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 items-center">
             <h3 className="text-2xl font-medium">{table.name}</h3>
-            <Badge variant="outline" className="text-xs font-normal">
-              {totalRecords} 条记录
-            </Badge>
+            <Button
+              onClick={() => {
+                navigator.clipboard.writeText(table.id);
+                toast.success("表ID已复制到剪贴板");
+              }}
+              className="text-xs font-normal"
+            >
+              {table.id}
+            </Button>
           </div>
 
           <div className="flex items-center space-x-2">

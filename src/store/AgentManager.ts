@@ -1,17 +1,18 @@
 import { ContextRuntimeProps } from "@/agent/context/Context";
-import { AGENT_DATABASE, CONTEXT_RUNTIME_DATABASE } from "@/assets/const";
+import {
+  AGENT_DATABASE,
+  CONTEXT_RUNTIME_DATABASE,
+  PLUGIN_DATABASE_CONTENT,
+} from "@/assets/const";
 import { Echoi } from "@/lib/echo/Echo";
 import { MCP, MCPStore } from "@/page/mcp/MCP";
-import {
-  PLUGIN_DATABASE_CONTENT,
-  PluginStore,
-  ToolPlugin,
-} from "@/plugin/ToolPlugin";
+import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
 import { supabase } from "@/utils/supabase";
 import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
 import { Echo } from "echo-state";
 import { Agent } from "../agent/Agent";
 import { AgentInfos, AgentMarketProps } from "../agent/types/agent";
+
 export class AgentManager {
   /* agents list */
   static list = new Echoi<Record<string, AgentInfos>>({}).indexed({

@@ -17,7 +17,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
 import {
   TbArrowLeft,
-  TbBrandWechat,
   TbHistory,
   TbPencil,
   TbPlus,
@@ -27,6 +26,7 @@ import {
 import { Descendant } from "slate";
 import { toast } from "sonner";
 import { AgentEditor } from "./AgentEditor";
+import { EmptyChatMinimal } from "./EmptyChatMinimal";
 import { HistoryPage } from "./HistoryDrawer";
 import { ChatMessageItem } from "./MessageItem";
 import { plainText, TypeArea } from "./TypeArea";
@@ -48,6 +48,7 @@ export const AgentChat = observer(() => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<{ focus: () => void }>(null);
   const mode = ChatViewMode.use();
+
   const [value, setValue] = useState<Descendant[]>([
     {
       type: "paragraph",
@@ -294,24 +295,14 @@ export const AgentChat = observer(() => {
             {agent?.infos.id && (
               <div
                 ref={messagesContainerRef}
-                className="px-4 py-4 w-full overflow-y-auto flex-1 scroll-smooth"
+                className="px-4 py-4 w-full overflow-y-auto flex-1 scroll-smooth space-y-1"
                 style={{
                   scrollbarWidth: "thin",
                   scrollbarColor: "var(--border) transparent",
                 }}
               >
                 {agent?.context.runtime.messages.length === 0 && (
-                  <div className="flex flex-col items-center justify-center h-full text-center p-4">
-                    <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
-                      <TbBrandWechat className="w-7 h-7 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-base font-medium mb-2">
-                      开始与 {agent?.infos.name || "AI助手"} 对话
-                    </h3>
-                    <p className="text-sm text-muted-foreground max-w-md">
-                      这是您与此助手的新对话。可以询问任何问题，助手将尽力为您提供帮助。
-                    </p>
-                  </div>
+                  <EmptyChatMinimal agent={agent} />
                 )}
 
                 {agent?.context.runtime.messages.length > 0 && (

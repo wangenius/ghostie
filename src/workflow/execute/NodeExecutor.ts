@@ -130,7 +130,7 @@ export class NodeExecutor {
 
         switch (typeof value) {
           case "object":
-            return JSON.stringify(value, null, 2);
+            return JSON.stringify(value);
           case "string":
             return value;
           default:

@@ -87,23 +87,15 @@ const H6: Components["h6"] = ({ children }) => {
 };
 
 const CustomParagraph: Components["p"] = ({ children }) => {
-  return (
-    <p className="my-2 text-muted-foreground leading-relaxed">{children}</p>
-  );
+  return <p className="my-2 leading-relaxed text-primary/80">{children}</p>;
 };
 
 const CustomUl: Components["ul"] = ({ children }) => {
-  return (
-    <ul className={`my-2 ml-6 list-disc text-muted-foreground`}>{children}</ul>
-  );
+  return <ul className={`my-2 ml-6 list-disc`}>{children}</ul>;
 };
 
 const CustomOl: Components["ol"] = ({ children }) => {
-  return (
-    <ol className={`my-2 ml-6 list-decimal text-muted-foreground`}>
-      {children}
-    </ol>
-  );
+  return <ol className={`my-2 ml-6 list-decimal`}>{children}</ol>;
 };
 
 const CustomListItem: Components["li"] = ({ children }) => {
@@ -148,7 +140,7 @@ const CustomTr: Components["tr"] = ({ children }) => {
 
 const CustomTh: Components["th"] = ({ children }) => {
   return (
-    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+    <th className="h-12 px-4 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0">
       {children}
     </th>
   );

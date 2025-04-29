@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import {
   TbBrain,
+  TbCheck,
   TbCopy,
   TbLoader2,
   TbMathFunction,
@@ -22,14 +23,46 @@ interface MessageItemProps {
   nextMessage?: MessageItem;
 }
 
-export function ChatMessageItem({
-  message,
-  lastMessage,
-  nextMessage,
-}: MessageItemProps) {
+const MessageItemState = ({
+  isLoading,
+  name,
+  placeholder,
+  icon: Icon,
+  onClick,
+}: {
+  isLoading: boolean;
+  name: string;
+  placeholder?: string;
+  icon: React.ElementType;
+  onClick?: () => void;
+}) => {
+  return (
+    <div
+      className={cn(
+        "select-none border-0 rounded-[18px] flex overflow-hidden group text-primary transition-colors items-center justify-between p-1",
+      )}
+      onClick={onClick}
+    >
+      <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center p-1 bg-muted rounded-md text-primary">
+          {isLoading ? (
+            <TbLoader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Icon className="h-3.5 w-3.5" />
+          )}
+        </div>
+        <span className="text-xs text-muted-foreground/90 group-hover:text-primary">
+          {name || placeholder}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+export function ChatMessageItem({ message, lastMessage }: MessageItemProps) {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
-  const [showReasoning, setShowReasoning] = useState(true);
+  const [showReasoning, setShowReasoning] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [toolCalls, setToolCalls] = useState<{ type: string; name: string }>({
     type: "",
@@ -38,42 +71,27 @@ export function ChatMessageItem({
   const images = ImagesStore.use();
 
   useEffect(() => {
-    if (message.tool_calls) {
-      ToolsHandler.ToolNameParser(message.tool_calls[0].function.name).then(
-        (res) => setToolCalls(res),
-      );
+    if (lastMessage?.tool_calls) {
+      ToolsHandler.ToolNameParser(
+        lastMessage?.tool_calls[0].function.name,
+      ).then((res) => setToolCalls(res));
     }
-  }, [message.tool_calls]);
+  }, [lastMessage?.tool_calls]);
   const handleCopyMessage = () => {
     navigator.clipboard.writeText(message.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
-  // 消息被主动隐藏，不显示
-  if (message.hidden) {
-    return null;
-  }
-  // 工具调用消息，不显示
+  if (message.hidden) return null;
+
+  // 工具调用消息
   if (message.tool_call_id && !message.images?.length) {
     return (
-      <div
-        className={cn(
-          "border-0 p-1 h-10 flex gap-2 transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2",
-          {
-            "rounded-b-3xl":
-              message.role === "tool" && nextMessage === undefined,
-          },
-          {
-            hidden:
-              message.role === "tool" && nextMessage?.role === "assistant",
-          },
-        )}
-      >
-        <div className="flex items-center gap-2 px-3 rounded-md text-primary text-sm py-2">
-          <TbLoader2 className="h-3.5 w-3.5 animate-spin" />
-          <span className="text-muted-foreground">loading...</span>
-        </div>
-      </div>
+      <MessageItemState
+        isLoading={message.tool_loading || false}
+        name={toolCalls.name || "工具调用"}
+        icon={TbMathFunction}
+      />
     );
   }
   if (message.tool_call_id && message.images?.length) {
@@ -92,11 +110,11 @@ export function ChatMessageItem({
       );
     }
     return (
-      <div className="border-0 p-1 flex px-4 gap-2 transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2">
+      <div className="border-0 p-1 flex px-4 gap-2 transition-colors group overflow-hidden text-primary text-sm space-y-2">
         {message.images.map((image) => (
           <div
             key={image}
-            className="relative group/image w-[160px] mb-1 aspect-square rounded-lg overflow-hidden bg-muted"
+            className="relative group/image w-[160px] mb-1 aspect-square rounded-lg overflow-hidden"
             onClick={() => setSelectedImage(image)}
           >
             <img
@@ -123,7 +141,7 @@ export function ChatMessageItem({
         <div
           className={cn(
             "w-fit border-0 px-4 py-1.5 mt-2 rounded-3xl rounded-tr-none transition-colors group overflow-hidden text-sm ml-auto max-w-[85%]",
-            "text-muted-foreground border",
+            "text-muted-foreground bg-muted",
           )}
         >
           {message.content && <span className="block">{message.content}</span>}
@@ -155,50 +173,43 @@ export function ChatMessageItem({
       </>
     );
 
+  if (
+    message.role === "assistant" &&
+    !message.content &&
+    !message.loading &&
+    !message.reasoner
+  )
+    return null;
+
   return (
     <div
       data-id={message.role}
       className={cn(
-        "border-0 p-3 rounded-3xl transition-colors group overflow-hidden text-primary bg-muted text-sm space-y-2",
-        {
-          "!rounded-t-none pt-0":
-            message.role === "assistant" && lastMessage?.role === "tool",
-        },
-        {
-          "rounded-b-none pb-1":
-            message.role === "assistant" && nextMessage?.role === "tool",
-        },
-        {
-          "mt-2": message.role === "assistant" && lastMessage?.role === "user",
-        },
+        "border-0 transition-colors group overflow-hidden text-primary text-sm space-y-2",
       )}
     >
+      {message.loading && !message.content && !message.reasoner && (
+        <MessageItemState
+          isLoading={message.loading || false}
+          name="loading..."
+          icon={TbLoader2}
+        />
+      )}
       {message.reasoner && (
-        <div className="gap-2 bg-primary/5 rounded-md p-2">
-          <div
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setShowReasoning((prev) => !prev);
-            }}
-            className="flex items-center gap-2 p-1 text-xs"
-          >
-            <TbBrain className="h-4 w-4" />
-            <span>reasoning</span>
-          </div>
+        <div className={cn("gap-2 rounded-[18px] transition-colors")}>
+          <MessageItemState
+            name="reasoning"
+            icon={TbBrain}
+            onClick={() => setShowReasoning((prev) => !prev)}
+            isLoading={!(message.content || message.tool_calls)}
+          />
           {showReasoning && (
-            <div className="text-xs text-muted-foreground">
+            <div className="text-[12px] text-muted-foreground/70 pl-3 pt-1 pb-3 ml-3 border-l-2 border-muted">
               {message.reasoner.split("\n").map((line, index) => (
                 <div key={index}>{line}</div>
               ))}
             </div>
           )}
-        </div>
-      )}
-      {message.loading && !message.content && (
-        <div className="flex items-center gap-2 px-3 rounded-md text-primary text-sm py-2">
-          <TbLoader2 className="h-3.5 w-3.5 animate-spin" />
-          <span className="text-muted-foreground">loading...</span>
         </div>
       )}
 
@@ -210,27 +221,8 @@ export function ChatMessageItem({
           <span>{message.error}</span>
         </div>
       )}
-      {toolCalls.type ? (
-        <div className="flex items-center gap-1 p-2 rounded-full bg-primary/10 text-primary text-xs">
-          {message.tool_loading ? (
-            <TbLoader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <TbMathFunction className="h-3.5 w-3.5" />
-          )}
-          {toolCalls.name}
-        </div>
-      ) : (
-        <div className="text-xs text-muted-foreground items-center flex justify-between select-none">
-          {message.role === "assistant" && (
-            <span className="flex items-center gap-1 px-2">
-              {new Date(message.created_at)
-                .toLocaleString("zh-CN", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-                .replace(/\//g, ".")}
-            </span>
-          )}
+      {!message.tool_calls && !message.loading && (
+        <div className="text-xs text-muted-foreground items-center flex select-none">
           {!isUser && message.role === "assistant" && (
             <Button variant="ghost" size="icon" onClick={handleCopyMessage}>
               {copied ? (
@@ -241,22 +233,22 @@ export function ChatMessageItem({
                   animate="animate"
                   exit="exit"
                 >
-                  <svg
-                    className="w-3.5 h-3.5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M20 6L9 17L4 12" />
-                  </svg>
+                  <TbCheck className="w-3.5 h-3.5" />
                 </motion.div>
               ) : (
                 <TbCopy className="w-3.5 h-3.5" />
               )}
             </Button>
+          )}
+          {message.role === "assistant" && (
+            <span className="flex items-center gap-1 px-2">
+              {new Date(message.created_at)
+                .toLocaleString("zh-CN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+                .replace(/\//g, ".")}
+            </span>
           )}
         </div>
       )}

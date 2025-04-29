@@ -85,6 +85,7 @@ export class ReAct extends Engine {
                 tool_loading: true,
               });
               const toolResult = await ToolsHandler.call(tool, this.agent);
+              console.log(toolResult);
               this.context.updateLastMessage({
                 tool_loading: false,
                 tool_call_id: tool.id,

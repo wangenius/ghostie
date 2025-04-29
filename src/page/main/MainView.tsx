@@ -14,6 +14,7 @@ import { PluginsTab } from "../plugins/PluginsTab";
 import { SchedulesTab } from "../schedule/SchedulesTab";
 import { GeneralSettingsPage } from "../settings/GeneralSettingsPage";
 import WorkflowsTab from "../workflow/WorkflowsTab";
+import { ResourcesTab } from "../resource/ResourcesTab";
 
 /* 主界面 */
 export function MainView() {
@@ -39,6 +40,8 @@ export function MainView() {
         return <DatabaseTab />;
       case "mcp":
         return <MCPTab />;
+      case "resources":
+        return <ResourcesTab />;
       default:
         return <GeneralSettingsPage />;
     }

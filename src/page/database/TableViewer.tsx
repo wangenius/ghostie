@@ -1,7 +1,12 @@
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -12,16 +17,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { CurrentDataStore, TableStore } from "@/database/Database";
+import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
-import { TbEdit, TbTrash } from "react-icons/tb";
 import { toast } from "sonner";
 
 interface TableViewerProps {
@@ -57,10 +56,6 @@ export function TableViewer({
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
-  const [sortConfig, setSortConfig] = useState<{
-    key: string | null;
-    direction: "ascending" | "descending";
-  }>({ key: null, direction: "ascending" });
 
   // 监听外部搜索查询变化
   useEffect(() => {
@@ -150,7 +145,7 @@ export function TableViewer({
         toast.success("记录更新成功");
       } else {
         // 添加新记录
-        const recordId = `record_${Date.now()}`;
+        const recordId = `record_${gen.id()}`;
         CurrentDataStore.set({
           [recordId]: recordDialog.currentRecord,
         });
@@ -195,17 +190,6 @@ export function TableViewer({
     }));
   };
 
-  // 处理排序
-  const handleSort = (key: string) => {
-    setSortConfig((prevConfig) => ({
-      key,
-      direction:
-        prevConfig.key === key && prevConfig.direction === "ascending"
-          ? "descending"
-          : "ascending",
-    }));
-  };
-
   // 过滤和排序记录
   const getProcessedRecords = () => {
     if (!records) return [];
@@ -220,20 +204,6 @@ export function TableViewer({
           String(value).toLowerCase().includes(lowerCaseQuery),
         ),
       );
-    }
-
-    // 排序
-    if (sortConfig.key) {
-      recordsArray.sort(([_, recordA], [__, recordB]) => {
-        const valueA = String(recordA[sortConfig.key as string] || "");
-        const valueB = String(recordB[sortConfig.key as string] || "");
-
-        if (sortConfig.direction === "ascending") {
-          return valueA.localeCompare(valueB);
-        } else {
-          return valueB.localeCompare(valueA);
-        }
-      });
     }
 
     return recordsArray;
@@ -267,74 +237,63 @@ export function TableViewer({
                 {table.columns.map((column) => (
                   <TableHead
                     key={column.name}
-                    className="cursor-pointer hover:bg-accent/50"
-                    onClick={() => handleSort(column.name)}
+                    className="font-medium text-muted-foreground px-2 py-1"
                   >
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center">
-                            {column.name}
-                            {sortConfig.key === column.name && (
-                              <Badge variant="outline" className="ml-2">
-                                {sortConfig.direction === "ascending"
-                                  ? "↑"
-                                  : "↓"}
-                              </Badge>
-                            )}
-                          </div>
-                        </TooltipTrigger>
-                        {column.description && (
-                          <TooltipContent>
-                            <p>{column.description}</p>
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    </TooltipProvider>
+                    {column.name}
                   </TableHead>
                 ))}
-                <TableHead className="w-[120px] text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedRecords.length > 0 ? (
-                paginatedRecords.map(([recordId, record], index) => {
-                  const actualIndex = (currentPage - 1) * pageSize + index;
-                  return (
-                    <TableRow key={recordId}>
-                      <TableCell className="font-medium">
-                        {actualIndex + 1}
-                      </TableCell>
-                      {table.columns.map((column) => (
-                        <TableCell key={column.name}>
-                          {record[column.name] || ""}
-                        </TableCell>
-                      ))}
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEditDialog(recordId, record)}
+                paginatedRecords.map(([recordId, record], idx) => (
+                  <TableRow
+                    key={recordId}
+                    className="hover:bg-accent/30 cursor-pointer"
+                    onClick={() => openEditDialog(recordId, record)}
+                  >
+                    <TableCell className="!p-0 w-[60px] align-middle">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <div
+                            className="h-full flex items-center justify-center cursor-pointer py-2 hover:bg-accent/50 rounded"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            <TbEdit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
+                            <span className="text-xs text-muted-foreground select-none">
+                              {idx + 1}
+                            </span>
+                          </div>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem
                             onClick={() => openDeleteDialog(recordId)}
+                            className="text-destructive"
                           >
-                            <TbTrash className="h-4 w-4" />
-                          </Button>
-                        </div>
+                            删除
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                    {table.columns.map((column) => (
+                      <TableCell
+                        key={column.name}
+                        className="max-w-[200px] px-2 py-1 text-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditDialog(recordId, record);
+                        }}
+                      >
+                        <span className="line-clamp-1">
+                          {record[column.name] || ""}
+                        </span>
                       </TableCell>
-                    </TableRow>
-                  );
-                })
+                    ))}
+                  </TableRow>
+                ))
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={table.columns.length + 2}
+                    colSpan={table.columns.length + 1}
                     className="h-24 text-center"
                   >
                     {searchQuery ? (

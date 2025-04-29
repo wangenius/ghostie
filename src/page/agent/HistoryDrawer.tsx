@@ -28,7 +28,7 @@ export const HistoryPage = ({
     });
   }, [id]);
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full gap-1">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium">历史</h3>
         <Button
@@ -77,6 +77,7 @@ export const HistoryPage = ({
                 onClick={async (e) => {
                   e.stopPropagation();
                   agent?.context.echo.delete(key);
+                  historyEcho.delete(key);
                 }}
                 variant="ghost"
                 size="icon"

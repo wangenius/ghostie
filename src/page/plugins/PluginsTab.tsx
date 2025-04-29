@@ -17,6 +17,7 @@ import { motion } from "framer-motion";
 import { useCallback, useRef, useState } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
 import {
+  TbCode,
   TbCodeAsterisk,
   TbDatabaseCog,
   TbDots,
@@ -34,30 +35,17 @@ import { TestDrawer } from "./components/TestDrawer";
 import { EnvEditor } from "./EnvEditor";
 
 import { dialog } from "@/components/custom/DialogModal";
-import {
-  PLUGIN_DATABASE_CONTENT,
-  PluginStore,
-  ToolPlugin,
-} from "@/plugin/ToolPlugin";
+import { Echoi } from "@/lib/echo/Echo";
+import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
 import { javascript } from "@codemirror/lang-javascript";
 import { githubDarkInit } from "@uiw/codemirror-theme-github";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
-import { Echo } from "echo-state";
 import * as prettierPluginBabel from "prettier/plugins/babel";
 import * as prettierPluginEstree from "prettier/plugins/estree";
 import { format } from "prettier/standalone";
 import { toast } from "sonner";
 
-const CurrentPlugin = new Echo<ToolPlugin>(new ToolPlugin());
-const PluginContent = new Echo<string>(
-  `/**
-* @name write the plugin name here
-* @description write the plugin description here
-*/`,
-).indexed({
-  database: PLUGIN_DATABASE_CONTENT,
-  name: "",
-});
+const CurrentPlugin = new Echoi<ToolPlugin>(new ToolPlugin());
 
 export function PluginsTab() {
   /* 是否提交中 */
@@ -76,7 +64,7 @@ export function PluginsTab() {
   const plugin = CurrentPlugin.use();
   const plugins = PluginStore.use();
   const props = plugins[plugin.props.id];
-  const content = PluginContent.use();
+  const content = plugin.content;
 
   // 处理测试工具变化
   const handleTestToolChange = (value: string) => {
@@ -101,11 +89,11 @@ export function PluginsTab() {
 
   const handleCreate = useCallback(async () => {
     const plugin = await ToolPlugin.create();
-    CurrentPlugin.set(plugin, { replace: true });
-    PluginContent.indexed({
-      database: PLUGIN_DATABASE_CONTENT,
-      name: plugin.props.id,
+    /* 保存到插件存储 */
+    await PluginStore.ready({
+      [plugin.props.id]: plugin.props,
     });
+    CurrentPlugin.set(plugin, { replace: true });
   }, []);
 
   const handleToggleFullscreen = useCallback(() => {
@@ -119,10 +107,6 @@ export function PluginsTab() {
       content: "Are you sure to upload this plugin?",
       onOk: async () => {
         try {
-          const content = await Echo.get<string>({
-            database: PLUGIN_DATABASE_CONTENT,
-            name: props.id,
-          }).getCurrent();
           await plugin.uploadToMarket(content);
           toast.success("plugin uploaded successfully, waiting for review");
         } catch (error) {
@@ -203,6 +187,14 @@ export function PluginsTab() {
                   依赖管理
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => {
+                    cmd.invoke("code_plugins");
+                  }}
+                >
+                  <TbCode className="w-4 h-4" />
+                  代码打开插件位置
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleImportPlugin}>
                   <TbUpload className="w-4 h-4" />
                   Import TypeScript Plugin
@@ -223,11 +215,9 @@ export function PluginsTab() {
               </span>
             </div>
           ),
-          onClick: () => {
-            CurrentPlugin.set(new ToolPlugin(plugin), { replace: true });
-            PluginContent.indexed({
-              database: PLUGIN_DATABASE_CONTENT,
-              name: plugin.id,
+          onClick: async () => {
+            CurrentPlugin.set(await ToolPlugin.create(plugin), {
+              replace: true,
             });
           },
           actived: props?.id === plugin.id,

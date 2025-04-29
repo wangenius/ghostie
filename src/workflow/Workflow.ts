@@ -1,10 +1,10 @@
-import { WORKFLOW_BODY_DATABASE, WORKFLOW_DATABASE } from "@/assets/const";
-import { WorkflowMarketProps } from "@/page/market/WorkflowsMarket";
 import {
   PLUGIN_DATABASE_CONTENT,
-  PluginStore,
-  ToolPlugin,
-} from "@/plugin/ToolPlugin";
+  WORKFLOW_BODY_DATABASE,
+  WORKFLOW_DATABASE,
+} from "@/assets/const";
+import { WorkflowMarketProps } from "@/page/market/WorkflowsMarket";
+import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
 import { AgentManager } from "@/store/AgentManager";
 import { gen } from "@/utils/generator";
 import { supabase } from "@/utils/supabase";

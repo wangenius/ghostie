@@ -1,4 +1,6 @@
+import { TABLE_DATA_DATABASE, TABLE_DATA_INDEX } from "@/assets/const";
 import { Echoi } from "@/lib/echo/Echo";
+import { gen } from "@/utils/generator";
 
 export interface ColumnDefinition {
   name: string;
@@ -16,14 +18,14 @@ export interface DataTable {
 
 // 表定义存储
 export const TableStore = new Echoi<Record<string, DataTable>>({}).indexed({
-  database: "DATA_TABLES",
-  name: "tables",
+  database: TABLE_DATA_INDEX,
+  name: "index",
 });
 
 export const CurrentDataStore = new Echoi<
   Record<string, Record<string, string>>
 >({}).indexed({
-  database: "TABLE_DATA",
+  database: TABLE_DATA_DATABASE,
   name: "",
 });
 
@@ -52,8 +54,7 @@ export class DataTableManager {
     }
 
     // 创建表ID
-    const id =
-      Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+    const id = gen.id();
     const now = Date.now();
 
     // 创建表定义
