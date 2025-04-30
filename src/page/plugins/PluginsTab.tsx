@@ -29,6 +29,7 @@ import {
   TbPlug,
   TbPlus,
   TbScriptPlus,
+  TbTrash,
   TbUpload,
 } from "react-icons/tb";
 import { TestDrawer } from "./components/TestDrawer";
@@ -40,6 +41,7 @@ import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
 import { javascript } from "@codemirror/lang-javascript";
 import { githubDarkInit } from "@uiw/codemirror-theme-github";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
+import { toJS } from "mobx";
 import * as prettierPluginBabel from "prettier/plugins/babel";
 import * as prettierPluginEstree from "prettier/plugins/estree";
 import { format } from "prettier/standalone";
@@ -64,7 +66,9 @@ export function PluginsTab() {
   const plugin = CurrentPlugin.use();
   const plugins = PluginStore.use();
   const props = plugins[plugin.props.id];
-  const content = plugin.content;
+  const content = plugin.content || "";
+
+  console.log(content);
 
   // 处理测试工具变化
   const handleTestToolChange = (value: string) => {
@@ -91,7 +95,7 @@ export function PluginsTab() {
     const plugin = await ToolPlugin.create();
     /* 保存到插件存储 */
     PluginStore.set({
-      [plugin.props.id]: plugin.props,
+      [plugin.props.id]: toJS(plugin.props),
     });
     CurrentPlugin.set(plugin, { replace: true });
   }, []);
@@ -256,13 +260,20 @@ export function PluginsTab() {
         <PreferenceBody
           emptyText="Please select a plugin or click the add button to create a new plugin"
           EmptyIcon={TbPlug}
-          isEmpty={!props?.id}
+          isEmpty={!props || !props.id}
           className={cn("rounded-xl flex-1")}
           header={
             <div className="flex items-center justify-between w-full">
-              <h3 className="text-base font-semibold">
-                {props?.name || "Unnamed Plugin"}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-semibold">
+                  {props?.name || "Unnamed Plugin"}
+                </h3>
+                <small
+                  className={"bg-primary text-muted text-xs rounded-md px-2"}
+                >
+                  {props?.version || ""}
+                </small>
+              </div>
               <div className="flex items-center gap-2">
                 <Button
                   onClick={() => {
@@ -310,6 +321,20 @@ export function PluginsTab() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      variant={"destructive"}
+                      onClick={async () => {
+                        const res = await cmd.confirm(
+                          `确认删除${plugin.props.name}?`,
+                        );
+                        if (res) {
+                          ToolPlugin.delete(plugin.props.id);
+                        }
+                      }}
+                    >
+                      <TbTrash className="size-4" />
+                      delete
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleUpload}>
                       <TbUpload className="w-4 h-4" />
                       Upload to Market

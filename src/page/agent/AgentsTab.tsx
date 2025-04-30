@@ -1,28 +1,21 @@
 import { Agent } from "@/agent/Agent";
-import { DEFAULT_AGENT } from "@/agent/types/agent";
+import { AgentInfos, DEFAULT_AGENT } from "@/agent/types/agent";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { AgentManager } from "@/store/AgentManager";
-import { cmd } from "@utils/shell";
+import { Tools } from "@/utils/tools";
 import Avatar from "boring-avatars";
-import { PiDotsThreeBold } from "react-icons/pi";
-import { TbDownload, TbGhost3, TbPlus, TbUpload } from "react-icons/tb";
+import { TbGhost3, TbPlus } from "react-icons/tb";
 import { AgentChat } from "./AgentChat";
 
 /** AgentsTab */
 export function AgentsTab() {
   const activeAgents = AgentManager.currentOpenedAgent.use();
-  const agents = AgentManager.list.use();
-  const loadingState = AgentManager.loadingState.use();
-  const activeAgent = AgentManager.OPENED_AGENTS.get(activeAgents);
+  const agents = AgentManager.OPENED_AGENTS.use();
+  const activeAgent = agents[activeAgents];
+  const agentsList = AgentManager.list.use();
 
   /* 创建机器人 */
   const handleCreateAgent = async () => {
@@ -36,49 +29,6 @@ export function AgentsTab() {
     }
   };
 
-  const handleImport = async () => {
-    try {
-      const result = await cmd.invoke<{ path: string; content: string }>(
-        "open_file",
-        {
-          title: "Select Assistant Configuration File",
-          filters: {
-            "Assistant Configuration": ["json"],
-          },
-        },
-      );
-      if (result) {
-        cmd.message("function is not implemented", "import success");
-      }
-    } catch (error) {
-      console.error("import agent error:", error);
-      await cmd.message(`import agent error: ${error}`, "import failed");
-    }
-  };
-
-  const handleExport = async () => {
-    try {
-      const result = await cmd.invoke<boolean>("save_file", {
-        title: "Save Assistant Configuration",
-        filters: {
-          "Assistant Configuration": ["json"],
-        },
-        defaultName: "agents.json",
-        content: JSON.stringify(agents),
-      });
-
-      if (result) {
-        await cmd.message(
-          "Successfully exported assistant configuration",
-          "export success",
-        );
-      }
-    } catch (error) {
-      console.error("export agent error:", error);
-      await cmd.message(`export agent error: ${error}`, "export failed");
-    }
-  };
-
   return (
     <PreferenceLayout>
       {/* 左侧列表 */}
@@ -89,75 +39,27 @@ export function AgentsTab() {
               <TbPlus className="w-4 h-4" />
               New
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <PiDotsThreeBold className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleImport}>
-                  <TbUpload className="w-4 h-4 mr-2" />
-                  <span>Import</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleExport}>
-                  <TbDownload className="w-4 h-4 mr-2" />
-                  <span>Export</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </>
         }
-        items={Object.values(agents)
-          .map((agent) => {
-            if (!agent.id) {
-              AgentManager.list.delete(agent.id);
+        items={Object.values(agentsList)
+          .map((infos) => {
+            if (!infos.id) {
+              AgentManager.list.delete(infos.id);
               return null;
             }
             return {
-              id: agent.id,
-              content: (
-                <div className="flex items-center space-x-3">
-                  <Avatar
-                    size={32}
-                    name={agent.id}
-                    variant="beam"
-                    colors={[
-                      "#92A1C6",
-                      "#146A7C",
-                      "#F0AB3D",
-                      "#C271B4",
-                      "#C20D90",
-                    ]}
-                    className="flex-none"
-                    square={false}
-                  />
-
-                  <div className="flex flex-col items-start space-y-1 font-normal text-xs overflow-hidden">
-                    <span className="text-sm font-medium">
-                      {agent.name || "未命名助手"}
-                    </span>
-                    {loadingState[agent.id] ? (
-                      <span className="text-xs text-muted-foreground">
-                        typing...
-                      </span>
-                    ) : (
-                      <span className="line-clamp-1 text-xs text-muted-foreground">
-                        {agent.description}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ),
-
+              id: infos.id,
+              content: <TabItem agent={infos} />,
               onClick: async () => {
-                if (!AgentManager.OPENED_AGENTS.get(agent.id)) {
-                  const newAgent = await AgentManager.getFromLocal(agent.id);
-                  AgentManager.OPENED_AGENTS.set(agent.id, newAgent);
+                if (!AgentManager.OPENED_AGENTS.current[infos.id]) {
+                  const newAgent = await AgentManager.getFromLocal(infos.id);
+                  AgentManager.OPENED_AGENTS.set({
+                    [infos.id]: newAgent,
+                  });
                 }
-                AgentManager.currentOpenedAgent.set(agent.id);
+                AgentManager.currentOpenedAgent.set(infos.id);
               },
-              actived: activeAgent?.infos.id === agent.id,
+              actived: activeAgent?.infos.id === infos.id,
               noRemove: true,
             };
           })
@@ -177,3 +79,34 @@ export function AgentsTab() {
     </PreferenceLayout>
   );
 }
+
+const TabItem = ({ agent }: { agent: AgentInfos }) => {
+  const instance = AgentManager.OPENED_AGENTS.current[agent.id];
+  const loadingState = AgentManager.loadingState.use();
+  const message = instance?.context.getLastMessage();
+  return (
+    <div className="flex items-center justify-between gap-2 min-h-8">
+      <Avatar
+        size={32}
+        name={agent.id}
+        variant="beam"
+        colors={["#92A1C6", "#146A7C", "#F0AB3D", "#C271B4", "#C20D90"]}
+        className="flex-none"
+        square={false}
+      />
+      <div className="flex flex-col items-start justify-start flex-1 gap-1">
+        <div className="flex justify-between w-full">
+          <span className="font-bold text-sm truncate">
+            {agent.name || "未命名助手"}{" "}
+          </span>
+          <span className="font-normal text-xs text-muted-foreground/50 truncate">
+            {message?.created_at ? Tools.whenWasThat(message?.created_at) : ""}
+          </span>
+        </div>
+        <span className="text-xs text-muted-foreground line-clamp-1">
+          {loadingState[agent.id] ? "typing..." : message?.content || ""}
+        </span>
+      </div>
+    </div>
+  );
+};

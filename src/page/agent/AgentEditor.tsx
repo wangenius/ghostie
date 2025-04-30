@@ -21,7 +21,7 @@ export const AgentEditor = () => {
   const list = KnowledgesStore.use();
   const workflows = WorkflowsStore.use();
   const id = AgentManager.currentOpenedAgent.use();
-  const agent = AgentManager.OPENED_AGENTS.get(id);
+  const agent = AgentManager.OPENED_AGENTS.current[id];
   const plugins = PluginStore.use();
   const engines = EngineManager.getEngines();
   const actived_mcps = MCP_Actived.use();

@@ -18,7 +18,7 @@ export const HistoryPage = ({
   onClick: (item: ContextRuntimeProps) => void;
 }) => {
   const id = AgentManager.currentOpenedAgent.use();
-  const agent = AgentManager.OPENED_AGENTS.get(id);
+  const agent = AgentManager.OPENED_AGENTS.current[id];
   const runtimes = historyEcho.use();
 
   useEffect(() => {

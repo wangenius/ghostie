@@ -20,11 +20,6 @@ export default function ShortcutsTab() {
           />
           <ShortcutItem
             icon={<TbKeyboard />}
-            title="Open History"
-            shortcut="Ctrl + H"
-          />
-          <ShortcutItem
-            icon={<TbKeyboard />}
             title="End Conversation"
             shortcut="Ctrl + O"
           />
@@ -32,22 +27,6 @@ export default function ShortcutsTab() {
             icon={<TbKeyboard />}
             title="Stop Generation"
             shortcut="Ctrl + P"
-          />
-        </div>
-
-        <div className="text-sm font-medium text-muted-foreground mb-2 mt-6">
-          Settings Shortcuts
-        </div>
-        <div className="grid gap-4">
-          <ShortcutItem
-            icon={<TbCommand />}
-            title="Open Settings"
-            shortcut="Ctrl + ,"
-          />
-          <ShortcutItem
-            icon={<TbKeyboard />}
-            title="Close Settings"
-            shortcut="Esc"
           />
         </div>
       </div>

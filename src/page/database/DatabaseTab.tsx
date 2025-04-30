@@ -622,15 +622,6 @@ export function DatabaseTab() {
         <div className="flex justify-between items-center mb-4">
           <div className="flex space-x-2 items-center">
             <h3 className="text-2xl font-medium">{table.name}</h3>
-            <Button
-              onClick={() => {
-                navigator.clipboard.writeText(table.id);
-                toast.success("表ID已复制到剪贴板");
-              }}
-              className="text-xs font-normal"
-            >
-              {table.id}
-            </Button>
           </div>
 
           <div className="flex items-center space-x-2">
@@ -677,6 +668,15 @@ export function DatabaseTab() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    navigator.clipboard.writeText(table.id);
+                    toast.success("表ID已复制到剪贴板");
+                  }}
+                  className="text-xs font-normal"
+                >
+                  {table.id}
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
                   onClick={async () => {

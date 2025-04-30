@@ -67,12 +67,12 @@ export function SettingsListItem({
   onClick,
   actived,
   onRemove,
-  noRemove,
+  noRemove = true,
 }: SettingsListItemProps) {
   return (
     <div
       className={cn(
-        "group relative px-3 py-2 rounded-sm transition-all hover:bg-muted-foreground/10 select-none cursor-pointer",
+        "group relative px-2 py-2 rounded-sm transition-all hover:bg-muted-foreground/10 select-none cursor-pointer",
         actived ? "bg-muted-foreground/10" : "bg-transparent",
       )}
       onClick={() => onClick(id)}

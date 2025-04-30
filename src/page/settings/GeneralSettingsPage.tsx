@@ -1,13 +1,24 @@
+import { TabListItem } from "@/components/custom/TabListItem";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
+import { Button } from "@/components/ui/button";
+import { Echoi } from "@/lib/echo/Echo";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import {
+  TbBook,
+  TbGhost3,
+  TbPalette,
+  TbTableShortcut,
+  TbUser,
+  TbVariable,
+} from "react-icons/tb";
 import { AuthSettings } from "./components/AuthSettings";
 import {
   MaxHistorySettings,
   ReactMaxIterationsSettings,
 } from "./components/ChatAgentSettings";
+import EnvironmentVariablesTab from "./components/EnvironmentVariablesTab";
 import {
   KnowledgeModelSettings,
   KnowledgeThresholdSettings,
@@ -26,10 +37,12 @@ import ShortcutsTab from "./ShortcutsTab";
 const items = [
   {
     name: "account",
+    icon: TbUser,
     component: [AuthSettings],
   },
   {
-    name: "system",
+    name: "preferences",
+    icon: TbPalette,
     component: [
       ThemeSettings,
       FontSettings,
@@ -41,34 +54,46 @@ const items = [
     ],
   },
   {
-    name: "chatagent",
+    name: "agent",
+    icon: TbGhost3,
     component: [MaxHistorySettings, ReactMaxIterationsSettings],
   },
   {
     name: "knowledge",
+    icon: TbBook,
     component: [KnowledgeModelSettings, KnowledgeThresholdSettings],
   },
   {
     name: "shortcuts",
+    icon: TbTableShortcut,
     component: [ShortcutsTab],
+  },
+  {
+    name: "environment variables",
+    icon: TbVariable,
+    component: [EnvironmentVariablesTab],
   },
 ];
 
+const CurrentItem = new Echoi<string>("account");
+
 export function GeneralSettingsPage() {
-  const [currentItem, setCurrentItem] = useState<string>("");
+  const currentItem = CurrentItem.use();
   return (
     <PreferenceLayout>
       <PreferenceList
-        left={<div className="flex items-center gap-2">Settings</div>}
+        left={<Button>Settings</Button>}
         items={items.map((item) => ({
           id: item.name,
           content: (
-            <div className="flex items-center gap-2">
-              {item.name || "未命名"}
-            </div>
+            <TabListItem
+              icon={<item.icon className="size-5 text-muted-foreground" />}
+              title={item.name || "未命名"}
+              description={""}
+            />
           ),
           onClick: async () => {
-            setCurrentItem(item.name);
+            CurrentItem.set(item.name);
           },
           actived: item.name === currentItem,
           noRemove: true,
@@ -90,25 +115,5 @@ export function GeneralSettingsPage() {
           ?.component.map((Component) => <Component />)}
       </PreferenceBody>
     </PreferenceLayout>
-    // <div className="space-y-2 max-w-screen-lg mx-auto px-4 h-full overflow-y-auto">
-    //   <h3 className="text-lg font-bold">Account</h3>
-    //   < />
-    //   <h3 className="text-lg font-bold pt-6">System</h3>
-    //   <ThemeSettings />
-    //   <FontSettings />
-    //   <AutoStartSettings />
-    //   <DenoSettings />
-    //   <UpdateSettings />
-    //   <ProxySettings />
-    //   <ConfigDirSettings />
-    //   <h3 className="text-lg font-bold pt-6">ChatAgent</h3>
-    //   <MaxHistorySettings />
-    //   <ReactMaxIterationsSettings />
-    //   <h3 className="text-lg font-bold pt-6">Knowledge</h3>
-    //   <KnowledgeModelSettings />
-    //   <KnowledgeThresholdSettings />
-    //   <h3 className="text-lg font-bold pt-6">Shortcuts</h3>
-    //   <ShortcutsTab />
-    // </div>
   );
 }

@@ -6,7 +6,7 @@ import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
 import { supabase } from "@/utils/supabase";
 import { Echo } from "echo-state";
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, toJS } from "mobx";
 import ts from "typescript";
 import { parsePluginFromString } from "./parser";
 
@@ -36,9 +36,9 @@ export class ToolPlugin {
   constructor(plugin?: Partial<PluginProps>) {
     this.props = { ...DEFAULT_PLUGIN, ...plugin };
     this.content = `/**
-    * @name write the plugin name here
-    * @description write the plugin description here
-    */`;
+ * @name write the plugin name here
+ * @description write the plugin description here
+ */`;
     makeAutoObservable(this);
   }
 
@@ -55,6 +55,7 @@ export class ToolPlugin {
         database: PLUGIN_DATABASE_CONTENT,
         name: id,
       }).getCurrent();
+      console.log(content);
       if (content) {
         plugin.content = content;
       }
@@ -76,10 +77,13 @@ export class ToolPlugin {
       throw new Error("Plugin not found");
     }
     const plug = new ToolPlugin(plugin);
-    plug.content = await Echo.get<string>({
+    const content = await Echo.get<string>({
       database: PLUGIN_DATABASE_CONTENT,
       name: id,
     }).getCurrent();
+    if (content) {
+      plug.content = content;
+    }
     /* 返回插件 */
     return plug;
   }
@@ -90,7 +94,7 @@ export class ToolPlugin {
 
     this.props = { ...this.props, ...data };
     PluginStore.set({
-      [this.props.id]: this.props,
+      [this.props.id]: toJS(this.props),
     });
     return this;
   }
@@ -100,12 +104,13 @@ export class ToolPlugin {
    */
   async processContent(
     content: string,
-  ): Promise<Pick<PluginProps, "name" | "description" | "tools">> {
+  ): Promise<Pick<PluginProps, "name" | "description" | "tools" | "version">> {
     try {
       const parsedFunctions = parsePluginFromString(content);
       return {
         name: parsedFunctions.meta.name || "undefined",
         description: parsedFunctions.meta.description || "",
+        version: parsedFunctions.meta.version || "0.0.1",
         tools: Object.values(parsedFunctions.tools).map((tool) => ({
           ...tool,
           plugin: this.props.id,
@@ -135,6 +140,7 @@ export class ToolPlugin {
       await this.update({
         name: pluginInfo.name,
         description: pluginInfo.description,
+        version: pluginInfo.version,
         tools: pluginInfo.tools.map((tool) => ({
           ...tool,
           plugin: this.props.id,
@@ -151,9 +157,6 @@ export class ToolPlugin {
   /** 删除插件 */
   static async delete(id: string) {
     try {
-      // 确保 PluginStore 已准备好
-      await PluginStore.ready();
-
       // 删除插件存储
       PluginStore.delete(id);
 

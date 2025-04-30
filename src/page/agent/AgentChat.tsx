@@ -42,7 +42,7 @@ interface MentionElement {
 
 export const AgentChat = observer(() => {
   const id = AgentManager.currentOpenedAgent.use();
-  const agent = AgentManager.OPENED_AGENTS.get(id);
+  const agent = AgentManager.OPENED_AGENTS.current[id];
   const loadingState = AgentManager.loadingState.use();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -151,7 +151,14 @@ export const AgentChat = observer(() => {
       // 发送消息并处理响应
       setLoading(true);
       try {
-        await agent?.chat(text, { images });
+        if (agent) {
+          await agent.chat(text, { images });
+
+          AgentManager.CurrentContexts.set({
+            [agent.infos.id]: agent.context.runtime.id,
+          });
+          console.log(await AgentManager.CurrentContexts.getCurrent());
+        }
       } catch (error) {
         console.error("发送消息失败:", error);
       } finally {
@@ -227,11 +234,10 @@ export const AgentChat = observer(() => {
               </Button>
               <Button
                 onClick={() => setHistoryOpen(true)}
-                size="sm"
-                className="text-xs text-muted-foreground"
+                size="icon"
+                className="h-8 w-8"
               >
                 <TbHistory className="h-4 w-4" />
-                历史
               </Button>
               <Drawer
                 open={historyOpen}

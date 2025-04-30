@@ -69,27 +69,34 @@ export function MainView() {
       </div>
       <main className="flex-1 overflow-hidden flex justify-between p-3 pt-0 gap-3">
         <div className="flex flex-col space-y-1">
-          {SETTINGS_NAV_ITEMS.map(({ id, icon: Icon }) => (
-            <Button
-              key={id}
-              onClick={() => Page.settings(id as SettingsTab)}
-              variant="ghost"
-              className={cn(
-                `group relative flex items-center justify-center gap-3 p-1 size-10 text-sm transition-all duration-200
-                    rounded-sm hover:bg-muted
+          {SETTINGS_NAV_ITEMS.map(({ id, icon: Icon, divider }) => {
+            return (
+              <>
+                <Button
+                  key={id}
+                  onClick={() => Page.settings(id as SettingsTab)}
+                  variant="ghost"
+                  className={cn(
+                    `group relative flex items-center justify-center gap-3 p-1 size-10 text-sm transition-all duration-200
+                    rounded-[11px] hover:bg-muted
                   `,
-                settingsTab === id && "bg-muted-foreground/10",
-              )}
-            >
-              <Icon
-                className={`size-5 transition-colors ${
-                  settingsTab === id
-                    ? "text-primary"
-                    : "text-muted-foreground group-hover:text-foreground"
-                }`}
-              />
-            </Button>
-          ))}
+                    settingsTab === id && "bg-primary hover:bg-primary/90",
+                  )}
+                >
+                  <Icon
+                    className={`size-5 transition-colors ${
+                      settingsTab === id
+                        ? "text-muted"
+                        : "text-muted-foreground group-hover:text-foreground"
+                    }`}
+                  />
+                </Button>
+                {divider ? (
+                  <div className="h-[1px] bg-muted-foreground/50 mx-2"></div>
+                ) : null}
+              </>
+            );
+          })}
         </div>
         <div className="flex-1 min-w-0 overflow-hidden">{renderContent()}</div>
       </main>

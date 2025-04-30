@@ -1,3 +1,4 @@
+import { TabListItem } from "@/components/custom/TabListItem";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
@@ -103,8 +104,10 @@ export function ModelsTab() {
         items={items.map((provider) => ({
           id: provider.name,
           content: (
-            <div className="flex items-center justify-between gap-2">
-              {provider.icon && (
+            <TabListItem
+              title={provider.name}
+              description={`${Object.keys(provider.models).length} models`}
+              icon={
                 <img
                   src={`/${provider.icon}`}
                   className={cn(
@@ -113,16 +116,8 @@ export function ModelsTab() {
                   )}
                   alt={provider.name}
                 />
-              )}
-              <div className="flex flex-col items-start justify-start flex-1 gap-1">
-                <span className="font-bold text-sm truncate">
-                  {provider.name}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {Object.keys(provider.models).length} models
-                </span>
-              </div>
-            </div>
+              }
+            />
           ),
           onClick: () => setSelectedModel(provider),
           actived: selectedModel?.name === provider.name,

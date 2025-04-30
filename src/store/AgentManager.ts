@@ -26,7 +26,18 @@ export class AgentManager {
   });
 
   /* 当前打开的Agent */
-  static OPENED_AGENTS = new Map<string, Agent>();
+  static OPENED_AGENTS = new Echoi<Record<string, Agent>>({});
+
+  static {
+    AgentManager.list.getCurrent().then((list) => {
+      console.log(list);
+      Object.values(list).map((item) => {
+        AgentManager.getFromLocal(item.id).then((agent) => {
+          AgentManager.OPENED_AGENTS.set({ [item.id]: agent });
+        });
+      });
+    });
+  }
 
   /* 当前打开的AgentId */
   static currentOpenedAgent = new Echoi<string>("");

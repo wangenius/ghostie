@@ -65,7 +65,6 @@ export default function WorkflowsTab() {
             </DropdownMenu>
           </>
         }
-        tips="Support workflows: Create and manage automated workflows through visual orchestration. Supports multiple node types and conditional branches."
         items={Object.entries(workflows).map(([id, workflow]) => ({
           id,
           content: (
