@@ -71,9 +71,8 @@ export function MainView() {
         <div className="flex flex-col space-y-1">
           {SETTINGS_NAV_ITEMS.map(({ id, icon: Icon, divider }) => {
             return (
-              <>
+              <div key={id} className="space-y-1">
                 <Button
-                  key={id}
                   onClick={() => Page.settings(id as SettingsTab)}
                   variant="ghost"
                   className={cn(
@@ -94,7 +93,7 @@ export function MainView() {
                 {divider ? (
                   <div className="h-[1px] bg-muted-foreground/50 mx-2"></div>
                 ) : null}
-              </>
+              </div>
             );
           })}
         </div>

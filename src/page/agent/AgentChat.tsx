@@ -331,6 +331,7 @@ export const AgentChat = observer(() => {
                   <ChatMessageItem
                     key={`msg-${agent?.context.runtime.id}-${index}`}
                     message={msg}
+                    index={index}
                     lastMessage={agent?.context.runtime.messages[index - 1]}
                     nextMessage={agent?.context.runtime.messages[index + 1]}
                   />

@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use ghostie::plugins::{chat, mcp, node};
+use ghostie::plugins::{chat, mcp, node, plugin_fs};
 use ghostie::utils;
 use tauri::{
     menu::{Menu, MenuItem},
@@ -10,6 +10,7 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
+/* 主函数 */
 #[tokio::main]
 async fn main() {
     let app = tauri::Builder::default()
@@ -155,6 +156,10 @@ async fn main() {
             mcp::get_service_info,
             mcp::call_tool,
             node::code_plugins,
+            plugin_fs::plugin_save_content,
+            plugin_fs::plugin_get_content,
+            plugin_fs::plugin_delete,
+            plugin_fs::plugin_list,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

@@ -101,9 +101,9 @@ export function GeneralSettingsPage() {
       />
 
       <PreferenceBody
-        className={cn("rounded-xl flex-1")}
+        className={cn("rounded-xl flex-1 px-6")}
         header={
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center justify-between w-full px-6 py-3">
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-bold">{currentItem}</h3>
             </div>

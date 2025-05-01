@@ -29,6 +29,7 @@ import { FileDrawer } from "./components/FileDrawer";
 import { FileList } from "./components/FileList";
 import { SearchResults } from "./components/SearchResults";
 import { KnowledgeCreator } from "./KnowledgeCreator";
+import { TabListItem } from "@/components/custom/TabListItem";
 
 const CurrentKnowledge = new Echoa(new Knowledge());
 const CurrentKnowledgeBody = new Echo<KnowledgeBody>({}).indexed({
@@ -170,16 +171,11 @@ export function KnowledgeTab() {
             </DropdownMenu>
           </>
         }
-        tips="Knowledge base supported: You can create a knowledge base by importing a file. Please refer to the development documentation for more information."
+        tips="Knowledge base supported: You can create a knowledge base by importing a file."
         items={Object.entries(documents).map(([id, doc]) => ({
           id,
           content: (
-            <div className="flex flex-col">
-              <span className="text-sm font-bold">{doc.name}</span>
-              <span className="text-xs text-muted-foreground line-clamp-1">
-                {doc.description}
-              </span>
-            </div>
+            <TabListItem title={doc.name} description={doc.description} />
           ),
           onClick: async () => {
             CurrentKnowledge.set(await Knowledge.get(id), {

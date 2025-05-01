@@ -5,8 +5,9 @@ import { cn } from "@/lib/utils";
 import { ToolsHandler } from "@/model/chat/ToolsHandler";
 import { MessageItem } from "@/model/types/chatModel";
 import { ImagesStore } from "@/resources/Image";
+import { AgentManager } from "@/store/AgentManager";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   TbBrain,
   TbCheck,
@@ -14,10 +15,12 @@ import {
   TbLoader2,
   TbMathFunction,
   TbMaximize,
+  TbMessagePlus,
 } from "react-icons/tb";
 import { ImageView } from "../main/ImageView";
 
 interface MessageItemProps {
+  index: number;
   message: MessageItem;
   lastMessage?: MessageItem;
   nextMessage?: MessageItem;
@@ -59,7 +62,11 @@ const MessageItemState = ({
   );
 };
 
-export function ChatMessageItem({ message, lastMessage }: MessageItemProps) {
+export function ChatMessageItem({
+  message,
+  lastMessage,
+  index,
+}: MessageItemProps) {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
   const [showReasoning, setShowReasoning] = useState(false);
@@ -77,6 +84,18 @@ export function ChatMessageItem({ message, lastMessage }: MessageItemProps) {
       ).then((res) => setToolCalls(res));
     }
   }, [lastMessage?.tool_calls]);
+
+  const handleMessagePlus = useCallback(() => {
+    const id = AgentManager.currentOpenedAgent.current;
+    const agent = AgentManager.OPENED_AGENTS.current[id];
+    const messages = [...agent?.context.runtime.messages];
+    agent.context.setRuntime();
+    agent.context.runtime.messages = messages.slice(0, index + 1);
+    AgentManager.CurrentContexts.set({
+      [agent.infos.id]: agent.context.runtime.id,
+    });
+  }, []);
+
   const handleCopyMessage = () => {
     navigator.clipboard.writeText(message.content);
     setCopied(true);
@@ -240,6 +259,15 @@ export function ChatMessageItem({ message, lastMessage }: MessageItemProps) {
               )}
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              handleMessagePlus();
+            }}
+          >
+            <TbMessagePlus className="w-3.5 h-3.5" />
+          </Button>
           {message.role === "assistant" && (
             <span className="flex items-center gap-1 px-2">
               {new Date(message.created_at)

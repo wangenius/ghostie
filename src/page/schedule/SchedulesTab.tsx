@@ -41,8 +41,9 @@ import {
   TbPlus,
   TbScriptPlus,
   TbTrash,
+  TbX,
 } from "react-icons/tb";
-
+import { TabListItem } from "@/components/custom/TabListItem";
 export const HistoryStore = new Echo<Record<string, ExecutionHistory>>({});
 
 export const SchedulesTab = () => {
@@ -412,15 +413,11 @@ export const SchedulesTab = () => {
     return {
       id: schedule.id,
       content: (
-        <div className="flex items-center gap-2">
-          {schedule.name || "未命名计划"}
-          {isRunning && (
-            <div
-              className="w-2 h-2 bg-green-500 rounded-full"
-              title="已启用"
-            ></div>
-          )}
-        </div>
+        <TabListItem
+          className="flex items-center gap-2"
+          title={schedule.name || "未命名计划"}
+          description={isRunning ? `已启用: ${schedule.name}` : `已禁用`}
+        />
       ),
       onClick: () => {
         setSelectedSchedule(schedule.id);

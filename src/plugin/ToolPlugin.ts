@@ -1,4 +1,4 @@
-import { PLUGIN_DATABASE_CONTENT, PLUGIN_DATABASE_INDEX } from "@/assets/const";
+import { PLUGIN_DATABASE_INDEX } from "@/assets/const";
 import { Echoi } from "@/lib/echo/Echo";
 import { PluginMarketProps, PluginProps } from "@/plugin/types";
 import { ImageManager } from "@/resources/Image";
@@ -50,15 +50,24 @@ export class ToolPlugin {
       /* 创建插件实例 */
       const plugin = new ToolPlugin({ ...config, id });
 
-      /* 初始化内容存储 */
-      const content = await Echo.get<string>({
-        database: PLUGIN_DATABASE_CONTENT,
-        name: id,
-      }).getCurrent();
-      console.log(content);
-      if (content) {
-        plugin.content = content;
+      /* 从后端文件系统获取内容 */
+      try {
+        const content = await cmd.invoke<string>("plugin_get_content", { id });
+        if (content) {
+          plugin.content = content;
+        } else {
+          await cmd.invoke("plugin_save_content", {
+            id: plugin.props.id,
+            content: plugin.content,
+          });
+        }
+      } catch (error) {
+        await cmd.invoke("plugin_save_content", {
+          id: plugin.props.id,
+          content: plugin.content,
+        });
       }
+
       return plugin;
     } catch (error) {
       console.error("Failed to create plugin:", error);
@@ -77,13 +86,17 @@ export class ToolPlugin {
       throw new Error("Plugin not found");
     }
     const plug = new ToolPlugin(plugin);
-    const content = await Echo.get<string>({
-      database: PLUGIN_DATABASE_CONTENT,
-      name: id,
-    }).getCurrent();
-    if (content) {
-      plug.content = content;
+
+    /* 从后端文件系统获取内容 */
+    try {
+      const content = await cmd.invoke<string>("plugin_get_content", { id });
+      if (content) {
+        plug.content = content;
+      }
+    } catch (error) {
+      console.error("Failed to get plugin content:", error);
     }
+
     /* 返回插件 */
     return plug;
   }
@@ -127,12 +140,14 @@ export class ToolPlugin {
     if (!this.props.id) return this;
 
     try {
-      // 保存内容
-      await Echo.get<string>({
-        database: PLUGIN_DATABASE_CONTENT,
-        name: this.props.id,
-      }).ready(content);
+      // 保存内容到后端文件系统
+      await cmd.invoke("plugin_save_content", {
+        id: this.props.id,
+        content: content,
+      });
+
       this.content = content;
+
       // 处理插件内容
       const pluginInfo = await this.processContent(content);
 
@@ -160,12 +175,8 @@ export class ToolPlugin {
       // 删除插件存储
       PluginStore.delete(id);
 
-      // 删除内容存储
-      const contentStore = Echoi.get<string>({
-        database: PLUGIN_DATABASE_CONTENT,
-        name: id,
-      });
-      await contentStore.discard();
+      // 删除插件文件
+      await cmd.invoke("plugin_delete", { id });
 
       // 如果是当前插件，重置当前插件ID
       const currentId = CurrentPluginId.current;
@@ -183,11 +194,10 @@ export class ToolPlugin {
    */
   async execute(tool: string, args: Record<string, unknown>) {
     try {
-      // 获取插件内容（TypeScript代码）
-      const tsContent = await Echo.get<string>({
-        database: PLUGIN_DATABASE_CONTENT,
-        name: this.props.id,
-      }).getCurrent();
+      // 获取插件内容（从后端获取最新内容）
+      const tsContent = await cmd.invoke<string>("plugin_get_content", {
+        id: this.props.id,
+      });
 
       // 替换__DB__表达式
       let processedContent = await this.replaceDBExpressions(tsContent);

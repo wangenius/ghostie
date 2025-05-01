@@ -68,8 +68,6 @@ export function PluginsTab() {
   const props = plugins[plugin.props.id];
   const content = plugin.content || "";
 
-  console.log(content);
-
   // 处理测试工具变化
   const handleTestToolChange = (value: string) => {
     setTestTool(value);
@@ -321,6 +319,10 @@ export function PluginsTab() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleUpload}>
+                      <TbUpload className="w-4 h-4" />
+                      Upload to Market
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       variant={"destructive"}
                       onClick={async () => {
@@ -334,10 +336,6 @@ export function PluginsTab() {
                     >
                       <TbTrash className="size-4" />
                       delete
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleUpload}>
-                      <TbUpload className="w-4 h-4" />
-                      Upload to Market
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
