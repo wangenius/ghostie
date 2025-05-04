@@ -1,5 +1,5 @@
 import { PluginStore } from "@/plugin/ToolPlugin";
-import { MCP_Actived } from "../mcp/MCP";
+import { MCP_Actived } from "../../plugin/MCP";
 import { WorkflowsStore } from "@/workflow/Workflow";
 import { KnowledgesStore } from "@/store/knowledges";
 

@@ -196,7 +196,8 @@ export function ChatMessageItem({
     message.role === "assistant" &&
     !message.content &&
     !message.loading &&
-    !message.reasoner
+    !message.reasoner &&
+    !message.error
   )
     return null;
 

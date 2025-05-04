@@ -3,6 +3,7 @@ use crate::plugins::mcp::mcp::MCPManager;
 use anyhow::Result;
 use once_cell::sync::Lazy;
 use rmcp::model::{CallToolResult, Tool};
+use std::collections::HashMap;
 use tokio::sync::Mutex;
 
 static MCP_MANAGER: Lazy<Mutex<Option<MCPManager>>> = Lazy::new(|| Mutex::new(None));
@@ -16,10 +17,13 @@ pub async fn init() -> Result<()> {
 }
 
 #[tauri::command]
-pub async fn start_service(id: String) -> Result<(), String> {
+pub async fn start_service(id: String, env: Option<HashMap<String, String>>) -> Result<(), String> {
     let state = MCP_MANAGER.lock().await;
     if let Some(manager) = state.as_ref() {
-        manager.start_service(&id).await.map_err(|e| e.to_string())
+        manager
+            .start_service(&id, env)
+            .await
+            .map_err(|e| e.to_string())
     } else {
         Err("MCP管理器未初始化".to_string())
     }

@@ -1,4 +1,3 @@
-use crate::plugins::node;
 use anyhow::Result;
 use rmcp::{
     model::{CallToolRequestParam, CallToolResult, Tool},
@@ -25,7 +24,11 @@ impl MCPManager {
     }
 
     // 启动一个新的MCP服务实例，注入环境变量
-    pub async fn start_service(&self, service_id: &str) -> Result<()> {
+    pub async fn start_service(
+        &self,
+        service_id: &str,
+        env: Option<HashMap<String, String>>,
+    ) -> Result<()> {
         let mut services = self.services.lock().await;
 
         // 检查服务是否已存在
@@ -34,19 +37,18 @@ impl MCPManager {
             return Ok(());
         }
 
-        // 获取环境变量
-        let env_vars = node::env_list().await?;
-
-        // 创建命令并注入环境变量
+        // 创建命令
         let mut cmd = Command::new("cmd");
         #[cfg(target_os = "windows")]
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
 
         cmd.arg("/c").arg("npx").arg("-y").arg(service_id);
 
-        // 添加所有环境变量到命令
-        for env_var in env_vars {
-            cmd.env(&env_var.key, &env_var.value);
+        // 如果提供了环境变量，添加到命令中
+        if let Some(env_vars) = env {
+            for (key, value) in env_vars {
+                cmd.env(key, value);
+            }
         }
 
         // 启动新服务
@@ -79,19 +81,17 @@ impl MCPManager {
         arguments: serde_json::Map<String, serde_json::Value>,
     ) -> Result<CallToolResult> {
         let services = self.services.lock().await;
+        let service = services
+            .get(service_id)
+            .ok_or_else(|| anyhow::anyhow!("服务 {} 未找到", service_id))?;
 
-        if let Some(service) = services.get(service_id) {
-            let result = service
-                .call_tool(CallToolRequestParam {
-                    name: Cow::Owned(tool_name.to_string()),
-                    arguments: Some(arguments),
-                })
-                .await?;
+        let request = CallToolRequestParam {
+            name: Cow::Owned(tool_name.to_string()),
+            arguments: Some(arguments),
+        };
 
-            return Ok(result);
-        }
-
-        anyhow::bail!("服务 {} 不存在", service_id)
+        let result = service.call_tool(request).await?;
+        Ok(result)
     }
 
     // 停止指定的服务

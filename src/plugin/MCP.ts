@@ -1,6 +1,6 @@
+import { Echoi } from "@/lib/echo/Echo";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
-import { Echo } from "echo-state";
 import { toast } from "sonner";
 export const MCP_DATABASE = "mcp";
 
@@ -12,30 +12,35 @@ export interface MCPTool {
 
 const DEFAULT_MCP: MCPProps = {
   id: "",
+  type: "node",
   server: "",
   name: "",
   description: "",
   opened: false,
+  env: {},
 };
 
 export interface MCPProps {
   id: string;
+  type: "node" | "python" | "sse";
   server: string;
+  env: Record<string, string>;
   name: string;
   description: string;
   opened: boolean;
   error?: string;
 }
 
-export const MCP_Actived = new Echo<Record<string, MCPTool[]>>({});
+/* 当前激活的MCP服务 */
+export const MCP_Actived = new Echoi<Record<string, MCPTool[]>>({});
 
-export const MCPStore = new Echo<Record<string, MCPProps>>({}).indexed({
+/* 所有的MCP的服务 */
+export const MCPStore = new Echoi<Record<string, MCPProps>>({}).indexed({
   database: MCP_DATABASE,
   name: MCP_DATABASE,
 });
 export class MCP {
   props: MCPProps = DEFAULT_MCP;
-
   constructor(mcp?: Partial<MCPProps>) {
     this.props = { ...DEFAULT_MCP, ...mcp };
   }
@@ -143,6 +148,7 @@ export class MCP {
     try {
       await cmd.invoke("start_service", {
         id: this.props.server,
+        env: this.props.env,
       });
       this.getInfo();
       this.update({

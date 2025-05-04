@@ -5,7 +5,7 @@ import {
   PLUGIN_DATABASE_CONTENT,
 } from "@/assets/const";
 import { Echoi } from "@/lib/echo/Echo";
-import { MCP, MCPStore } from "@/page/mcp/MCP";
+import { MCP, MCPStore } from "@/plugin/MCP";
 import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
 import { supabase } from "@/utils/supabase";
 import { Workflow, WorkflowsStore } from "@/workflow/Workflow";

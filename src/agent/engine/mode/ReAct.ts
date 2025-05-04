@@ -55,7 +55,6 @@ export class ReAct extends Engine {
         console.log(response);
 
         if (response.error) {
-          console.error(response.error);
           this.context.updateLastMessage({
             error: response.error,
             loading: false,
@@ -85,7 +84,6 @@ export class ReAct extends Engine {
                 tool_loading: true,
               });
               const toolResult = await ToolsHandler.call(tool, this.agent);
-              console.log(toolResult);
               this.context.updateLastMessage({
                 tool_loading: false,
                 tool_call_id: tool.id,
@@ -138,6 +136,10 @@ export class ReAct extends Engine {
       return this.context.getLastMessage();
     } catch (error) {
       console.error("Chat error:", error);
+      this.context.updateLastMessage({
+        error: error instanceof Error ? error.message : String(error),
+        loading: false,
+      });
       throw error;
     }
   }

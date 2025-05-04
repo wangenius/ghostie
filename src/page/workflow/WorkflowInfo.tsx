@@ -9,10 +9,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { cmd } from "@/utils/shell";
 import { memo, useCallback } from "react";
-import { TbDots, TbFileText, TbShape3, TbUpload } from "react-icons/tb";
+import {
+  TbDots,
+  TbFileText,
+  TbShape3,
+  TbTrash,
+  TbUpload,
+} from "react-icons/tb";
 import "reactflow/dist/style.css";
 import { toast } from "sonner";
-import { CurrentWorkflow, WorkflowsStore } from "../../workflow/Workflow";
+import {
+  CurrentWorkflow,
+  Workflow,
+  WorkflowsStore,
+} from "../../workflow/Workflow";
 
 export const WorkflowInfo = memo(() => {
   const workflow = CurrentWorkflow.use();
@@ -41,6 +51,18 @@ export const WorkflowInfo = memo(() => {
     });
   };
 
+  const handleDelete = useCallback(() => {
+    dialog.confirm({
+      title: "Delete Workflow",
+      content: "Are you sure to delete this workflow?",
+      onOk: async () => {
+        const id = workflow.meta.id;
+        CurrentWorkflow.set(new Workflow());
+        await Workflow.delete(id);
+        toast.success("Successfully deleted workflow");
+      },
+    });
+  }, []);
   return (
     <div key={meta.id} className="flex flex-col">
       <div className="flex items-center justify-between">
@@ -74,6 +96,10 @@ export const WorkflowInfo = memo(() => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem variant="destructive" onClick={handleDelete}>
+                <TbTrash className="w-4 h-4" />
+                Delete
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleUpload}>
                 <TbUpload className="w-4 h-4" />
                 Upload to Market

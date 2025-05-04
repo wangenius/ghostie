@@ -9,7 +9,7 @@ import {
   WORKFLOW_TOOL_NAME_PREFIX,
 } from "@/assets/const";
 import { Knowledge } from "@/knowledge/Knowledge";
-import { MCP, MCP_Actived } from "@/page/mcp/MCP";
+import { MCP, MCP_Actived } from "@/plugin/MCP";
 import { StartNodeConfig, WorkflowBody } from "@/page/workflow/types/nodes";
 import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
 import { ToolParameters } from "@/plugin/types";

@@ -1,5 +1,6 @@
 import { KNOWLEDGE_BODY_DATABASE } from "@/assets/const";
 import { dialog } from "@/components/custom/DialogModal";
+import { TabListItem } from "@/components/custom/TabListItem";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
@@ -29,7 +30,6 @@ import { FileDrawer } from "./components/FileDrawer";
 import { FileList } from "./components/FileList";
 import { SearchResults } from "./components/SearchResults";
 import { KnowledgeCreator } from "./KnowledgeCreator";
-import { TabListItem } from "@/components/custom/TabListItem";
 
 const CurrentKnowledge = new Echoa(new Knowledge());
 const CurrentKnowledgeBody = new Echo<KnowledgeBody>({}).indexed({
@@ -171,7 +171,6 @@ export function KnowledgeTab() {
             </DropdownMenu>
           </>
         }
-        tips="Knowledge base supported: You can create a knowledge base by importing a file."
         items={Object.entries(documents).map(([id, doc]) => ({
           id,
           content: (

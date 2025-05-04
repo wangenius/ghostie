@@ -57,7 +57,7 @@ const DatabaseNodeComponent = (props: NodeProps<DatabaseNodeConfig>) => {
         className="text-xs min-h-[80px] transition-colors resize-none p-2"
         value={condition}
         onChange={handleConditionChange}
-        placeholder="Enter condition..."
+        placeholder="Enter condition like: i => i.name === 'test'"
       />
     </NodePortal>
   );

@@ -129,12 +129,12 @@ export function NodeDeps() {
 
   const handleUpdateAll = async () => {
     try {
+      const checked = await cmd.confirm("确定要更新所有依赖吗？");
+      if (!checked) return;
       setUpdating(true);
       setProgressMessage("正在更新所有依赖...");
 
-      const success = await cmd.invoke<boolean>("node_update_dependencies", {
-        window: {}, // Tauri会自动补充window参数
-      });
+      const success = await cmd.invoke<boolean>("node_update_dependencies", {});
 
       if (success) {
         cmd.message("所有依赖更新成功", "success");
@@ -159,7 +159,7 @@ export function NodeDeps() {
       <div className="flex flex-col gap-3 justify-between flex-1">
         <div className="flex-none bg-muted-foreground/10 p-3 rounded-lg mb-2">
           <p className="text-xs text-muted-foreground">
-            使用插件时需要的Node.js依赖包管理。安装后可以在插件中通过{" "}
+            使用插件时需要的Node.js依赖包管理。安装后可以在插件中通过
             <code>import</code> 语句引入使用。
           </p>
         </div>
@@ -184,9 +184,9 @@ export function NodeDeps() {
             disabled={installingPackages.includes(newPackage)}
           >
             {installingPackages.includes(newPackage) ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <PackagePlus className="h-4 w-4 mr-2" />
+              <PackagePlus className="h-4 w-4" />
             )}
             安装
           </Button>
@@ -198,17 +198,15 @@ export function NodeDeps() {
               已安装的依赖 ({sortedDependencies.length})
             </h3>
             <Button
-              variant="outline"
-              size="sm"
+              size="icon"
               onClick={handleUpdateAll}
               disabled={updating || sortedDependencies.length === 0}
             >
               {updating ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="h-4 w-4" />
               )}
-              更新全部
             </Button>
           </div>
 

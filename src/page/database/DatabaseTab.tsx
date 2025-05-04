@@ -761,12 +761,10 @@ export function DatabaseTab() {
           },
           noRemove: true,
         }))}
-        left={<div className="py-2 px-3 text-xs font-medium">数据表列表</div>}
         right={
           <Button
             size="sm"
             variant="ghost"
-            className="w-full justify-start"
             onClick={() => {
               setNewTableView(true);
               setNewTableName("");
@@ -775,7 +773,7 @@ export function DatabaseTab() {
               setSelectedTable(null);
             }}
           >
-            <TbPlus className="mr-2 h-4 w-4" />
+            <TbPlus className="h-4 w-4" />
             创建新表
           </Button>
         }

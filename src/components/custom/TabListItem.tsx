@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 
 export const TabListItem = (provider: {
-  icon: ReactNode;
+  icon?: ReactNode;
   title: string;
   description: string;
 }) => {

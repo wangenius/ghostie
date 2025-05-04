@@ -14,7 +14,7 @@ import { SkillManager } from "@/skills/SkillManager";
 import { KnowledgesStore } from "@/store/knowledges";
 import { WorkflowsStore } from "@/workflow/Workflow";
 import { TbListSearch } from "react-icons/tb";
-import { MCPTool, MCP_Actived } from "../mcp/MCP";
+import { MCPTool, MCP_Actived } from "../../plugin/MCP";
 import { SettingItem } from "../settings/components/SettingItem";
 import { AgentManager } from "@/store/AgentManager";
 export const AgentEditor = () => {

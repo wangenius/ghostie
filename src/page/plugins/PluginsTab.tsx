@@ -6,7 +6,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -19,7 +18,6 @@ import { PiDotsThreeBold } from "react-icons/pi";
 import {
   TbCode,
   TbCodeAsterisk,
-  TbDatabaseCog,
   TbDots,
   TbFileText,
   TbMaximize,
@@ -33,7 +31,6 @@ import {
   TbUpload,
 } from "react-icons/tb";
 import { TestDrawer } from "./components/TestDrawer";
-import { EnvEditor } from "./EnvEditor";
 
 import { dialog } from "@/components/custom/DialogModal";
 import { Echoi } from "@/lib/echo/Echo";
@@ -46,6 +43,7 @@ import * as prettierPluginBabel from "prettier/plugins/babel";
 import * as prettierPluginEstree from "prettier/plugins/estree";
 import { format } from "prettier/standalone";
 import { toast } from "sonner";
+import { NodeDeps } from "./NodeDeps";
 
 const CurrentPlugin = new Echoi<ToolPlugin>(new ToolPlugin());
 
@@ -123,8 +121,6 @@ export function PluginsTab() {
     });
   }, [props, content]);
 
-  const handleImportPlugin = useCallback(() => {}, []);
-
   // 处理代码格式化
   const handleFormatCode = useCallback(async () => {
     const view = editorRef.current?.view;
@@ -161,7 +157,12 @@ export function PluginsTab() {
   return (
     <PreferenceLayout>
       <PreferenceList
-        left={<Button variant="ghost">Plugin</Button>}
+        left={
+          <Button onClick={() => NodeDeps.open()} variant="ghost">
+            <TbPackage className="w-4 h-4" />
+            依赖管理
+          </Button>
+        }
         right={
           <>
             <Button className="flex-1" onClick={handleCreate}>
@@ -176,19 +177,6 @@ export function PluginsTab() {
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => EnvEditor.open()}>
-                  <TbDatabaseCog className="w-4 h-4" />
-                  Environment Variables
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
-                    import("./NodeDeps").then((mod) => mod.NodeDeps.open())
-                  }
-                >
-                  <TbPackage className="w-4 h-4" />
-                  依赖管理
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => {
                     cmd.invoke("code_plugins");
@@ -196,10 +184,6 @@ export function PluginsTab() {
                 >
                   <TbCode className="w-4 h-4" />
                   代码打开插件位置
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleImportPlugin}>
-                  <TbUpload className="w-4 h-4" />
-                  Import TypeScript Plugin
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

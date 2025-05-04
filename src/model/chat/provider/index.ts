@@ -15,6 +15,8 @@ import "./Gemini";
 import "./Moonshot";
 import "./Hunyuan";
 import "./Jina";
+import "./OpenRouter";
+import "./DeerAPI";
 // 为了避免循环依赖，不要在这里导出任何内容
 // 在应用程序的入口文件中导入这个文件来确保所有模型提供商都已注册
 
