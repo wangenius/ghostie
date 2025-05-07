@@ -15,7 +15,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ToolParameters, ToolProperty, ToolPropertyType } from "@/plugin/types";
+import {
+  ToolParameters,
+  ToolProperty,
+  ToolPropertyType,
+} from "@/toolkit/types";
 import {
   DropdownMenu,
   DropdownMenuTrigger,

@@ -1,5 +1,5 @@
 /* 技能方法接口 */
-import { ToolParameters } from "@/plugin/types";
+import { ToolParameters } from "@/toolkit/types";
 import { Agent } from "@/agent/Agent";
 
 /** 方法元数据 */

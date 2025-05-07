@@ -1,4 +1,4 @@
-import { ToolPlugin } from "@/plugin/ToolPlugin";
+import { Toolkit } from "@/toolkit/Toolkit";
 import { AgentManager } from "@/store/AgentManager";
 import { Echo, LocalEcho } from "echo-state";
 import { toast } from "sonner";
@@ -294,7 +294,7 @@ export class Scheduler {
                 break;
               case "plugin":
                 if (schedule.pluginId) {
-                  const plugin = await ToolPlugin.get(schedule.pluginId);
+                  const plugin = await Toolkit.get(schedule.pluginId);
                   targetName = plugin.props.name || "";
                   // 如果有指定参数，使用指定参数；否则使用空对象
                   const params = schedule.pluginParams || {};
@@ -307,9 +307,7 @@ export class Scheduler {
                 break;
               case "agent":
                 if (schedule.agentId) {
-                  const agent = await AgentManager.getFromLocal(
-                    schedule.agentId,
-                  );
+                  const agent = await AgentManager.getById(schedule.agentId);
                   targetName = agent.infos.name || "";
                   // 如果设置了输入内容，使用设置的内容；否则使用默认消息
                   const input = schedule.agentInput || "定时任务自动触发";

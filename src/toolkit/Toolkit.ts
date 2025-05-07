@@ -1,17 +1,16 @@
-import { PLUGIN_DATABASE_INDEX } from "@/assets/const";
+import { TOOLKIT_DATABASE_INDEX } from "@/assets/const";
 import { Echoi } from "@/lib/echo/Echo";
-import { PluginMarketProps, PluginProps } from "@/plugin/types";
 import { ImageManager } from "@/resources/Image";
+import { ToolkitProps } from "@/toolkit/types";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
-import { supabase } from "@/utils/supabase";
 import { Echo } from "echo-state";
 import { makeAutoObservable, toJS } from "mobx";
 import ts from "typescript";
 import { parsePluginFromString } from "./parser";
 
 /* 默认 */
-export const DEFAULT_PLUGIN: PluginProps = {
+export const DEFAULT_TOOLKIT: ToolkitProps = {
   id: "",
   name: "",
   description: "",
@@ -20,21 +19,23 @@ export const DEFAULT_PLUGIN: PluginProps = {
 };
 
 // 插件存储
-export const PluginStore = new Echoi<Record<string, PluginProps>>({}).indexed({
-  database: PLUGIN_DATABASE_INDEX,
-  name: "plugins",
-});
+export const ToolkitStore = new Echoi<Record<string, ToolkitProps>>({}).indexed(
+  {
+    database: TOOLKIT_DATABASE_INDEX,
+    name: "plugins",
+  },
+);
 
 // 当前选中的插件ID
-export const CurrentPluginId = new Echoi<string>("");
+export const CurrentToolkitId = new Echoi<string>("");
 
-export class ToolPlugin {
-  props: PluginProps = DEFAULT_PLUGIN;
+export class Toolkit {
+  props: ToolkitProps = DEFAULT_TOOLKIT;
   content: string = "";
 
   /** 构造函数 */
-  constructor(plugin?: Partial<PluginProps>) {
-    this.props = { ...DEFAULT_PLUGIN, ...plugin };
+  constructor(plugin?: Partial<ToolkitProps>) {
+    this.props = { ...DEFAULT_TOOLKIT, ...plugin };
     this.content = `/**
  * @name write the plugin name here
  * @description write the plugin description here
@@ -43,12 +44,12 @@ export class ToolPlugin {
   }
 
   /** 创建插件或者获取插件 */
-  static async create(config: Partial<PluginProps> = {}): Promise<ToolPlugin> {
+  static async create(config: Partial<ToolkitProps> = {}): Promise<Toolkit> {
     try {
       /* 生成ID */
       const id = config.id || gen.id();
       /* 创建插件实例 */
-      const plugin = new ToolPlugin({ ...config, id });
+      const plugin = new Toolkit({ ...config, id });
 
       /* 从后端文件系统获取内容 */
       try {
@@ -78,14 +79,14 @@ export class ToolPlugin {
   /** 获取插件
    * 获取一个插件
    */
-  static async get(id: string): Promise<ToolPlugin> {
+  static async get(id: string): Promise<Toolkit> {
     /* 获取插件 */
-    const plugin = (await PluginStore.getCurrent())[id];
+    const plugin = await ToolkitStore.getValue(id);
     /* 如果插件不存在 */
     if (!plugin) {
       throw new Error("Plugin not found");
     }
-    const plug = new ToolPlugin(plugin);
+    const plug = new Toolkit(plugin);
 
     /* 从后端文件系统获取内容 */
     try {
@@ -102,11 +103,11 @@ export class ToolPlugin {
   }
 
   /** 更新插件 */
-  async update(data: Partial<Omit<PluginProps, "id">>) {
+  async update(data: Partial<Omit<ToolkitProps, "id">>) {
     if (!this.props.id) return this;
 
     this.props = { ...this.props, ...data };
-    PluginStore.set({
+    ToolkitStore.set({
       [this.props.id]: toJS(this.props),
     });
     return this;
@@ -117,7 +118,7 @@ export class ToolPlugin {
    */
   async processContent(
     content: string,
-  ): Promise<Pick<PluginProps, "name" | "description" | "tools" | "version">> {
+  ): Promise<Pick<ToolkitProps, "name" | "description" | "tools" | "version">> {
     try {
       const parsedFunctions = parsePluginFromString(content);
       return {
@@ -173,15 +174,15 @@ export class ToolPlugin {
   static async delete(id: string) {
     try {
       // 删除插件存储
-      PluginStore.delete(id);
+      ToolkitStore.delete(id);
 
       // 删除插件文件
       await cmd.invoke("plugin_delete", { id });
 
       // 如果是当前插件，重置当前插件ID
-      const currentId = CurrentPluginId.current;
+      const currentId = CurrentToolkitId.current;
       if (currentId === id) {
-        CurrentPluginId.set("");
+        CurrentToolkitId.set("");
       }
     } catch (error) {
       console.error("Failed to delete plugin:", error);
@@ -203,8 +204,6 @@ export class ToolPlugin {
       let processedContent = await this.replaceDBExpressions(tsContent);
       // 替换__IMAGE__表达式
       processedContent = await this.replaceImageExpressions(processedContent);
-
-      console.log(processedContent);
 
       // 使用TypeScript编译器将TypeScript代码编译成JavaScript代码
       const jsContent = this.compileTypeScriptToJavaScript(processedContent);
@@ -276,8 +275,6 @@ export class ToolPlugin {
               ? Object.values(tableData)
               : [];
 
-          console.log(dataArray);
-
           // 创建并执行过滤函数
           const filterFnBody = `
             try {
@@ -287,8 +284,6 @@ export class ToolPlugin {
               return dataArray;
             }
           `;
-
-          console.log(filterFnBody);
 
           // 创建并执行过滤函数
           const filterFn = new Function("dataArray", filterFnBody);
@@ -364,64 +359,5 @@ export class ToolPlugin {
       console.error("编译TypeScript代码时出错:", error);
       throw new Error("TypeScript编译失败");
     }
-  }
-
-  static async fetchMarketData(
-    page: number = 1,
-    limit: number = 10,
-  ): Promise<PluginMarketProps[]> {
-    // Get current page data
-    const start = (page - 1) * limit;
-    const end = start + limit - 1;
-
-    const { data, error } = await supabase
-      .from("plugins")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .range(start, end);
-
-    if (error) {
-      throw JSON.stringify(error);
-    }
-    return (data as PluginMarketProps[]) || [];
-  }
-
-  static async installFromMarket(data: PluginMarketProps) {
-    const plugin = await ToolPlugin.create({
-      id: data.id,
-      name: data.name,
-      description: data.description,
-      version: data.version,
-    });
-    await plugin.updateContent(data.content.trim());
-    return plugin;
-  }
-
-  static async uninstallFromMarket(id: string) {
-    const { error } = await supabase.from("plugins").delete().eq("id", id);
-    if (error) {
-      throw JSON.stringify(error);
-    }
-  }
-
-  async uploadToMarket(content: string) {
-    /* 检查是否已经有了 */
-    const { data } = await supabase
-      .from("plugins")
-      .select("id")
-      .eq("id", this.props.id);
-    if (data && data.length > 0) {
-      throw new Error("key already exists");
-    }
-    const { error } = await supabase.from("plugins").insert({
-      id: this.props.id,
-      name: this.props.name,
-      description: this.props.description,
-      content: content,
-    });
-    if (error) {
-      throw JSON.stringify(error);
-    }
-    return;
   }
 }

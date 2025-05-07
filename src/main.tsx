@@ -13,10 +13,13 @@ import "./model/vision/provider";
 import App from "./page/App";
 import "./skills/instance";
 import { Scheduler } from "./page/schedule/Scheduler";
+import { UserMananger } from "./services/user/User";
 
+/* 主要部分 */
 const element = document.getElementById("root") as HTMLElement;
 createRoot(element).render(<App />);
 
+/* 提示部分 */
 const ToastProvider = document.getElementById("toast") as HTMLElement;
 createRoot(ToastProvider).render(
   <Toaster
@@ -34,3 +37,5 @@ createRoot(ToastProvider).render(
 );
 // 初始化调度器
 Scheduler.init();
+/* 初始化用户管理器 */
+UserMananger.init();

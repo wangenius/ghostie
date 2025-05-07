@@ -77,7 +77,7 @@ export class AgentNodeExecutor extends NodeExecutor {
         throw new Error("Agent not configured");
       }
 
-      const agent = await AgentManager.getFromLocal(agentConfig.agent);
+      const agent = await AgentManager.getById(agentConfig.agent);
       if (!agent) {
         throw new Error(`Agent not found: ${agentConfig.agent}`);
       }

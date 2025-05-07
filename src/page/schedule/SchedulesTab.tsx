@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { ParamInput } from "@/page/plugins/components/ParamInput";
+import { ParamInput } from "@/page/toolkit/components/ParamInput";
 import {
   ExecutionHistory,
   Schedule,
@@ -24,8 +24,8 @@ import {
   Scheduler,
 } from "@/page/schedule/Scheduler";
 import { StartNodeConfig } from "@/page/workflow/types/nodes";
-import { PluginStore } from "@/plugin/ToolPlugin";
-import { ToolProperty } from "@/plugin/types";
+import { ToolkitStore } from "@/toolkit/Toolkit";
+import { ToolProperty } from "@/toolkit/types";
 import { AgentManager } from "@/store/AgentManager";
 import { gen } from "@/utils/generator";
 import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
@@ -50,7 +50,7 @@ export const SchedulesTab = () => {
   // 全局状态
   const schedulesData = Scheduler.use();
   const workflows = WorkflowsStore.use();
-  const plugins = PluginStore.use();
+  const plugins = ToolkitStore.use();
   const agents = AgentManager.list.use();
   const [selectedSchedule, setSelectedSchedule] = useState<string>("");
   const currentSchedule = schedulesData[selectedSchedule];

@@ -1,4 +1,4 @@
-import { FunctionCallProps } from "../../plugin/types";
+import { FunctionCallProps } from "../../toolkit/types";
 
 /** 消息角色类型
  * system: 系统消息

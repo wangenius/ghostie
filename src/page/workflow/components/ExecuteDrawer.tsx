@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ToolProperty } from "@/plugin/types";
+import { ToolProperty } from "@/toolkit/types";
 import { Workflow } from "@/workflow/Workflow";
 import { useCallback, useState } from "react";
 import "reactflow/dist/style.css";

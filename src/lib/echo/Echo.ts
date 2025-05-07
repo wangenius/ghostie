@@ -321,12 +321,21 @@ export class Echoi<T extends Record<string, any> | null | string | number> {
     return this.state;
   }
 
+  /** value */
+  public async getValue<K extends string>(
+    id: K,
+  ): Promise<
+    T extends Record<string, any> ? (K extends keyof T ? T[K] : undefined) : T
+  > {
+    await this.ready();
+    if (typeof this.state === "object" && this.state !== null) {
+      return (this.state as any)[id];
+    }
+    return this.state as any;
+  }
+
   public get current(): T {
-    // 只有在使用IndexedDB且未初始化时才抛出错误
-    if (
-      this.storageAdapter instanceof IndexedDBAdapter &&
-      !this.isInitialized
-    ) {
+    if (this.storageAdapter && !this.isInitialized) {
       throw new Error(
         "Echo Core: please use getCurrent() method or wait for ready() Promise to complete",
       );
@@ -530,15 +539,6 @@ export class Echoi<T extends Record<string, any> | null | string | number> {
     this.storageAdapter?.close();
     this.storageAdapter = null;
     this.isInitialized = false;
-  }
-
-  /**
-   * 销毁实例,
-   * 持久化数据也会消失
-   */
-  public destroy(): void {
-    this.cleanup();
-    this.storageAdapter?.destroy();
   }
 }
 

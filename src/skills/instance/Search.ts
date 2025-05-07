@@ -1,6 +1,6 @@
 import { Agent } from "@/agent/Agent";
 import { ToolsHandler } from "@/model/chat/ToolsHandler";
-import { PluginStore } from "@/plugin/ToolPlugin";
+import { ToolkitStore } from "@/toolkit/Toolkit";
 import { SkillManager } from "../SkillManager";
 
 /** 网络搜索 */
@@ -13,7 +13,7 @@ SkillManager.register("getAllPlugins", {
     required: [],
   },
   execute: async () => {
-    const plugins = await PluginStore.getCurrent();
+    const plugins = await ToolkitStore.getCurrent();
     const tools = Object.values(plugins).flatMap((plugin) => {
       return plugin.tools.map((tool) => {
         return {

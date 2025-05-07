@@ -6,7 +6,8 @@ import {
   TbCheese,
   TbClock,
   TbDatabase,
-  TbMessage,
+  TbMessageCircle,
+  TbMessages,
   TbPlanet,
   TbScript,
   TbServer,
@@ -17,8 +18,8 @@ import {
 export type SettingsTab = (typeof SETTINGS_NAV_ITEMS)[number]["id"];
 
 export const SETTINGS_NAV_ITEMS = [
-  { id: "agents", label: "Agents", icon: TbMessage, divider: false },
-  { id: "schedules", label: "Schedules", icon: TbClock, divider: false },
+  { id: "agents", label: "Agents", icon: TbMessageCircle, divider: false },
+  { id: "teams", label: "Teams", icon: TbMessages, divider: false },
   { id: "market", label: "Market", icon: TbPlanet, divider: true },
   { id: "plugins", label: "Plugins", icon: TbScript, divider: false },
   { id: "workflows", label: "Workflows", icon: TbShape3, divider: false },
@@ -27,6 +28,7 @@ export const SETTINGS_NAV_ITEMS = [
   { id: "knowledge", label: "Knowledge", icon: TbBook2, divider: false },
   { id: "resources", label: "Resources", icon: TbCheese, divider: true },
   { id: "models", label: "Models", icon: TbBox, divider: false },
+  { id: "schedules", label: "Schedules", icon: TbClock, divider: false },
   { id: "general", label: "General", icon: TbSettings, divider: false },
 ] as const;
 const PageStore = new Echo<{

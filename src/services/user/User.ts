@@ -1,29 +1,27 @@
+import { Echoi } from "@/lib/echo/Echo";
 import { cmd } from "@/utils/shell";
 import { supabase } from "@/utils/supabase";
 import { User } from "@supabase/auth-js";
-import { Echo } from "echo-state";
 
 export class UserMananger {
-  static store = new Echo<User | null>(null);
-  static {
+  static store = new Echoi<User | null>(null);
+  static use = this.store.use.bind(this.store);
+
+  static async init() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        this.store.set(user);
+        console.log("user", user);
+        UserMananger.store.set(user);
       }
     });
-    // 监听认证状态变化
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        this.store.set(session.user);
+        UserMananger.store.set(session.user);
       } else {
-        this.store.set(null);
+        UserMananger.store.set(null);
       }
     });
   }
-  static use = this.store.use.bind(this.store);
-  static current = this.store.current;
 
   static async login(email: string, password: string) {
     try {

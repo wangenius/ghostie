@@ -1,10 +1,10 @@
-import { PluginStore } from "@/plugin/ToolPlugin";
-import { MCP_Actived } from "../../plugin/MCP";
+import { ToolkitStore } from "@/toolkit/Toolkit";
+import { MCP_Actived } from "../../toolkit/MCP";
 import { WorkflowsStore } from "@/workflow/Workflow";
 import { KnowledgesStore } from "@/store/knowledges";
 
 export function EmptyChatMinimal({ agent }: any) {
-  const plugins = PluginStore.use();
+  const plugins = ToolkitStore.use();
   const actived = MCP_Actived.use();
   const workflows = WorkflowsStore.use();
   const knowledges = KnowledgesStore.use();
@@ -47,7 +47,7 @@ export function EmptyChatMinimal({ agent }: any) {
             MCP工具
           </div>
           <div className="flex flex-wrap gap-2">
-            {agent.infos.mcps.slice(0, 3).map((mcp: any, i: number) => {
+            {agent.infos.mcps?.slice(0, 3).map((mcp: any, i: number) => {
               const tools = actived[mcp.server] || [];
               const toolInfo = tools.find((t: any) => t.name === mcp.tool);
               if (!toolInfo) return null;
@@ -70,7 +70,7 @@ export function EmptyChatMinimal({ agent }: any) {
             技能
           </div>
           <div className="flex flex-wrap gap-2">
-            {agent.infos.skills.slice(0, 3).map((id: any, i: number) => {
+            {agent.infos.skills?.slice(0, 3).map((id: any, i: number) => {
               const skill = (window as any).SkillManager?.getSkills?.()[id];
               if (!skill) return null;
               return (
@@ -79,7 +79,7 @@ export function EmptyChatMinimal({ agent }: any) {
                 </span>
               );
             })}
-            {agent.infos.skills.length > 3 && (
+            {agent.infos.skills?.length > 3 && (
               <span className="px-2 py-0.5 bg-accent rounded text-xs">
                 +{agent.infos.skills.length - 3}
               </span>
@@ -92,7 +92,7 @@ export function EmptyChatMinimal({ agent }: any) {
             工作流
           </div>
           <div className="flex flex-wrap gap-2">
-            {agent.infos.workflows.slice(0, 3).map((id: any, i: number) => {
+            {agent.infos.workflows?.slice(0, 3).map((id: any, i: number) => {
               const wf = workflows[id];
               if (!wf) return null;
               return (
@@ -101,7 +101,7 @@ export function EmptyChatMinimal({ agent }: any) {
                 </span>
               );
             })}
-            {agent.infos.workflows.length > 3 && (
+            {agent.infos.workflows?.length > 3 && (
               <span className="px-2 py-0.5 bg-accent rounded text-xs">
                 +{agent.infos.workflows.length - 3}
               </span>
@@ -114,7 +114,7 @@ export function EmptyChatMinimal({ agent }: any) {
             知识库
           </div>
           <div className="flex flex-wrap gap-2">
-            {agent.infos.knowledges.slice(0, 3).map((id: any, i: number) => {
+            {agent.infos.knowledges?.slice(0, 3).map((id: any, i: number) => {
               const k = knowledges[id];
               if (!k) return null;
               return (

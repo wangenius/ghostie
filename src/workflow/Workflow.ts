@@ -1,10 +1,10 @@
 import {
-  PLUGIN_DATABASE_CONTENT,
+  TOOLKIT_DATABASE_CONTENT,
   WORKFLOW_BODY_DATABASE,
   WORKFLOW_DATABASE,
 } from "@/assets/const";
-import { WorkflowMarketProps } from "@/page/market/WorkflowsMarket";
-import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
+import { WorkflowMarketProps } from "@/page/market/WorkflowsMarketTab";
+import { ToolkitStore, Toolkit } from "@/toolkit/Toolkit";
 import { AgentManager } from "@/store/AgentManager";
 import { gen } from "@/utils/generator";
 import { supabase } from "@/utils/supabase";
@@ -139,9 +139,9 @@ export class Workflow {
 
         if (!processedPlugins.has(pluginId)) {
           try {
-            const plugin = await ToolPlugin.get(pluginId);
+            const plugin = await Toolkit.get(pluginId);
             const content = await Echo.get<string>({
-              database: PLUGIN_DATABASE_CONTENT,
+              database: TOOLKIT_DATABASE_CONTENT,
               name: pluginId,
             }).getCurrent();
 
@@ -167,7 +167,7 @@ export class Workflow {
 
         if (!processedAgents.has(agentId)) {
           try {
-            const agent = await AgentManager.getFromLocal(agentId);
+            const agent = await AgentManager.getById(agentId);
 
             // 尝试上传代理，如果失败则检查是否是因为已存在
             try {
@@ -227,7 +227,7 @@ export class Workflow {
       const agentsToInstall = new Set<string>();
 
       // 获取现有的插件和代理，用于检查是否已安装
-      const existingPlugins = await PluginStore.getCurrent();
+      const existingPlugins = await ToolkitStore.getCurrent();
       const existingAgents = await AgentManager.list.getCurrent();
 
       // 处理所有节点，检查是否需要安装插件和代理
@@ -274,7 +274,7 @@ export class Workflow {
 
           if (data) {
             // 安装插件
-            await ToolPlugin.installFromMarket(data);
+            await Toolkit.installFromMarket(data);
             console.log(`成功安装插件: ${data.name}`);
           }
         } catch (error) {

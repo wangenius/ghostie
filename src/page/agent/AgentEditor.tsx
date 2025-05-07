@@ -3,26 +3,23 @@ import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import { KnowledgeMeta } from "@/knowledge/Knowledge";
 import { ChatModelManager } from "@/model/chat/ChatModelManager";
 import { ImageModelManager } from "@/model/image/ImageModelManager";
 import { VisionModelManager } from "@/model/vision/VisionModelManager";
-import { PluginStore } from "@/plugin/ToolPlugin";
-import { PluginProps, ToolProps } from "@/plugin/types";
 import { SkillManager } from "@/skills/SkillManager";
-import { KnowledgesStore } from "@/store/knowledges";
-import { WorkflowsStore } from "@/workflow/Workflow";
-import { TbListSearch } from "react-icons/tb";
-import { MCPTool, MCP_Actived } from "../../plugin/MCP";
-import { SettingItem } from "../settings/components/SettingItem";
 import { AgentManager } from "@/store/AgentManager";
+import { KnowledgesStore } from "@/store/knowledges";
+import { ToolkitStore } from "@/toolkit/Toolkit";
+import { ToolkitProps, ToolProps } from "@/toolkit/types";
+import { WorkflowsStore } from "@/workflow/Workflow";
+import { MCP_Actived, MCPTool } from "../../toolkit/MCP";
 export const AgentEditor = () => {
   const list = KnowledgesStore.use();
   const workflows = WorkflowsStore.use();
   const id = AgentManager.currentOpenedAgent.use();
   const agent = AgentManager.OPENED_AGENTS.current[id];
-  const plugins = PluginStore.use();
+  const plugins = ToolkitStore.use();
   const engines = EngineManager.getEngines();
   const actived_mcps = MCP_Actived.use();
   const agents = AgentManager.list.use();
@@ -34,31 +31,31 @@ export const AgentEditor = () => {
       {/* 主内容区 */}
       <div className="px-8 py-8">
         <div className="space-y-6">
-          <Input
-            type="text"
-            defaultValue={agent.infos.name}
-            onChange={(e) =>
-              agent.update({
-                name: e.target.value,
-              })
-            }
-            placeholder="Assistant Name"
-          />
-          <DrawerSelector
-            title="Agent Mode"
-            value={[agent.infos.engine]}
-            items={Object.entries(engines).map(([key, engine]) => ({
-              label: engine.name,
-              value: key,
-              description: engine.description,
-              variant: engine.name !== "ReAct" ? "danger" : "default",
-            }))}
-            onSelect={([value]) =>
-              agent.update({
-                engine: value,
-              })
-            }
-          />
+          <h3 className="text-lg font-medium">Agent Info</h3>
+
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              defaultValue={agent.infos.name}
+              onChange={(e) =>
+                agent.update({
+                  name: e.target.value,
+                })
+              }
+              placeholder="Assistant Name"
+            />{" "}
+            <Input
+              type="text"
+              defaultValue={agent.infos.version || "0.0.1"}
+              onChange={(e) =>
+                agent.update({
+                  version: e.target.value,
+                })
+              }
+              placeholder="Assistant Version"
+            />
+          </div>
+
           <AutoResizeTextarea
             defaultValue={agent.infos.description}
             key={agent.infos.id}
@@ -70,9 +67,26 @@ export const AgentEditor = () => {
             className="resize-none"
             placeholder="Enter the description, this will be work as a description for other agent call this agent"
           />
+
           {/* 模型部分 */}
           <section className="space-y-4">
             <h3 className="text-lg font-medium">Model</h3>
+
+            <DrawerSelector
+              title="Agent Mode"
+              value={[agent.infos.engine]}
+              items={Object.entries(engines).map(([key, engine]) => ({
+                label: engine.name,
+                value: key,
+                description: engine.description,
+                variant: engine.name !== "ReAct" ? "danger" : "default",
+              }))}
+              onSelect={([value]) =>
+                agent.update({
+                  engine: value,
+                })
+              }
+            />
 
             <DrawerSelector
               title="Text Model"
@@ -151,21 +165,6 @@ export const AgentEditor = () => {
           <section className="space-y-4">
             <h3 className="text-lg font-medium">Abilities</h3>
             <div className="space-y-4 px-2">
-              <SettingItem
-                icon={<TbListSearch className="w-[18px] h-[18px]" />}
-                title="auto search all abilities"
-                description={`Current abilities: ${false}`}
-                action={
-                  <div className="flex gap-1">
-                    <Switch
-                      checked={false}
-                      disabled={true}
-                      title="this will be implemented in the next version"
-                      onCheckedChange={() => {}}
-                    />
-                  </div>
-                }
-              />
               <DrawerSelector
                 title="Select Sub-Agents"
                 value={agent.infos.agents}
@@ -190,7 +189,7 @@ export const AgentEditor = () => {
               <DrawerSelector
                 title="Select Plugin"
                 value={agent.infos.tools}
-                items={Object.values(plugins).flatMap((plugin: PluginProps) =>
+                items={Object.values(plugins).flatMap((plugin: ToolkitProps) =>
                   plugin.tools.map((tool: ToolProps) => ({
                     label: tool.name,
                     value: {

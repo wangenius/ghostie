@@ -10,10 +10,11 @@ import {
   TbServer,
   TbShape3,
 } from "react-icons/tb";
-import { AgentsMarket } from "./AgentsMarket";
-import { MCPMarket } from "./MCPMarket";
-import { PluginsMarket } from "./PluginsMarket";
-import { WorkflowsMarket } from "./WorkflowsMarket";
+import { AgentsMarketTab } from "./AgentsMarketTab";
+import { MCPMarketTab } from "./MCPMarketTab";
+import { ToolkitsMarketTab } from "./ToolkitMarketTab";
+import { WorkflowsMarketTab } from "./WorkflowsMarketTab";
+import { TabListItem } from "@/components/custom/TabListItem";
 
 const tabs = [
   {
@@ -62,16 +63,7 @@ export const MarketTab = () => {
         items={tabs.map((tab) => {
           return {
             id: tab.id,
-            content: (
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon">
-                  <tab.icon className="h-4 w-4" />
-                </Button>
-                <div className="flex flex-col items-start gap-1">
-                  <span className="font-bold text-sm truncate">{tab.name}</span>
-                </div>
-              </div>
-            ),
+            content: <TabListItem title={tab.name} description={tab.id} />,
             onClick: () => {
               setActiveTab(tab.id);
             },
@@ -83,10 +75,10 @@ export const MarketTab = () => {
 
       {/* 右侧编辑区域 */}
       <PreferenceBody emptyText="请选择一个助手或点击添加按钮创建新助手">
-        {activeTab === "agents" && <AgentsMarket />}
-        {activeTab === "plugins" && <PluginsMarket />}
-        {activeTab === "workflows" && <WorkflowsMarket />}
-        {activeTab === "mcp" && <MCPMarket />}
+        {activeTab === "agents" && <AgentsMarketTab />}
+        {activeTab === "plugins" && <ToolkitsMarketTab />}
+        {activeTab === "workflows" && <WorkflowsMarketTab />}
+        {activeTab === "mcp" && <MCPMarketTab />}
       </PreferenceBody>
     </PreferenceLayout>
   );

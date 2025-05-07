@@ -4,14 +4,7 @@ import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { PiDotsThreeBold } from "react-icons/pi";
-import { TbDownload, TbPlus, TbShape3 } from "react-icons/tb";
+import { TbPlus, TbShape3 } from "react-icons/tb";
 import {
   CurrentWorkflow,
   Workflow,
@@ -49,20 +42,6 @@ export default function WorkflowsTab() {
               <TbPlus className="w-4 h-4" />
               New
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <PiDotsThreeBold className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => {}}>
-                  <TbDownload className="w-4 h-4" />
-                  <span>Export Workflow</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </>
         }
         items={Object.entries(workflows).map(([id, workflow]) => ({

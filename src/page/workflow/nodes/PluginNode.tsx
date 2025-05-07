@@ -1,7 +1,7 @@
 import { TOOL_NAME_SPLIT } from "@/assets/const";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Input } from "@/components/ui/input";
-import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
+import { ToolkitStore, Toolkit } from "@/toolkit/Toolkit";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { NodeProps } from "reactflow";
 import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
@@ -9,7 +9,7 @@ import { useFlow } from "../context/FlowContext";
 import { NodeState, PluginNodeConfig, WorkflowNode } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
-  const plugins = PluginStore.use();
+  const plugins = ToolkitStore.use();
   const { updateNodeData } = useFlow();
   const [localInputs, setLocalInputs] = useState<Record<string, string>>({});
 
@@ -143,7 +143,7 @@ export class PluginNodeExecutor extends NodeExecutor {
         throw new Error("Plugin not configured");
       }
 
-      const plugin = await ToolPlugin.get(pluginConfig.plugin);
+      const plugin = await Toolkit.get(pluginConfig.plugin);
       if (!plugin) {
         throw new Error(`Plugin not found: ${pluginConfig.plugin}`);
       }
@@ -165,7 +165,7 @@ export class PluginNodeExecutor extends NodeExecutor {
       );
 
       const pluginResult = await (
-        await ToolPlugin.get(plugin.props.id)
+        await Toolkit.get(plugin.props.id)
       ).execute(pluginConfig.tool, processedArgs);
       console.log("pluginResult", pluginResult);
 

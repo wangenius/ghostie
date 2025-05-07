@@ -1,4 +1,4 @@
-import { EnvEditor } from "@/page/plugins/EnvEditor";
+import { EnvEditor } from "@/page/settings/EnvEditor";
 
 export default function EnvironmentVariablesTab() {
   return (

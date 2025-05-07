@@ -10,11 +10,12 @@ import { KnowledgeTab } from "../knowledge/KnowledgeTab";
 import { MarketTab } from "../market/MarketTab";
 import { MCPTab } from "../mcp/MCPManagerTab";
 import { ModelsTab } from "../model/ModelsTab";
-import { PluginsTab } from "../plugins/PluginsTab";
+import { ToolkitTab } from "../toolkit/ToolkitTab";
 import { SchedulesTab } from "../schedule/SchedulesTab";
 import { GeneralSettingsPage } from "../settings/GeneralSettingsPage";
 import WorkflowsTab from "../workflow/WorkflowsTab";
 import { ResourcesTab } from "../resource/ResourcesTab";
+import TeamsTab from "../team/TeamsTab";
 
 /* 主界面 */
 export function MainView() {
@@ -28,10 +29,12 @@ export function MainView() {
         return <MarketTab />;
       case "schedules":
         return <SchedulesTab />;
+      case "teams":
+        return <TeamsTab />;
       case "models":
         return <ModelsTab />;
       case "plugins":
-        return <PluginsTab />;
+        return <ToolkitTab />;
       case "knowledge":
         return <KnowledgeTab />;
       case "workflows":

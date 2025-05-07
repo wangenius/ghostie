@@ -13,7 +13,7 @@ import { cmd } from "@/utils/shell";
 import { EditorView } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
 import { motion } from "framer-motion";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import { PiDotsThreeBold } from "react-icons/pi";
 import {
   TbCode,
@@ -34,7 +34,7 @@ import { TestDrawer } from "./components/TestDrawer";
 
 import { dialog } from "@/components/custom/DialogModal";
 import { Echoi } from "@/lib/echo/Echo";
-import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
+import { ToolkitStore, Toolkit } from "@/toolkit/Toolkit";
 import { javascript } from "@codemirror/lang-javascript";
 import { githubDarkInit } from "@uiw/codemirror-theme-github";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
@@ -44,10 +44,11 @@ import * as prettierPluginEstree from "prettier/plugins/estree";
 import { format } from "prettier/standalone";
 import { toast } from "sonner";
 import { NodeDeps } from "./NodeDeps";
+import { ToolkitCloudManager } from "@/cloud/ToolkitCloudManager";
 
-const CurrentPlugin = new Echoi<ToolPlugin>(new ToolPlugin());
+const CurrentPlugin = new Echoi<Toolkit>(new Toolkit());
 
-export function PluginsTab() {
+export function ToolkitTab() {
   /* 是否提交中 */
   const [isSubmitting, setIsSubmitting] = useState(false);
   /* 测试参数 */
@@ -59,12 +60,30 @@ export function PluginsTab() {
   /* 测试结果 */
   const [result, setResult] = useState<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  /* 插件是否已在市场中 */
+  const [isPluginInMarket, setIsPluginInMarket] = useState(false);
   /* CodeMirror 实例引用 */
   const editorRef = useRef<ReactCodeMirrorRef>(null);
   const plugin = CurrentPlugin.use();
-  const plugins = PluginStore.use();
+  const plugins = ToolkitStore.use();
   const props = plugins[plugin.props.id];
   const content = plugin.content || "";
+
+  // 检查插件是否已在市场中
+  useEffect(() => {
+    if (props?.id) {
+      ToolkitCloudManager.checkPluginExists(props.id)
+        .then((exists) => {
+          setIsPluginInMarket(exists);
+        })
+        .catch((error) => {
+          console.error("Failed to check plugin market status:", error);
+          setIsPluginInMarket(false);
+        });
+    } else {
+      setIsPluginInMarket(false);
+    }
+  }, [props?.id]);
 
   // 处理测试工具变化
   const handleTestToolChange = (value: string) => {
@@ -88,9 +107,9 @@ export function PluginsTab() {
   };
 
   const handleCreate = useCallback(async () => {
-    const plugin = await ToolPlugin.create();
+    const plugin = await Toolkit.create();
     /* 保存到插件存储 */
-    PluginStore.set({
+    ToolkitStore.set({
       [plugin.props.id]: toJS(plugin.props),
     });
     CurrentPlugin.set(plugin, { replace: true });
@@ -102,24 +121,36 @@ export function PluginsTab() {
 
   const handleUpload = useCallback(async () => {
     if (!props.id) return;
+
+    // 使用状态中的isPluginInMarket值，无需重新查询
     dialog.confirm({
-      title: "Upload Plugin",
-      content: "Are you sure to upload this plugin?",
+      title: isPluginInMarket ? "更新插件" : "上传插件",
+      content: isPluginInMarket
+        ? `您确定要更新插件 "${plugin.props.name}" 吗？这将覆盖市场中的现有版本。`
+        : `您确定要上传插件 "${plugin.props.name}" 到市场吗？`,
       onOk: async () => {
         try {
-          await plugin.uploadToMarket(content);
-          toast.success("plugin uploaded successfully, waiting for review");
+          await ToolkitCloudManager.uploadToMarket(plugin);
+
+          // 根据操作类型显示不同的提示信息
+          if (isPluginInMarket) {
+            toast.success("插件已成功更新，等待审核");
+          } else {
+            toast.success("插件已成功上传，等待审核");
+            // 更新状态
+            setIsPluginInMarket(true);
+          }
         } catch (error) {
-          console.error("failed to upload plugin:", error);
+          console.error("plugin operation failed:", error);
           toast.error(
-            `failed to upload plugin: ${
+            `${isPluginInMarket ? "更新" : "上传"}插件失败: ${
               error instanceof Error ? error.message : String(error)
             }`,
           );
         }
       },
     });
-  }, [props, content]);
+  }, [props, plugin, isPluginInMarket]);
 
   // 处理代码格式化
   const handleFormatCode = useCallback(async () => {
@@ -202,7 +233,7 @@ export function PluginsTab() {
             </div>
           ),
           onClick: async () => {
-            CurrentPlugin.set(await ToolPlugin.get(plugin.id), {
+            CurrentPlugin.set(await Toolkit.get(plugin.id), {
               replace: true,
             });
           },
@@ -212,7 +243,7 @@ export function PluginsTab() {
               title: "Delete Plugin",
               content: `Are you sure to delete this plugin ${plugin.name}?`,
               onOk() {
-                ToolPlugin.delete(plugin.id);
+                Toolkit.delete(plugin.id);
                 if (props?.id === plugin.id) {
                   CurrentPlugin.temporary().reset();
                 }
@@ -305,7 +336,7 @@ export function PluginsTab() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={handleUpload}>
                       <TbUpload className="w-4 h-4" />
-                      Upload to Market
+                      {isPluginInMarket ? "更新到市场" : "上传到市场"}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       variant={"destructive"}
@@ -314,7 +345,7 @@ export function PluginsTab() {
                           `确认删除${plugin.props.name}?`,
                         );
                         if (res) {
-                          ToolPlugin.delete(plugin.props.id);
+                          Toolkit.delete(plugin.props.id);
                         }
                       }}
                     >

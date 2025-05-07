@@ -3,4 +3,4 @@ description:
 globs: 
 alwaysApply: false
 ---
-1. 使用 
+1. 每个类方法、函数都需要方法函数注释。

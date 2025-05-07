@@ -40,6 +40,7 @@ export interface AgentMCPProps {
 export interface AgentInfos {
   /* 助手id */
   id: string;
+
   /* 名称 */
   name: string;
   /* 描述 */
@@ -50,6 +51,8 @@ export interface AgentInfos {
   system: string;
   /* Agent模式, 包括react、plan、reason等等 */
   engine?: string;
+  /* 助手版本 */
+  version: string;
   /* 模型能力 */
   models?: {
     [key in ModelType]?: ModelItem;
@@ -89,6 +92,8 @@ export interface AgentMarketProps {
   id: string;
   /* 助手名称 */
   name: string;
+  /* 助手版本 */
+  version: string;
   /* 助手创建时间 */
   inserted_at: string;
   /* 助手更新时间 */
@@ -105,6 +110,7 @@ export const DEFAULT_AGENT: AgentInfos = {
   id: "",
   name: "",
   system: "",
+  version: "0.0.1",
   engine: "react",
   tools: [],
   mcps: [],

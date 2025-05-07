@@ -6,7 +6,6 @@ import { Drawer } from "@/components/ui/drawer";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { cmd } from "@/utils/shell";
 import { useState } from "react";
 import {
   TbLoader2,
@@ -18,7 +17,7 @@ import {
   TbScriptPlus,
   TbTrash,
 } from "react-icons/tb";
-import { MCP, MCP_Actived, MCPStore } from "../../plugin/MCP";
+import { MCP, MCP_Actived, MCPStore } from "../../toolkit/MCP";
 
 const MCP_TYPES = [
   {
@@ -215,29 +214,6 @@ export function MCPTab() {
                             <span className="text-sm font-medium text-primary">
                               {key}
                             </span>
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="hover:bg-destructive/10 hover:text-destructive"
-                                onClick={async () => {
-                                  const checked = await cmd.confirm(
-                                    `确定删除环境变量 ${key} 吗？`,
-                                  );
-                                  if (checked) {
-                                    const newEnv = {
-                                      ...mcps[currentMCP.props.id]?.env,
-                                    };
-                                    delete newEnv[key];
-                                    currentMCP.update({
-                                      env: newEnv,
-                                    });
-                                  }
-                                }}
-                              >
-                                <TbTrash />
-                              </Button>
-                            </div>
                           </div>
                         </div>
                       </div>

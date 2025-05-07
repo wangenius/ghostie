@@ -54,7 +54,7 @@ export interface ToolProps extends FunctionCallProps {
 /**
  * 插件信息
  */
-export interface PluginProps {
+export interface ToolkitProps {
   /* 插件id, 用于识别 */
   id: string;
   /* 插件名称 */
@@ -67,7 +67,7 @@ export interface PluginProps {
   tools: ToolProps[];
 }
 
-export interface PluginMarketProps extends Omit<PluginProps, "tools"> {
+export interface ToolkitMarketProps extends Omit<ToolkitProps, "tools"> {
   /* 插件创建时间 */
   created_at: string;
   /* 插件更新时间 */

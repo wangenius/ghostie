@@ -30,6 +30,7 @@ import { EmptyChatMinimal } from "./EmptyChatMinimal";
 import { HistoryPage } from "./HistoryDrawer";
 import { ChatMessageItem } from "./MessageItem";
 import { plainText, TypeArea } from "./TypeArea";
+import { AgentCloudManager } from "@/cloud/AgentCloudMananger";
 
 const ChatViewMode = new Echoi<"chat" | "edit">("chat");
 
@@ -48,6 +49,8 @@ export const AgentChat = observer(() => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<{ focus: () => void }>(null);
   const mode = ChatViewMode.use();
+  /* Agent是否已在市场中 */
+  const [isAgentInMarket, setIsAgentInMarket] = useState(false);
 
   const [value, setValue] = useState<Descendant[]>([
     {
@@ -59,6 +62,22 @@ export const AgentChat = observer(() => {
   const [historyOpen, setHistoryOpen] = useState(false);
   // 获取当前Agent的loading状态
   const loading = loadingState[agent?.infos.id || ""] || false;
+
+  // 检查Agent是否已在市场中
+  useEffect(() => {
+    if (agent?.infos.id) {
+      AgentCloudManager.checkAgentExists(agent.infos.id)
+        .then((exists) => {
+          setIsAgentInMarket(exists);
+        })
+        .catch((error) => {
+          console.error("Failed to check agent market status:", error);
+          setIsAgentInMarket(false);
+        });
+    } else {
+      setIsAgentInMarket(false);
+    }
+  }, [agent?.infos.id]);
 
   // 设置loading状态的函数
   const setLoading = useCallback(
@@ -170,19 +189,32 @@ export const AgentChat = observer(() => {
   // 上传机器人
   const handleUpload = useCallback(async () => {
     if (!agent) return;
+
     dialog.confirm({
-      title: "Upload Agent",
-      content: "Are you sure you want to upload this agent?",
+      title: isAgentInMarket ? "更新Agent" : "上传Agent",
+      content: isAgentInMarket
+        ? `您确定要更新Agent "${agent.infos.name}" 吗？这将覆盖市场中的现有版本。`
+        : `您确定要上传Agent "${agent.infos.name}" 到市场吗？`,
       onOk: async () => {
         try {
-          await AgentManager.uploadToMarket(agent.infos);
-          toast.success("Successfully uploaded agent to market");
+          await AgentCloudManager.uploadToMarket(agent.infos);
+
+          // 根据操作类型显示不同的提示信息
+          if (isAgentInMarket) {
+            toast.success("成功更新Agent到市场，等待审核");
+          } else {
+            toast.success("成功上传Agent到市场，等待审核");
+            // 更新状态
+            setIsAgentInMarket(true);
+          }
         } catch (error) {
-          toast.error(`Upload agent failed: ${error}`);
+          toast.error(
+            `${isAgentInMarket ? "更新" : "上传"}Agent失败: ${error instanceof Error ? error.message : String(error)}`,
+          );
         }
       },
     });
-  }, [agent]);
+  }, [agent, isAgentInMarket]);
   return (
     <div
       key={`${agent?.infos.id}`}
@@ -209,7 +241,7 @@ export const AgentChat = observer(() => {
             </div>
             <p className="text-xs line-clamp-1 max-w-[260px]">
               {mode === "chat"
-                ? agent?.infos.description || "AI助手随时为您服务"
+                ? agent?.infos.version || "0.0.1"
                 : "您正在编辑助手设置，完成后请点击返回"}
             </p>
           </div>
@@ -273,7 +305,7 @@ export const AgentChat = observer(() => {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleUpload}>
                     <TbUpload className="w-4 h-4 mr-2" />
-                    Upload
+                    {isAgentInMarket ? "更新" : "上传"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

@@ -1,4 +1,4 @@
-import { PluginProps } from "@/plugin/types";
+import { ToolkitProps } from "@/toolkit/types";
 import JsonViewer from "@/components/custom/JsonViewer";
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
@@ -9,7 +9,7 @@ import { CustomSelect } from "@/components/ui/custom-select";
 interface TestDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedPlugin?: PluginProps;
+  selectedPlugin?: ToolkitProps;
   testTool: string;
   testArgs: Record<string, unknown>;
   result: any;

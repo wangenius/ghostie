@@ -9,7 +9,7 @@ import { PanelNode } from "@/page/workflow/nodes/PanelNode";
 import { PluginNode } from "@/page/workflow/nodes/PluginNode";
 import { StartNode } from "@/page/workflow/nodes/StartNode";
 import { SwitchNode } from "@/page/workflow/nodes/SwitchNode";
-import { ToolParameters } from "@/plugin/types";
+import { ToolParameters } from "@/toolkit/types";
 import {
   TbArrowIteration,
   TbBellRinging2,

@@ -91,15 +91,17 @@ const CustomParagraph: Components["p"] = ({ children }) => {
 };
 
 const CustomUl: Components["ul"] = ({ children }) => {
-  return <ul className={`my-2 ml-6 list-disc`}>{children}</ul>;
+  return <ul className={`my-2 ml-6 list-disc text-primary/80`}>{children}</ul>;
 };
 
 const CustomOl: Components["ol"] = ({ children }) => {
-  return <ol className={`my-2 ml-6 list-decimal`}>{children}</ol>;
+  return (
+    <ol className={`my-2 ml-6 list-decimal text-primary/80`}>{children}</ol>
+  );
 };
 
 const CustomListItem: Components["li"] = ({ children }) => {
-  return <li className="my-0.5">{children}</li>;
+  return <li className="my-0.5 text-primary/80">{children}</li>;
 };
 
 const CustomBlockquote: Components["blockquote"] = ({ children }) => {

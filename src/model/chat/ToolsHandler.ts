@@ -9,10 +9,10 @@ import {
   WORKFLOW_TOOL_NAME_PREFIX,
 } from "@/assets/const";
 import { Knowledge } from "@/knowledge/Knowledge";
-import { MCP, MCP_Actived } from "@/plugin/MCP";
+import { MCP, MCP_Actived } from "@/toolkit/MCP";
 import { StartNodeConfig, WorkflowBody } from "@/page/workflow/types/nodes";
-import { PluginStore, ToolPlugin } from "@/plugin/ToolPlugin";
-import { ToolParameters } from "@/plugin/types";
+import { ToolkitStore, Toolkit } from "@/toolkit/Toolkit";
+import { ToolParameters } from "@/toolkit/types";
 import { ImageManager } from "@/resources/Image";
 import { SkillManager } from "@/skills/SkillManager";
 import { KnowledgesStore } from "@/store/knowledges";
@@ -32,7 +32,7 @@ export class ToolsHandler {
     tools: AgentToolProps[],
   ): Promise<ToolRequestBody> {
     const toolRequestBody: ToolRequestBody = [];
-    const list = await PluginStore.getCurrent();
+    const list = await ToolkitStore.getCurrent();
     for (const tool of tools) {
       /* 获取插件 */
       /* 如果插件不存在 */
@@ -209,7 +209,7 @@ export class ToolsHandler {
     agents: string[],
   ): Promise<ToolRequestBody> {
     const toolRequestBody: ToolRequestBody = [];
-    if (agents.length) {
+    if (agents?.length) {
       /* 获取代理 */
       const list = await AgentManager.list.getCurrent();
 
@@ -243,7 +243,7 @@ export class ToolsHandler {
     skills: string[],
   ): Promise<ToolRequestBody> {
     const toolRequestBody: ToolRequestBody = [];
-    if (skills.length) {
+    if (skills?.length) {
       /* 获取代理 */
       const list = SkillManager.getSkills();
 
@@ -377,7 +377,7 @@ export class ToolsHandler {
         };
       }
       if (firstName === AGENT_TOOL_NAME_PREFIX) {
-        const agent = await AgentManager.getFromLocal(secondName);
+        const agent = await AgentManager.getById(secondName);
 
         if (!agent) {
           return {
@@ -418,7 +418,7 @@ export class ToolsHandler {
         };
       }
 
-      const plugin = await ToolPlugin.get(secondName);
+      const plugin = await Toolkit.get(secondName);
       /** 执行工具  */
       const toolResult = await plugin.execute(firstName, query);
       /* 返回工具调用结果 */
@@ -483,7 +483,7 @@ export class ToolsHandler {
       };
     }
 
-    const plugins = await PluginStore.getCurrent();
+    const plugins = await ToolkitStore.getCurrent();
     const plugin = plugins[secondName];
     return {
       type: plugin?.name,

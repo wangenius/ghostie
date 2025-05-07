@@ -52,7 +52,7 @@ export function AgentsTab() {
               content: <TabItem agent={infos} />,
               onClick: async () => {
                 if (!AgentManager.OPENED_AGENTS.current[infos.id]) {
-                  const newAgent = await AgentManager.getFromLocal(infos.id);
+                  const newAgent = await AgentManager.getById(infos.id);
                   AgentManager.OPENED_AGENTS.set({
                     [infos.id]: newAgent,
                   });
