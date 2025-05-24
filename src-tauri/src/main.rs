@@ -132,6 +132,7 @@ async fn main() {
             chat::cancel_stream,
             chat::image_result,
             chat::image_generate,
+            chat::chat_json,
             utils::file::open_files_path,
             utils::file::open_file,
             utils::file::save_file,

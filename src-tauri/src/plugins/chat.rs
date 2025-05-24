@@ -264,3 +264,49 @@ pub async fn image_result(api_url: String, api_key: String) -> Result<serde_json
 
     Ok(response_json)
 }
+
+#[tauri::command]
+pub async fn chat_json(
+    api_url: String,
+    api_key: String,
+    request_body: serde_json::Value,
+) -> Result<String, String> {
+    // 使用全局客户端
+    let client = &*HTTP_CLIENT;
+
+    // 构建请求头
+    let mut headers = HeaderMap::new();
+    headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+    headers.insert(
+        AUTHORIZATION,
+        HeaderValue::from_str(&format!("Bearer {}", api_key)).map_err(|e| e.to_string())?,
+    );
+
+    // 构建请求
+    let request_builder = client
+        .post(&api_url)
+        .headers(headers)
+        .json(&request_body)
+        .timeout(Duration::from_secs(60));
+
+    println!("[chat_json] 正在发送请求到: {}", api_url);
+    let response = request_builder.send().await.map_err(|e| {
+        println!("[chat_json] 请求发送失败: {}", e);
+        e.to_string()
+    })?;
+
+    // 检查响应状态
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.map_err(|e| e.to_string())?;
+        println!(
+            "[chat_json] 请求失败，状态码: {}, 错误信息: {}",
+            status, error_text
+        );
+        return Err(format!("请求失败: {} - {}", status, error_text));
+    }
+
+    // 直接返回完整响应体
+    let response_text = response.text().await.map_err(|e| e.to_string())?;
+    Ok(response_text)
+}

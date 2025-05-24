@@ -1,5 +1,6 @@
 import { CronInput } from "@/components/custom/CronInput";
 import { dialog } from "@/components/custom/DialogModal";
+import { TabListItem } from "@/components/custom/TabListItem";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceList } from "@/components/layout/PreferenceList";
@@ -12,23 +13,29 @@ import {
 } from "@/components/ui/collapsible";
 import { Drawer } from "@/components/ui/drawer";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
+import {
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { ParamInput } from "@/page/toolkit/components/ParamInput";
 import {
   ExecutionHistory,
   Schedule,
   SCHEDULE_HISTORY_DATABASE,
   Scheduler,
 } from "@/page/schedule/Scheduler";
+import { ParamInput } from "@/page/toolkit/components/ParamInput";
 import { StartNodeConfig } from "@/page/workflow/types/nodes";
+import { AgentManager } from "@/store/AgentManager";
 import { ToolkitStore } from "@/toolkit/Toolkit";
 import { ToolProperty } from "@/toolkit/types";
-import { AgentManager } from "@/store/AgentManager";
 import { gen } from "@/utils/generator";
 import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
+import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
 import { format } from "date-fns";
 import { Echo } from "echo-state";
 import { motion } from "framer-motion";
@@ -36,14 +43,13 @@ import { useCallback, useEffect, useState } from "react";
 import {
   TbChevronDown,
   TbChevronRight,
+  TbDots,
   TbHistory,
   TbPlug,
   TbPlus,
   TbScriptPlus,
   TbTrash,
-  TbX,
 } from "react-icons/tb";
-import { TabListItem } from "@/components/custom/TabListItem";
 export const HistoryStore = new Echo<Record<string, ExecutionHistory>>({});
 
 export const SchedulesTab = () => {
@@ -414,7 +420,6 @@ export const SchedulesTab = () => {
       id: schedule.id,
       content: (
         <TabListItem
-          className="flex items-center gap-2"
           title={schedule.name || "未命名计划"}
           description={isRunning ? `已启用: ${schedule.name}` : `已禁用`}
         />
@@ -663,7 +668,7 @@ export const SchedulesTab = () => {
           isEmpty={!currentSchedule?.id}
           className={cn("rounded-xl flex-1")}
           header={
-            <div className="flex items-center justify-between w-full">
+            <div className="flex items-center justify-between w-full gap-1">
               <Input
                 variant="title"
                 value={currentSchedule?.name}
@@ -693,6 +698,34 @@ export const SchedulesTab = () => {
                 <TbHistory className="w-4 h-4" />
                 历史
               </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="ghost">
+                    <TbDots className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => {
+                      dialog.confirm({
+                        title: "删除计划",
+                        content: `确定要删除计划 ${currentSchedule?.name} 吗？`,
+                        onOk() {
+                          Scheduler.cancel(currentSchedule?.id);
+                          Scheduler.delete(currentSchedule?.id);
+                          if (selectedSchedule === currentSchedule?.id) {
+                            setSelectedSchedule("");
+                          }
+                        },
+                      });
+                    }}
+                  >
+                    <TbTrash className="w-4 h-4" />
+                    删除
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Drawer
                 direction="right"
                 open={historyDrawerOpen}
@@ -720,7 +753,7 @@ export const SchedulesTab = () => {
           {currentSchedule?.id && (
             <div className="flex flex-col h-full">
               <div className="flex-1 overflow-y-auto px-2">
-                <div className="space-y-4">
+                <div className="bg-muted p-2 rounded-3xl">
                   <CronInput
                     value={currentSchedule.cron}
                     onChange={handleCronExpressionChange}

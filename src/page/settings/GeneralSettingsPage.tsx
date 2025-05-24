@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils";
 import {
   TbBook,
   TbGhost3,
+  TbKey,
   TbPalette,
   TbTableShortcut,
   TbUser,
-  TbVariable,
 } from "react-icons/tb";
 import { AuthSettings } from "./components/AuthSettings";
 import {
@@ -69,8 +69,8 @@ const items = [
     component: [ShortcutsTab],
   },
   {
-    name: "environment variables",
-    icon: TbVariable,
+    name: "环境变量",
+    icon: TbKey,
     component: [EnvironmentVariablesTab],
   },
 ];

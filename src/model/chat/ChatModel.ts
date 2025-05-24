@@ -278,4 +278,31 @@ export class ChatModel {
       console.error("Failed to stop stream:", e);
     }
   }
+
+  /**
+   * 以 JSON 结构输出内容并自动解析
+   * @param message 历史消息
+   * @param format JSON格式约束
+   * @param examples 可选，格式示例
+   * @returns Promise<any> 最终解析到的 JSON 对象
+   */
+  public async json(messages: CompletionMessage[]): Promise<any> {
+    const body = {
+      apiUrl: this.info.api_url,
+      apiKey: this.info.api_key,
+      requestBody: {
+        model: this.info.model,
+        messages,
+        temperature: this.temperature,
+        tools: this.tools,
+      },
+    };
+    try {
+      // 假设 tauri 命令返回字符串
+      const result = await cmd.invoke("chat_json", body);
+      return JSON.parse(result);
+    } catch (e) {
+      throw new Error("模型输出无法解析为 JSON: " + e);
+    }
+  }
 }
