@@ -1,0 +1,23 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.json",
+  "include": [
+    "src/renderer/src/**/*",
+    "src/renderer/src/**/*.ts",
+    "src/renderer/src/**/*.tsx",
+    "src/renderer/index.html"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/renderer/src/*"],
+      "@common/*": ["./src/common/*"],
+      "@services/*": ["./src/renderer/src/services/*"],
+      "@components/*": ["./src/renderer/src/components/*"],
+      "@utils/*": ["./src/renderer/src/utils/*"],
+      "@windows/*": ["./src/windows/*"],
+      "@hook/*": ["./src/hook/*"],
+      "@workflow/*": ["./src/renderer/src/workflow/*"]
+    }
+  }
+}

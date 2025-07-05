@@ -1,0 +1,41 @@
+appId: com.wangenius.ghostie
+productName: Ghostie
+directories:
+  output: out
+  buildResources: resources
+files:
+  - dist/**/*
+  - resources/**/*
+  - node_modules/**/*
+extraResources:
+  - resources/**/*
+publish:
+  provider: github
+  owner: wangenius
+  repo: ghostie-releases
+mac:
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  icon: resources/icon.icns
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: resources/icon.ico
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  icon: resources/icon.png
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Ghostie 
