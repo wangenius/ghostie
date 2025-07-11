@@ -1,6 +1,7 @@
 ---
-description: 
-globs: 
-alwaysApply: false
+alwaysApply: true
 ---
-1. 每个类方法、函数都需要方法函数注释。
+1. 项目使用的是electron-vite架构。 前后端通信使用 @shell 模块 的 cmd.invoke .
+2. 前端在 renderer中，后端在main中。 common中是共用的types。
+3. echo是前端的hook，不应该在后端使用。
+4. 业务逻辑层在后端。

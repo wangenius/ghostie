@@ -7,7 +7,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
-import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
+import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { CodeNodeConfig, NodeState, WorkflowNode } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 

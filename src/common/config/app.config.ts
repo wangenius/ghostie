@@ -41,10 +41,10 @@ export interface AppConfig {
     };
     /** API 配置 */
     api: {
-        /** Supabase URL */
-        supabaseUrl: string;
-        /** Supabase 匿名密钥 */
-        supabaseAnonKey: string;
+        /** 飞书 App ID */
+        feishuAppId: string;
+        /** 飞书 App Secret */
+        feishuAppSecret: string;
         /** 盐轮数 */
         saltRounds: number;
     };
@@ -90,8 +90,8 @@ export const defaultConfig: AppConfig = {
         available: ["light", "dark", "system"]
     },
     api: {
-        supabaseUrl: "https://iwuvrfojrkclhcxfcjzy.supabase.co",
-        supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3dXZyZm9qcmtjbGhjeGZjanp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0MTA0NDIsImV4cCI6MjA1ODk4NjQ0Mn0.L_VhFwjH1wO2KyqdUBruc1O0AH78mP-2mIkdQwTyak8",
+        feishuAppId: "cli_a123456789abcdef", // 需要替换为实际的飞书 App ID
+        feishuAppSecret: "your_feishu_app_secret", // 需要替换为实际的飞书 App Secret
         saltRounds: 10
     },
     shortcuts: {
@@ -121,8 +121,8 @@ export function getAppConfig(): AppConfig {
 export function getEnvConfig() {
     return {
         API_KEY: process.env.API_KEY,
-        SUPABASE_URL: process.env.SUPABASE_URL || defaultConfig.api.supabaseUrl,
-        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || defaultConfig.api.supabaseAnonKey,
+        FEISHU_APP_ID: process.env.FEISHU_APP_ID || defaultConfig.api.feishuAppId,
+        FEISHU_APP_SECRET: process.env.FEISHU_APP_SECRET || defaultConfig.api.feishuAppSecret,
         SALT_ROUNDS: parseInt(process.env.SALT_ROUNDS || defaultConfig.api.saltRounds.toString()),
         PACKAGE_VERSION: process.env.PACKAGE_VERSION || defaultConfig.version
     };

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { ToolkitStore, Toolkit } from "@/toolkit/Toolkit";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { NodeProps } from "reactflow";
-import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
+import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { useFlow } from "../context/FlowContext";
 import { NodeState, PluginNodeConfig, WorkflowNode } from "../types/nodes";
 import { NodePortal } from "./NodePortal";

@@ -97,7 +97,7 @@ const TabItem = ({ agent }: { agent: AgentInfos }) => {
       <div className="flex flex-col items-start justify-start flex-1 gap-1">
         <div className="flex justify-between w-full">
           <span className="font-bold text-sm truncate">
-            {agent.name || "未命名助手"}{" "}
+            {agent.name || "未命名助手"}
           </span>
           <span className="font-normal text-xs text-muted-foreground/50 truncate">
             {message?.created_at ? Tools.whenWasThat(message?.created_at) : ""}

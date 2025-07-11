@@ -49,7 +49,7 @@ export const TypeArea = memo(
     loading?: boolean;
   }) => {
     return (
-      <div className="flex flex-col relative h-[120px] border rounded-2xl">
+      <div className="flex flex-col relative h-[120px] bg-muted rounded-2xl">
         <div
           className={cn(
             "flex flex-1 flex-col relative overflow-y-auto px-3 py-2",

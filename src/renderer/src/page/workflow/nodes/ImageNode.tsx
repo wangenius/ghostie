@@ -10,7 +10,7 @@ import { CurrentWorkflow } from "@/workflow/Workflow";
 import { memo, useCallback, useState } from "react";
 import { TbMaximize } from "react-icons/tb";
 import { NodeProps } from "reactflow";
-import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
+import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { useFlow } from "../context/FlowContext";
 import { ImageNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";

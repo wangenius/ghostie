@@ -1,10 +1,10 @@
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Textarea } from "@/components/ui/textarea";
-import { TableStore } from "@/database/Database";
+import { TableStore } from "src/main/database/Database";
 import { Echo } from "echo-state";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
-import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
+import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { useFlow } from "../context/FlowContext";
 import { DatabaseNodeConfig, NodeState, WorkflowNode } from "../types/nodes";
 import { NodePortal } from "./NodePortal";

@@ -4,7 +4,7 @@ import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
 import { SwitchNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
-import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
+import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 
 const SwitchNodeComponent = (props: NodeProps<SwitchNodeConfig>) => {
   const [condition, setCondition] = useState(props.data.condition || "");

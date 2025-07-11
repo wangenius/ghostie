@@ -4,7 +4,7 @@ import { Page } from "@/utils/PageRouter";
 
 export const Header = ({
   title,
-  close = () => Page.to("main"),
+  close = () => Page.to("history"),
   extra,
 }: {
   title: string;
@@ -14,7 +14,7 @@ export const Header = ({
   return (
     <div className="flex select-none draggable justify-between items-center p-3 h-12">
       <span className="text-xs pl-2 text-muted-foreground">
-        <img src="/icon.png" className="w-6 h-6" />
+        <img src="./icon.png" className="w-6 h-6" />
       </span>
       <div className="text-sm pl-3 flex-1 font-medium text-foreground">
         {title}

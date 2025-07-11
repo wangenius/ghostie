@@ -2,7 +2,7 @@ import JsonViewer from "@/components/custom/JsonViewer";
 import { memo, useMemo } from "react";
 import { TbCircleX } from "react-icons/tb";
 import { NodeProps } from "reactflow";
-import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
+import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { CurrentWorkflow } from "@/workflow/Workflow";
 import { PanelNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";

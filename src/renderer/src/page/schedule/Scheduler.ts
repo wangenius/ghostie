@@ -3,7 +3,7 @@ import { AgentManager } from "@/store/AgentManager";
 import { Echo, LocalEcho } from "echo-state";
 import { toast } from "sonner";
 import { Tickie } from "tickie";
-import { Workflow } from "../../workflow/Workflow";
+import { Workflow } from "../../../../main/workflow/Workflow";
 
 /**
  * 执行历史记录

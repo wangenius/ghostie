@@ -6,7 +6,7 @@ import { ChatModel } from "@/model/chat/ChatModel";
 import { ChatModelManager } from "@/model/chat/ChatModelManager";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
-import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
+import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { useFlow } from "../context/FlowContext";
 import { ChatNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";

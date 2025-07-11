@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { KnowledgeBody } from "@/knowledge/Knowledge";
+import type { KnowledgeBody } from "src/main/knowledge/Knowledge";
 import { cn } from "@/lib/utils";
 import { TbFileText, TbSearch, TbTrash } from "react-icons/tb";
 

@@ -4,7 +4,12 @@
     "src/renderer/src/**/*",
     "src/renderer/src/**/*.ts",
     "src/renderer/src/**/*.tsx",
-    "src/renderer/index.html"
+    "src/renderer/index.html",
+    "src/common/**/*",
+    "src/main/knowledge",
+    "src/main/skills",
+    "src/main/database",
+    "src/main/workflow"
   ],
   "compilerOptions": {
     "composite": true,
@@ -17,7 +22,7 @@
       "@utils/*": ["./src/renderer/src/utils/*"],
       "@windows/*": ["./src/windows/*"],
       "@hook/*": ["./src/hook/*"],
-      "@workflow/*": ["./src/renderer/src/workflow/*"]
+      "@workflow/*": ["src/main/workflow/*"]
     }
   }
 }

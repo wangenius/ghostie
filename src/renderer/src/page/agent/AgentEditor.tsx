@@ -3,7 +3,7 @@ import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { KnowledgeMeta } from "@/knowledge/Knowledge";
+import { KnowledgeMeta } from "src/main/knowledge/Knowledge";
 import { ChatModelManager } from "@/model/chat/ChatModelManager";
 import { ImageModelManager } from "@/model/image/ImageModelManager";
 import { VisionModelManager } from "@/model/vision/VisionModelManager";

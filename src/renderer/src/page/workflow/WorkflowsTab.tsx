@@ -9,7 +9,7 @@ import {
   CurrentWorkflow,
   Workflow,
   WorkflowsStore,
-} from "../../workflow/Workflow";
+} from "../../../../main/workflow/Workflow";
 import { WorkflowEditor } from "./WorkflowEditor";
 import { CurrentEditWorkflow } from "./context/FlowContext";
 

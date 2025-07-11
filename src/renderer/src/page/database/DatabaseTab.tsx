@@ -25,7 +25,7 @@ import {
   CurrentDataStore,
   DataTableManager,
   TableStore,
-} from "@/database/Database";
+} from "src/main/database/Database";
 import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
 import {

@@ -28,7 +28,7 @@ import { PlusCircle, Trash2 } from "lucide-react";
 import { nanoid } from "nanoid";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NodeProps } from "reactflow";
-import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
+import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { useFlow } from "../context/FlowContext";
 import { StartNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";

@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { TbChevronLeft } from "react-icons/tb";
-import type { SearchResult } from "@/knowledge/Knowledge";
+import type { SearchResult } from "src/main/knowledge/Knowledge";
 
 interface SearchResultsProps {
   results: SearchResult[];

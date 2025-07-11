@@ -9,7 +9,7 @@ export default defineConfig({
         },
         plugins: [
             externalizeDepsPlugin(),
-            bytecodePlugin({ protectedStrings: ["https://iwuvrfojrkclhcxfcjzy.supabase.co"] })
+            bytecodePlugin({ protectedStrings: ["feishu_app_secret"] })
         ],
         resolve: {
             alias: {
@@ -37,8 +37,8 @@ export default defineConfig({
             PACKAGE_VERSION: JSON.stringify(version),
             SALT_ROUNDS: 10,
             API_KEY: process.env.API_KEY,
-            SUPABASE_URL: JSON.stringify("https://iwuvrfojrkclhcxfcjzy.supabase.co"),
-            SUPABASE_ANON_KEY: JSON.stringify("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3dXZyZm9qcmtjbGhjeGZjanp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0MTA0NDIsImV4cCI6MjA1ODk4NjQ0Mn0.L_VhFwjH1wO2KyqdUBruc1O0AH78mP-2mIkdQwTyak8"),
+            FEISHU_APP_ID: JSON.stringify(process.env.FEISHU_APP_ID || "cli_a123456789abcdef"),
+            FEISHU_APP_SECRET: JSON.stringify(process.env.FEISHU_APP_SECRET || "your_feishu_app_secret"),
         },
         resolve: {
             alias: {

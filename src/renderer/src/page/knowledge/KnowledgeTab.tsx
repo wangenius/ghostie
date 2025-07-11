@@ -19,7 +19,7 @@ import {
   KnowledgeBody,
   KnowledgeMeta,
   type SearchResult,
-} from "@/knowledge/Knowledge";
+} from "src/main/knowledge/Knowledge";
 import { KnowledgesStore } from "@/store/knowledges";
 import { cmd } from "@utils/shell";
 import { Echo, Echoa } from "echo-state";

@@ -3,6 +3,7 @@ import { join } from "path";
 import fs from "fs";
 import { exec } from "child_process";
 import { promisify } from "util";
+import { mainWindow } from "./index";
 
 const execAsync = promisify(exec);
 
@@ -157,6 +158,40 @@ function registerWindowHandlers(): void {
         // 实现通知功能
         console.log("通知:", options);
     });
+
+    /**
+     * 打开新窗口
+     * @param _ 事件对象
+     * @param params 窗口参数
+     */
+    ipcMain.handle("open-window", async (_, params: { name: string; query: any; config: any }) => {
+        // TODO: 实现打开新窗口的功能
+        console.log("打开新窗口:", params);
+    });
+
+    /**
+     * 隐藏窗口
+     */
+    ipcMain.handle("hide-window", async () => {
+        if (mainWindow) {
+            mainWindow.hide();
+        }
+    });
+
+    /**
+     * 切换标签页
+     * @param _ 事件对象
+     * @param id 标签页 ID
+     */
+    ipcMain.handle("toggle-tab", async (_, id: string) => {
+        if (mainWindow) {
+            mainWindow.webContents.send("switch-tab", {
+                event: "switch-tab",
+                payload: id,
+                id: Date.now()
+            });
+        }
+    });
 }
 
 /**
@@ -172,7 +207,7 @@ function registerNodeHandlers(): void {
      */
     ipcMain.handle("plugin-execute", async (_, command: string, args: string[]) => {
         try {
-            const { stdout, stderr } = await execAsync(command, { args });
+            const { stdout, stderr } = await execAsync(command);
             return { stdout, stderr };
         } catch (error) {
             throw new Error(`执行命令失败: ${error}`);
@@ -397,13 +432,14 @@ function registerPluginFSHandlers(): void {
     /**
      * 保存插件内容
      * @param _ 事件对象
-     * @param path 文件路径
-     * @param content 文件内容
+     * @param params 参数对象 { id: string, content: string }
      */
-    ipcMain.handle("plugin-save-content", async (_, path: string, content: string) => {
+    ipcMain.handle("plugin-save-content", async (_, params: { id: string; content: string }) => {
         try {
             const pluginDir = join(app.getPath("userData"), "plugins");
-            const fullPath = join(pluginDir, path);
+            // 确保 id 是字符串
+            const pluginPath = typeof params.id === 'string' ? params.id : String(params.id);
+            const fullPath = join(pluginDir, pluginPath);
             
             // 确保目录存在
             const dir = join(fullPath, "..");
@@ -411,8 +447,9 @@ function registerPluginFSHandlers(): void {
                 fs.mkdirSync(dir, { recursive: true });
             }
             
-            fs.writeFileSync(fullPath, content, "utf-8");
+            fs.writeFileSync(fullPath, params.content, "utf-8");
         } catch (error) {
+            console.error("保存插件内容失败:", error);
             throw new Error(`保存插件内容失败: ${error}`);
         }
     });
@@ -420,19 +457,22 @@ function registerPluginFSHandlers(): void {
     /**
      * 获取插件内容
      * @param _ 事件对象
-     * @param path 文件路径
+     * @param params 参数对象 { id: string }
      * @returns Promise<string> 文件内容
      */
-    ipcMain.handle("plugin-get-content", async (_, path: string) => {
+    ipcMain.handle("plugin-get-content", async (_, params: { id: string }) => {
         try {
             const pluginDir = join(app.getPath("userData"), "plugins");
-            const fullPath = join(pluginDir, path);
+            // 确保 id 是字符串
+            const pluginPath = typeof params.id === 'string' ? params.id : String(params.id);
+            const fullPath = join(pluginDir, pluginPath);
             
             if (fs.existsSync(fullPath)) {
                 return fs.readFileSync(fullPath, "utf-8");
             }
             return "";
         } catch (error) {
+            console.error("获取插件内容失败:", error);
             throw new Error(`获取插件内容失败: ${error}`);
         }
     });
@@ -440,17 +480,20 @@ function registerPluginFSHandlers(): void {
     /**
      * 删除插件文件
      * @param _ 事件对象
-     * @param path 文件路径
+     * @param params 参数对象 { id: string }
      */
-    ipcMain.handle("plugin-delete", async (_, path: string) => {
+    ipcMain.handle("plugin-delete", async (_, params: { id: string }) => {
         try {
             const pluginDir = join(app.getPath("userData"), "plugins");
-            const fullPath = join(pluginDir, path);
+            // 确保 id 是字符串
+            const pluginPath = typeof params.id === 'string' ? params.id : String(params.id);
+            const fullPath = join(pluginDir, pluginPath);
             
             if (fs.existsSync(fullPath)) {
                 fs.unlinkSync(fullPath);
             }
         } catch (error) {
+            console.error("删除插件文件失败:", error);
             throw new Error(`删除插件文件失败: ${error}`);
         }
     });

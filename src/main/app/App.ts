@@ -32,6 +32,30 @@ export class App {
      * 退出应用
      */
     static exit(): void {
-        app.quit();
+        // 在 macOS 上，确保应用完全退出
+        if (process.platform === "darwin") {
+            // 强制退出所有窗口
+            app.exit(0);
+        } else {
+            app.quit();
+        }
+    }
+
+    /**
+     * 隐藏应用（仅适用于 macOS）
+     */
+    static hide(): void {
+        if (process.platform === "darwin") {
+            app.hide();
+        }
+    }
+
+    /**
+     * 显示应用（仅适用于 macOS）
+     */
+    static show(): void {
+        if (process.platform === "darwin") {
+            app.show();
+        }
     }
 } 

@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { memo, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
-import { NodeExecutor } from "../../../workflow/execute/NodeExecutor";
+import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { CurrentWorkflow } from "@/workflow/Workflow";
 import { IteratorNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";

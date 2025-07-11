@@ -22,7 +22,7 @@ import {
   CurrentWorkflow,
   Workflow,
   WorkflowsStore,
-} from "../../workflow/Workflow";
+} from "../../../../main/workflow/Workflow";
 
 export const WorkflowInfo = memo(() => {
   const workflow = CurrentWorkflow.use();

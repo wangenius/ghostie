@@ -21,6 +21,20 @@ mac:
         - x64
         - arm64
   icon: resources/icon.icns
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: null
+  entitlementsInherit: null
+  extendInfo:
+    NSHighResolutionCapable: true
+    NSRequiresAquaSystemAppearance: false
+    LSMinimumSystemVersion: "10.15.0"
+    CFBundleDocumentTypes:
+      - CFBundleTypeName: "All Files"
+        CFBundleTypeRole: "Viewer"
+        LSHandlerRank: "Default"
+        LSItemContentTypes:
+          - "public.data"
 win:
   target:
     - target: nsis

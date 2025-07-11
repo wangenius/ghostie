@@ -39,7 +39,11 @@ export type InvokeChannels =
     | "plugin-save-content"
     | "plugin-get-content"
     | "plugin-delete"
-    | "plugin-list";
+    | "plugin-list"
+    | "open-window"
+    | "hide-window"
+    | "setup-menu"
+    | "toggle-tab";
 
 /**
  * send 通道类型
@@ -49,7 +53,7 @@ export type SendChannels = "notification";
 /**
  * on 通道类型
  */
-export type OnChannels = "update-available" | "update-downloaded";
+export type OnChannels = "update-available" | "update-downloaded" | "switch-tab";
 
 /**
  * invoke 参数映射
@@ -84,10 +88,14 @@ export type InvokeParamsMap = {
     "stop-service": [];
     "get-service-info": [];
     "call-tool": [string, any];
-    "plugin-save-content": [string, string];
-    "plugin-get-content": [string];
-    "plugin-delete": [string];
+    "plugin-save-content": [{ id: string; content: string }];
+    "plugin-get-content": [{ id: string }];
+    "plugin-delete": [{ id: string }];
     "plugin-list": [];
+    "open-window": [{ name: string; query: any; config: any }];
+    "hide-window": [];
+    "setup-menu": [any];
+    "toggle-tab": [string];
 };
 
 /**
@@ -127,6 +135,10 @@ export type InvokeReturnMap = {
     "plugin-get-content": string;
     "plugin-delete": void;
     "plugin-list": Array<{ name: string; path: string; type: "file" | "directory" }>;
+    "open-window": void;
+    "hide-window": void;
+    "setup-menu": void;
+    "toggle-tab": void;
 };
 
 /**
@@ -142,6 +154,7 @@ export type SendParamsMap = {
 export type OnCallbackParamsMap = {
     "update-available": [any];
     "update-downloaded": [any];
+    "switch-tab": [{ event: string; payload: string; id: number }];
 };
 
 /**
@@ -181,8 +194,12 @@ export const validChannels = {
         "plugin-save-content",
         "plugin-get-content",
         "plugin-delete",
-        "plugin-list"
+        "plugin-list",
+        "open-window",
+        "hide-window",
+        "setup-menu",
+        "toggle-tab"
     ] as const,
     send: ["notification"] as const,
-    on: ["update-available", "update-downloaded"] as const
+    on: ["update-available", "update-downloaded", "switch-tab"] as const
 }; 

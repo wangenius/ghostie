@@ -5,9 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { cmd } from "@/utils/shell";
-// import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
-// import { relaunch } from "@tauri-apps/plugin-process";
-// import { check } from "@tauri-apps/plugin-updater";
 import { useEffect, useState } from "react";
 import {
   TbAutomation,
@@ -22,7 +19,6 @@ import {
 import { toast } from "sonner";
 import { SettingsManager } from "@/settings/SettingsManager";
 import { SettingItem } from "./SettingItem";
-
 export function ThemeSettings() {
   const settings = SettingsManager.use();
   const themes = [
@@ -170,28 +166,7 @@ export function DenoSettings() {
   const [isChecking, setIsChecking] = useState(true);
   const [version, setVersion] = useState<string>("");
 
-  useEffect(() => {
-    checkNode();
-  }, []);
 
-  const checkNode = async () => {
-    try {
-      setIsChecking(true);
-      const result = await cmd.invoke<Record<string, string>>("node_check");
-      setIsInstalled(result.installed === "true");
-      if (result.installed === "true") {
-        setVersion(result.version || "");
-      } else {
-        setVersion("");
-      }
-    } catch (error) {
-      console.error("Check Node environment failed:", error);
-      setIsInstalled(false);
-      setVersion("");
-    } finally {
-      setIsChecking(false);
-    }
-  };
 
   const showInstallDialog = () => {
     dialog({
@@ -199,7 +174,11 @@ export function DenoSettings() {
       description: `Installing Node will allow you to run and execute plugins. The
         installation process may take 1~2 minutes.
       `,
-      content: <NodeInstallDialog checkNode={checkNode} />,
+      content: <NodeInstallDialog checkNode={() => {
+        setIsChecking(true);
+        setIsInstalled(false);
+        setVersion("");
+      }} />,
     });
   };
 
@@ -224,7 +203,11 @@ export function DenoSettings() {
       description={getDescription()}
       action={
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={checkNode}>
+          <Button variant="ghost" size="sm" onClick={() => {
+            setIsChecking(true);
+            setIsInstalled(false);
+            setVersion("");
+          }}>
             <TbRotate
               className={`w-4 h-4 ${isChecking ? "animate-spin-reverse" : ""}`}
             />
@@ -248,51 +231,7 @@ export function UpdateSettings() {
   const [progress, setProgress] = useState(0);
   const [newVersion, setNewVersion] = useState<string | null>(null);
 
-  const checkForUpdates = async () => {
-    try {
-      const update = await check();
-      console.log("update", update);
-      if (update?.version) {
-        const confirm = await cmd.confirm(`Ready to download the update?`);
-        if (confirm) {
-          setNewVersion(update.version);
-          setUpdateState("downloading");
-          let total = 100;
-          let current = 0;
-          await update.download((progress) => {
-            if (progress.event === "Started") {
-              total = progress.data.contentLength || 10000000;
-            } else if (progress.event === "Progress") {
-              current += progress.data.chunkLength;
-            }
-            setProgress(Math.round((current / total) * 100));
-          });
-          const confirmInstall = await cmd.confirm(
-            `Ready to install the update?`,
-          );
-          if (confirmInstall) {
-            await update.install();
-            await relaunch();
-          } else {
-            setUpdateState("idle");
-          }
-        } else {
-          setUpdateState("idle");
-        }
-      } else {
-        toast.success(
-          `Current version is the latest version ${PACKAGE_VERSION}`,
-        );
-        setUpdateState("idle");
-      }
-      return update;
-    } catch (error) {
-      console.error("Update check failed:", error);
-      toast.error(`Update check failed, please try again later`);
-      setUpdateState("idle");
-      return false;
-    }
-  };
+  const checkForUpdates = async () => { };
 
   const checkUpdate = async () => {
     setUpdateState("checking");
@@ -304,15 +243,14 @@ export function UpdateSettings() {
     <SettingItem
       icon={
         <TbRotate
-          className={`w-[18px] h-[18px] ${
-            updateState === "checking" ? "animate-spin-reverse" : ""
-          }`}
+          className={`w-[18px] h-[18px] ${updateState === "checking" ? "animate-spin-reverse" : ""
+            }`}
         />
       }
       title="Check for updates"
       description={
         updateState === "idle"
-          ? `Current version: ${PACKAGE_VERSION}`
+          ? `Current version:`
           : updateState === "checking"
             ? "Checking for updates..."
             : updateState === "downloading"
@@ -340,7 +278,6 @@ export function UpdateSettings() {
             </div>
           ) : (
             <Button
-              onClick={async () => await relaunch()}
               variant="destructive"
               size="sm"
             >
@@ -440,20 +377,6 @@ export function ProxySettings() {
 
 export function AutoStartSettings() {
   const [autoStart, setAutoStart] = useState(false);
-
-  useEffect(() => {
-    isEnabled().then((enabled) => {
-      setAutoStart(enabled);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (autoStart) {
-      enable();
-    } else {
-      disable();
-    }
-  }, [autoStart]);
 
   const handleEnabledChange = (checked: boolean) => {
     setAutoStart(checked);

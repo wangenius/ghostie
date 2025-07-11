@@ -17,7 +17,7 @@ import "./model/chat/provider";
 import "./model/embedding/provider";
 import "./model/image/provider";
 import "./model/vision/provider";
-import "./skills/instance";
+import "../../main/skills/instance";
 
 // 导入主要组件和服务
 import App from "./page/App";

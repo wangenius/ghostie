@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CurrentDataStore, TableStore } from "@/database/Database";
+import { CurrentDataStore, TableStore } from "src/main/database/Database";
 import { gen } from "@/utils/generator";
 import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
