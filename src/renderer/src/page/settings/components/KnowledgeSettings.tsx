@@ -2,18 +2,17 @@ import { Slider } from "@/components/ui/slider";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { TbDatabase } from "react-icons/tb";
 import { SettingItem } from "./SettingItem";
-import { SettingsManager } from "../../../settings/SettingsManager";
-import { EmbeddingModelManager } from "@/model/embedding/EmbeddingModelManger";
 
 export function KnowledgeModelSettings() {
-  const { knowledge } = SettingsManager.use();
+  const knowledge = {
+    baseModel: "",
+    searchModel: "",
+  };
 
   // 转换模型数据为 DrawerSelectorItem 格式
-  const modelItems = Object.values(
-    EmbeddingModelManager.getProviders(),
-  ).flatMap((provider) => {
+  const modelItems = Object.values({}).flatMap((provider: any) => {
     const models = provider.models;
-    return Object.values(models).map((model) => ({
+    return Object.values(models).map((model: any) => ({
       label: model.name,
       value: `${provider.name}:${model.name}`,
       type: provider.name,
@@ -31,7 +30,7 @@ export function KnowledgeModelSettings() {
             value={[knowledge.baseModel]}
             items={modelItems}
             onSelect={(value: string[]) => {
-              SettingsManager.setKnowledge({ baseModel: value[0] });
+              // SettingsManager.setKnowledge({ baseModel: value[0] });
             }}
             placeholder="Select Model"
           />
@@ -46,7 +45,7 @@ export function KnowledgeModelSettings() {
             value={[knowledge.searchModel]}
             items={modelItems}
             onSelect={(value: string[]) => {
-              SettingsManager.setKnowledge({ searchModel: value[0] });
+              // SettingsManager.setKnowledge({ searchModel: value[0] });
             }}
             placeholder="Select Model"
           />
@@ -57,7 +56,11 @@ export function KnowledgeModelSettings() {
 }
 
 export function KnowledgeThresholdSettings() {
-  const { knowledge } = SettingsManager.use();
+  const knowledge = {
+    threshold: 0.5,
+    chunkSize: 100,
+    limit: 10,
+  };
 
   return (
     <>
@@ -71,9 +74,9 @@ export function KnowledgeThresholdSettings() {
             min={0}
             max={1}
             step={0.1}
-            onValueChange={([value]) =>
-              SettingsManager.setKnowledge({ threshold: value })
-            }
+            onValueChange={([value]) => {
+              // SettingsManager.setKnowledge({ threshold: value })
+            }}
             className="w-32"
           />
         }
@@ -88,9 +91,9 @@ export function KnowledgeThresholdSettings() {
             min={100}
             max={800}
             step={5}
-            onValueChange={([value]) =>
-              SettingsManager.setKnowledge({ chunkSize: value })
-            }
+            onValueChange={([value]) => {
+              // SettingsManager.setKnowledge({ chunkSize: value })
+            }}
             className="w-32"
           />
         }
@@ -105,9 +108,9 @@ export function KnowledgeThresholdSettings() {
             min={1}
             max={50}
             step={1}
-            onValueChange={([value]) =>
-              SettingsManager.setKnowledge({ limit: value })
-            }
+            onValueChange={([value]) => {
+              // SettingsManager.setKnowledge({ limit: value })
+            }}
             className="w-32"
           />
         }

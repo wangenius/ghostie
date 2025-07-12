@@ -1,16 +1,19 @@
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Textarea } from "@/components/ui/textarea";
-import { TableStore } from "src/main/database/Database";
-import { Echo } from "echo-state";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
-import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { useFlow } from "../context/FlowContext";
 import { DatabaseNodeConfig, NodeState, WorkflowNode } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 
 const DatabaseNodeComponent = (props: NodeProps<DatabaseNodeConfig>) => {
-  const tables = TableStore.use();
+  const tables = {
+    "1": {
+      id: "1",
+      name: "Table 1",
+      description: "Table 1 description",
+    },
+  };
   const [condition, setCondition] = useState(props.data.condition);
   const { updateNodeData } = useFlow();
 
@@ -64,66 +67,3 @@ const DatabaseNodeComponent = (props: NodeProps<DatabaseNodeConfig>) => {
 };
 
 export const DatabaseNode = memo(DatabaseNodeComponent);
-export class DatabaseNodeExecutor extends NodeExecutor {
-  constructor(
-    node: WorkflowNode,
-    updateNodeState: (update: Partial<NodeState>) => void,
-  ) {
-    super(node, updateNodeState);
-  }
-
-  public override async execute(inputs: Record<string, any>) {
-    try {
-      this.updateNodeState({
-        status: "running",
-        startTime: new Date().toISOString(),
-        inputs,
-      });
-      const databaseConfig = this.node.data as DatabaseNodeConfig;
-
-      const result = await Echo.get<Record<string, any>>({
-        database: "TABLE_DATA",
-        name: databaseConfig.table,
-      }).getCurrent();
-
-      // 创建并执行过滤函数
-      const filterFnBody = `
-try {
-  return dataArray.filter(${databaseConfig.condition});
-} catch (e) {
-  console.error("过滤函数执行出错:", e);
-  return dataArray;
-}
-`;
-
-      console.log(filterFnBody);
-      let value: Record<string, any>[] = [];
-
-      // 创建并执行过滤函数
-      const filterFn = new Function("dataArray", filterFnBody);
-      value = filterFn(Object.values(result));
-
-      // 确保结果是数组
-      if (!Array.isArray(value)) {
-        value = Array.isArray(result) ? result : [result];
-      }
-      this.updateNodeState({
-        status: "completed",
-        outputs: {
-          result: value,
-        },
-      });
-
-      return {
-        success: true,
-        data: {
-          result: value,
-        },
-      };
-    } catch (error) {
-      return this.createErrorResult(error);
-    }
-  }
-}
-
-NodeExecutor.register("database", DatabaseNodeExecutor);

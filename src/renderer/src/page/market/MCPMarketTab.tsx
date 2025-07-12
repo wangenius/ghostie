@@ -1,9 +1,6 @@
-import { MCPCloudManager } from "@/cloud/MCPCloudManager";
 import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserMananger } from "@/services/user/User";
-import { MCP } from "@/toolkit/MCP";
 import { cmd } from "@/utils/shell";
 import { useEffect, useState } from "react";
 import {
@@ -39,13 +36,13 @@ export const MCPMarketTab = () => {
   const [hasNextPage, setHasNextPage] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const itemsPerPage = 10;
-  const user = UserMananger.use();
+  const user = null;
 
   // Fetch plugins from Supabase - paginated
   const fetchMcps = async (page = 1) => {
     try {
       setLoading(true);
-      const data = await MCPCloudManager.getMarketData(page, itemsPerPage);
+      const data = [];
       setMcps(data || []);
       setCurrentPage(page);
       setHasNextPage((data?.length || 0) >= itemsPerPage);
@@ -61,11 +58,6 @@ export const MCPMarketTab = () => {
     try {
       setInstalling(mcp.id);
       console.log(mcp);
-      await MCP.create({
-        name: mcp.name,
-        description: mcp.description,
-        server: mcp.server,
-      });
 
       toast.success(`成功安装MCP: ${mcp.name}`);
     } catch (error) {
@@ -79,10 +71,9 @@ export const MCPMarketTab = () => {
   };
 
   // Delete plugin
-  const handleDelete = async (mcp: MCPMarketProps) => {
+  const handleDelete = async (mcp: any) => {
     try {
       setDeleting(mcp.id);
-      await MCPCloudManager.deleteMCP(mcp.id);
       // Update current page data
       fetchMcps(currentPage);
       toast.success(`成功删除MCP: ${mcp.name}`);
@@ -99,7 +90,7 @@ export const MCPMarketTab = () => {
   };
 
   // Show plugin details
-  const showMCPDetails = (mcp: MCPMarketProps) => {
+  const showMCPDetails = (mcp: any) => {
     dialog({
       title: mcp.name,
       className: "md:max-w-[600px]",
@@ -113,7 +104,7 @@ export const MCPMarketTab = () => {
           </div>
 
           <div className="flex justify-end gap-2 mt-2">
-            {user?.id === mcp.user_id && (
+            {false && (
               <Button
                 variant="destructive"
                 className="flex items-center gap-1"

@@ -1,41 +1,34 @@
-import { WORKFLOW_BODY_DATABASE } from "@/assets/const";
 import { dialog } from "@/components/custom/DialogModal";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
-import { PreferenceList } from "@/components/layout/PreferenceList";
+import { PreferenceSidebar } from "@/components/layout/PreferenceSidebar";
 import { Button } from "@/components/ui/button";
 import { TbPlus, TbShape3 } from "react-icons/tb";
-import {
-  CurrentWorkflow,
-  Workflow,
-  WorkflowsStore,
-} from "../../../../main/workflow/Workflow";
 import { WorkflowEditor } from "./WorkflowEditor";
-import { CurrentEditWorkflow } from "./context/FlowContext";
 
 /* 工作流列表 */
 export default function WorkflowsTab() {
   /* 工作流列表 */
-  const workflows = WorkflowsStore.use();
+  const workflows = {};
   /* 当前工作流 */
-  const contextWorkflowId = CurrentWorkflow.use((selector) => selector.meta.id);
+  const contextWorkflowId = "";
 
   const handleWorkflowSelect = async (id: string) => {
-    CurrentWorkflow.set(await Workflow.get(id), { replace: true });
-    await CurrentEditWorkflow.indexed({
-      database: WORKFLOW_BODY_DATABASE,
-      name: id,
-    }).ready();
+    // CurrentWorkflow.set(await Workflow.get(id), { replace: true });
+    // await CurrentEditWorkflow.indexed({
+    //   database: WORKFLOW_BODY_DATABASE,
+    //   name: id,
+    // }).ready();
   };
 
   const handleCreateWorkflow = async () => {
-    await Workflow.create();
+    // await Workflow.create();
   };
 
   return (
     <PreferenceLayout>
       {/* 左侧列表 */}
-      <PreferenceList
+      <PreferenceSidebar
         right={
           <>
             <Button className="flex-1" onClick={handleCreateWorkflow}>
@@ -44,7 +37,7 @@ export default function WorkflowsTab() {
             </Button>
           </>
         }
-        items={Object.entries(workflows).map(([id, workflow]) => ({
+        items={Object.entries(workflows).map(([id, workflow]: any) => ({
           id,
           content: (
             <div className="flex flex-col items-start gap-1">
@@ -63,9 +56,9 @@ export default function WorkflowsTab() {
               title: "Delete Workflow",
               content: "Are you sure you want to delete this workflow?",
               onOk: () => {
-                Workflow.delete(id);
+                // Workflow.delete(id);
                 if (contextWorkflowId === id) {
-                  CurrentWorkflow.set(new Workflow());
+                  // CurrentWorkflow.set(new Workflow());
                 }
               },
             });

@@ -1,15 +1,20 @@
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Textarea } from "@/components/ui/textarea";
-import { AgentManager } from "@/store/AgentManager";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
-import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { useFlow } from "../context/FlowContext";
 import { AgentNodeConfig, NodeState, WorkflowNode } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 
 const AgentNodeComponent = (props: NodeProps<AgentNodeConfig>) => {
-  const agents = AgentManager.list.use();
+  const agents = {
+    "1": {
+      id: "1",
+      name: "Agent 1",
+      system: "Agent 1 system",
+      engine: "Agent 1 engine",
+    },
+  };
   const [prompt, setPrompt] = useState(props.data.prompt);
   const { updateNodeData } = useFlow();
 
@@ -56,59 +61,3 @@ const AgentNodeComponent = (props: NodeProps<AgentNodeConfig>) => {
 };
 
 export const AgentNode = memo(AgentNodeComponent);
-export class AgentNodeExecutor extends NodeExecutor {
-  constructor(
-    node: WorkflowNode,
-    updateNodeState: (update: Partial<NodeState>) => void,
-  ) {
-    super(node, updateNodeState);
-  }
-
-  public override async execute(inputs: Record<string, any>) {
-    try {
-      this.updateNodeState({
-        status: "running",
-        startTime: new Date().toISOString(),
-        inputs,
-      });
-
-      const agentConfig = this.node.data as AgentNodeConfig;
-      if (!agentConfig.agent) {
-        throw new Error("Agent not configured");
-      }
-
-      const agent = await AgentManager.getById(agentConfig.agent);
-      if (!agent) {
-        throw new Error(`Agent not found: ${agentConfig.agent}`);
-      }
-
-      const parsedPrompt = this.parseTextFromInputs(
-        agentConfig.prompt || "",
-        inputs,
-      );
-
-      const agentResult = await agent.chat(parsedPrompt);
-      if (!agentResult || !agentResult.content) {
-        throw new Error("Agent response is empty");
-      }
-
-      this.updateNodeState({
-        status: "completed",
-        outputs: {
-          result: agentResult.content,
-        },
-      });
-
-      return {
-        success: true,
-        data: {
-          result: agentResult.content,
-        },
-      };
-    } catch (error) {
-      return this.createErrorResult(error);
-    }
-  }
-}
-
-NodeExecutor.register("agent", AgentNodeExecutor);

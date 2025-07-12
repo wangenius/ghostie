@@ -3,7 +3,6 @@ import { cmd } from "@/utils/shell";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
-import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { NotificationNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 
@@ -46,38 +45,3 @@ const NotificationNodeComponent = (
 };
 
 export const NotificationNode = memo(NotificationNodeComponent);
-
-export class NotificationNodeExecutor extends NodeExecutor {
-  public override async execute(inputs: Record<string, any>) {
-    try {
-      const messageConfig = this.node.data as NotificationNodeConfig;
-      const message = this.parseTextFromInputs(
-        messageConfig.message || "",
-        inputs,
-      );
-
-      if (!message) {
-        throw new Error("Notification content is empty");
-      }
-
-      await cmd.notify(message);
-      this.updateNodeState({
-        status: "completed",
-        outputs: {
-          result: message,
-        },
-      });
-      return {
-        success: true,
-        data: {
-          result: message,
-        },
-      };
-    } catch (error) {
-      console.error("Message node execution failed", error);
-      return this.createErrorResult(error);
-    }
-  }
-}
-
-NodeExecutor.register("notification", NotificationNodeExecutor);

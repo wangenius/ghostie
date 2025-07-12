@@ -1,29 +1,28 @@
-import { Agent } from "@/agent/Agent";
-import { AgentInfos, DEFAULT_AGENT } from "@/agent/types/agent";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
-import { PreferenceList } from "@/components/layout/PreferenceList";
+import { PreferenceSidebar } from "@/components/layout/PreferenceSidebar";
 import { Button } from "@/components/ui/button";
-import { AgentManager } from "@/store/AgentManager";
 import { Tools } from "@/utils/tools";
 import Avatar from "boring-avatars";
 import { TbGhost3, TbPlus } from "react-icons/tb";
 import { AgentChat } from "./AgentChat";
+import { useState } from "react";
 
 /** AgentsTab */
 export function AgentsTab() {
-  const activeAgents = AgentManager.currentOpenedAgent.use();
-  const agents = AgentManager.OPENED_AGENTS.use();
-  const activeAgent = agents[activeAgents];
-  const agentsList = AgentManager.list.use();
+  const [activeAgent, setActiveAgent] = useState<any>(null);
 
   /* 创建机器人 */
   const handleCreateAgent = async () => {
     try {
-      const agent = await Agent.create();
-      AgentManager.list.set({
-        [agent.infos.id]: { ...DEFAULT_AGENT, id: agent.infos.id },
-      });
+      const agent = {
+        id: "1",
+        name: "Agent 1",
+        description: "Agent 1 description",
+        version: "0.0.1",
+        engine: "ReAct",
+      };
+      setActiveAgent(agent);
     } catch (error) {
       console.error("add agent error:", error);
     }
@@ -32,7 +31,7 @@ export function AgentsTab() {
   return (
     <PreferenceLayout>
       {/* 左侧列表 */}
-      <PreferenceList
+      <PreferenceSidebar
         right={
           <>
             <Button className="flex-1" onClick={handleCreateAgent}>
@@ -41,25 +40,23 @@ export function AgentsTab() {
             </Button>
           </>
         }
-        items={Object.values(agentsList)
-          .map((infos) => {
-            if (!infos.id) {
-              AgentManager.list.delete(infos.id);
+        items={[{
+          id: "1",
+          name: "Agent 1",
+          description: "Agent 1 description",
+          version: "0.0.1",
+          engine: "ReAct",
+        }].map((agent) => {
+            if (!agent.id) {
               return null;
             }
             return {
-              id: infos.id,
-              content: <TabItem agent={infos} />,
+              id: agent.id,
+              content: <TabItem agent={agent} />,
               onClick: async () => {
-                if (!AgentManager.OPENED_AGENTS.current[infos.id]) {
-                  const newAgent = await AgentManager.getById(infos.id);
-                  AgentManager.OPENED_AGENTS.set({
-                    [infos.id]: newAgent,
-                  });
-                }
-                AgentManager.currentOpenedAgent.set(infos.id);
+                setActiveAgent(agent);
               },
-              actived: activeAgent?.infos.id === infos.id,
+              actived: activeAgent?.id === agent.id,
               noRemove: true,
             };
           })
@@ -72,7 +69,7 @@ export function AgentsTab() {
       <PreferenceBody
         emptyText="Please select an assistant or click the add button to create a new assistant"
         EmptyIcon={TbGhost3}
-        isEmpty={!activeAgent?.infos.id}
+        isEmpty={!activeAgent?.id}
       >
         {activeAgent && <AgentChat />}
       </PreferenceBody>
@@ -80,10 +77,14 @@ export function AgentsTab() {
   );
 }
 
-const TabItem = ({ agent }: { agent: AgentInfos }) => {
-  const instance = AgentManager.OPENED_AGENTS.current[agent.id];
-  const loadingState = AgentManager.loadingState.use();
-  const message = instance?.context.getLastMessage();
+const TabItem = ({ agent }: { agent: any }) => {
+  const loadingState = false;
+  const message = {
+    role: "user",
+    content: "Hello, how are you?",
+    created_at: new Date().toISOString(),
+    id: "1",
+  }
   return (
     <div className="flex items-center justify-between gap-2 min-h-8">
       <Avatar
@@ -97,7 +98,7 @@ const TabItem = ({ agent }: { agent: AgentInfos }) => {
       <div className="flex flex-col items-start justify-start flex-1 gap-1">
         <div className="flex justify-between w-full">
           <span className="font-bold text-sm truncate">
-            {agent.name || "未命名助手"}
+            {agent.name || "未命名助手"}{" "}
           </span>
           <span className="font-normal text-xs text-muted-foreground/50 truncate">
             {message?.created_at ? Tools.whenWasThat(message?.created_at) : ""}

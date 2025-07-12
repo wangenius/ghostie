@@ -8,8 +8,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Echoi } from "@/lib/echo/Echo";
-import { AgentManager } from "@/store/AgentManager";
 import { cmd } from "@/utils/shell";
 import Avatar from "boring-avatars";
 import { observer } from "mobx-react-lite";
@@ -30,9 +28,6 @@ import { EmptyChatMinimal } from "./EmptyChatMinimal";
 import { HistoryPage } from "./HistoryDrawer";
 import { ChatMessageItem } from "./MessageItem";
 import { plainText, TypeArea } from "./TypeArea";
-import { AgentCloudManager } from "@/cloud/AgentCloudMananger";
-
-const ChatViewMode = new Echoi<"chat" | "edit">("chat");
 
 // 定义 MentionElement 接口
 interface MentionElement {
@@ -42,13 +37,11 @@ interface MentionElement {
 }
 
 export const AgentChat = observer(() => {
-  const id = AgentManager.currentOpenedAgent.use();
-  const agent = AgentManager.OPENED_AGENTS.current[id];
-  const loadingState = AgentManager.loadingState.use();
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<{ focus: () => void }>(null);
-  const mode = ChatViewMode.use();
+  const [mode, setMode] = useState<"chat" | "edit">("chat");
   /* Agent是否已在市场中 */
   const [isAgentInMarket, setIsAgentInMarket] = useState(false);
 
@@ -61,50 +54,22 @@ export const AgentChat = observer(() => {
 
   const [historyOpen, setHistoryOpen] = useState(false);
   // 获取当前Agent的loading状态
-  const loading = loadingState[agent?.infos.id || ""] || false;
+  const loading = false;
 
-  // 检查Agent是否已在市场中
-  useEffect(() => {
-    if (agent?.infos.id) {
-      AgentCloudManager.checkAgentExists(agent.infos.id)
-        .then((exists) => {
-          setIsAgentInMarket(exists);
-        })
-        .catch((error) => {
-          console.error("Failed to check agent market status:", error);
-          setIsAgentInMarket(false);
-        });
-    } else {
-      setIsAgentInMarket(false);
-    }
-  }, [agent?.infos.id]);
-
-  // 设置loading状态的函数
-  const setLoading = useCallback(
-    (isLoading: boolean) => {
-      AgentManager.loadingState.set({
-        ...loadingState,
-        [agent?.infos.id || ""]: isLoading,
-      });
-    },
-    [agent?.infos.id, loadingState],
-  );
 
   // 自动滚动到底部
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [agent?.context.runtime]);
+  }, []);
 
   const handleDeleteAgent = async () => {
     const answer = await cmd.confirm(
-      `Are you sure you want to delete the assistant "${agent?.infos.name}"?`,
+      `Are you sure you want to delete the assistant ""?`,
     );
     if (answer) {
       try {
-        AgentManager.OPENED_AGENTS.delete(agent?.infos.id || "");
-        AgentManager.list.delete(agent?.infos.id || "");
         toast.success("Successfully deleted agent");
       } catch (error) {
         console.error("delete agent error:", error);
@@ -114,110 +79,14 @@ export const AgentChat = observer(() => {
   // 提交消息
   const handleSubmit = useCallback(
     async (value: Descendant[]) => {
-      // 如果正在加载，停止当前请求
-      if (loading) {
-        agent?.stop();
-        return;
-      }
-
-      // 检查消息是否为空
-      const text = plainText(value);
-      if (!text.trim()) {
-        return;
-      }
-
-      // 提取所有 mention 元素和图片元素
-      const mentions: { id: string; text: string }[] = [];
-      const images: { contentType: string; base64Image: string }[] = [];
-
-      // 遍历所有节点寻找 mention 和 image 类型的元素
-      const extractElements = (nodes: Descendant[]) => {
-        for (const node of nodes) {
-          // 判断节点是否为 mention 类型
-          if ("type" in node) {
-            if (node.type === "mention" && "id" in node) {
-              const mentionNode = node as MentionElement;
-              mentions.push({
-                id: mentionNode.id,
-                text: mentionNode.children[0].text,
-              });
-            } else if (node.type === "image") {
-              const imageNode = node as ImageElement;
-              images.push({
-                contentType: imageNode.contentType,
-                base64Image: imageNode.base64Image,
-              });
-            }
-          }
-
-          // 递归遍历子节点
-          if ("children" in node && Array.isArray(node.children)) {
-            extractElements(node.children);
-          }
-        }
-      };
-
-      extractElements(value);
-
-      // 重置输入框
-      setValue([
-        {
-          type: "paragraph",
-          children: [{ text: "" }],
-        },
-      ]);
-
-      // 发送消息并处理响应
-      setLoading(true);
-      try {
-        if (agent) {
-          await agent.chat(text, { images });
-
-          AgentManager.CurrentContexts.set({
-            [agent.infos.id]: agent.context.runtime.id,
-          });
-          console.log(await AgentManager.CurrentContexts.getCurrent());
-        }
-      } catch (error) {
-        console.error("发送消息失败:", error);
-      } finally {
-        setLoading(false);
-      }
+      console.log(value);
     },
-    [agent, loading, setLoading],
+    [],
   );
   // 上传机器人
-  const handleUpload = useCallback(async () => {
-    if (!agent) return;
-
-    dialog.confirm({
-      title: isAgentInMarket ? "更新Agent" : "上传Agent",
-      content: isAgentInMarket
-        ? `您确定要更新Agent "${agent.infos.name}" 吗？这将覆盖市场中的现有版本。`
-        : `您确定要上传Agent "${agent.infos.name}" 到市场吗？`,
-      onOk: async () => {
-        try {
-          await AgentCloudManager.uploadToMarket(agent.infos);
-
-          // 根据操作类型显示不同的提示信息
-          if (isAgentInMarket) {
-            toast.success("成功更新Agent到市场，等待审核");
-          } else {
-            toast.success("成功上传Agent到市场，等待审核");
-            // 更新状态
-            setIsAgentInMarket(true);
-          }
-        } catch (error) {
-          toast.error(
-            `${isAgentInMarket ? "更新" : "上传"}Agent失败: ${error instanceof Error ? error.message : String(error)}`,
-          );
-        }
-      },
-    });
-  }, [agent, isAgentInMarket]);
+  const handleUpload = useCallback(async () => {}, []);
   return (
     <div
-      key={`${agent?.infos.id}`}
       className="flex flex-col h-full border-none shadow-none bg-background/50"
     >
       {/* Agent信息头部 */}
@@ -225,14 +94,14 @@ export const AgentChat = observer(() => {
         <div className="flex items-center space-x-3">
           <Avatar
             size={32}
-            name={agent?.infos.id || ""}
+            name={""}
             variant="beam"
             colors={["#92A1C6", "#146A7C", "#F0AB3D", "#C271B4", "#C20D90"]}
             square={false}
           />
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              {agent?.infos.name || "未命名助手"}
+              {"未命名助手"}
               {mode === "edit" && (
                 <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
                   编辑模式
@@ -241,7 +110,7 @@ export const AgentChat = observer(() => {
             </div>
             <p className="text-xs line-clamp-1 max-w-[260px]">
               {mode === "chat"
-                ? agent?.infos.version || "0.0.1"
+                ? "0.0.1"
                 : "您正在编辑助手设置，完成后请点击返回"}
             </p>
           </div>
@@ -255,11 +124,7 @@ export const AgentChat = observer(() => {
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => {
-                  if (!agent) return;
-                  agent?.context.setRuntime();
-                  AgentManager.CurrentContexts.set({
-                    [agent.infos.id]: agent.context.runtime.id,
-                  });
+                  
                 }}
               >
                 <TbPlus className="h-4 w-4" />
@@ -278,8 +143,7 @@ export const AgentChat = observer(() => {
                   <HistoryPage
                     onClick={async (item) => {
                       setHistoryOpen(false);
-                      if (!agent) return;
-                      agent?.context.setRuntime(item);
+                      
                     }}
                   />
                 }
@@ -288,7 +152,7 @@ export const AgentChat = observer(() => {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => ChatViewMode.set("edit")}
+                onClick={() => setMode("edit")}
               >
                 <TbPencil className="h-4 w-4" />
               </Button>
@@ -313,7 +177,7 @@ export const AgentChat = observer(() => {
           ) : (
             <Button
               size="sm"
-              onClick={() => ChatViewMode.set("chat")}
+              onClick={() => setMode("chat")}
               className="gap-1"
             >
               <TbArrowLeft className="h-4 w-4" />
@@ -325,12 +189,12 @@ export const AgentChat = observer(() => {
 
       {/* 聊天区域 */}
       <div
-        key={`chat-${agent?.infos.id}`}
+        key={`chat-${mode}`}
         className="flex-1 p-0 overflow-hidden"
       >
         {mode === "chat" && (
           <div className="flex flex-col h-full">
-            {agent?.infos.id && (
+            { (
               <div
                 ref={messagesContainerRef}
                 className="px-4 py-4 w-full overflow-y-auto flex-1 scroll-smooth space-y-1"
@@ -339,11 +203,10 @@ export const AgentChat = observer(() => {
                   scrollbarColor: "var(--border) transparent",
                 }}
               >
-                {agent?.context.runtime.messages.length === 0 && (
-                  <EmptyChatMinimal agent={agent} />
-                )}
-
-                {agent?.context.runtime.messages.length > 0 && (
+                {/* {messages.length === 0 && (
+                  <EmptyChatMinimal />
+                )} */}
+                {/* {messages.length > 0 && (
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xs mx-auto text-muted-foreground font-mono">
                       {new Date(
@@ -359,19 +222,21 @@ export const AgentChat = observer(() => {
                 )}
 
                 {/* 当前聊天消息 */}
-                {agent?.context.runtime.messages.map((msg, index) => (
-                  <ChatMessageItem
-                    key={`msg-${agent?.context.runtime.id}-${index}`}
+                  {[{
+                    role: "user",
+                    content: "Hello, how are you?",
+                  }].map((msg, index) => (
+                    <ChatMessageItem
+                    key={`msg-${index}`}
                     message={msg}
                     index={index}
-                    lastMessage={agent?.context.runtime.messages[index - 1]}
-                    nextMessage={agent?.context.runtime.messages[index + 1]}
+                    lastMessage={index > 0 ? msg : null}
                   />
                 ))}
 
-                {agent?.context.runtime.messages.length !== 0 && (
+                {/* {messages.length !== 0 && (
                   <div className="h-4" ref={messagesEndRef} />
-                )}
+                )} */}
               </div>
             )}
           </div>
@@ -384,13 +249,13 @@ export const AgentChat = observer(() => {
       </div>
 
       {mode === "chat" && (
-        <div key={`type-area-${agent?.infos.id}`}>
+        <div key={`type-area`}>
           <TypeArea
             value={value}
             onChange={setValue}
             onSubmit={handleSubmit}
             editorRef={editorRef}
-            currentAgent={agent?.infos.id || ""}
+            currentAgent={""}
             loading={loading}
           />
         </div>

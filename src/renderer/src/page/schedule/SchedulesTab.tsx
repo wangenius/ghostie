@@ -3,7 +3,7 @@ import { dialog } from "@/components/custom/DialogModal";
 import { TabListItem } from "@/components/custom/TabListItem";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
-import { PreferenceList } from "@/components/layout/PreferenceList";
+import { PreferenceSidebar } from "@/components/layout/PreferenceSidebar";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,22 +22,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import {
-  ExecutionHistory,
-  Schedule,
-  SCHEDULE_HISTORY_DATABASE,
-  Scheduler,
-} from "@/page/schedule/Scheduler";
 import { ParamInput } from "@/page/toolkit/components/ParamInput";
 import { StartNodeConfig } from "@/page/workflow/types/nodes";
-import { AgentManager } from "@/store/AgentManager";
-import { ToolkitStore } from "@/toolkit/Toolkit";
-import { ToolProperty } from "@/toolkit/types";
 import { gen } from "@/utils/generator";
-import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
 import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
 import { format } from "date-fns";
-import { Echo } from "echo-state";
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -50,18 +39,17 @@ import {
   TbScriptPlus,
   TbTrash,
 } from "react-icons/tb";
-export const HistoryStore = new Echo<Record<string, ExecutionHistory>>({});
 
 export const SchedulesTab = () => {
   // 全局状态
-  const schedulesData = Scheduler.use();
-  const workflows = WorkflowsStore.use();
-  const plugins = ToolkitStore.use();
-  const agents = AgentManager.list.use();
+
   const [selectedSchedule, setSelectedSchedule] = useState<string>("");
-  const currentSchedule = schedulesData[selectedSchedule];
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
-  const history = HistoryStore.use();
+  const [currentSchedule, setCurrentSchedule] = useState<any>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [workflows, setWorkflows] = useState<any>({});
+  const [plugins, setPlugins] = useState<any>({});
+  const [agents, setAgents] = useState<any>({});  
 
   // 展开的历史记录项
   const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>(
@@ -108,17 +96,17 @@ export const SchedulesTab = () => {
     if (!workflow) return null;
 
     try {
-      const workflowInstance = await Workflow.get(workflow.id);
-      const workflowBody = await workflowInstance.getBody();
+      // const workflowInstance = await Workflow.get(workflow.id);
+      // const workflowBody = await workflowInstance.getBody();
 
-      // 查找开始节点
-      const startNode = Object.values(workflowBody.nodes).find(
-        (node: any) => node.type === "start",
-      );
+        // // 查找开始节点
+        // const startNode = Object.values(workflowBody.nodes).find(
+        //   (node: any) => node.type === "start",
+        // );
 
-      if (startNode && startNode.data) {
-        return (startNode.data as StartNodeConfig).parameters;
-      }
+      // if (startNode && startNode.data) {
+      //   return (startNode.data as StartNodeConfig).parameters;
+      // }
       return null;
     } catch (error) {
       console.error("获取工作流参数失败:", error);
@@ -162,7 +150,7 @@ export const SchedulesTab = () => {
     const id = gen.id();
 
     // 创建新计划对象
-    const newSchedule: Schedule = {
+    const newSchedule: any = {
       id,
       name: "新计划",
       type: "workflow",
@@ -171,11 +159,7 @@ export const SchedulesTab = () => {
       enabled: false,
     };
 
-    // 保存到存储中
-    Scheduler.set((prev) => ({
-      ...prev,
-      [id]: newSchedule,
-    }));
+    setCurrentSchedule(newSchedule);
   };
 
   // 处理计划启用状态变更
@@ -213,12 +197,12 @@ export const SchedulesTab = () => {
       }
     } else {
       // 停止定时任务
-      Scheduler.cancel(currentSchedule.id);
+      // Scheduler.cancel(currentSchedule.id);
     }
     // 启动定时任务
-    Scheduler.update(currentSchedule.id, {
-      enabled: checked,
-    });
+    // Scheduler.update(currentSchedule.id, {
+    //   enabled: checked,
+    // });
   };
 
   // 处理Cron表达式变更
@@ -226,9 +210,9 @@ export const SchedulesTab = () => {
     (newExpression: string) => {
       // 如果计划已启用，则更新定时任务
       if (currentSchedule?.id && currentSchedule.enabled) {
-        Scheduler.update(currentSchedule.id, {
-          cron: newExpression,
-        });
+        // Scheduler.update(currentSchedule.id, {
+        //   cron: newExpression,
+        // });
       }
     },
     [currentSchedule],
@@ -241,9 +225,9 @@ export const SchedulesTab = () => {
     const newName = e.target.value;
 
     // 更新存储中的计划名称
-    Scheduler.update(currentSchedule.id, {
-      name: newName,
-    });
+    // Scheduler.update(currentSchedule.id, {
+    //   name: newName,
+    // });
   };
 
   // 处理代理输入内容变更
@@ -255,9 +239,9 @@ export const SchedulesTab = () => {
     const newInput = e.target.value;
 
     // 更新存储中的代理输入内容
-    Scheduler.update(currentSchedule.id, {
-      agentInput: newInput,
-    });
+    // Scheduler.update(currentSchedule.id, {
+    //   agentInput: newInput,
+    // });
   };
 
   // 处理插件参数变更
@@ -270,9 +254,9 @@ export const SchedulesTab = () => {
 
     // 直接更新存储中的插件参数
     if (currentSchedule?.id) {
-      Scheduler.update(currentSchedule.id, {
-        pluginParams: updatedParams,
-      });
+      // Scheduler.update(currentSchedule.id, {
+      //   pluginParams: updatedParams,
+      // });
     }
   };
 
@@ -291,9 +275,9 @@ export const SchedulesTab = () => {
 
       // 直接更新存储中的工作流输入参数
       if (currentSchedule?.id) {
-        Scheduler.update(currentSchedule.id, {
-          workflowInputs: newValues,
-        });
+        //  Scheduler.update(currentSchedule.id, {
+        //   workflowInputs: newValues,
+        // });
       }
 
       return newValues;
@@ -306,11 +290,11 @@ export const SchedulesTab = () => {
 
     // 如果当前计划已启用，先停止定时任务
     if (currentSchedule.enabled) {
-      Scheduler.cancel(currentSchedule.id);
+      // Scheduler.cancel(currentSchedule.id);
     }
 
     // 重置所有ID字段
-    const update: Partial<Schedule> = {
+    const update: Partial<any> = {
       type,
       workflowId: undefined,
       pluginId: undefined,
@@ -319,7 +303,7 @@ export const SchedulesTab = () => {
     };
 
     // 更新存储中的计划
-    Scheduler.update(currentSchedule.id, update);
+    // Scheduler.update(currentSchedule.id, update);
   };
 
   // 处理工作流选择变更
@@ -328,15 +312,15 @@ export const SchedulesTab = () => {
 
     // 如果当前计划已启用，先停止定时任务
     if (currentSchedule.enabled) {
-      Scheduler.cancel(currentSchedule.id);
+      // Scheduler.cancel(currentSchedule.id);
     }
 
     // 更新存储中的计划
-    Scheduler.update(currentSchedule.id, {
-      workflowId,
-      workflowInputs: {}, // 重置工作流输入参数
-      enabled: false, // 更改工作流后，默认为禁用状态
-    });
+    // Scheduler.update(currentSchedule.id, {
+    //   workflowId,
+    //   workflowInputs: {}, // 重置工作流输入参数
+    //   enabled: false, // 更改工作流后，默认为禁用状态
+    // });
   };
 
   // 处理插件选择变更
@@ -345,15 +329,15 @@ export const SchedulesTab = () => {
 
     // 如果当前计划已启用，先停止定时任务
     if (currentSchedule.enabled) {
-      Scheduler.cancel(currentSchedule.id);
+      // Scheduler.cancel(currentSchedule.id);
     }
 
     // 更新存储中的计划
-    Scheduler.update(currentSchedule.id, {
-      pluginId,
-      pluginParams: {}, // 重置插件参数
-      enabled: false, // 更改插件后，默认为禁用状态
-    });
+    // Scheduler.update(currentSchedule.id, {
+    //   pluginId,
+    //   pluginParams: {}, // 重置插件参数
+    //   enabled: false, // 更改插件后，默认为禁用状态
+    // });
   };
 
   // 处理代理选择变更
@@ -362,14 +346,14 @@ export const SchedulesTab = () => {
 
     // 如果当前计划已启用，先停止定时任务
     if (currentSchedule.enabled) {
-      Scheduler.cancel(currentSchedule.id);
+      // Scheduler.cancel(currentSchedule.id);
     }
 
     // 更新存储中的计划
-    Scheduler.update(currentSchedule.id, {
-      agentId,
-      enabled: false, // 更改代理后，默认为禁用状态
-    });
+    // Scheduler.update(currentSchedule.id, {
+    //   agentId,
+    //   enabled: false, // 更改代理后，默认为禁用状态
+    // });
   };
 
   // 清空执行历史
@@ -382,7 +366,7 @@ export const SchedulesTab = () => {
       okText: "确定",
       cancelText: "取消",
       onOk() {
-        Scheduler.clearHistory(currentSchedule.id);
+        // Scheduler.clearHistory(currentSchedule.id);
       },
     });
   };
@@ -413,8 +397,8 @@ export const SchedulesTab = () => {
   };
 
   // 渲染计划列表项
-  const renderScheduleItem = (schedule: Schedule) => {
-    const isRunning = Scheduler.isEnabled(schedule.id);
+  const renderScheduleItem = (schedule: any) => {
+      const isRunning = false
 
     return {
       id: schedule.id,
@@ -426,10 +410,10 @@ export const SchedulesTab = () => {
       ),
       onClick: () => {
         setSelectedSchedule(schedule.id);
-        HistoryStore.indexed({
-          database: SCHEDULE_HISTORY_DATABASE,
-          name: schedule.id,
-        });
+        // HistoryStore.indexed({
+        //   database: SCHEDULE_HISTORY_DATABASE,
+        //   name: schedule.id,
+        // });
       },
       actived: selectedSchedule === schedule.id,
       onRemove: () => {
@@ -437,8 +421,8 @@ export const SchedulesTab = () => {
           title: "删除计划",
           content: `确定要删除计划 ${schedule.name} 吗？`,
           onOk() {
-            Scheduler.cancel(schedule.id);
-            Scheduler.delete(schedule.id);
+            // Scheduler.cancel(schedule.id);
+            // Scheduler.delete(schedule.id);
             if (selectedSchedule === schedule.id) {
               setSelectedSchedule("");
             }
@@ -483,7 +467,7 @@ export const SchedulesTab = () => {
   };
 
   // 渲染执行历史记录
-  const renderHistory = (history: Record<string, ExecutionHistory>) => {
+  const renderHistory = (history: Record<string, any>) => {
     if (Object.keys(history).length === 0) {
       return (
         <div className="flex flex-col items-center justify-center h-full py-10 text-muted-foreground">
@@ -569,7 +553,7 @@ export const SchedulesTab = () => {
   // 渲染单个参数输入项（类似于ExecuteDrawer.tsx中的方法）
   const renderParamInput = (
     name: string,
-    property: ToolProperty,
+    property: any,
     path: string[] = [],
     required: boolean = false,
   ) => {
@@ -600,7 +584,7 @@ export const SchedulesTab = () => {
             {Object.entries(property.properties).map(([subName, subProp]) =>
               renderParamInput(
                 subName,
-                subProp as ToolProperty,
+                    subProp as any,
                 currentPath,
                 false,
               ),
@@ -635,7 +619,7 @@ export const SchedulesTab = () => {
 
   return (
     <PreferenceLayout>
-      <PreferenceList
+      <PreferenceSidebar
         right={
           <>
             <Button className="flex-1" onClick={handleCreate}>
@@ -644,7 +628,7 @@ export const SchedulesTab = () => {
             </Button>
           </>
         }
-        items={Object.values(schedulesData).map(renderScheduleItem)}
+        items={Object.values({}).map(renderScheduleItem)}
         emptyText="暂无计划，点击上方按钮添加新计划"
         EmptyIcon={TbPlus}
       />
@@ -712,8 +696,8 @@ export const SchedulesTab = () => {
                         title: "删除计划",
                         content: `确定要删除计划 ${currentSchedule?.name} 吗？`,
                         onOk() {
-                          Scheduler.cancel(currentSchedule?.id);
-                          Scheduler.delete(currentSchedule?.id);
+                          //    Scheduler.cancel(currentSchedule?.id);
+                          // Scheduler.delete(currentSchedule?.id);
                           if (selectedSchedule === currentSchedule?.id) {
                             setSelectedSchedule("");
                           }
@@ -793,7 +777,7 @@ export const SchedulesTab = () => {
                           <DrawerSelector
                             title="选择执行的工作流"
                             value={[currentSchedule?.workflowId]}
-                            items={Object.values(workflows).map((workflow) => {
+                            items={Object.values(workflows).map((workflow: any) => {
                               return {
                                 label: workflow.name,
                                 value: workflow.id,
@@ -828,7 +812,7 @@ export const SchedulesTab = () => {
                                     ).map(([name, prop]) => {
                                       return renderParamInput(
                                         name,
-                                        prop as ToolProperty,
+                                        prop as any,
                                         [],
                                         (Array.isArray(
                                           workflowParams.required,
@@ -852,7 +836,7 @@ export const SchedulesTab = () => {
                           <DrawerSelector
                             title="选择执行的插件"
                             value={[currentSchedule?.pluginId]}
-                            items={Object.values(plugins).map((plugin) => {
+                            items={Object.values(plugins).map((plugin: any) => {
                               return {
                                 label: plugin.name,
                                 value: plugin.id,
@@ -884,7 +868,7 @@ export const SchedulesTab = () => {
                                       <ParamInput
                                         key={key}
                                         name={key}
-                                        property={property as ToolProperty}
+                                        property={property as any}
                                         value={pluginParams[key]}
                                         onChange={(value) =>
                                           handlePluginParamChange(key, value)
@@ -906,7 +890,7 @@ export const SchedulesTab = () => {
                             <DrawerSelector
                               title="选择执行的代理"
                               value={[currentSchedule?.agentId]}
-                              items={Object.values(agents).map((agent) => {
+                              items={Object.values(agents).map((agent: any) => {
                                 return {
                                   label: agent.name,
                                   value: agent.id,

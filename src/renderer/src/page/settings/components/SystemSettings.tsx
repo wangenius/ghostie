@@ -17,10 +17,12 @@ import {
   TbTypography,
 } from "react-icons/tb";
 import { toast } from "sonner";
-import { SettingsManager } from "@/settings/SettingsManager";
 import { SettingItem } from "./SettingItem";
+
 export function ThemeSettings() {
-  const settings = SettingsManager.use();
+  const settings = {
+    theme: "light",
+  };
   const themes = [
     { name: "light", label: "Light" },
     { name: "dark", label: "Dark" },
@@ -30,7 +32,7 @@ export function ThemeSettings() {
     <SettingItem
       icon={<TbPalette className="w-[18px] h-[18px]" />}
       title="Theme"
-      description={`Current theme: ${settings.theme.label}`}
+      description={`Current theme: ${settings.theme}`}
       action={
         <div className="flex gap-1">
           <DrawerSelector
@@ -39,7 +41,9 @@ export function ThemeSettings() {
               label: theme.label,
               value: theme,
             }))}
-            onSelect={(value) => SettingsManager.setTheme(value[0])}
+            onSelect={(value) => {
+              // SettingsManager.setTheme(value[0])
+            }}
           />
         </div>
       }
@@ -48,7 +52,9 @@ export function ThemeSettings() {
 }
 
 export function FontSettings() {
-  const settings = SettingsManager.use();
+  const settings = {
+    font: "default",
+  };
   const fonts = [
     { name: "default", label: "default" },
     { name: "mono", label: "jetbrains" },
@@ -58,7 +64,7 @@ export function FontSettings() {
     <SettingItem
       icon={<TbTypography className="w-[18px] h-[18px]" />}
       title="Font"
-      description={`Current font: ${settings.font.label}`}
+      description={`Current font: ${settings.font}`}
       action={
         <div className="flex gap-1">
           <DrawerSelector
@@ -67,7 +73,9 @@ export function FontSettings() {
               label: font.label,
               value: font,
             }))}
-            onSelect={(value) => SettingsManager.setFont(value[0])}
+            onSelect={(value) => {
+              // SettingsManager.setFont(value[0])
+            }}
           />
         </div>
       }
@@ -166,7 +174,28 @@ export function DenoSettings() {
   const [isChecking, setIsChecking] = useState(true);
   const [version, setVersion] = useState<string>("");
 
+  useEffect(() => {
+    checkNode();
+  }, []);
 
+  const checkNode = async () => {
+    try {
+      setIsChecking(true);
+      const result = await cmd.invoke<Record<string, string>>("node_check");
+      setIsInstalled(result.installed === "true");
+      if (result.installed === "true") {
+        setVersion(result.version || "");
+      } else {
+        setVersion("");
+      }
+    } catch (error) {
+      console.error("Check Node environment failed:", error);
+      setIsInstalled(false);
+      setVersion("");
+    } finally {
+      setIsChecking(false);
+    }
+  };
 
   const showInstallDialog = () => {
     dialog({
@@ -174,11 +203,7 @@ export function DenoSettings() {
       description: `Installing Node will allow you to run and execute plugins. The
         installation process may take 1~2 minutes.
       `,
-      content: <NodeInstallDialog checkNode={() => {
-        setIsChecking(true);
-        setIsInstalled(false);
-        setVersion("");
-      }} />,
+      content: <NodeInstallDialog checkNode={checkNode} />,
     });
   };
 
@@ -203,11 +228,7 @@ export function DenoSettings() {
       description={getDescription()}
       action={
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={() => {
-            setIsChecking(true);
-            setIsInstalled(false);
-            setVersion("");
-          }}>
+          <Button variant="ghost" size="sm" onClick={checkNode}>
             <TbRotate
               className={`w-4 h-4 ${isChecking ? "animate-spin-reverse" : ""}`}
             />
@@ -231,7 +252,53 @@ export function UpdateSettings() {
   const [progress, setProgress] = useState(0);
   const [newVersion, setNewVersion] = useState<string | null>(null);
 
-  const checkForUpdates = async () => { };
+  const checkForUpdates = async () => {
+    try {
+      const update = {
+        version: "1.0.0",
+      };
+      console.log("update", update);
+      if (update?.version) {
+        const confirm = await cmd.confirm(`Ready to download the update?`);
+        if (confirm) {
+          setNewVersion(update.version);
+          setUpdateState("downloading");
+          let total = 100;
+          let current = 0;
+          // await {}.download((progress: any  ) => {
+          //   if (progress.event === "Started") {
+          //     total = progress.data.contentLength || 10000000;
+          //   } else if (progress.event === "Progress") {
+          //     current += progress.data.chunkLength;
+          //   }
+          //   setProgress(Math.round((current / total) * 100));
+          // });
+          const confirmInstall = await cmd.confirm(
+            `Ready to install the update?`,
+          );
+          if (confirmInstall) {
+            //await {}.install();
+            //await {};
+          } else {
+            setUpdateState("idle");
+          }
+        } else {
+          setUpdateState("idle");
+        }
+      } else {
+        toast.success(
+          `Current version is the latest version ${"PACKAGE_VERSION"}`,
+        );
+        setUpdateState("idle");
+      }
+      return update;
+    } catch (error) {
+      console.error("Update check failed:", error);
+      toast.error(`Update check failed, please try again later`);
+      setUpdateState("idle");
+      return false;
+    }
+  };
 
   const checkUpdate = async () => {
     setUpdateState("checking");
@@ -243,14 +310,15 @@ export function UpdateSettings() {
     <SettingItem
       icon={
         <TbRotate
-          className={`w-[18px] h-[18px] ${updateState === "checking" ? "animate-spin-reverse" : ""
-            }`}
+          className={`w-[18px] h-[18px] ${
+            updateState === "checking" ? "animate-spin-reverse" : ""
+          }`}
         />
       }
       title="Check for updates"
       description={
         updateState === "idle"
-          ? `Current version:`
+          ? `Current version: ${"PACKAGE_VERSION"}`
           : updateState === "checking"
             ? "Checking for updates..."
             : updateState === "downloading"
@@ -278,6 +346,7 @@ export function UpdateSettings() {
             </div>
           ) : (
             <Button
+              onClick={async () => await {}}
               variant="destructive"
               size="sm"
             >
@@ -309,7 +378,13 @@ export function ConfigDirSettings() {
 }
 
 export function ProxySettings() {
-  const settings = SettingsManager.use();
+  const settings = {
+    proxy: {
+      host: "",
+      port: "",
+      enabled: false,
+    },
+  };
   const [host, setHost] = useState(settings.proxy.host);
   const [port, setPort] = useState(settings.proxy.port);
 
@@ -327,11 +402,11 @@ export function ProxySettings() {
   };
 
   const updateGlobalSettings = () => {
-    SettingsManager.setProxy({ host, port });
+    //  SettingsManager.setProxy({ host, port });
   };
 
   const handleEnabledChange = (checked: boolean) => {
-    SettingsManager.setProxy({ enabled: checked });
+    //  SettingsManager.setProxy({ enabled: checked });
   };
 
   return (
@@ -377,6 +452,18 @@ export function ProxySettings() {
 
 export function AutoStartSettings() {
   const [autoStart, setAutoStart] = useState(false);
+
+  useEffect(() => {
+    setAutoStart(false);
+  }, []);
+
+  useEffect(() => {
+    if (autoStart) {
+      // {}.enable();
+    } else {
+      // {}.disable();
+    }
+  }, [autoStart]);
 
   const handleEnabledChange = (checked: boolean) => {
     setAutoStart(checked);

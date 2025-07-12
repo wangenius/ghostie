@@ -4,6 +4,7 @@ import fs from "fs";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { mainWindow } from "./index";
+import { ToolkitCloudManager } from "./toolkit/ToolkitCloudManager";
 
 const execAsync = promisify(exec);
 
@@ -29,6 +30,11 @@ export function ipc_handles(): void {
     
     // 插件文件系统相关处理器
     registerPluginFSHandlers();
+    
+    // Toolkit 市场相关处理器
+    registerToolkitMarketHandlers();
+    
+    // 注意：Agent 相关处理器现在通过装饰器在 Agent 类中自动注册
 }
 
 /**
@@ -519,6 +525,87 @@ function registerPluginFSHandlers(): void {
         } catch (error) {
             console.error("获取插件列表失败:", error);
             return [];
+        }
+    });
+}
+
+/**
+ * 注册 Toolkit 市场相关的 IPC 处理器
+ */
+function registerToolkitMarketHandlers(): void {
+    /**
+     * 获取市场数据
+     * @param _ 事件对象
+     * @param page 页码
+     * @param limit 每页数量
+     * @returns Promise<any[]> 市场数据
+     */
+    ipcMain.handle("toolkit-market-fetch", async (_, page: number, limit: number) => {
+        try {
+            return await ToolkitCloudManager.fetchMarketData(page, limit);
+        } catch (error) {
+            console.error("获取市场数据失败:", error);
+            throw error;
+        }
+    });
+
+    /**
+     * 从市场安装插件
+     * @param _ 事件对象
+     * @param data 插件数据
+     * @returns Promise<any> 安装结果
+     */
+    ipcMain.handle("toolkit-market-install", async (_, data: any) => {
+        try {
+            return await ToolkitCloudManager.installFromMarket(data);
+        } catch (error) {
+            console.error("安装插件失败:", error);
+            throw error;
+        }
+    });
+
+    /**
+     * 从市场卸载插件
+     * @param _ 事件对象
+     * @param id 插件ID
+     * @returns Promise<void>
+     */
+    ipcMain.handle("toolkit-market-uninstall", async (_, id: string) => {
+        try {
+            return await ToolkitCloudManager.uninstallFromMarket(id);
+        } catch (error) {
+            console.error("卸载插件失败:", error);
+            throw error;
+        }
+    });
+
+    /**
+     * 检查插件是否存在
+     * @param _ 事件对象
+     * @param pluginId 插件ID
+     * @returns Promise<boolean> 是否存在
+     */
+    ipcMain.handle("toolkit-market-check-exists", async (_, pluginId: string) => {
+        try {
+            return await ToolkitCloudManager.checkPluginExists(pluginId);
+        } catch (error) {
+            console.error("检查插件是否存在失败:", error);
+            throw error;
+        }
+    });
+
+    /**
+     * 上传插件到市场
+     * @param _ 事件对象
+     * @param pluginData 插件数据
+     * @returns Promise<void>
+     */
+    ipcMain.handle("toolkit-market-upload", async (_, pluginData: any) => {
+        try {
+            return await ToolkitCloudManager.uploadToMarket(pluginData);
+        } catch (error) {
+            console.error("上传插件失败:", error);
+            throw error;
         }
     });
 } 

@@ -1,14 +1,9 @@
-import { Echo } from "echo-state";
 
 export class ModelKey {
-  private static store = new Echo<Record<string, string>>({}).localStorage({
-    name: "providers_api_keys",
-  });
-
-  static use = this.store.use.bind(this.store);
+  private static store = {} as Record<string, string>;
 
   static set(provider: string, key: string) {
-    this.store.set((prev) => ({ ...prev, [provider]: key }));
+    this.store[provider] = key;
   }
 
   static get(provider: string) {

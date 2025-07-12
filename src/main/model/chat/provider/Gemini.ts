@@ -61,25 +61,6 @@ export class Gemini extends ChatModel {
         }
       }
 
-      // 处理工具调用
-      if (data.candidates?.[0]?.content?.parts) {
-        const functionPart = data.candidates[0].content.parts.find(
-          (part: any) => part.functionCall,
-        );
-
-        if (functionPart?.functionCall) {
-          tool_call = {
-            id: functionPart.functionCall.name || "function_call_id",
-            index: 0,
-            type: "function" as const,
-            function: {
-              name: functionPart.functionCall.name,
-              arguments: JSON.stringify(functionPart.functionCall.args || {}),
-            },
-          };
-        }
-      }
-
       return {
         content,
         reasoner,

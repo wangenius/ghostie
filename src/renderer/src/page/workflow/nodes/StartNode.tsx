@@ -16,11 +16,6 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
-  ToolParameters,
-  ToolProperty,
-  ToolPropertyType,
-} from "@/toolkit/types";
-import {
   DropdownMenu,
   DropdownMenuTrigger,
 } from "@radix-ui/react-dropdown-menu";
@@ -28,7 +23,6 @@ import { PlusCircle, Trash2 } from "lucide-react";
 import { nanoid } from "nanoid";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NodeProps } from "reactflow";
-import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { useFlow } from "../context/FlowContext";
 import { StartNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
@@ -37,17 +31,17 @@ interface EditableProperty {
   id: string;
   name: string;
   description: string;
-  type: ToolPropertyType;
+  type: any;
   required: boolean;
   properties?: Record<string, EditableProperty>;
   items?: EditableProperty;
 }
 
 // 将ToolParameters转换为可编辑格式
-const toolParamsToEditable = (params?: ToolParameters): EditableProperty[] => {
+const toolParamsToEditable = (params?: any): EditableProperty[] => {
   if (!params || !params.properties) return [];
 
-  return Object.entries(params.properties).map(([key, prop]) => {
+  return Object.entries(params.properties).map(([key, prop]: [string, any]) => {
     const editableProp: EditableProperty = {
       id: key,
       name: key,
@@ -58,7 +52,7 @@ const toolParamsToEditable = (params?: ToolParameters): EditableProperty[] => {
 
     if (prop.properties) {
       editableProp.properties = {};
-      Object.entries(prop.properties).forEach(([propKey, propValue]) => {
+      Object.entries(prop.properties).forEach(([propKey, propValue]: [string, any]) => {
         editableProp.properties![propKey] = {
           id: propKey,
           name: propKey,
@@ -70,7 +64,7 @@ const toolParamsToEditable = (params?: ToolParameters): EditableProperty[] => {
         if (propValue.properties) {
           const nestedProps: Record<string, EditableProperty> = {};
           Object.entries(propValue.properties).forEach(
-            ([nestedKey, nestedValue]) => {
+            ([nestedKey, nestedValue]: [string, any]) => {
               nestedProps[nestedKey] = {
                 id: nestedKey,
                 name: nestedKey,
@@ -110,7 +104,7 @@ const toolParamsToEditable = (params?: ToolParameters): EditableProperty[] => {
       if (prop.items.properties) {
         editableProp.items.properties = {};
         Object.entries(prop.items.properties).forEach(
-          ([itemKey, itemValue]) => {
+          ([itemKey, itemValue]: [string, any]) => {
             editableProp.items!.properties![itemKey] = {
               id: itemKey,
               name: itemKey,
@@ -130,8 +124,8 @@ const toolParamsToEditable = (params?: ToolParameters): EditableProperty[] => {
 // 将可编辑格式转换回ToolParameters
 const editableToToolParams = (
   editableProps: EditableProperty[],
-): ToolParameters => {
-  const properties: Record<string, ToolProperty> = {};
+): any => {
+  const properties: Record<string, any> = {};
   const required: string[] = [];
 
   editableProps.forEach((prop) => {
@@ -139,7 +133,7 @@ const editableToToolParams = (
       required.push(prop.name);
     }
 
-    const toolProp: ToolProperty = {
+    const toolProp: any = {
       type: prop.type,
       description: prop.description,
     };
@@ -147,7 +141,7 @@ const editableToToolParams = (
     // 处理对象属性
     if (prop.properties) {
       toolProp.properties = {};
-      Object.entries(prop.properties).forEach(([key, value]) => {
+      Object.entries(prop.properties).forEach(([key, value]: [string, any]) => {
         toolProp.properties![value.name || key] = {
           type: value.type,
           description: value.description,
@@ -157,7 +151,7 @@ const editableToToolParams = (
         if (value.properties) {
           toolProp.properties![key].properties = {};
           Object.entries(value.properties).forEach(
-            ([nestedKey, nestedValue]) => {
+            ([nestedKey, nestedValue]: [string, any]) => {
               toolProp.properties![key].properties![nestedKey] = {
                 type: nestedValue.type,
                 description: nestedValue.description,
@@ -186,7 +180,7 @@ const editableToToolParams = (
       // 处理数组项的属性
       if (prop.items.properties) {
         toolProp.items.properties = {};
-        Object.entries(prop.items.properties).forEach(([key, value]) => {
+        Object.entries(prop.items.properties).forEach(([key, value]: [string, any]) => {
           toolProp.items!.properties![key] = {
             type: value.type,
             description: value.description,
@@ -280,7 +274,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
                     id: propId,
                     name: "",
                     description: "",
-                    type: "string" as ToolPropertyType,
+                    type: "string" as any,
                     required: false,
                   },
                 },
@@ -440,7 +434,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
 
   // 更新数组项类型
   const updateArrayItemType = useCallback(
-    (paramId: string, itemType: ToolPropertyType) => {
+    (paramId: string, itemType: any) => {
       setEditableParams((prev) =>
         prev.map((p) => {
           if (p.id === paramId && p.type === "array") {
@@ -490,7 +484,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
             <Label className="text-xs text-gray-500"> Array Item Type</Label>
             <Select
               value={itemType}
-              onValueChange={(value: ToolPropertyType) =>
+              onValueChange={(value: any) =>
                 updateArrayItemType(param.id, value)
               }
             >
@@ -575,7 +569,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
                           value={prop.type}
                           onValueChange={(value: string) =>
                             updateObjectProperty(currentPath, propId, {
-                              type: value as ToolPropertyType,
+                                type: value as any,
                             })
                           }
                         >
@@ -687,7 +681,7 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
                       value={param.type}
                       onValueChange={(value: string) =>
                         updateParam(param.id, {
-                          type: value as ToolPropertyType,
+                          type: value as any,
                         })
                       }
                     >
@@ -788,41 +782,3 @@ const StartNodeComponent = (props: NodeProps<StartNodeConfig>) => {
 };
 
 export const StartNode = memo(StartNodeComponent);
-export class StartNodeExecutor extends NodeExecutor {
-  public override async execute(inputs: Record<string, any>) {
-    try {
-      console.log("inputs", inputs);
-      this.updateNodeState({
-        status: "running",
-        startTime: new Date().toISOString(),
-        inputs: inputs || {},
-      });
-
-      const result = {
-        success: true,
-        data: inputs || {},
-      };
-
-      console.log("result", result);
-
-      this.updateNodeState({
-        status: "completed",
-        outputs: {
-          result: result.data,
-        },
-        endTime: new Date().toISOString(),
-      });
-
-      return result;
-    } catch (error) {
-      this.updateNodeState({
-        status: "failed",
-        error: error instanceof Error ? error.message : String(error),
-        endTime: new Date().toISOString(),
-      });
-      return super.createErrorResult(error);
-    }
-  }
-}
-
-NodeExecutor.register("start", StartNodeExecutor);

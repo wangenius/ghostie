@@ -1,2 +1,0 @@
-import "./Search";
-import "./image";

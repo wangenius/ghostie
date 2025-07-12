@@ -10,19 +10,8 @@ import { PiCheck, PiInfo, PiWarning, PiXCircle } from "react-icons/pi";
 import { TbLoader2 } from "react-icons/tb";
 import { Toaster } from "sonner";
 
-// 导入各个模块的初始化
-import "./agent/engine/mode";
-import "./model/audio/provider";
-import "./model/chat/provider";
-import "./model/embedding/provider";
-import "./model/image/provider";
-import "./model/vision/provider";
-import "../../main/skills/instance";
-
 // 导入主要组件和服务
-import App from "./page/App";
-import { Scheduler } from "./page/schedule/Scheduler";
-import { UserMananger } from "./services/user/User";
+import App from "./App";
 
 /**
  * 渲染主应用组件
@@ -55,10 +44,10 @@ createRoot(ToastProvider).render(
  * 初始化调度器
  * 启动定时任务和调度功能
  */
-Scheduler.init();
+// Scheduler.init();
 
 /**
  * 初始化用户管理器
  * 检查用户状态和权限
  */
-UserMananger.init();
+// UserMananger.init();

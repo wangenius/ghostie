@@ -2,12 +2,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { TbChevronRight, TbFileText } from "react-icons/tb";
-import type { KnowledgeFile } from "src/main/knowledge/Knowledge";
 
 interface FileDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  file?: KnowledgeFile;
+  file?: any;
 }
 
 export function FileDrawer({ open, onOpenChange, file }: FileDrawerProps) {

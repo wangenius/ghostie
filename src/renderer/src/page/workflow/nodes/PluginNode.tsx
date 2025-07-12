@@ -1,15 +1,39 @@
 import { TOOL_NAME_SPLIT } from "@/assets/const";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Input } from "@/components/ui/input";
-import { ToolkitStore, Toolkit } from "@/toolkit/Toolkit";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { NodeProps } from "reactflow";
-import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { useFlow } from "../context/FlowContext";
 import { NodeState, PluginNodeConfig, WorkflowNode } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
-  const plugins = ToolkitStore.use();
+  const plugins = {
+    "1": {
+      id: "1",
+      name: "Plugin 1",
+      tools: [
+        {
+          name: "Tool 1",
+          description: "Tool 1 description",
+          parameters: {
+            properties: {
+              name: {
+                type: "string",
+              },
+            },
+          },
+        },
+      ],
+      description: "Plugin 1 description",
+      parameters: {
+        properties: {
+          name: {
+            type: "string",
+          },
+        },
+      },
+    },
+  };
   const { updateNodeData } = useFlow();
   const [localInputs, setLocalInputs] = useState<Record<string, string>>({});
 
@@ -74,12 +98,12 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
       <div key={key} className="flex flex-col gap-1">
         <div className="text-xs text-gray-500">{key}</div>
         <Input
-          type={prop.type === "number" ? "number" : "text"}
+          type={(prop as any).type === "number" ? "number" : "text"}
           className="h-8 px-3 text-xs rounded-full border"
           variant="dust"
           value={localInputs[key] || ""}
           onChange={(e) =>
-            handleParameterChange(key, e.target.value, prop.type)
+            handleParameterChange(key, e.target.value, (prop as any).type)
           }
           placeholder={`Enter ${key}...`}
         />
@@ -122,73 +146,3 @@ const PluginNodeComponent = (props: NodeProps<PluginNodeConfig>) => {
 };
 
 export const PluginNode = memo(PluginNodeComponent);
-export class PluginNodeExecutor extends NodeExecutor {
-  constructor(
-    node: WorkflowNode,
-    updateNodeState: (update: Partial<NodeState>) => void,
-  ) {
-    super(node, updateNodeState);
-  }
-
-  public override async execute(inputs: Record<string, any>) {
-    try {
-      this.updateNodeState({
-        status: "running",
-        startTime: new Date().toISOString(),
-        inputs,
-      });
-
-      const pluginConfig = this.node.data as PluginNodeConfig;
-      if (!pluginConfig.plugin) {
-        throw new Error("Plugin not configured");
-      }
-
-      const plugin = await Toolkit.get(pluginConfig.plugin);
-      if (!plugin) {
-        throw new Error(`Plugin not found: ${pluginConfig.plugin}`);
-      }
-
-      const tool = plugin.props.tools.find((t) => t.name === pluginConfig.tool);
-      if (!tool) {
-        throw new Error(`Tool not found: ${pluginConfig.tool}`);
-      }
-
-      const processedArgs = Object.entries(pluginConfig.args || {}).reduce(
-        (acc, [key, value]) => ({
-          ...acc,
-          [key]:
-            typeof value === "string"
-              ? this.parseTextFromInputs(value, inputs)
-              : value,
-        }),
-        {},
-      );
-
-      const pluginResult = await (
-        await Toolkit.get(plugin.props.id)
-      ).execute(pluginConfig.tool, processedArgs);
-      console.log("pluginResult", pluginResult);
-
-      if (!pluginResult) {
-        throw new Error("Plugin execution result is empty");
-      }
-
-      this.updateNodeState({
-        status: "completed",
-        outputs: {
-          result: pluginResult,
-        },
-      });
-      return {
-        success: true,
-        data: {
-          result: pluginResult,
-        },
-      };
-    } catch (error) {
-      return this.createErrorResult(error);
-    }
-  }
-}
-
-NodeExecutor.register("plugin", PluginNodeExecutor);

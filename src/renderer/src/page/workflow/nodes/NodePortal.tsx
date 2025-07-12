@@ -27,7 +27,6 @@ import { toast } from "sonner";
 import CustomHandle from "../components/CustomHandle";
 import { useFlow } from "../context/FlowContext";
 import { NODE_TYPES, NodeType } from "../types/nodes";
-import { CurrentWorkflow } from "@/workflow/Workflow";
 type NodeVariant = NodeType;
 
 interface BaseNodeProps extends NodeProps {
@@ -50,14 +49,20 @@ const NodePortalComponent = ({
   title,
 }: BaseNodeProps) => {
   const updateNodeInternals = useUpdateNodeInternals();
-  const workflow = CurrentWorkflow.use();
+  const workflow = {};
   const { onNodesChange } = useFlow();
 
   useEffect(() => {
     updateNodeInternals(id);
   }, [id, data, left, right, updateNodeInternals]);
 
-  const state = workflow.executor.use((selector) => selector[id]);
+  const state = {
+    status: "completed",
+    outputs: {
+      result: "1",
+    },
+    error: "1",
+  };
 
   useEffect(() => {
     console.log("state", state);
@@ -117,7 +122,7 @@ const NodePortalComponent = ({
       onDoubleClick={handleNodeDoubleClick}
       className={nodeClassName}
       onContextMenu={handleContextMenu}
-      key={workflow.meta.id + id}
+      key={"workflow-node-" + id}
     >
       <div className="flex items-center justify-between h-8 px-1">
         <div className="text-sm font-bold flex-1 flex items-center gap-1">

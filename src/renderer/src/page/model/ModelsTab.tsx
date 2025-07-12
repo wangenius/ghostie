@@ -1,7 +1,7 @@
 import { TabListItem } from "@/components/custom/TabListItem";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
-import { PreferenceList } from "@/components/layout/PreferenceList";
+import { PreferenceSidebar } from "@/components/layout/PreferenceSidebar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,16 +10,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { ChatModelManager } from "@/model/chat/ChatModelManager";
-import { ImageModelManager } from "@/model/image/ImageModelManager";
-import { VisionModelManager } from "@/model/vision/VisionModelManager";
-import { SettingsManager } from "@/settings/SettingsManager";
 import { DropdownMenuRadioGroup } from "@radix-ui/react-dropdown-menu";
 import { Echo } from "echo-state";
 import { useEffect, useMemo, useState } from "react";
 import { TbBox, TbPlus } from "react-icons/tb";
-import { EmbeddingModelManager } from "../../model/embedding/EmbeddingModelManger";
-import { ModelProvider } from "../../model/types/model";
 import { ModelItem } from "./ModelItem";
 
 export enum ModelTab {
@@ -36,12 +30,7 @@ const selectedTab = new Echo<ModelTab>(ModelTab.TEXT).localStorage({
 export function ModelsTab() {
   const [selectedModel, setSelectedModel] = useState<any>();
   const tab = selectedTab.use();
-
-  const { theme } = SettingsManager.use();
-
-  const [providers, setProviders] = useState<Record<string, ModelProvider>>(
-    ChatModelManager.getProviders(),
-  );
+  const [providers, setProviders] = useState<any>({});
 
   const items = useMemo(() => {
     return Object.values(providers);
@@ -50,16 +39,16 @@ export function ModelsTab() {
   useEffect(() => {
     if (tab === ModelTab.TEXT) {
       setSelectedModel(null);
-      setProviders(ChatModelManager.getProviders());
+      setProviders({});
     } else if (tab === ModelTab.EMBEDDING) {
       setSelectedModel(null);
-      setProviders(EmbeddingModelManager.getProviders());
+      setProviders({});
     } else if (tab === ModelTab.VISION) {
       setSelectedModel(null);
-      setProviders(VisionModelManager.getProviders());
+      setProviders({});
     } else if (tab === ModelTab.IMAGE) {
       setSelectedModel(null);
-      setProviders(ImageModelManager.getProviders());
+      setProviders({});
     } else {
       setSelectedModel(null);
       setProviders({});
@@ -69,7 +58,7 @@ export function ModelsTab() {
   return (
     <PreferenceLayout>
       {/* 左侧列表 */}
-      <PreferenceList
+      <PreferenceSidebar
         left={
           <div className="flex">
             <DropdownMenu>
@@ -101,7 +90,7 @@ export function ModelsTab() {
             {items.length} providers
           </div>
         }
-        items={items.map((provider) => ({
+        items={items.map((provider: any) => ({
           id: provider.name,
           content: (
             <TabListItem
@@ -112,7 +101,7 @@ export function ModelsTab() {
                   src={`/${provider.icon}`}
                   className={cn(
                     "w-7 h-7 p-1 rounded-lg",
-                    theme.name === "dark" ? "bg-white" : "",
+                      false ? "bg-white" : "",
                   )}
                   alt={provider.name}
                 />

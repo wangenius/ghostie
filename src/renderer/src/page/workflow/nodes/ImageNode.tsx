@@ -1,16 +1,10 @@
-import { ModelItem } from "@/agent/types/agent";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ImageModel } from "@/model/image/ImageModel";
-import { ImageModelManager } from "@/model/image/ImageModelManager";
 import { ImageView } from "@/page/main/ImageView";
-import { ImageManager, ImagesStore } from "@/resources/Image";
-import { CurrentWorkflow } from "@/workflow/Workflow";
 import { memo, useCallback, useState } from "react";
 import { TbMaximize } from "react-icons/tb";
 import { NodeProps } from "reactflow";
-import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { useFlow } from "../context/FlowContext";
 import { ImageNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
@@ -22,12 +16,26 @@ const ImageNodeComponet = (props: NodeProps<ImageNodeConfig>) => {
   );
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { updateNodeData } = useFlow();
-  const workflow = CurrentWorkflow.use();
-  const workflowState = workflow.executor.use((selector) => selector[props.id]);
-  const images = ImagesStore.use();
+  const workflow = {
+    executor: {
+      [props.id]: {
+        status: "completed",
+        outputs: {
+          result: "1",
+        },
+      },
+    },
+  };
+  const workflowState = {
+    status: "completed",
+    outputs: {
+      result: "1",
+    },
+  };
+  const images = {};
 
   const handleModelChange = useCallback(
-    (model: ModelItem) => {
+    (model: any) => {
       updateNodeData<ImageNodeConfig>(props.id, {
         model: model,
       });
@@ -58,25 +66,8 @@ const ImageNodeComponet = (props: NodeProps<ImageNodeConfig>) => {
       <DrawerSelector
         panelTitle="Select Model"
         value={[props.data.model]}
-        items={Object.values(ImageModelManager.getProviders()).flatMap(
-          (provider) => {
-            const key = ImageModelManager.getApiKey(provider.name);
-            if (!key) return [];
-            const models = provider.models;
-            return Object.values(models).map((model) => {
-              return {
-                label: model.name,
-                value: {
-                  provider: provider.name,
-                  name: model.name,
-                },
-                type: provider.name,
-                description: `${model.description}`,
-              };
-            });
-          },
-        )}
-        onSelect={(value) => handleModelChange(value[0])}
+        items={[]}
+        onSelect={() => {}}
       />
 
       <div className="space-y-1.5">
@@ -128,83 +119,3 @@ const ImageNodeComponet = (props: NodeProps<ImageNodeConfig>) => {
 };
 
 export const ImageNode = memo(ImageNodeComponet);
-export class ImageNodeExecutor extends NodeExecutor {
-  public override async execute(inputs: Record<string, any>) {
-    try {
-      this.updateNodeState({
-        status: "running",
-        startTime: new Date().toISOString(),
-        inputs,
-      });
-
-      const imageConfig = this.node.data as ImageNodeConfig;
-      if (!imageConfig.model) {
-        throw new Error("Image model not configured");
-      }
-
-      const parsedPrompt = this.parseTextFromInputs(
-        imageConfig.prompt || "",
-        inputs,
-      );
-      const parsedNegativePrompt = this.parseTextFromInputs(
-        imageConfig.negative_prompt || "",
-        inputs,
-      );
-
-      const model = ImageModel.create(imageConfig.model);
-      const res = await model.generate(parsedPrompt, parsedNegativePrompt);
-
-      if (!("output" in res)) {
-        throw new Error(res.message);
-      }
-
-      await ImageManager.setImage(res.output.task_id, "", "image/png");
-      await ImageManager.setImageTaskId(res.output.task_id, res.output.task_id);
-
-      model.setTaskId(res.output.task_id);
-
-      while (true) {
-        const result = await model.getResult();
-        if (
-          result.output.task_status === "SUCCEEDED" &&
-          "results" in result.output &&
-          result.output.results[0]?.base64
-        ) {
-          const base64Image = result.output.results[0].base64;
-          await ImageManager.setImage(
-            res.output.task_id,
-            base64Image,
-            "image/png",
-          );
-
-          this.updateNodeState({
-            status: "completed",
-            outputs: {
-              result: res.output.task_id,
-            },
-          });
-          break;
-        } else if (result.output.task_status === "FAILED") {
-          this.updateNodeState({
-            status: "failed",
-            error: "图片生成失败",
-          });
-          break;
-        }
-        // 等待3秒后再次检查
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-      }
-
-      return {
-        success: true,
-        data: {
-          result: res.output.task_id,
-        },
-      };
-    } catch (error) {
-      return this.createErrorResult(error);
-    }
-  }
-}
-
-NodeExecutor.register("image", ImageNodeExecutor);

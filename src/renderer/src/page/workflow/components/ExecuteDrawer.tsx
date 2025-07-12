@@ -2,8 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ToolProperty } from "@/toolkit/types";
-import { Workflow } from "@/workflow/Workflow";
 import { useCallback, useState } from "react";
 import "reactflow/dist/style.css";
 import { useFlow } from "../context/FlowContext";
@@ -17,7 +15,7 @@ export const ExecuteDrawer = ({
 }: {
   isExecuteDrawerOpen: boolean;
   setIsExecuteDrawerOpen: (open: boolean) => void;
-  workflow: Workflow;
+  workflow: any;
 }) => {
   const [paramValues, setParamValues] = useState<Record<string, any>>({});
   const { nodes } = useFlow();
@@ -52,7 +50,7 @@ export const ExecuteDrawer = ({
   const renderParamInput = useCallback(
     (
       name: string,
-      property: ToolProperty,
+      property: any,
       path: string[] = [],
       required: boolean = false,
     ) => {
@@ -73,7 +71,7 @@ export const ExecuteDrawer = ({
               {Object.entries(property.properties).map(([subName, subProp]) =>
                 renderParamInput(
                   subName,
-                  subProp as ToolProperty,
+                  subProp as any,
                   currentPath,
                   false,
                 ),
@@ -124,7 +122,7 @@ export const ExecuteDrawer = ({
         {Object.entries(parameters.properties).map(([name, prop]) => {
           return renderParamInput(
             name,
-            prop as ToolProperty,
+            prop as any,
             [],
             parameters.required?.includes(name) || false,
           );

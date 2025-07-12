@@ -7,8 +7,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
-import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
-import { CodeNodeConfig, NodeState, WorkflowNode } from "../types/nodes";
+import { CodeNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 
 const CodeNodeComponent = (props: NodeProps<CodeNodeConfig>) => {
@@ -111,61 +110,3 @@ const CodeNodeComponent = (props: NodeProps<CodeNodeConfig>) => {
 };
 
 export const CodeNode = memo(CodeNodeComponent);
-export class CodeNodeExecutor extends NodeExecutor {
-  constructor(
-    node: WorkflowNode,
-    updateNodeState: (update: Partial<NodeState>) => void,
-  ) {
-    super(node, updateNodeState);
-  }
-
-  public override async execute(inputs: Record<string, any>) {
-    try {
-      this.updateNodeState({
-        status: "running",
-        startTime: new Date().toISOString(),
-        inputs,
-      });
-
-      const codeConfig = this.node.data as CodeNodeConfig;
-      if (!codeConfig.code) {
-        throw new Error("Code content is empty");
-      }
-
-      const context = {
-        inputs: inputs || {},
-        console: {
-          log: (...args: any[]) => console.log(...args),
-          error: (...args: any[]) => console.error(...args),
-        },
-      };
-
-      const functionBody = `
-        "use strict";
-        const {inputs, console} = arguments[0];
-        ${codeConfig.code}
-      `;
-
-      const executeFn = new Function(functionBody);
-      const result = await executeFn(context);
-
-      this.updateNodeState({
-        status: "completed",
-        outputs: {
-          result: result,
-        },
-      });
-
-      return {
-        success: true,
-        data: {
-          result: result,
-        },
-      };
-    } catch (error) {
-      return this.createErrorResult(error);
-    }
-  }
-}
-
-NodeExecutor.register("code", CodeNodeExecutor);

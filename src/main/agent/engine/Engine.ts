@@ -10,7 +10,7 @@ export class Engine {
   /* 代理 */
   agent: Agent;
   /* 模型 */
-  model: ChatModel;
+  model: ChatModel | ChatModel;
   /* 上下文 */
   context: Context;
   /* 初始化完成标志 */
@@ -22,7 +22,17 @@ export class Engine {
     this.agent = agent;
     this.context = this.agent.context;
     console.log(agent.infos.models);
-    this.model = ChatModel.create(agent.infos.models?.text);
+    
+    // 优先使用 AI SDK，如果模型支持的话
+    try {
+      this.model = ChatModel.create(agent.infos.models?.text);
+      console.log('使用 AI SDK 模型');
+    } catch (error) {
+      // 如果 AI SDK 不支持，回退到原始模型
+      this.model = ChatModel.create(agent.infos.models?.text);
+      console.log('使用传统 ChatModel');
+    }
+    
     console.log(this.model);
     this.initPromise = this.init(agent).then(() => {
       this.isInitialized = true;

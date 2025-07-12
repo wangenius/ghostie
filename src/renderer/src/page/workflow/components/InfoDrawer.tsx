@@ -1,7 +1,6 @@
 import { Drawer } from "@/components/ui/drawer";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
 import { useCallback } from "react";
 import "reactflow/dist/style.css";
 
@@ -12,13 +11,13 @@ export const InfoDrawer = ({
 }: {
   isEditDrawerOpen: boolean;
   setIsEditDrawerOpen: (open: boolean) => void;
-  workflow: Workflow;
+  workflow: any;
 }) => {
-  const meta = WorkflowsStore.use((selector) => selector[workflow.meta.id]);
+  const meta = {};
   // 处理描述变更
   const handleDescriptionChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      workflow.updateMeta({ description: e.target.value });
+      // workflow.updateMeta({ description: e.target.value });
     },
     [workflow],
   );
@@ -30,7 +29,7 @@ export const InfoDrawer = ({
       onOpenChange={setIsEditDrawerOpen}
       className="w-[380px]"
       title="Workflow Trigger"
-      key={`edit-${meta.id}`}
+      key={`edit-${""}`}
     >
       <div className="flex flex-col h-full">
         <div className="flex-1 overflow-y-auto">
@@ -40,7 +39,7 @@ export const InfoDrawer = ({
                 <Label>Trigger Description</Label>
                 <div className="space-y-2">
                   <Textarea
-                    defaultValue={meta.description}
+                    defaultValue={"Unnamed Workflow"}
                     onChange={handleDescriptionChange}
                     placeholder="Enter workflow description for llm trigger"
                     className="min-h-[100px] resize-none"

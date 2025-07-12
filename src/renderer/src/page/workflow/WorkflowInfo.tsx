@@ -18,20 +18,15 @@ import {
 } from "react-icons/tb";
 import "reactflow/dist/style.css";
 import { toast } from "sonner";
-import {
-  CurrentWorkflow,
-  Workflow,
-  WorkflowsStore,
-} from "../../../../main/workflow/Workflow";
 
 export const WorkflowInfo = memo(() => {
-  const workflow = CurrentWorkflow.use();
-  const meta = WorkflowsStore.use((selector) => selector[workflow.meta.id]);
+  const workflow = {};
+  const meta = {};
 
   // 处理名称变更
   const handleNameChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      workflow.updateMeta({ name: e.target.value });
+      // workflow.updateMeta({ name: e.target.value });
     },
     [workflow],
   );
@@ -42,7 +37,7 @@ export const WorkflowInfo = memo(() => {
       content: "Are you sure to upload this workflow?",
       onOk: async () => {
         try {
-          await workflow.uploadToMarket();
+          // await workflow.uploadToMarket();
           toast.success("Successfully uploaded workflow to market");
         } catch (error) {
           toast.error(`Upload workflow failed:${error}`);
@@ -56,20 +51,20 @@ export const WorkflowInfo = memo(() => {
       title: "Delete Workflow",
       content: "Are you sure to delete this workflow?",
       onOk: async () => {
-        const id = workflow.meta.id;
-        CurrentWorkflow.set(new Workflow());
-        await Workflow.delete(id);
+        const id = "";
+        // CurrentWorkflow.set(new Workflow());
+        // await Workflow.delete(id);
         toast.success("Successfully deleted workflow");
       },
     });
   }, []);
   return (
-    <div key={meta.id} className="flex flex-col">
+    <div key={""} className="flex flex-col">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 pl-3 flex-1">
           <TbShape3 className="w-6 h-6 text-muted-foreground" />
           <Input
-            defaultValue={meta.name}
+            defaultValue={"Unnamed Workflow"}
             variant="title"
             className="p-0 m-0 rounded-none text-primary/80 font-medium text-lg"
             onChange={handleNameChange}

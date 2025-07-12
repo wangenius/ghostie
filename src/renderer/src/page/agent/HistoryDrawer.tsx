@@ -1,32 +1,17 @@
-import { ContextRuntimeProps } from "@/agent/context/Context";
-import { CONTEXT_RUNTIME_DATABASE } from "@/assets/const";
 import { Button } from "@/components/ui/button";
-import { Echoi } from "@/lib/echo/Echo";
 import { cn } from "@/lib/utils";
-import { AgentManager } from "@/store/AgentManager";
-import { useEffect } from "react";
 import { TbClock, TbMessageCircle, TbTrash } from "react-icons/tb";
 
-const historyEcho = new Echoi<Record<string, ContextRuntimeProps>>({}).indexed({
-  database: CONTEXT_RUNTIME_DATABASE,
-  name: "",
-});
+export const HistoryPage = ({ onClick }: { onClick: (item: any) => void }) => {
+  const id = "";
+  const agent = null;
+  const runtimes = {
+    "1": {
+      created_at: new Date().toISOString(),
+      messages: [{ content: "Hello, how are you?" }],
+    },
+  };
 
-export const HistoryPage = ({
-  onClick,
-}: {
-  onClick: (item: ContextRuntimeProps) => void;
-}) => {
-  const id = AgentManager.currentOpenedAgent.use();
-  const agent = AgentManager.OPENED_AGENTS.current[id];
-  const runtimes = historyEcho.use();
-
-  useEffect(() => {
-    historyEcho.indexed({
-      database: CONTEXT_RUNTIME_DATABASE,
-      name: id,
-    });
-  }, [id]);
   return (
     <div className="flex flex-col h-full gap-1">
       <div className="flex items-center justify-between">
@@ -35,9 +20,6 @@ export const HistoryPage = ({
           variant="destructive"
           className="flex-none"
           onClick={() => {
-            historyEcho.discard();
-            historyEcho.reset();
-            historyEcho.temporary();
           }}
         >
           <TbTrash className="h-4 w-4" />
@@ -76,8 +58,6 @@ export const HistoryPage = ({
               <Button
                 onClick={async (e) => {
                   e.stopPropagation();
-                  agent?.context.echo.delete(key);
-                  historyEcho.delete(key);
                 }}
                 variant="ghost"
                 size="icon"

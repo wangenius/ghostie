@@ -1,8 +1,6 @@
 import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserMananger } from "@/services/user/User";
-import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
 import { useEffect, useState } from "react";
 import {
   TbCheck,
@@ -36,14 +34,14 @@ export const WorkflowsMarketTab = () => {
   const [hasNextPage, setHasNextPage] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const itemsPerPage = 10;
-  const user = UserMananger.use();
-  const CurrentWorkflows = WorkflowsStore.use();
+  const user = null;
+  const CurrentWorkflows = {};
 
   // 从 Supabase 获取工作流列表 - 分页处理
   const fetchWorkflows = async (page = 1) => {
     try {
       setLoading(true);
-      const data = await Workflow.fetchFromMarket(page, itemsPerPage);
+      const data = [];
       setWorkflows(data || []);
       setCurrentPage(page);
       // 如果获取的项目数少于itemsPerPage，说明没有下一页
@@ -59,7 +57,6 @@ export const WorkflowsMarketTab = () => {
   const handleInstall = async (workflow: WorkflowMarketProps) => {
     try {
       setInstalling(workflow.id);
-      await Workflow.installFromMarket(workflow);
       toast.success(`成功安装工作流: ${workflow.name}`);
     } catch (error) {
       toast.error(`安装工作流失败:${error}`);
@@ -69,10 +66,9 @@ export const WorkflowsMarketTab = () => {
   };
 
   // 删除工作流
-  const handleDelete = async (workflow: WorkflowMarketProps) => {
+  const handleDelete = async (workflow: any) => {
     try {
       setDeleting(workflow.id);
-      await Workflow.uninstallFromMarket(workflow.id);
       // 更新当前页数据
       fetchWorkflows(currentPage);
       toast.success(`成功删除工作流: ${workflow.name}`);
@@ -84,7 +80,7 @@ export const WorkflowsMarketTab = () => {
   };
 
   // 显示工作流详情
-  const showWorkflowDetails = (workflow: WorkflowMarketProps) => {
+  const showWorkflowDetails = (workflow: any) => {
     dialog({
       title: workflow.name || "未命名工作流",
       description: `更新时间: ${new Date(workflow.updated_at).toLocaleString()}`,
@@ -109,7 +105,7 @@ export const WorkflowsMarketTab = () => {
           )}
 
           <div className="flex justify-end gap-2 mt-2">
-            {user?.id === workflow.user_id && (
+            {false && (
               <Button
                 variant="destructive"
                 className="flex items-center gap-1"

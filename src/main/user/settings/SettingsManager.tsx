@@ -1,4 +1,3 @@
-import { Echo } from "echo-state";
 
 // 新增：定义代理设置接口
 interface ProxySettingsConfig {
@@ -37,7 +36,7 @@ interface SettingsProps {
 
 /* 设置管理 */
 export class SettingsManager {
-  private static store = new Echo<SettingsProps>({
+  private static store = {
     theme: { name: "light", label: "light" },
     font: { name: "maple", label: "maple" },
     language: "zh-CN",
@@ -57,66 +56,58 @@ export class SettingsManager {
       host: "127.0.0.1",
       port: "1080",
     },
-  }).localStorage({ name: "settings" });
-
-  static use = this.store.use.bind(this.store);
+  };
 
   static get current() {
-    return this.store.current;
+    return this.store;
   }
 
   public static getTheme() {
-    return this.store.current.theme;
+    return this.store.theme;
   }
 
   public static setKnowledge(knowledge: Partial<SettingsProps["knowledge"]>) {
-    this.store.set((prev) => ({
-      ...prev,
-      knowledge: { ...prev.knowledge, ...knowledge },
-    }));
+    this.store.knowledge = { ...this.store.knowledge, ...knowledge };
   }
 
   public static getReactMaxIterations() {
-    return this.store.current.reActMaxIterations;
+    return this.store.reActMaxIterations;
   }
 
   public static setReactMaxIterations(maxIterations: number) {
-    this.store.set((prev) => ({ ...prev, reActMaxIterations: maxIterations }));
+    this.store.reActMaxIterations = maxIterations;
   }
 
   public static setTheme(theme: { name: string; label: string }) {
-    this.store.set((prev) => ({ ...prev, theme }));
+    this.store.theme = theme;
   }
 
   public static getSortType() {
-    return this.store.current.sortType;
+    return this.store.sortType;
   }
 
   public static setSortType(sortType: "default" | "mostUsed" | "recentUsed") {
-    this.store.set((prev) => ({ ...prev, sortType }));
+    this.store.sortType = sortType;
   }
 
   public static getFont() {
-    return this.store.current.font;
+    return this.store.font;
   }
 
   public static setFont(font: { name: string; label: string }) {
-    this.store.set((prev) => ({ ...prev, font }));
+    this.store.font = font;
   }
 
   public static getMaxHistory() {
-    return this.store.current.maxHistory;
+        return this.store.maxHistory;
   }
 
   public static setMaxHistory(maxHistory: number) {
-    this.store.set((prev) => ({ ...prev, maxHistory }));
+    this.store.maxHistory = maxHistory;
   }
 
   // 新增：更新代理设置的方法
   public static setProxy(proxyConfig: Partial<ProxySettingsConfig>) {
-    this.store.set((prev) => ({
-      ...prev,
-      proxy: { ...prev.proxy, ...proxyConfig },
-    }));
+    this.store.proxy = { ...this.store.proxy, ...proxyConfig };
   }
 }

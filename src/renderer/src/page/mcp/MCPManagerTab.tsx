@@ -1,6 +1,6 @@
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
-import { PreferenceList } from "@/components/layout/PreferenceList";
+import { PreferenceSidebar } from "@/components/layout/PreferenceSidebar";
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
@@ -17,7 +17,6 @@ import {
   TbScriptPlus,
   TbTrash,
 } from "react-icons/tb";
-import { MCP, MCP_Actived, MCPStore } from "../../toolkit/MCP";
 
 const MCP_TYPES = [
   {
@@ -41,21 +40,28 @@ const MCP_TYPES = [
 ];
 
 export function MCPTab() {
-  const mcps = MCPStore.use();
-  const [currentMCP, setCurrentMCP] = useState<MCP | null>(null);
-  const actived_mcps = MCP_Actived.use();
+  const [currentMCP, setCurrentMCP] = useState<any>(null);
+  const actived_mcps = {};
   const [loading, setLoading] = useState(false);
   const [envDrawerOpen, setEnvDrawerOpen] = useState(false);
   const [newEnvKey, setNewEnvKey] = useState("");
-
+  const mcps = {
+    "1": {
+      id: "1",
+      name: "MCP 1",
+      description: "MCP 1 description",
+      opened: false,
+      type: "node",
+    },
+  };
   return (
     <PreferenceLayout>
-      <PreferenceList
+      <PreferenceSidebar
         right={
           <Button
             className="flex-1"
             onClick={() => {
-              MCP.create();
+              // MCP.create();
             }}
           >
             <TbScriptPlus className="w-4 h-4" />
@@ -81,11 +87,11 @@ export function MCPTab() {
           ),
           description: mcp.description || "无描述",
           onClick: async () => {
-            setCurrentMCP(await MCP.get(mcp.id));
+            // setCurrentMCP(await MCP.get(mcp.id));
           },
           actived: mcp.id === currentMCP?.props.id,
           onRemove: () => {
-            MCP.delete(mcp.id);
+            // MCP.delete(mcp.id);
           },
         }))}
         emptyText="点击上方按钮添加新mcp"
@@ -119,9 +125,9 @@ export function MCPTab() {
                   setLoading(true);
                   if (currentMCP) {
                     if (mcps[currentMCP?.props.id || ""]?.opened) {
-                      await currentMCP.stop();
+                      // await currentMCP.stop();
                     } else {
-                      await currentMCP.start();
+                      // await currentMCP.start();
                     }
                   }
                   setLoading(false);
@@ -263,7 +269,7 @@ export function MCPTab() {
                             <Input
                               className="h-9"
                               placeholder="变量值"
-                              value={value}
+                              value={value as string}
                               onChange={(e) => {
                                 if (currentMCP) {
                                   const newEnv = {

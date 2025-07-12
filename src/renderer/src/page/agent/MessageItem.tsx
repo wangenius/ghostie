@@ -2,10 +2,6 @@ import { iconVariants } from "@/components/custom/CodeBlock";
 import { MarkdownRender } from "@/components/Markdown/MarkdownRender";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ToolsHandler } from "@/model/chat/ToolsHandler";
-import { MessageItem } from "@/model/types/chatModel";
-import { ImagesStore } from "@/resources/Image";
-import { AgentManager } from "@/store/AgentManager";
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -18,13 +14,6 @@ import {
   TbMessagePlus,
 } from "react-icons/tb";
 import { ImageView } from "../main/ImageView";
-
-interface MessageItemProps {
-  index: number;
-  message: MessageItem;
-  lastMessage?: MessageItem;
-  nextMessage?: MessageItem;
-}
 
 const MessageItemState = ({
   isLoading,
@@ -62,11 +51,7 @@ const MessageItemState = ({
   );
 };
 
-export function ChatMessageItem({
-  message,
-  lastMessage,
-  index,
-}: MessageItemProps) {
+export function ChatMessageItem({ message, lastMessage, index }: any) {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
   const [showReasoning, setShowReasoning] = useState(false);
@@ -75,25 +60,10 @@ export function ChatMessageItem({
     type: "",
     name: "",
   });
-  const images = ImagesStore.use();
 
-  useEffect(() => {
-    if (lastMessage?.tool_calls) {
-      ToolsHandler.ToolNameParser(
-        lastMessage?.tool_calls[0].function.name,
-      ).then((res) => setToolCalls(res));
-    }
-  }, [lastMessage?.tool_calls]);
 
   const handleMessagePlus = useCallback(() => {
-    const id = AgentManager.currentOpenedAgent.current;
-    const agent = AgentManager.OPENED_AGENTS.current[id];
-    const messages = [...agent?.context.runtime.messages];
-    agent.context.setRuntime();
-    agent.context.runtime.messages = messages.slice(0, index + 1);
-    AgentManager.CurrentContexts.set({
-      [agent.infos.id]: agent.context.runtime.id,
-    });
+
   }, []);
 
   const handleCopyMessage = () => {
@@ -137,7 +107,7 @@ export function ChatMessageItem({
             onClick={() => setSelectedImage(image)}
           >
             <img
-              src={images[image]?.base64Image}
+              src={image}
               alt="生成的图片"
               className="w-full h-full object-cover transition-transform group-hover/image:scale-105"
             />
@@ -173,7 +143,7 @@ export function ChatMessageItem({
                   onClick={() => setSelectedImage(image)}
                 >
                   <img
-                    src={images[image]?.base64Image}
+                    src={image}
                     alt="用户上传的图片"
                     className="w-full h-full object-cover transition-transform group-hover/image:scale-105"
                   />

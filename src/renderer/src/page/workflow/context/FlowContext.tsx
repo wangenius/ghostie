@@ -1,7 +1,5 @@
 import { gen } from "@/utils/generator";
 import { WORKFLOW_BODY_DATABASE } from "@/assets/const";
-import { CurrentWorkflow } from "@/workflow/Workflow";
-import { Echo } from "echo-state";
 import {
   createContext,
   useCallback,
@@ -61,60 +59,60 @@ interface FlowContextType {
 /* 工作流上下文 */
 const FlowContext = createContext<FlowContextType | null>(null);
 
-export const CurrentEditWorkflow = new Echo<WorkflowBody>({
-  id: "",
-  nodes: {},
-  edges: {},
-  viewport: {
-    x: 0,
-    y: 0,
-    zoom: 1,
-  },
-}).indexed({
-  database: WORKFLOW_BODY_DATABASE,
-  name: "",
-});
+// export const CurrentEditWorkflow = new Echo<WorkflowBody>({
+//   id: "",
+//   nodes: {},
+//   edges: {},
+//   viewport: {
+//     x: 0,
+//     y: 0,
+//     zoom: 1,
+//   },
+// }).indexed({
+//   database: WORKFLOW_BODY_DATABASE,
+//   name: "",
+// });
 
 /* 当前工作流上下文 */
 export const FlowProvider = ({ children }: { children: React.ReactNode }) => {
-  const workflow = CurrentWorkflow.use();
-  const body = CurrentEditWorkflow.use();
+  const workflow = {};
+  const body = {};
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
 
   useEffect(() => {
     let isActive = true;
 
-    if (workflow.meta.id) {
-      CurrentEditWorkflow.indexed({
-        database: WORKFLOW_BODY_DATABASE,
-        name: workflow.meta.id,
-      })
-        .getCurrent()
-        .then((loadedBody) => {
-          // Ensure loadedBody has default structure if empty/new
-          const ensuredBody: WorkflowBody = {
-            id: loadedBody.id || workflow.meta.id || gen.id(), // Use workflow id or generate one
-            nodes: loadedBody.nodes || {},
-            edges: loadedBody.edges || {},
-            viewport: loadedBody.viewport || { x: 0, y: 0, zoom: 1 },
-          };
-          if (isActive) {
-            // 检查标记
-            CurrentEditWorkflow.set(ensuredBody); // Update the central Echo state
-          }
-        });
+    if (true) {
+      // CurrentEditWorkflow.indexed({
+      //   database: WORKFLOW_BODY_DATABASE,
+      //   name: workflow.meta.id,
+      // })
+        // .getCurrent()
+        // .then((loadedBody) => {
+        //   // Ensure loadedBody has default structure if empty/new
+        //   const ensuredBody: WorkflowBody = {
+        //     id: loadedBody.id || workflow.meta.id || gen.id(), // Use workflow id or generate one
+        //     nodes: loadedBody.nodes || {},
+        //   edges: loadedBody.edges || {},
+        //   viewport: loadedBody.viewport || { x: 0, y: 0, zoom: 1 },
+        // };
+        //   if (isActive) {
+        //     // 检查标记
+        //     CurrentEditWorkflow.set(ensuredBody); // Update the central Echo state
+        //   }
+        // });
     }
 
     return () => {
       isActive = false;
     };
-  }, [workflow.meta.id]);
+  }, []);
 
   const onNodesChange = useCallback((changes: NodeChange[]) => {
-    CurrentEditWorkflow.set((prev) => {
+    // CurrentEditWorkflow.set((prev) => {
       // Get current nodes as WorkflowNode array
-      const currentNodes = Object.values(prev.nodes || {}) as WorkflowNode[];
+      const currentNodes = Object.values({}) as WorkflowNode[];
       // Apply changes
       const nextNodesArray = applyNodeChanges(changes, currentNodes);
       // Convert back to Record<string, WorkflowNode>
@@ -131,13 +129,13 @@ export const FlowProvider = ({ children }: { children: React.ReactNode }) => {
           {} as Record<string, WorkflowNode>,
         ), // Match WorkflowBody.nodes type
       };
-    });
+    // });
   }, []);
 
   const onEdgesChange = useCallback((changes: EdgeChange[]) => {
-    CurrentEditWorkflow.set((prev) => {
+    // CurrentEditWorkflow.set((prev) => {
       // Get current edges as WorkflowEdge array
-      const currentEdges = Object.values(prev.edges || {}) as WorkflowEdge[];
+      const currentEdges = Object.values({}) as WorkflowEdge[];
       // Apply changes
       const nextEdgesArray = applyEdgeChanges(changes, currentEdges);
       // Convert back to Record<string, WorkflowEdge>
@@ -151,7 +149,7 @@ export const FlowProvider = ({ children }: { children: React.ReactNode }) => {
           {} as Record<string, WorkflowEdge>,
         ), // Match WorkflowBody.edges type
       };
-    });
+    // });
   }, []);
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -188,13 +186,6 @@ export const FlowProvider = ({ children }: { children: React.ReactNode }) => {
           },
           data: {} as NodeConfig, // Initialize with empty data or default based on type
         };
-
-        CurrentEditWorkflow.set((prev) => ({
-          nodes: {
-            ...prev.nodes,
-            [newNode.id]: newNode, // Add the correctly typed WorkflowNode
-          },
-        }));
       }
     },
     [screenToFlowPosition],
@@ -203,13 +194,8 @@ export const FlowProvider = ({ children }: { children: React.ReactNode }) => {
   const onMoveEnd = useCallback(
     (_: any, viewport: Viewport) => {
       // Only update viewport, preserve existing nodes/edges
-      CurrentEditWorkflow.set({
-        viewport: {
-          x: viewport.x,
-          y: viewport.y,
-          zoom: viewport.zoom,
-        },
-      });
+      // CurrentEditWorkflow.set({
+      // });
     },
     [], // No dependency on CurrentEditWorkflow setter itself
   );
@@ -240,12 +226,7 @@ export const FlowProvider = ({ children }: { children: React.ReactNode }) => {
         },
       };
 
-      CurrentEditWorkflow.set((prev) => ({
-        edges: {
-          ...prev.edges,
-          [newEdge.id]: newEdge, // Add the correctly typed WorkflowEdge
-        },
-      }));
+      
     },
     [], // No external dependencies needed
   );
@@ -255,43 +236,15 @@ export const FlowProvider = ({ children }: { children: React.ReactNode }) => {
       id: string,
       selector: ((data: T) => Partial<T>) | Partial<T>,
     ) => {
-      CurrentEditWorkflow.set((prev) => {
-        const targetNode = prev.nodes?.[id] as WorkflowNode<T> | undefined; // Cast to access specific data type T
-        if (!targetNode) {
-          console.warn(`[updateNodeData] Node with id ${id} not found.`);
-          return {}; // Return empty update if node not found
-        }
 
-        const updatedData =
-          typeof selector === "function"
-            ? selector(targetNode.data) // No need to cast data here if targetNode is typed correctly
-            : selector;
-
-        // Construct the updated node ensuring it remains a valid WorkflowNode
-        const updatedNode: WorkflowNode = {
-          ...targetNode,
-          data: {
-            ...targetNode.data,
-            ...updatedData,
-          },
-        };
-
-        // Return the partial update for the nodes record
-        return {
-          nodes: {
-            ...prev.nodes,
-            [id]: updatedNode, // Place the updated WorkflowNode back
-          },
-        };
-      });
     },
     [], // No external dependencies needed
   );
 
   // Provide nodes/edges/viewport directly from the central state 'body'
-  const nodes = Object.values(body.nodes || {});
-  const edges = Object.values(body.edges || {});
-  const viewport = body.viewport || { x: 0, y: 0, zoom: 1 };
+  const nodes = [] as WorkflowNode[];
+  const edges = [] as WorkflowEdge[];
+  const viewport = { x: 0, y: 0, zoom: 1 };
 
   const value = {
     nodes, // Use derived array

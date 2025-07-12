@@ -31,3 +31,5 @@ Cargo.lock
 *.css.map
 docs/.vitepress/cache
 deno
+
+ghostie

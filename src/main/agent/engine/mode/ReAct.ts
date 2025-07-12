@@ -2,7 +2,6 @@ import { Agent } from "@/agent/Agent";
 import { ExecuteOptions } from "@/agent/types/agent";
 import { ToolsHandler } from "@/model/chat/ToolsHandler";
 import { MessageItem } from "@/model/types/chatModel";
-import { SettingsManager } from "@/settings/SettingsManager";
 import { Engine } from "../Engine";
 import { EngineManager } from "../EngineManager";
 /* ReAct 引擎 */
@@ -15,11 +14,8 @@ export class ReAct extends Engine {
   async execute(input: string, options?: ExecuteOptions): Promise<MessageItem> {
     try {
       await this.ensureInitialized();
-
       let content = input;
-
       let iterations = 0;
-      let MAX_ITERATIONS = SettingsManager.getReactMaxIterations();
       this.context.pushMessage({
         role: "user",
         content: content,
@@ -28,7 +24,7 @@ export class ReAct extends Engine {
         extra: options?.extra,
       });
       /* 开始迭代 */
-      while (iterations < MAX_ITERATIONS) {
+      while (iterations < 20) {
         iterations++;
         let content = "";
         let reasoner = "";
@@ -102,7 +98,7 @@ export class ReAct extends Engine {
       }
 
       // 如果达到最大迭代次数，生成一个说明
-      if (iterations >= MAX_ITERATIONS) {
+      if (iterations >= 20) {
         this.context.pushMessage({
           role: "user",
           content: "已达到最大迭代次数。基于当前信息，请生成最终总结回应。",

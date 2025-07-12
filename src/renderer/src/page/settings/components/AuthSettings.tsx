@@ -3,21 +3,20 @@ import { FormContainer, FormInput } from "@/components/custom/FormWrapper";
 import { Button } from "@/components/ui/button";
 import { TbLoader2, TbUser } from "react-icons/tb";
 import { SettingItem } from "./SettingItem";
-import { UserMananger } from "../../../services/user/User";
 import { useState } from "react";
 import { cmd } from "@/utils/shell";
 
 export function AuthSettings() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
-  const user = UserMananger.use();
+  const [user, setUser] = useState<any>(null);
 
   const handleLogout = async () => {
     dialog.confirm({
       title: "Logout",
       content: "Are you sure you want to logout?",
       onOk: async () => {
-        await UserMananger.logout();
+        // await UserMananger.logout();
       },
     });
   };
@@ -32,7 +31,7 @@ export function AuthSettings() {
           onSubmit={async (data) => {
             try {
               setIsLoggingIn(true);
-              await UserMananger.login(data.email, data.password);
+              // await UserMananger.login(data.email, data.password);
               close();
             } finally {
               setIsLoggingIn(false);
@@ -90,7 +89,7 @@ export function AuthSettings() {
             }
             try {
               setIsRegistering(true);
-              await UserMananger.register(data.email, data.password);
+              // await UserMananger.register(data.email, data.password);
               close();
             } finally {
               setIsRegistering(false);

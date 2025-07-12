@@ -1,6 +1,6 @@
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
-import { PreferenceList } from "@/components/layout/PreferenceList";
+import { PreferenceSidebar } from "@/components/layout/PreferenceSidebar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -33,46 +33,65 @@ import {
 import { TestDrawer } from "./components/TestDrawer";
 
 import { dialog } from "@/components/custom/DialogModal";
-import { Echoi } from "@/lib/echo/Echo";
-import { ToolkitStore, Toolkit } from "@/toolkit/Toolkit";
 import { javascript } from "@codemirror/lang-javascript";
 import { githubDarkInit } from "@uiw/codemirror-theme-github";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
-import { toJS } from "mobx";
 import * as prettierPluginBabel from "prettier/plugins/babel";
 import * as prettierPluginEstree from "prettier/plugins/estree";
 import { format } from "prettier/standalone";
 import { toast } from "sonner";
 import { NodeDeps } from "./NodeDeps";
-import { ToolkitCloudManager } from "@/cloud/ToolkitCloudManager";
 
-const CurrentPlugin = new Echoi<Toolkit>(new Toolkit());
+// 简化的类型定义
+interface ToolkitProps {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  tools: Array<{ name: string; description: string; }>;
+}
+
+interface Toolkit {
+  props: ToolkitProps;
+  content: string;
+  execute: (tool: string, args: Record<string, unknown>) => Promise<any>;
+  updateContent: (content: string) => void;
+}
+
+// 简化的工具包管理
+const createEmptyToolkit = (): Toolkit => ({
+  props: {
+    id: '',
+    name: 'Unnamed Plugin',
+    description: '',
+    version: '0.0.1',
+    tools: []
+  },
+  content: '',
+  execute: async () => ({}),
+  updateContent: () => {}
+});
 
 export function ToolkitTab() {
-  /* 是否提交中 */
+  /* 状态管理 */
+  const [currentPlugin, setCurrentPlugin] = useState<Toolkit>(createEmptyToolkit());
+  const [plugins, setPlugins] = useState<Record<string, ToolkitProps>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  /* 测试参数 */
   const [testArgs, setTestArgs] = useState<Record<string, unknown>>({});
-  /* 测试工具 */
   const [testTool, setTestTool] = useState<string>("");
-  /* 测试抽屉是否打开 */
   const [isTestDrawerOpen, setIsTestDrawerOpen] = useState(false);
-  /* 测试结果 */
   const [result, setResult] = useState<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  /* 插件是否已在市场中 */
   const [isPluginInMarket, setIsPluginInMarket] = useState(false);
-  /* CodeMirror 实例引用 */
   const editorRef = useRef<ReactCodeMirrorRef>(null);
-  const plugin = CurrentPlugin.use();
-  const plugins = ToolkitStore.use();
-  const props = plugins[plugin.props.id];
-  const content = plugin.content || "";
+
+  const props = plugins[currentPlugin.props.id];
+  const content = currentPlugin.content || "";
 
   // 检查插件是否已在市场中
   useEffect(() => {
     if (props?.id) {
-      ToolkitCloudManager.checkPluginExists(props.id)
+      cmd.invoke("toolkit-market-check-exists", props.id)
         .then((exists) => {
           setIsPluginInMarket(exists);
         })
@@ -88,15 +107,15 @@ export function ToolkitTab() {
   // 处理测试工具变化
   const handleTestToolChange = (value: string) => {
     setTestTool(value);
-    setResult(null); // 重置测试结果
+    setResult(null);
   };
 
   // 测试插件
   const handleTest = async (tool: string) => {
     try {
-      if (!props.id) return;
+      if (!props?.id) return;
       setIsSubmitting(true);
-      const result = await plugin.execute(tool, testArgs);
+      const result = await currentPlugin.execute(tool, testArgs);
       setResult(result);
     } catch (error) {
       console.error(error);
@@ -107,12 +126,13 @@ export function ToolkitTab() {
   };
 
   const handleCreate = useCallback(async () => {
-    const plugin = await Toolkit.create();
-    /* 保存到插件存储 */
-    ToolkitStore.set({
-      [plugin.props.id]: toJS(plugin.props),
-    });
-    CurrentPlugin.set(plugin, { replace: true });
+    const newPlugin = createEmptyToolkit();
+    newPlugin.props.id = `plugin_${Date.now()}`;
+    setPlugins(prev => ({
+      ...prev,
+      [newPlugin.props.id]: newPlugin.props
+    }));
+    setCurrentPlugin(newPlugin);
   }, []);
 
   const handleToggleFullscreen = useCallback(() => {
@@ -120,24 +140,21 @@ export function ToolkitTab() {
   }, [isFullscreen]);
 
   const handleUpload = useCallback(async () => {
-    if (!props.id) return;
+    if (!props?.id) return;
 
-    // 使用状态中的isPluginInMarket值，无需重新查询
     dialog.confirm({
       title: isPluginInMarket ? "更新插件" : "上传插件",
       content: isPluginInMarket
-        ? `您确定要更新插件 "${plugin.props.name}" 吗？这将覆盖市场中的现有版本。`
-        : `您确定要上传插件 "${plugin.props.name}" 到市场吗？`,
+        ? `您确定要更新插件 "${currentPlugin.props.name}" 吗？这将覆盖市场中的现有版本。`
+        : `您确定要上传插件 "${currentPlugin.props.name}" 到市场吗？`,
       onOk: async () => {
         try {
-          await ToolkitCloudManager.uploadToMarket(plugin);
+          await cmd.invoke("toolkit-market-upload", currentPlugin);
 
-          // 根据操作类型显示不同的提示信息
           if (isPluginInMarket) {
             toast.success("插件已成功更新，等待审核");
           } else {
             toast.success("插件已成功上传，等待审核");
-            // 更新状态
             setIsPluginInMarket(true);
           }
         } catch (error) {
@@ -150,7 +167,7 @@ export function ToolkitTab() {
         }
       },
     });
-  }, [props, plugin, isPluginInMarket]);
+  }, [props, currentPlugin, isPluginInMarket]);
 
   // 处理代码格式化
   const handleFormatCode = useCallback(async () => {
@@ -167,7 +184,6 @@ export function ToolkitTab() {
         tabWidth: 2,
       });
 
-      // 更新编辑器内容
       view.dispatch({
         changes: {
           from: 0,
@@ -187,7 +203,7 @@ export function ToolkitTab() {
 
   return (
     <PreferenceLayout>
-      <PreferenceList
+      <PreferenceSidebar
         left={
           <Button onClick={() => NodeDeps.open()} variant="ghost">
             <TbPackage className="w-4 h-4" />
@@ -233,9 +249,9 @@ export function ToolkitTab() {
             </div>
           ),
           onClick: async () => {
-            CurrentPlugin.set(await Toolkit.get(plugin.id), {
-              replace: true,
-            });
+            const toolkit = createEmptyToolkit();
+            toolkit.props = plugin;
+            setCurrentPlugin(toolkit);
           },
           actived: props?.id === plugin.id,
           onRemove: () => {
@@ -243,9 +259,13 @@ export function ToolkitTab() {
               title: "Delete Plugin",
               content: `Are you sure to delete this plugin ${plugin.name}?`,
               onOk() {
-                Toolkit.delete(plugin.id);
+                setPlugins(prev => {
+                  const newPlugins = { ...prev };
+                  delete newPlugins[plugin.id];
+                  return newPlugins;
+                });
                 if (props?.id === plugin.id) {
-                  CurrentPlugin.temporary().reset();
+                  setCurrentPlugin(createEmptyToolkit());
                 }
               },
             });
@@ -289,21 +309,25 @@ export function ToolkitTab() {
               </div>
               <div className="flex items-center gap-2">
                 <Button
-                  onClick={() => {
-                    cmd.invoke("open_url", {
-                      url: "https://ghostie.wangenius.com/docs/guide/plugin",
-                    });
-                  }}
                   variant="ghost"
+                  size="sm"
+                  onClick={() => setIsTestDrawerOpen(true)}
                 >
-                  <TbFileText className="w-4 h-4" />
-                  Documentation
+                  <TbPlayerPlay className="w-4 h-4" />
+                  Test
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleFormatCode}>
+                  <TbCodeAsterisk className="w-4 h-4" />
+                  Format
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleUpload}>
+                  <TbUpload className="w-4 h-4" />
+                  {isPluginInMarket ? "Update" : "Upload"}
                 </Button>
                 <Button
-                  onClick={handleToggleFullscreen}
-                  size="icon"
                   variant="ghost"
-                  title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                  size="sm"
+                  onClick={handleToggleFullscreen}
                 >
                   {isFullscreen ? (
                     <TbMinimize className="w-4 h-4" />
@@ -311,49 +335,6 @@ export function ToolkitTab() {
                     <TbMaximize className="w-4 h-4" />
                   )}
                 </Button>
-                <Button
-                  onClick={() => setIsTestDrawerOpen(true)}
-                  variant="ghost"
-                  size="icon"
-                  title="Test Plugin"
-                >
-                  <TbPlayerPlay className="w-4 h-4" />
-                </Button>
-                <Button
-                  onClick={handleFormatCode}
-                  variant="ghost"
-                  size="icon"
-                  title="Format Code"
-                >
-                  <TbCodeAsterisk className="w-4 h-4" />
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="icon">
-                      <TbDots className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={handleUpload}>
-                      <TbUpload className="w-4 h-4" />
-                      {isPluginInMarket ? "更新到市场" : "上传到市场"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      variant={"destructive"}
-                      onClick={async () => {
-                        const res = await cmd.confirm(
-                          `确认删除${plugin.props.name}?`,
-                        );
-                        if (res) {
-                          Toolkit.delete(plugin.props.id);
-                        }
-                      }}
-                    >
-                      <TbTrash className="size-4" />
-                      delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
             </div>
           }
@@ -402,7 +383,7 @@ export function ToolkitTab() {
               EditorView.lineWrapping,
             ]}
             onChange={(value) => {
-              plugin.updateContent(value.toString());
+              currentPlugin.updateContent(value.toString());
             }}
             placeholder={`Write your plugin code, refer to the development documentation`}
             basicSetup={{
@@ -421,6 +402,7 @@ export function ToolkitTab() {
           />
         </PreferenceBody>
       </motion.div>
+
       <TestDrawer
         open={isTestDrawerOpen}
         onOpenChange={setIsTestDrawerOpen}

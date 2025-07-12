@@ -6,10 +6,6 @@
     "src/renderer/src/**/*.tsx",
     "src/renderer/index.html",
     "src/common/**/*",
-    "src/main/knowledge",
-    "src/main/skills",
-    "src/main/database",
-    "src/main/workflow"
   ],
   "compilerOptions": {
     "composite": true,

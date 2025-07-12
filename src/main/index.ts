@@ -14,6 +14,15 @@ import { Settings } from "./app/Settings";
 import { ipc_handles } from "./ipc";
 import { User } from "./user/User";
 import { SETTINGS_NAV_ITEMS } from "../common/config/nav";
+import { AgentIpcManager } from "./agent/AgentIpcManager";
+
+// 导入模型提供商和引擎模式
+import "./model/chat/provider";
+import "./model/image/provider";
+import "./model/audio/provider";
+import "./model/vision/provider";
+import "./model/embedding/provider";
+import "./agent/engine/mode";
 
 /**
  * 主窗口实例
@@ -39,10 +48,10 @@ export const ProgressState = {
  * 窗口配置常量
  */
 const WINDOW_CONFIG = {
-  width: 1200,
+  width: 800,
   height: 800,
   minHeight: 800,
-  minWidth: 1200,
+  minWidth: 800,
   show: false,
   frame: true,
   titleBarStyle: "hidden",
@@ -291,6 +300,14 @@ function setupPlatformSpecific(): void {
  */
 async function setupIPCHandlers(): Promise<void> {
   ipc_handles();
+  
+  // 初始化 AgentManager
+  const { AgentManager } = await import("./store/AgentManager");
+  await AgentManager.init();
+  
+  // 初始化 Agent IPC 管理器
+  const agentIpcManager = AgentIpcManager.getInstance();
+  await agentIpcManager.initializeGlobalAgent();
 }
 
 /**
@@ -321,7 +338,6 @@ app.whenReady().then(async () => {
     App.setAutoUpdate();
     setupPlatformSpecific();
     electronApp.setAppUserModelId("com.wangenius.ghostie");
-
     app.on("browser-window-created", (_, window) => {
       optimizer.watchWindowShortcuts(window);
     });
@@ -370,6 +386,10 @@ app.on("activate", () => {
  */
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
+  
+  // 清理 Agent IPC 管理器
+  const agentIpcManager = AgentIpcManager.getInstance();
+  agentIpcManager.cleanup();
 });
 
 /**

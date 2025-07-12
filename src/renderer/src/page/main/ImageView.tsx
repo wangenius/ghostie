@@ -1,5 +1,4 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { ImageManager } from "@/resources/Image";
 import { useEffect, useState } from "react";
 
 export const ImageView = ({
@@ -12,9 +11,7 @@ export const ImageView = ({
   const [image, setImage] = useState<string | null>(null);
   useEffect(() => {
     if (selectedImage) {
-      ImageManager.getImageBody(selectedImage).then((image) => {
-        setImage(image);
-      });
+
     }
   }, [selectedImage]);
   return (

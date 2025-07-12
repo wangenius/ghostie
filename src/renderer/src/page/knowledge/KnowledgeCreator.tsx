@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { Knowledge } from "src/main/knowledge/Knowledge";
 import { cmd } from "@/utils/shell";
 import { useState } from "react";
 import {
@@ -78,19 +77,6 @@ export const KnowledgeCreator = ({ close }: { close: () => void }) => {
       setLoading(true);
       setUploadProgress(0);
       setUploadStatus("Preparing to upload...");
-
-      await Knowledge.create(selectedFiles, {
-        /* 知识库名称 */
-        name: knowledgeName,
-        /* 描述 */
-        description,
-        /* 上传进度 */
-        onProgress: (progress) => {
-          setUploadProgress(progress.progress);
-          setUploadStatus(progress.status);
-          setCurrentFile(progress.currentFile);
-        },
-      });
       setSelectedFiles([]);
       setKnowledgeName("");
       close();

@@ -1,4 +1,3 @@
-import { ToolProperty } from "@/toolkit/types";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -9,6 +8,13 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { TbPlus, TbTrash } from "react-icons/tb";
+
+// 简化的类型定义
+interface ToolProperty {
+  type: string;
+  description?: string;
+  properties?: Record<string, ToolProperty>;
+}
 
 interface ParamInputProps {
   property: ToolProperty;

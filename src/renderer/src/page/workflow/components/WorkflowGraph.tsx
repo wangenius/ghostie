@@ -1,4 +1,3 @@
-import { CurrentWorkflow } from "@/workflow/Workflow";
 import { memo, useEffect, useRef, useState } from "react";
 import ReactFlow, { Background, SelectionMode, useReactFlow } from "reactflow";
 import "reactflow/dist/style.css";
@@ -34,7 +33,7 @@ export const WorkflowGraph = memo(
     const isInitialMount = useRef(true);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
     const [isExecuteDrawerOpen, setIsExecuteDrawerOpen] = useState(false);
-    const workflow = CurrentWorkflow.use();
+    const workflow = {};
 
     useEffect(() => {
       if (isInitialMount.current) {

@@ -1,6 +1,6 @@
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
-import { PreferenceList } from "@/components/layout/PreferenceList";
+import { PreferenceSidebar } from "@/components/layout/PreferenceSidebar";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import {
@@ -49,7 +49,7 @@ export const MarketTab = () => {
   return (
     <PreferenceLayout>
       {/* 左侧列表 */}
-      <PreferenceList
+      <PreferenceSidebar
         left={
           <div className="flex items-center gap-2">
             <Button>Explore Market</Button>

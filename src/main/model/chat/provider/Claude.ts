@@ -45,9 +45,9 @@ export class Claude extends ChatModel {
       // 解析Claude的响应格式
       const data = JSON.parse(payload.replace("data: ", ""));
 
-      let content = undefined;
-      let reasoner = undefined;
-      let tool_call = undefined;
+      let content;
+      let reasoner;
+      let tool_call;
 
       // 处理文本内容
       if (data.type === "content_block_delta" && data.delta?.text) {

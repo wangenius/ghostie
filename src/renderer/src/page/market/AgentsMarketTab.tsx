@@ -1,10 +1,7 @@
-import { AgentMarketProps } from "@/agent/types/agent";
-import { AgentCloudManager } from "@/cloud/AgentCloudMananger";
+
 import { dialog } from "@/components/custom/DialogModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserMananger } from "@/services/user/User";
-import { AgentManager } from "@/store/AgentManager";
 import Avatar from "boring-avatars";
 import { useEffect, useState } from "react";
 import {
@@ -20,10 +17,10 @@ import {
 import { toast } from "sonner";
 
 interface AgentDetailsPanelProps {
-  agent: AgentMarketProps;
+  agent: any;
   onClose: () => void;
-  onInstall: (agent: AgentMarketProps) => void;
-  onDelete: (agent: AgentMarketProps) => void;
+  onInstall: (agent: any) => void;
+  onDelete: (agent: any) => void;
   isInstalled: boolean;
   isDeleting: boolean;
   isInstalling: boolean;
@@ -174,21 +171,21 @@ const AgentDetailsPanel = ({
 };
 
 export const AgentsMarketTab = () => {
-  const [agents, setAgents] = useState<AgentMarketProps[]>([]);
+  const [agents, setAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [installing, setInstalling] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const user = UserMananger.use();
-  const CurrentAgents = AgentManager.list.use();
+  const user = null;
+  const CurrentAgents = {};
 
   // 从 Supabase 获取机器人列表 - 分页处理
   const fetchAgents = async (page = 1) => {
     try {
       setLoading(true);
-      const data = await AgentCloudManager.fetchMarketData(page, 10);
+      const data = [];
       setAgents(data);
       setCurrentPage(page);
       // 如果获取的项目数少于itemsPerPage，说明没有下一页
@@ -201,10 +198,9 @@ export const AgentsMarketTab = () => {
   };
 
   // 安装机器人
-  const handleInstall = async (agent: AgentMarketProps) => {
+  const handleInstall = async (agent: any) => {
     try {
       setInstalling(agent.id);
-      await AgentCloudManager.installFromMarket(agent);
       toast.success(`Successfully installed agent: ${agent.name}`);
     } catch (error) {
       console.error("Install agent failed:", error);
@@ -215,10 +211,9 @@ export const AgentsMarketTab = () => {
   };
 
   // 删除机器人
-  const handleDelete = async (agent: AgentMarketProps) => {
+  const handleDelete = async (agent: any) => {
     try {
       setDeleting(agent.id);
-      await AgentCloudManager.uninstallFromMarket(agent.id);
 
       // 更新当前页数据
       fetchAgents(currentPage);
@@ -232,7 +227,7 @@ export const AgentsMarketTab = () => {
   };
 
   // 显示机器人详情
-  const showAgentDetails = (agent: AgentMarketProps) => {
+const showAgentDetails = (agent: any) => {
     dialog({
       title: agent.name,
       description: agent.version,
@@ -246,7 +241,7 @@ export const AgentsMarketTab = () => {
           isInstalled={!!CurrentAgents[agent.id]}
           isDeleting={deleting === agent.id}
           isInstalling={installing === agent.id}
-          isOwner={user?.id === agent.user_id}
+          isOwner={false}
         />
       ),
     });

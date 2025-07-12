@@ -328,6 +328,92 @@ export const pluginFs = {
 };
 
 /**
+ * Agent 功能适配器
+ * 提供 Agent 管理和交互功能
+ */
+export const agent = {
+    /**
+     * 获取 Agent 列表
+     * @returns Promise<Record<string, any>> Agent 列表
+     */
+    getList: async (): Promise<Record<string, any>> => {
+        return (window as any).shell.invoke("agent-list");
+    },
+
+    /**
+     * 创建新的 Agent
+     * @param infos 可选的 Agent 信息
+     * @returns Promise<any> 创建的 Agent 信息
+     */
+    create: async (infos?: any): Promise<any> => {
+        return (window as any).shell.invoke("agent-create", infos);
+    },
+
+    /**
+     * 根据 ID 获取 Agent
+     * @param id Agent ID
+     * @returns Promise<any | null> Agent 信息
+     */
+    getById: async (id: string): Promise<any | null> => {
+        return (window as any).shell.invoke("agent-get-by-id", id);
+    },
+
+    /**
+     * 更新 Agent 信息
+     * @param id Agent ID
+     * @param data 更新数据
+     * @returns Promise<void>
+     */
+    update: async (id: string, data: any): Promise<void> => {
+        return (window as any).shell.invoke("agent-update", id, data);
+    },
+
+    /**
+     * 删除 Agent
+     * @param id Agent ID
+     * @returns Promise<void>
+     */
+    delete: async (id: string): Promise<void> => {
+        return (window as any).shell.invoke("agent-delete", id);
+    },
+
+    /**
+     * Agent 聊天
+     * @param id Agent ID
+     * @param message 消息内容
+     * @param options 聊天选项
+     * @returns Promise<any> 聊天结果
+     */
+    chat: async (id: string, message: string, options?: any): Promise<any> => {
+        return (window as any).shell.invoke("agent-chat", id, message, options);
+    },
+
+    /**
+     * 获取当前 Agent 信息
+     * @returns Promise<any> 当前 Agent 信息
+     */
+    getCurrent: async (): Promise<any> => {
+        return (window as any).shell.invoke("agent-get-current");
+    },
+
+    /**
+     * 停止当前 Agent
+     * @returns Promise<void>
+     */
+    stop: async (): Promise<void> => {
+        return (window as any).shell.invoke("agent-stop");
+    },
+
+    /**
+     * 关闭当前 Agent
+     * @returns Promise<void>
+     */
+    close: async (): Promise<void> => {
+        return (window as any).shell.invoke("agent-close");
+    }
+};
+
+/**
  * 导出所有适配器
  * 保持与 Tauri API 的兼容性
  */

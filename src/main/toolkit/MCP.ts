@@ -1,8 +1,4 @@
-import { Echoi } from "@/lib/echo/Echo";
 import { gen } from "@/utils/generator";
-import { cmd } from "@/utils/shell";
-import { toast } from "sonner";
-export const MCP_DATABASE = "mcp";
 
 export interface MCPTool {
   name: string;
@@ -32,36 +28,13 @@ export interface MCPProps {
 }
 
 /* 当前激活的MCP服务 */
-export const MCP_Actived = new Echoi<Record<string, MCPTool[]>>({});
-
+export const MCP_Actived = {};
 /* 所有的MCP的服务 */
-export const MCPStore = new Echoi<Record<string, MCPProps>>({}).indexed({
-  database: MCP_DATABASE,
-  name: MCP_DATABASE,
-});
+export const MCPStore = {};
 export class MCP {
   props: MCPProps = DEFAULT_MCP;
   constructor(mcp?: Partial<MCPProps>) {
     this.props = { ...DEFAULT_MCP, ...mcp };
-  }
-
-  static {
-    MCPStore.getCurrent().then((mcps) => {
-      for (const mcp of Object.values(mcps)) {
-        const m = new MCP(mcp);
-        try {
-          if (mcp.opened) {
-            m.getInfo();
-          }
-        } catch (error) {
-          console.error(error);
-          m.update({
-            opened: false,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-      }
-    });
   }
 
   /**
@@ -76,10 +49,7 @@ export class MCP {
     /* 创建代理 */
     const mcp = new MCP({ ...props, id });
     console.log(mcp);
-    /* 保存插件 */
-    MCPStore.set({
-      [id]: mcp.props,
-    });
+
     /* 返回代理 */
     return mcp;
   }
@@ -89,13 +59,7 @@ export class MCP {
    * 根据ID获取已有的MCP实例
    */
   static async get(id: string): Promise<MCP> {
-    /* 获取插件 */
-    const mcp = (await MCPStore.getCurrent())[id];
-    /* 如果插件不存在 */
-    if (!mcp) {
-      throw new Error("MCP not found");
-    }
-    const instance = new MCP(mcp);
+    const instance = new MCP(MCPStore[id]);
     /* 返回插件 */
     return instance;
   }
@@ -110,9 +74,7 @@ export class MCP {
     }
     /* 实例 */
     this.props = { ...this.props, ...data };
-    MCPStore.set({
-      [this.props.id]: this.props,
-    });
+
     return this;
   }
 
@@ -120,25 +82,13 @@ export class MCP {
    * 删除插件
    * 从存储中移除MCP实例并停止服务
    */
-  static async delete(id: string) {
-    cmd.invoke("stop_service", {
-      id,
-    });
-    /* 删除插件 */
-    MCPStore.delete(id);
-  }
+  static async delete(id: string) {}
 
   /**
    * 调用工具
    * 执行指定MCP服务中的特定工具
    */
-  run(tool: string, args: Record<string, unknown>) {
-    return cmd.invoke("call_tool", {
-      id: this.props.server,
-      name: tool,
-      args,
-    });
-  }
+  run(tool: string, args: Record<string, unknown>) {}
 
   /**
    * 启动服务
@@ -146,17 +96,12 @@ export class MCP {
    */
   async start() {
     try {
-      await cmd.invoke("start_service", {
-        id: this.props.server,
-        env: this.props.env,
-      });
       this.getInfo();
       this.update({
         opened: true,
       });
     } catch (error) {
       console.error(error);
-      toast.error(error instanceof Error ? error.message : String(error));
       this.update({
         opened: false,
         error: error instanceof Error ? error.message : String(error),
@@ -169,11 +114,7 @@ export class MCP {
    * 终止MCP服务实例
    */
   async stop() {
-    cmd.invoke("stop_service", {
-      id: this.props.server,
-    });
     this.update({ opened: false });
-    MCP_Actived.delete(this.props.id);
   }
 
   /**
@@ -182,16 +123,10 @@ export class MCP {
    */
   async getInfo() {
     try {
-      const result = await cmd.invoke<[string, MCPTool[]]>("get_service_info", {
-        id: this.props.server,
-      });
-      MCP_Actived.set({
-        [this.props.id]: result[1],
-      });
-      return result;
+      MCP_Actived[this.props.id] = [];
+      return [];
     } catch (error) {
       console.error(error);
-      toast.error(error instanceof Error ? error.message : String(error));
       this.update({
         opened: false,
         error: error instanceof Error ? error.message : String(error),

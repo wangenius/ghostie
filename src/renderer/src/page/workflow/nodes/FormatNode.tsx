@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
 import { memo, useCallback, useState } from "react";
 import { NodeProps } from "reactflow";
-import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { useFlow } from "../context/FlowContext";
 import { FormatNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
@@ -59,38 +58,3 @@ const FormatNodeComponent = (props: NodeProps<FormatNodeConfig>) => {
 };
 
 export const FormatNode = memo(FormatNodeComponent);
-
-export class FormatNodeExecutor extends NodeExecutor {
-  public override async execute(inputs: Record<string, any>) {
-    try {
-      const formatConfig = this.node.data as FormatNodeConfig;
-      const content = this.parseTextFromInputs(
-        formatConfig.content || "",
-        inputs,
-      );
-      this.updateNodeState({
-        status: "running",
-        startTime: new Date().toISOString(),
-        inputs,
-      });
-
-      this.updateNodeState({
-        status: "completed",
-        outputs: {
-          result: content,
-        },
-      });
-
-      return {
-        success: true,
-        data: {
-          result: content,
-        },
-      };
-    } catch (error) {
-      return this.createErrorResult(error);
-    }
-  }
-}
-
-NodeExecutor.register("format", FormatNodeExecutor);

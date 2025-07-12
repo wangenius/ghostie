@@ -1,10 +1,12 @@
 import { Slider } from "@/components/ui/slider";
 import { TbArrowIteration, TbHistory } from "react-icons/tb";
 import { SettingItem } from "./SettingItem";
-import { SettingsManager } from "../../../settings/SettingsManager";
 
 export function ReactMaxIterationsSettings() {
-  const settings = SettingsManager.use();
+  const settings = {
+    reActMaxIterations: 5,
+    maxHistory: 20,
+  };
 
   return (
     <SettingItem
@@ -16,7 +18,7 @@ export function ReactMaxIterationsSettings() {
         <Slider
           value={[settings.reActMaxIterations]}
           onValueChange={(value) => {
-            SettingsManager.setReactMaxIterations(value[0]);
+            // SettingsManager.setReactMaxIterations(value[0]);
           }}
           min={5}
           max={20}
@@ -29,7 +31,9 @@ export function ReactMaxIterationsSettings() {
 }
 
 export function MaxHistorySettings() {
-  const settings = SettingsManager.use();
+  const settings = {
+    maxHistory: 20,
+  };
 
   return (
     <SettingItem
@@ -41,7 +45,7 @@ export function MaxHistorySettings() {
         <Slider
           value={[settings.maxHistory]}
           onValueChange={(value) => {
-            SettingsManager.setMaxHistory(value[0]);
+            // SettingsManager.setMaxHistory(value[0]);
           }}
           min={20}
           max={120}

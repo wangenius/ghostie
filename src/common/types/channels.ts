@@ -43,7 +43,21 @@ export type InvokeChannels =
     | "open-window"
     | "hide-window"
     | "setup-menu"
-    | "toggle-tab";
+    | "toggle-tab"
+    | "agent-list"
+    | "agent-create"
+    | "agent-get-by-id"
+    | "agent-update"
+    | "agent-delete"
+    | "agent-chat"
+    | "agent-get-current"
+    | "agent-stop"
+    | "agent-close"
+    | "toolkit-market-fetch"
+    | "toolkit-market-install"
+    | "toolkit-market-uninstall"
+    | "toolkit-market-check-exists"
+    | "toolkit-market-upload";
 
 /**
  * send 通道类型
@@ -96,6 +110,20 @@ export type InvokeParamsMap = {
     "hide-window": [];
     "setup-menu": [any];
     "toggle-tab": [string];
+    "agent-list": [];
+    "agent-create": [any?];
+    "agent-get-by-id": [string];
+    "agent-update": [string, any];
+    "agent-delete": [string];
+    "agent-chat": [string, string, any?];
+    "agent-get-current": [];
+    "agent-stop": [];
+    "agent-close": [];
+    "toolkit-market-fetch": [number, number];
+    "toolkit-market-install": [any];
+    "toolkit-market-uninstall": [string];
+    "toolkit-market-check-exists": [string];
+    "toolkit-market-upload": [any];
 };
 
 /**
@@ -139,6 +167,20 @@ export type InvokeReturnMap = {
     "hide-window": void;
     "setup-menu": void;
     "toggle-tab": void;
+    "agent-list": Record<string, any>;
+    "agent-create": any;
+    "agent-get-by-id": any | null;
+    "agent-update": void;
+    "agent-delete": void;
+    "agent-chat": any;
+    "agent-get-current": any;
+    "agent-stop": void;
+    "agent-close": void;
+    "toolkit-market-fetch": any[];
+    "toolkit-market-install": any;
+    "toolkit-market-uninstall": void;
+    "toolkit-market-check-exists": boolean;
+    "toolkit-market-upload": void;
 };
 
 /**
@@ -198,7 +240,21 @@ export const validChannels = {
         "open-window",
         "hide-window",
         "setup-menu",
-        "toggle-tab"
+        "toggle-tab",
+        "agent-list",
+        "agent-create",
+        "agent-get-by-id",
+        "agent-update",
+        "agent-delete",
+        "agent-chat",
+        "agent-get-current",
+        "agent-stop",
+        "agent-close",
+        "toolkit-market-fetch",
+        "toolkit-market-install",
+        "toolkit-market-uninstall",
+        "toolkit-market-check-exists",
+        "toolkit-market-upload"
     ] as const,
     send: ["notification"] as const,
     on: ["update-available", "update-downloaded", "switch-tab"] as const

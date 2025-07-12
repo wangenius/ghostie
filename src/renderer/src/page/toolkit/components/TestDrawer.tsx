@@ -1,10 +1,24 @@
-import { ToolkitProps } from "@/toolkit/types";
 import JsonViewer from "@/components/custom/JsonViewer";
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
 import { TbLoader2, TbPlayerPlay } from "react-icons/tb";
 import { ParamInput } from "./ParamInput";
 import { CustomSelect } from "@/components/ui/custom-select";
+
+// 简化的类型定义
+interface ToolkitProps {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  tools: Array<{ 
+    name: string; 
+    description: string; 
+    parameters?: {
+      properties?: Record<string, any>;
+    };
+  }>;
+}
 
 interface TestDrawerProps {
   open: boolean;

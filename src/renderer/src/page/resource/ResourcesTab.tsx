@@ -1,26 +1,25 @@
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
-import { PreferenceList } from "@/components/layout/PreferenceList";
+import { PreferenceSidebar } from "@/components/layout/PreferenceSidebar";
 import { Button } from "@/components/ui/button";
 import { ImageView } from "@/page/main/ImageView";
-import { ImageManager, ImagesStore } from "@/resources/Image";
 import { useState } from "react";
 import { TbMaximize, TbPhoto, TbTrash } from "react-icons/tb";
 import { toast } from "sonner";
 
 export function ResourcesTab() {
-  const images = ImagesStore.use();
+  const images = {};
   const imagesList = Object.keys(images);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const handleDeleteImage = async (id: string) => {
-    await ImageManager.deleteImage(id);
+    // await ImageManager.deleteImage(id);
   };
 
   return (
     <PreferenceLayout>
       {/* 侧边栏 - 表列表 */}
-      <PreferenceList
+      <PreferenceSidebar
         items={[
           {
             id: "images",

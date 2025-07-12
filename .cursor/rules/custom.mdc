@@ -5,3 +5,5 @@ alwaysApply: true
 2. 前端在 renderer中，后端在main中。 common中是共用的types。
 3. echo是前端的hook，不应该在后端使用。
 4. 业务逻辑层在后端。
+5. 前端使用 shadcn的组件。
+6. ghostie目录下是原本旧的方案（不需要再维护），使用tauri完成的。 在前端的UI和交互上，你应该参考。

@@ -49,7 +49,7 @@ export const TypeArea = memo(
     loading?: boolean;
   }) => {
     return (
-      <div className="flex flex-col relative h-[120px] bg-muted rounded-2xl">
+      <div className="flex flex-col relative h-[120px] border rounded-2xl">
         <div
           className={cn(
             "flex flex-1 flex-col relative overflow-y-auto px-3 py-2",
@@ -64,7 +64,7 @@ export const TypeArea = memo(
             placeholder="use @ to call agent & ctrl + enter to send"
             extensions={[
               <HashDrop key="hash_drop_menu" />,
-              <MentionDrop key="mention_at_drop_menu" />,
+              <MentionDrop key="mention_at_drop_menu" mentions={[]} />,
             ]}
           />
         </div>

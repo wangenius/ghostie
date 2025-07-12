@@ -2,7 +2,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { memo, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
-import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
 import { EndNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 
@@ -32,29 +31,4 @@ const EndNodeComponent = (props: NodeProps<EndNodeConfig>) => {
 
 export const EndNode = memo(EndNodeComponent);
 
-export class EndNodeExecutor extends NodeExecutor {
-  public override async execute(inputs: Record<string, any>) {
-    this.updateNodeState({
-      status: "running",
-      startTime: new Date().toISOString(),
-      inputs,
-    });
 
-    const content = this.node.data as EndNodeConfig;
-
-    const contentText = this.parseTextFromInputs(content.content || "", inputs);
-
-    this.updateNodeState({
-      status: "completed",
-      outputs: {
-        result: contentText,
-      },
-    });
-    return {
-      success: true,
-      data: contentText,
-    };
-  }
-}
-
-NodeExecutor.register("end", EndNodeExecutor);

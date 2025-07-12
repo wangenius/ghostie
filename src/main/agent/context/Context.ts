@@ -1,8 +1,5 @@
-import { CONTEXT_RUNTIME_DATABASE } from "@/assets/const";
-import { Echoi } from "@/lib/echo/Echo";
 import { CompletionMessage, MessageItem } from "@/model/types/chatModel";
 import { gen } from "@/utils/generator";
-import { makeAutoObservable, reaction, toJS } from "mobx";
 import { Agent } from "../Agent";
 import { ContextMemory } from "./Memory";
 /* 上下文 */
@@ -23,17 +20,12 @@ export class Context {
   memory: ContextMemory;
   /** 运行时上下文 */
   runtime: ContextRuntimeProps;
-  echo: Echoi<Record<string, ContextRuntimeProps>>;
   /**
    * 构造函数
    */
   private constructor(agent: Agent) {
     this.agent = agent;
     this.memory = new ContextMemory();
-    this.echo = Echoi.get({
-      database: CONTEXT_RUNTIME_DATABASE,
-      name: agent.infos.id,
-    });
     this.runtime = {
       id: gen.id(),
       messages: [],
@@ -45,15 +37,7 @@ export class Context {
       created_at: Date.now(),
       updated_at: Date.now(),
     };
-    makeAutoObservable(this);
-    reaction(
-      () => this.runtime,
-      () => {
-        if (this.runtime.messages.length > 0) {
-          this.echo.ready({ [this.runtime.id]: toJS(this.runtime) });
-        }
-      },
-    );
+
   }
 
   setRuntime(runtime?: ContextRuntimeProps) {

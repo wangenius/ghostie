@@ -1,11 +1,5 @@
-import { TOOLKIT_DATABASE_INDEX } from "@/assets/const";
-import { Echoi } from "@/lib/echo/Echo";
-import { ImageManager } from "@/resources/Image";
 import { ToolkitProps } from "@/toolkit/types";
 import { gen } from "@/utils/generator";
-import { cmd } from "@/utils/shell";
-import { Echo } from "echo-state";
-import { makeAutoObservable, toJS } from "mobx";
 import ts from "typescript";
 import { parsePluginFromString } from "./parser";
 
@@ -18,16 +12,7 @@ export const DEFAULT_TOOLKIT: ToolkitProps = {
   version: "0.0.1",
 };
 
-// 插件存储
-export const ToolkitStore = new Echoi<Record<string, ToolkitProps>>({}).indexed(
-  {
-    database: TOOLKIT_DATABASE_INDEX,
-    name: "plugins",
-  },
-);
-
-// 当前选中的插件ID
-export const CurrentToolkitId = new Echoi<string>("");
+export const ToolkitStore = {};
 
 export class Toolkit {
   props: ToolkitProps = DEFAULT_TOOLKIT;
@@ -40,7 +25,6 @@ export class Toolkit {
  * @name write the plugin name here
  * @description write the plugin description here
  */`;
-    makeAutoObservable(this);
   }
 
   /** 创建插件或者获取插件 */
@@ -53,20 +37,9 @@ export class Toolkit {
 
       /* 从后端文件系统获取内容 */
       try {
-        const content = await cmd.invoke<string>("plugin-get-content", { id });
-        if (content) {
-          plugin.content = content;
-        } else {
-          await cmd.invoke("plugin-save-content", {
-            id: plugin.props.id,
-            content: plugin.content,
-          });
-        }
+       
       } catch (error) {
-        await cmd.invoke("plugin-save-content", {
-          id: plugin.props.id,
-          content: plugin.content,
-        });
+       
       }
 
       return plugin;
@@ -81,19 +54,15 @@ export class Toolkit {
    */
   static async get(id: string): Promise<Toolkit> {
     /* 获取插件 */
-    const plugin = await ToolkitStore.getValue(id);
     /* 如果插件不存在 */
-    if (!plugin) {
+    if (!ToolkitStore[id]) {
       throw new Error("Plugin not found");
     }
-    const plug = new Toolkit(plugin);
+    const plug = new Toolkit(ToolkitStore[id]);
 
     /* 从后端文件系统获取内容 */
     try {
-      const content = await cmd.invoke<string>("plugin-get-content", { id });
-      if (content) {
-        plug.content = content;
-      }
+     
     } catch (error) {
       console.error("Failed to get plugin content:", error);
     }
@@ -107,9 +76,6 @@ export class Toolkit {
     if (!this.props.id) return this;
 
     this.props = { ...this.props, ...data };
-    ToolkitStore.set({
-      [this.props.id]: toJS(this.props),
-    });
     return this;
   }
 
@@ -142,10 +108,7 @@ export class Toolkit {
 
     try {
       // 保存内容到后端文件系统
-      await cmd.invoke("plugin-save-content", {
-        id: this.props.id,
-        content: content,
-      });
+     
 
       this.content = content;
 
@@ -173,17 +136,6 @@ export class Toolkit {
   /** 删除插件 */
   static async delete(id: string) {
     try {
-      // 删除插件存储
-      ToolkitStore.delete(id);
-
-      // 删除插件文件
-      await cmd.invoke("plugin-delete", { id });
-
-      // 如果是当前插件，重置当前插件ID
-      const currentId = CurrentToolkitId.current;
-      if (currentId === id) {
-        CurrentToolkitId.set("");
-      }
     } catch (error) {
       console.error("Failed to delete plugin:", error);
       throw error;
@@ -196,9 +148,7 @@ export class Toolkit {
   async execute(tool: string, args: Record<string, unknown>) {
     try {
       // 获取插件内容（从后端获取最新内容）
-      const tsContent = await cmd.invoke<string>("plugin-get-content", {
-        id: this.props.id,
-      });
+      const tsContent = this.content;
 
       // 替换__DB__表达式
       let processedContent = await this.replaceDBExpressions(tsContent);
@@ -209,11 +159,7 @@ export class Toolkit {
       const jsContent = this.compileTypeScriptToJavaScript(processedContent);
 
       // 调用后端执行JavaScript代码
-      const result = await cmd.invoke("plugin-execute", {
-        content: jsContent,
-        tool: tool,
-        args: args,
-      });
+      const result = {};    
       return result;
     } catch (error) {
       console.error(error);
@@ -259,22 +205,9 @@ export class Toolkit {
         // 提取过滤表达式 - 在逗号后面，右括号前面
         const filterExpr = script.substring(commaPos + 1, endPos - 1).trim();
 
-        // 安全地获取数据表内容
-        const tableData = await Echo.get<Record<string, any>>({
-          database: "TABLE_DATA",
-          name: tableId,
-        }).getCurrent();
-
         let value: Record<string, any>[] = [];
 
         try {
-          // 将tableData转换为数组
-          const dataArray = Array.isArray(tableData)
-            ? tableData
-            : tableData && typeof tableData === "object"
-              ? Object.values(tableData)
-              : [];
-
           // 创建并执行过滤函数
           const filterFnBody = `
             try {
@@ -285,22 +218,10 @@ export class Toolkit {
             }
           `;
 
-          // 创建并执行过滤函数
-          const filterFn = new Function("dataArray", filterFnBody);
-          value = filterFn(dataArray);
-
-          // 确保结果是数组
-          if (!Array.isArray(value)) {
-            value = Array.isArray(dataArray) ? dataArray : [dataArray];
-          }
+         
         } catch (e) {
           console.error("构建或执行过滤函数失败:", e);
-          // 如果出错，返回原始数据
-          value = Array.isArray(tableData)
-            ? tableData
-            : tableData && typeof tableData === "object"
-              ? [tableData]
-              : [];
+         
         }
 
         const serialized = JSON.stringify(value, null, 2);
@@ -328,8 +249,8 @@ export class Toolkit {
     }
     for (const { fullMatch, id } of matches) {
       try {
-        const base64 = await ImageManager.getImageBody(id);
-        result = result.replace(fullMatch, `"${base64}"`);
+        // const base64 = await ImageManager.getImageBody(id);
+        // result = result.replace(fullMatch, `"${base64}"`);
       } catch (err) {
         console.error(`处理__IMAGE__表达式失败:`, err);
         result = result.replace(fullMatch, "");

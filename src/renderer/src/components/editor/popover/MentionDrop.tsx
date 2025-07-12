@@ -1,7 +1,6 @@
 import { Menu, MenuItemProps } from "@/components/ui/menu";
 
 import { Positioner } from "@/components/editor/position";
-import { AgentManager } from "@/store/AgentManager";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TbGhost3 } from "react-icons/tb";
 import { Editor, Range, Transforms } from "slate";
@@ -9,23 +8,19 @@ import { useSlate } from "slate-react";
 import { Portal } from ".";
 import { insertMention } from "../elements/mention";
 
+interface Mention {
+  name: string;
+  id: string;
+}
+
 /** 目标提及下拉菜单 */
-export const MentionDrop = () => {
+export const MentionDrop = ({ mentions }: { mentions: Mention[] }) => {
   const editor = useSlate();
   const [actantRange, setActantRange] = useState<Range | null>(null);
   const [focusIndex, setFocusIndex] = useState(0);
   const [searchText, setSearchText] = useState("");
   const menuRef = useRef<HTMLDivElement | null>(null);
-
-  const agents = AgentManager.list.use();
-
   const position = Positioner.range(editor, actantRange, menuRef);
-
-  const filteredMentions = Object.values(agents || {})
-    .filter(
-      (m) => m.name?.toLowerCase().includes(searchText.toLowerCase()) && m.name,
-    )
-    .slice(0, 5);
 
   useEffect(() => {
     const { selection } = editor;
@@ -67,34 +62,32 @@ export const MentionDrop = () => {
   }, [editor.selection]);
 
   useEffect(() => {
-    if (actantRange && filteredMentions.length > 0 && menuRef.current) {
+    if (actantRange && mentions.length > 0 && menuRef.current) {
       const position = Positioner.range(editor, actantRange, menuRef);
       if (position) {
         Object.assign(menuRef.current.style, position);
       }
     }
-  }, [actantRange, filteredMentions.length, position]);
+  }, [actantRange, mentions.length, position]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      if (!actantRange || filteredMentions.length === 0) return;
+      if (!actantRange || mentions.length === 0) return;
 
       switch (event.key) {
         case "ArrowDown":
           event.preventDefault();
-          setFocusIndex((i) => (i + 1) % filteredMentions.length);
+          setFocusIndex((i) => (i + 1) % mentions.length);
           break;
         case "ArrowUp":
           event.preventDefault();
-          setFocusIndex(
-            (i) => (i - 1 + filteredMentions.length) % filteredMentions.length,
-          );
+          setFocusIndex((i) => (i - 1 + mentions.length) % mentions.length);
           break;
         case "Enter":
         case "Tab":
           event.preventDefault();
           Transforms.select(editor, actantRange);
-          insertMention(editor, filteredMentions[focusIndex]);
+          insertMention(editor, mentions[focusIndex]);
           Transforms.insertText(editor, "");
           setActantRange(null);
           break;
@@ -104,7 +97,7 @@ export const MentionDrop = () => {
           break;
       }
     },
-    [editor, actantRange, filteredMentions, focusIndex],
+    [editor, actantRange, mentions, focusIndex],
   );
 
   useEffect(() => {
@@ -115,7 +108,7 @@ export const MentionDrop = () => {
     return;
   }, [handleKeyDown, actantRange]);
 
-  if (!actantRange || filteredMentions.length === 0) return null;
+  if (!actantRange || mentions.length === 0) return null;
 
   return (
     <Portal>
@@ -125,7 +118,7 @@ export const MentionDrop = () => {
       >
         <Menu
           items={[
-            ...filteredMentions.map((mention, i) => {
+            ...mentions.map((mention, i) => {
               return {
                 label: mention.name,
                 icon: TbGhost3,

@@ -1,9 +1,8 @@
 import { TabListItem } from "@/components/custom/TabListItem";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
-import { PreferenceList } from "@/components/layout/PreferenceList";
+import { PreferenceSidebar } from "@/components/layout/PreferenceSidebar";
 import { Button } from "@/components/ui/button";
-import { Echoi } from "@/lib/echo/Echo";
 import { cn } from "@/lib/utils";
 import {
   TbBook,
@@ -33,6 +32,7 @@ import {
   UpdateSettings,
 } from "./components/SystemSettings";
 import ShortcutsTab from "./ShortcutsTab";
+import { useState } from "react";
 
 const items = [
   {
@@ -75,13 +75,12 @@ const items = [
   },
 ];
 
-const CurrentItem = new Echoi<string>("account");
 
 export function GeneralSettingsPage() {
-  const currentItem = CurrentItem.use();
+  const [currentItem, setCurrentItem] = useState<string>("account");
   return (
     <PreferenceLayout>
-      <PreferenceList
+      <PreferenceSidebar
         left={<Button>Settings</Button>}
         items={items.map((item) => ({
           id: item.name,
@@ -93,7 +92,7 @@ export function GeneralSettingsPage() {
             />
           ),
           onClick: async () => {
-            CurrentItem.set(item.name);
+            setCurrentItem(item.name);
           },
           actived: item.name === currentItem,
           noRemove: true,

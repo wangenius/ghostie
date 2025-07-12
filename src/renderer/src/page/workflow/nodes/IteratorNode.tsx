@@ -3,15 +3,19 @@ import { Input } from "@/components/ui/input";
 import { memo, useState } from "react";
 import { NodeProps } from "reactflow";
 import { useFlow } from "../context/FlowContext";
-import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
-import { CurrentWorkflow } from "@/workflow/Workflow";
 import { IteratorNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
-import { Workflow, WorkflowsStore } from "@/workflow/Workflow";
+
 const IteratorNodeComponent = (props: NodeProps<IteratorNodeConfig>) => {
   const [content, setContent] = useState(props.data.target || "");
-  const workflows = WorkflowsStore.use();
-  const id = CurrentWorkflow.use((selector) => selector.meta.id);
+  const workflows = {
+    "1": {
+      id: "1",
+      name: "Workflow 1",
+      description: "Workflow 1 description",
+    },
+  };
+  const id = "";
   const { updateNodeData } = useFlow();
   const handleTargetChange = (value: string) => {
     setContent(value);
@@ -58,80 +62,3 @@ const IteratorNodeComponent = (props: NodeProps<IteratorNodeConfig>) => {
 };
 
 export const IteratorNode = memo(IteratorNodeComponent);
-
-export class IteratorNodeExecutor extends NodeExecutor {
-  public override async execute(inputs: Record<string, any>) {
-    this.updateNodeState({
-      status: "running",
-      startTime: new Date().toISOString(),
-      inputs: inputs || {},
-    });
-    const { target, action } = this.node.data as IteratorNodeConfig;
-    const workflow = await Workflow.get(action);
-
-    let content = this.parseTextFromInputs(target, inputs);
-    content = `{ "result": ${content} }`;
-    let body: { result: any; collected: any[] } = {
-      result: null,
-      collected: [],
-    };
-
-    try {
-      const parsed = JSON.parse(content);
-
-      body.result = parsed.result;
-    } catch (error) {
-      return {
-        success: false,
-        data: {},
-        error: "Iteration object format error",
-      };
-    }
-
-    // 如果 result 不是数组或对象，返回错误
-    if (typeof body.result !== "object" || body.result === null) {
-      return {
-        success: false,
-        data: {},
-        error: "Iteration object must be an array or object",
-      };
-    }
-
-    // 将对象或数组转换为可迭代的数组
-    const items = Array.isArray(body.result)
-      ? body.result
-      : Object.entries(body.result).map(([key, value]) => ({ key, value }));
-
-    for (const item of items) {
-      if (typeof item !== "object") {
-        return {
-          success: false,
-          data: {},
-          error: "Iteration item must be an object type",
-        };
-      }
-      const result = await workflow.execute(item);
-
-      if (result.success) {
-        body.collected.push(result.data);
-      }
-    }
-
-    this.updateNodeState({
-      status: "completed",
-      endTime: new Date().toISOString(),
-      outputs: {
-        result: body.collected,
-      },
-    });
-
-    return {
-      success: true,
-      data: {
-        result: body.collected,
-      },
-    };
-  }
-}
-
-NodeExecutor.register("iterator", IteratorNodeExecutor);

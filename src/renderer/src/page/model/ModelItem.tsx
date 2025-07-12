@@ -1,18 +1,12 @@
 import { Input } from "@/components/ui/input";
-import {
-  ChatModelManager,
-  ChatModelProvider,
-} from "@/model/chat/ChatModelManager";
 import { memo } from "react";
-import { ModelKey } from "../../model/key/ModelKey";
-import { ModelProvider, ModelProviderList } from "../../model/types/model";
 export const ModelItem = memo(
   ({
     model,
     providers,
   }: {
-    model: ChatModelProvider;
-    providers: ModelProviderList<ModelProvider>;
+    model: any;
+    providers: any;
   }) => {
     // 获取当前提供商支持的模型列表
     const currentProvider = model.name;
@@ -20,7 +14,7 @@ export const ModelItem = memo(
       ? Object.values(providers[currentProvider].models) || []
       : [];
 
-    const keys = ModelKey.use();
+    const keys = {};
 
     return (
       <div className="flex-1 overflow-y-auto">
@@ -54,9 +48,9 @@ export const ModelItem = memo(
                 type="password"
                 spellCheck={false}
                 value={keys[currentProvider] || ""}
-                onChange={(e) =>
-                  ChatModelManager.setApiKey(currentProvider, e.target.value)
-                }
+                onChange={(e) => {
+                  // ChatModelManager.setApiKey(currentProvider, e.target.value)
+                }}
                 placeholder="if you need to update the API key, please enter the new value"
                 className="font-mono h-10"
               />
@@ -68,7 +62,7 @@ export const ModelItem = memo(
                     Models
                   </label>
                   <div className="space-y-3">
-                    {supportedModels.map((modelInfo) => (
+                    {supportedModels.map((modelInfo: any) => (
                       <div
                         key={modelInfo.name}
                         className="rounded-lg bg-muted p-3 border-border"

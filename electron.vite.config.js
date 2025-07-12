@@ -13,6 +13,7 @@ export default defineConfig({
         ],
         resolve: {
             alias: {
+                "@": resolve("src/main"),
                 "@common": resolve("src/common")
             }
         }

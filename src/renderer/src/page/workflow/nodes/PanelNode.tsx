@@ -2,14 +2,18 @@ import JsonViewer from "@/components/custom/JsonViewer";
 import { memo, useMemo } from "react";
 import { TbCircleX } from "react-icons/tb";
 import { NodeProps } from "reactflow";
-import { NodeExecutor } from "../../../../../main/workflow/execute/NodeExecutor";
-import { CurrentWorkflow } from "@/workflow/Workflow";
 import { PanelNodeConfig } from "../types/nodes";
 import { NodePortal } from "./NodePortal";
 
 const PanelNodeComponent = (props: NodeProps<PanelNodeConfig>) => {
-  const workflow = CurrentWorkflow.use();
-  const workflowState = workflow.executor.use((selector) => selector[props.id]);
+  const workflow = {};
+  const workflowState = {
+    status: "completed",
+    outputs: {
+      result: "1",
+    },
+    error: "1",
+  };
 
   const renderOutputs = useMemo(() => {
     if (workflowState?.status === "completed") {
@@ -63,31 +67,3 @@ const PanelNodeComponent = (props: NodeProps<PanelNodeConfig>) => {
 };
 
 export const PanelNode = memo(PanelNodeComponent);
-
-export class PanelNodeExecutor extends NodeExecutor {
-  public override async execute(inputs: Record<string, any>) {
-    try {
-      this.updateNodeState({
-        status: "running",
-        startTime: new Date().toISOString(),
-        inputs,
-      });
-
-      this.updateNodeState({
-        status: "completed",
-        outputs: inputs,
-      });
-
-      return {
-        success: true,
-        data: {
-          result: inputs,
-        },
-      };
-    } catch (error) {
-      return this.createErrorResult(error);
-    }
-  }
-}
-
-NodeExecutor.register("panel", PanelNodeExecutor);
