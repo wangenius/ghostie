@@ -308,6 +308,10 @@ async function setupIPCHandlers(): Promise<void> {
   // 初始化 Agent IPC 管理器
   const agentIpcManager = AgentIpcManager.getInstance();
   await agentIpcManager.initializeGlobalAgent();
+  
+  // 初始化 Model IPC 管理器
+  const { ModelIpcManager } = await import("./model/ModelIpcManager");
+  ModelIpcManager.getInstance();
 }
 
 /**
@@ -390,6 +394,11 @@ app.on("will-quit", () => {
   // 清理 Agent IPC 管理器
   const agentIpcManager = AgentIpcManager.getInstance();
   agentIpcManager.cleanup();
+  
+  // 清理 Model IPC 管理器
+  const { ModelIpcManager } = require("./model/ModelIpcManager");
+  const modelIpcManager = ModelIpcManager.getInstance();
+  modelIpcManager.cleanup();
 });
 
 /**

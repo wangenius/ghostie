@@ -57,7 +57,14 @@ export type InvokeChannels =
     | "toolkit-market-install"
     | "toolkit-market-uninstall"
     | "toolkit-market-check-exists"
-    | "toolkit-market-upload";
+    | "toolkit-market-upload"
+    | "model_get_chat_providers"
+    | "model_get_image_providers"
+    | "model_get_audio_providers"
+    | "model_get_vision_providers"
+    | "model_get_embedding_providers"
+    | "model_get_api_key"
+    | "model_set_api_key";
 
 /**
  * send 通道类型
@@ -124,6 +131,13 @@ export type InvokeParamsMap = {
     "toolkit-market-uninstall": [string];
     "toolkit-market-check-exists": [string];
     "toolkit-market-upload": [any];
+    "model_get_chat_providers": [];
+    "model_get_image_providers": [];
+    "model_get_audio_providers": [];
+    "model_get_vision_providers": [];
+    "model_get_embedding_providers": [];
+    "model_get_api_key": [string];
+    "model_set_api_key": [string, string];
 };
 
 /**
@@ -181,6 +195,13 @@ export type InvokeReturnMap = {
     "toolkit-market-uninstall": void;
     "toolkit-market-check-exists": boolean;
     "toolkit-market-upload": void;
+    "model_get_chat_providers": any;
+    "model_get_image_providers": any;
+    "model_get_audio_providers": any;
+    "model_get_vision_providers": any;
+    "model_get_embedding_providers": any;
+    "model_get_api_key": string;
+    "model_set_api_key": void;
 };
 
 /**
@@ -254,7 +275,14 @@ export const validChannels = {
         "toolkit-market-install",
         "toolkit-market-uninstall",
         "toolkit-market-check-exists",
-        "toolkit-market-upload"
+        "toolkit-market-upload",
+        "model_get_chat_providers",
+        "model_get_image_providers",
+        "model_get_audio_providers",
+        "model_get_vision_providers",
+        "model_get_embedding_providers",
+        "model_get_api_key",
+        "model_set_api_key"
     ] as const,
     send: ["notification"] as const,
     on: ["update-available", "update-downloaded", "switch-tab"] as const

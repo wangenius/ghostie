@@ -1,20 +1,58 @@
 import { Input } from "@/components/ui/input";
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
+
 export const ModelItem = memo(
   ({
     model,
     providers,
+    getApiKey,
+    setApiKey,
   }: {
     model: any;
     providers: any;
+    getApiKey?: (provider: string) => Promise<string>;
+    setApiKey?: (provider: string, key: string) => Promise<void>;
   }) => {
     // 获取当前提供商支持的模型列表
     const currentProvider = model.name;
     const supportedModels = currentProvider
-      ? Object.values(providers[currentProvider].models) || []
+      ? Object.values(providers[currentProvider]?.models || {})
       : [];
 
-    const keys = {};
+    const [apiKey, setApiKeyState] = useState<string>("");
+    const [isLoading, setIsLoading] = useState(false);
+
+    // 获取API密钥
+    useEffect(() => {
+      const fetchApiKey = async () => {
+        if (getApiKey && currentProvider) {
+          try {
+            const key = await getApiKey(currentProvider);
+            setApiKeyState(key);
+          } catch (error) {
+            console.error("获取API密钥失败:", error);
+          }
+        }
+      };
+
+      fetchApiKey();
+    }, [currentProvider, getApiKey]);
+
+    // 处理API密钥变更
+    const handleApiKeyChange = async (value: string) => {
+      setApiKeyState(value);
+      
+      if (setApiKey && currentProvider) {
+        try {
+          setIsLoading(true);
+          await setApiKey(currentProvider, value);
+        } catch (error) {
+          console.error("设置API密钥失败:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
 
     return (
       <div className="flex-1 overflow-y-auto">
@@ -47,12 +85,11 @@ export const ModelItem = memo(
               <Input
                 type="password"
                 spellCheck={false}
-                value={keys[currentProvider] || ""}
-                onChange={(e) => {
-                  // ChatModelManager.setApiKey(currentProvider, e.target.value)
-                }}
+                value={apiKey}
+                onChange={(e) => handleApiKeyChange(e.target.value)}
                 placeholder="if you need to update the API key, please enter the new value"
                 className="font-mono h-10"
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-3 rounded-lg">

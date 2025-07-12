@@ -366,7 +366,7 @@ export function ConfigDirSettings() {
       title="Local Configuration File Directory"
       action={
         <Button
-          onClick={() => cmd.invoke("open_config_dir")}
+          onClick={() => cmd.invoke("open-config-dir")}
           variant="ghost"
           size="sm"
         >

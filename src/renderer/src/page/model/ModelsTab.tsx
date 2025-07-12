@@ -15,12 +15,14 @@ import { Echo } from "echo-state";
 import { useEffect, useMemo, useState } from "react";
 import { TbBox, TbPlus } from "react-icons/tb";
 import { ModelItem } from "./ModelItem";
+import { useModels, ModelType } from "@/hooks/useModels";
 
 export enum ModelTab {
   TEXT = "text",
   EMBEDDING = "embedding",
   VISION = "vision",
   IMAGE = "image",
+  AUDIO = "audio",
 }
 
 const selectedTab = new Echo<ModelTab>(ModelTab.TEXT).localStorage({
@@ -30,30 +32,38 @@ const selectedTab = new Echo<ModelTab>(ModelTab.TEXT).localStorage({
 export function ModelsTab() {
   const [selectedModel, setSelectedModel] = useState<any>();
   const tab = selectedTab.use();
-  const [providers, setProviders] = useState<any>({});
+  const { providers, loading, error, fetchProviders, getApiKey, setApiKey } = useModels();
 
   const items = useMemo(() => {
     return Object.values(providers);
   }, [providers]);
 
+  // 当标签页切换时，获取对应类型的模型提供商
   useEffect(() => {
-    if (tab === ModelTab.TEXT) {
-      setSelectedModel(null);
-      setProviders({});
-    } else if (tab === ModelTab.EMBEDDING) {
-      setSelectedModel(null);
-      setProviders({});
-    } else if (tab === ModelTab.VISION) {
-      setSelectedModel(null);
-      setProviders({});
-    } else if (tab === ModelTab.IMAGE) {
-      setSelectedModel(null);
-      setProviders({});
-    } else {
-      setSelectedModel(null);
-      setProviders({});
+    let modelType: ModelType;
+    switch (tab) {
+      case ModelTab.TEXT:
+        modelType = ModelType.TEXT;
+        break;
+      case ModelTab.EMBEDDING:
+        modelType = ModelType.EMBEDDING;
+        break;
+      case ModelTab.VISION:
+        modelType = ModelType.VISION;
+        break;
+      case ModelTab.IMAGE:
+        modelType = ModelType.IMAGE;
+        break;
+      case ModelTab.AUDIO:
+        modelType = ModelType.AUDIO;
+        break;
+      default:
+        modelType = ModelType.TEXT;
     }
-  }, [tab]);
+    
+    fetchProviders(modelType);
+    setSelectedModel(null);
+  }, [tab, fetchProviders]);
 
   return (
     <PreferenceLayout>
@@ -87,7 +97,7 @@ export function ModelsTab() {
         }
         right={
           <div className="text-xs text-muted-foreground pr-2">
-            {items.length} providers
+            {loading ? "加载中..." : `${items.length} providers`}
           </div>
         }
         items={items.map((provider: any) => ({
@@ -95,7 +105,7 @@ export function ModelsTab() {
           content: (
             <TabListItem
               title={provider.name}
-              description={`${Object.keys(provider.models).length} models`}
+              description={`${Object.keys(provider.models || {}).length} models`}
               icon={
                 <img
                   src={`/${provider.icon}`}
@@ -113,18 +123,33 @@ export function ModelsTab() {
           onRemove: () => {},
           noRemove: true,
         }))}
-        emptyText="no model, click the button above to add a new model"
+        emptyText={
+          loading 
+            ? "正在加载模型提供商..." 
+            : error 
+            ? `加载失败: ${error}` 
+            : "没有找到模型提供商"
+        }
         EmptyIcon={TbPlus}
       />
 
       {/* 右侧编辑区域 */}
       <PreferenceBody
-        emptyText="please choose a model or click the button above to add a new model"
+        emptyText={
+          loading 
+            ? "正在加载..." 
+            : "请选择一个模型提供商查看详情"
+        }
         isEmpty={!selectedModel}
         EmptyIcon={TbBox}
       >
         {selectedModel && (
-          <ModelItem model={selectedModel} providers={providers} />
+          <ModelItem 
+            model={selectedModel} 
+            providers={providers}
+            getApiKey={getApiKey}
+            setApiKey={setApiKey}
+          />
         )}
       </PreferenceBody>
     </PreferenceLayout>
