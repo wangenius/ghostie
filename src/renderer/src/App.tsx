@@ -9,7 +9,7 @@ import {
   TbScript,
   TbServer,
   TbSettings,
-  TbShape3
+  TbShape3,
 } from "react-icons/tb";
 import { AgentsTab } from "./page/agent/AgentsTab";
 import { KnowledgeTab } from "./page/knowledge/KnowledgeTab";
@@ -50,7 +50,9 @@ export const ActiveTab = new Echo<
   | "database"
   | "mcp"
   | "resources"
->("chat");
+>("chat").localStorage({
+  name: "activeTab",
+});
 
 /* 主应用,提供路由 */
 function App() {
@@ -98,10 +100,7 @@ function App() {
   }, []);
 
   return (
-    <main
-      id="app"
-      className="flex-1 overflow-hidden h-screen flex gap-3"
-    >
+    <main id="app" className="flex-1 overflow-hidden h-screen flex gap-3">
       {renderContent()}
     </main>
   );

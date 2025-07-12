@@ -34,9 +34,35 @@ export function ModelsTab() {
   const tab = selectedTab.use();
   const { providers, loading, error, fetchProviders, getApiKey, setApiKey } = useModels();
 
+  // 获取当前标签页对应的提供商列表
+  const currentProviders = useMemo(() => {
+    let modelType: ModelType;
+    switch (tab) {
+      case ModelTab.TEXT:
+        modelType = ModelType.TEXT;
+        break;
+      case ModelTab.EMBEDDING:
+        modelType = ModelType.EMBEDDING;
+        break;
+      case ModelTab.VISION:
+        modelType = ModelType.VISION;
+        break;
+      case ModelTab.IMAGE:
+        modelType = ModelType.IMAGE;
+        break;
+      case ModelTab.AUDIO:
+        modelType = ModelType.AUDIO;
+        break;
+      default:
+        modelType = ModelType.TEXT;
+    }
+    
+    return providers[modelType] || {};
+  }, [providers, tab]);
+
   const items = useMemo(() => {
-    return Object.values(providers);
-  }, [providers]);
+    return Object.values(currentProviders);
+  }, [currentProviders]);
 
   // 当标签页切换时，获取对应类型的模型提供商
   useEffect(() => {
@@ -146,7 +172,7 @@ export function ModelsTab() {
         {selectedModel && (
           <ModelItem 
             model={selectedModel} 
-            providers={providers}
+            providers={currentProviders}
             getApiKey={getApiKey}
             setApiKey={setApiKey}
           />

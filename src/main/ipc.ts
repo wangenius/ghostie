@@ -331,55 +331,37 @@ function registerNodeHandlers(): void {
  * 注册聊天功能相关的 IPC 处理器
  */
 function registerChatHandlers(): void {
+    // 注意：聊天流处理现在由模型类直接处理HTTP请求
+    // 这里只保留一些基本的聊天相关功能
+    
     /**
-     * 聊天流处理
-     * @param _ 事件对象
-     * @param message 聊天消息
-     * @returns Promise<string> 回复内容
-     */
-    ipcMain.handle("chat-stream", async (_, message: string) => {
-        // 实现聊天流功能
-        console.log("聊天消息:", message);
-        return "这是模拟的回复";
-    });
-
-    /**
-     * 取消聊天流
+     * 取消聊天流 - 已废弃，现在由模型类直接处理
      */
     ipcMain.handle("cancel-stream", async () => {
-        // 实现取消流功能
-        console.log("取消聊天流");
+        console.log("cancel-stream 已废弃，现在由模型类直接处理");
     });
 
     /**
-     * 获取图像结果
-     * @returns Promise<any> 图像结果
+     * 获取图像结果 - 已废弃，现在由模型类直接处理
      */
     ipcMain.handle("image-result", async () => {
-        // 实现图像结果功能
+        console.log("image-result 已废弃，现在由模型类直接处理");
         return null;
     });
 
     /**
-     * 生成图像
-     * @param _ 事件对象
-     * @param prompt 图像描述
-     * @returns Promise<string> 生成的图像路径
+     * 生成图像 - 已废弃，现在由模型类直接处理
      */
     ipcMain.handle("image-generate", async (_, prompt: string) => {
-        // 实现图像生成功能
-        console.log("图像生成:", prompt);
+        console.log("image-generate 已废弃，现在由模型类直接处理");
         return "生成的图像路径";
     });
 
     /**
-     * JSON 格式聊天
-     * @param _ 事件对象
-     * @param message 聊天消息
-     * @returns Promise<any> JSON 格式回复
+     * JSON 格式聊天 - 已废弃，现在由模型类直接处理
      */
     ipcMain.handle("chat-json", async (_, message: string) => {
-        // 实现 JSON 聊天功能
+        console.log("chat-json 已废弃，现在由模型类直接处理");
         return { response: "JSON 格式回复", timestamp: new Date().toISOString() };
     });
 }

@@ -4,7 +4,7 @@ import {
   VisionModelInfo,
   VisionModelRequestBody,
   VisionModelProvider,
-} from "@/model/types/visionModel";
+} from "src/common/types/visionModel";
 import { VisionModelManager } from "../VisionModelManager";
 
 /** 豆包视觉模型 */

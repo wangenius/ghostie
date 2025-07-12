@@ -1,4 +1,4 @@
-import { ChatModelRequestBody, ToolCallReply } from "@/model/types/chatModel";
+import { ChatModelRequestBody, ToolCallReply } from "src/common/types/chatModel";
 import { ChatModel } from "../ChatModel";
 import { ChatModelManager, ChatModelProvider } from "../ChatModelManager";
 

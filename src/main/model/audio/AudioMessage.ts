@@ -1,4 +1,4 @@
-import { AudioMessage as AudioMessageType } from "@/model/types/audioModel";
+import { AudioMessage as AudioMessageType } from "src/common/types/audioModel";
 
 /** 音频消息类 */
 export class AudioMessage {

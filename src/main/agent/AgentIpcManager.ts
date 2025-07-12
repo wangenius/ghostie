@@ -29,9 +29,24 @@ export class AgentIpcManager {
             return;
         }
 
-        // 创建一个全局 Agent 实例来处理 IPC 请求
-        this.globalAgent = await Agent.create();
-        console.log("全局 Agent IPC 处理器已初始化");
+        try {
+            // 创建一个全局 Agent 实例来处理 IPC 请求
+            // 使用默认配置确保有文本模型
+            this.globalAgent = await Agent.create("global-agent");
+            console.log("全局 Agent IPC 处理器已初始化");
+        } catch (error) {
+            console.error("初始化全局 Agent 失败:", error);
+            // 即使初始化失败，也要创建一个基本的 Agent 实例来处理 IPC
+            const { DEFAULT_AGENT } = await import("./types/agent");
+            const { ReactAgent } = await import("./ReactAgent");
+            this.globalAgent = new ReactAgent({
+                ...DEFAULT_AGENT,
+                id: "global-agent",
+                name: "Global Agent",
+                system: "你是一个全局的AI助手，用于处理系统级的请求。",
+            });
+            console.log("使用默认配置创建全局 Agent");
+        }
     }
 
     /**

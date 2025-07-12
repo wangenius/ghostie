@@ -4,7 +4,7 @@ import { ModelKey } from "../key/ModelKey";
 import {
   VisionModelProvider,
   VisionModelProviderList,
-} from "../types/visionModel";
+} from "../../../common/types/visionModel";
 import { VisionModel } from "./VisionModel";
 
 /** 视觉模型管理器 */

@@ -5,109 +5,129 @@ import {
   VisionModelInfo,
   VisionModelRequestBody,
   VisionModelResponse,
-} from "@/model/types/visionModel";
+} from "src/common/types/visionModel";
 import { ImageManager } from "@/resources/Image";
 import { gen } from "@/utils/generator";
-import { cmd } from "@/utils/shell";
 import { VisionMessage } from "./VisionMessage";
 import { VisionModelManager } from "./VisionModelManager";
+import { HttpStreamHandler } from "@/utils/http-stream";
 
 /** 视觉模型, 用于与模型进行交互 */
 export class VisionModel {
-  /** 模型信息 */
-  public info: VisionModelInfo;
-  /** 模型用于存储的上下文内容 */
-  public Message: VisionMessage = VisionMessage.create();
+  /** 模型配置 */
+  protected info: { model: string; api_key: string; api_url: string };
+  /** 消息管理器 */
+  protected Message: VisionMessage;
   /** 当前请求ID */
-  protected currentRequestId: string | undefined;
+  protected currentRequestId?: string;
   /** 温度 */
-  protected temperature: number = 1;
+  protected temperature: number = 0.7;
+  /** HTTP流处理器 */
+  private httpHandler: HttpStreamHandler;
 
-  /** 构造函数
-   * @param config 模型配置
-   */
-  constructor(config: VisionModelInfo) {
+  /** 构造函数 */
+  constructor(config: { model: string; api_key: string; api_url: string }) {
     this.info = config;
+    this.Message = VisionMessage.create();
+    this.httpHandler = new HttpStreamHandler();
   }
 
-  /** 创建模型
-   * @param modelwithprovider 模型名称 openai:gpt-4-vision-preview
-   * @returns 模型实例
-   */
-  static create(model?: ModelItem) {
-    if (model?.provider) {
-      return VisionModelManager.get(model.provider).create(model.name);
+  /** 创建模型实例 */
+  static create(config?: { model: string; api_key: string; api_url: string }): VisionModel {
+    if (!config) {
+      throw new Error("模型配置不能为空");
     }
-    return new VisionModel({
-      api_key: "",
-      api_url: "",
-      model: "",
-    });
+    return new VisionModel(config);
   }
 
-  /** 设置温度
-   * @param temperature 温度
-   * @returns 当前实例
-   */
+  /** 设置API密钥 */
+  setApiKey(apiKey: string): this {
+    this.info.api_key = apiKey;
+    return this;
+  }
+
+  /** 设置API URL */
+  setApiUrl(apiUrl: string): this {
+    this.info.api_url = apiUrl;
+    return this;
+  }
+
+  /** 设置温度 */
   setTemperature(temperature: number): this {
     this.temperature = temperature;
     return this;
   }
 
+  /** 获取模型信息 */
+  getInfo() {
+    return this.info;
+  }
+
+  /** 停止当前请求 */
+  async stop(): Promise<void> {
+    if (this.currentRequestId) {
+      this.httpHandler.abort();
+      this.currentRequestId = undefined;
+    }
+  }
+
   /**
-   * 准备请求体，允许子类重写以添加特定参数
-   * @param body 基础请求体
-   * @returns 处理后的请求体
+   * 适配不同提供商的请求体格式
+   * 子类可以重写此方法来适配特定的API格式
    */
-  protected prepareRequestBody(
-    body: VisionModelRequestBody,
-  ): VisionModelRequestBody {
+  protected prepareRequestBody(body: VisionModelRequestBody): VisionModelRequestBody {
     return body;
   }
 
   /**
-   * 解析响应体，处理不同提供商的响应格式差异
-   * @param payload 原始响应数据字符串
-   * @returns 解析后的内容
+   * 适配不同提供商的响应体格式
+   * 子类可以重写此方法来解析特定的响应格式
    */
-  protected parseResponseBody(payload: string): {
-    completion?: string;
-    reasoner?: string;
-  } {
+  protected parseResponseBody(payload: string): { completion?: string } {
     try {
-      const data = JSON.parse(payload.replace("data: ", ""));
-      const delta = data.choices?.[0]?.delta;
-      const completion = delta?.content;
-      return { completion };
+      const data = JSON.parse(payload);
+      
+      // 标准 OpenAI 视觉格式
+      if (data.choices && data.choices[0]) {
+        const choice = data.choices[0];
+        return {
+          completion: choice.delta?.content || choice.message?.content || "",
+        };
+      }
+      
+      return {};
     } catch (error) {
+      console.error("解析视觉响应失败:", error);
       return {};
     }
   }
 
-  public async execute(image: string, query: string): Promise<string> {
-    this.Message.setSystem(
-      `你是一个专业的视觉模型，请根据用户的问题和图片内容，给出详细的回答。`,
-    );
-    const imagebase64 = await ImageManager.getImageBody(image);
+  /** 执行视觉分析
+   * @param imageUrl 图像URL或base64
+   * @param query 查询内容
+   * @returns 分析结果
+   */
+  public async execute(imageUrl: string, query: string): Promise<string> {
     this.Message.push([
       {
         role: "user",
         content: [
           {
-            type: "image_url",
-            image_url: {
-              url: imagebase64,
-            },
-          },
-          {
             type: "text",
             text: query,
+          },
+          {
+            type: "image_url",
+            image_url: {
+              url: imageUrl,
+            },
           },
         ],
       },
     ]);
-    const response = await this.stream();
-    return response.content;
+
+    const result = await this.stream();
+    return result.content;
   }
 
   /** 流式请求
@@ -149,13 +169,20 @@ export class VisionModel {
 
       console.log(requestBody);
 
-      // 监听流式响应事件
-      const unlistenStream = await cmd.listen(
-        `chat-stream-${this.currentRequestId}`,
-        (event) => {
-          if (!event.payload) return;
-          /* 适配子类不同的相应格式 */
-          const { completion } = this.parseResponseBody(event.payload);
+      // 发起流式请求
+      await this.httpHandler.streamRequest(
+        this.info.api_url,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.info.api_key}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        },
+        (chunk: string) => {
+          /* 适配子类不同的响应格式 */
+          const { completion } = this.parseResponseBody(chunk);
 
           /* 如果返回的是正文 */
           if (completion) {
@@ -165,31 +192,13 @@ export class VisionModel {
             });
           }
         },
-      );
-
-      // 监听错误事件
-      const unlistenError = await cmd.listen(
-        `chat-stream-error-${this.currentRequestId}`,
-        (event) => {
+        (error: Error) => {
           this.Message.updateLastMessage({
-            error: `请求失败: ${event.payload}`,
+            error: `请求失败: ${error.message}`,
           });
-          throw new Error(event.payload);
-        },
+          throw error;
+        }
       );
-
-      // 发起流式请求
-      await cmd.invoke("chat_stream", {
-        model: this.info.model,
-        apiUrl: this.info.api_url,
-        apiKey: this.info.api_key,
-        requestId: this.currentRequestId,
-        requestBody,
-      });
-
-      // 清理事件监听器
-      unlistenStream();
-      unlistenError();
 
       this.Message.updateLastMessage({
         loading: false,
@@ -207,14 +216,6 @@ export class VisionModel {
         error: error instanceof Error ? error.message : "Unknown error",
         stop: () => this.stop(),
       };
-    }
-  }
-
-  /** 停止当前请求 */
-  public async stop(): Promise<void> {
-    if (this.currentRequestId) {
-      await cmd.invoke("cancel_stream", { requestId: this.currentRequestId });
-      this.currentRequestId = undefined;
     }
   }
 }

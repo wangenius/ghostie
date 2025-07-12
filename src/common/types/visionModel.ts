@@ -1,5 +1,5 @@
 import { ModelProvider, ModelProviderList } from "./model";
-import { VisionModel } from "../vision/VisionModel";
+import { VisionModel } from "../../main/model/vision/VisionModel";
 
 /** 视觉模型请求体 */
 export interface VisionModelRequestBody {

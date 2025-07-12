@@ -6,8 +6,9 @@ import {
   ImageModelRequestBody,
   ImageModelRequestResponse,
   ImageModelRequestResponseError,
-} from "@/model/types/imageModel";
-import { cmd } from "@/utils/shell";
+} from "src/common/types/imageModel";
+import { gen } from "@/utils/generator";
+import { HttpStreamHandler } from "@/utils/http-stream";
 import { ImageModelManager } from "./ImageModelManager";
 
 /** 图像生成模型, 用于与模型进行交互 */
@@ -16,6 +17,8 @@ export class ImageModel {
   public info: ImageModelInfo;
   /** 任务ID */
   protected task_id: string | undefined;
+  /** HTTP处理器 */
+  private httpHandler: HttpStreamHandler;
 
   /** 构造函数
    * @param config 模型配置
@@ -23,6 +26,7 @@ export class ImageModel {
    */
   constructor(config: ImageModelInfo) {
     this.info = config;
+    this.httpHandler = new HttpStreamHandler();
   }
 
   /** 创建模型
@@ -113,16 +117,27 @@ export class ImageModel {
 
     console.log(requestBody);
 
-    // 发起流式请求
-    const response = await cmd.invoke<
-      ImageModelRequestResponse | ImageModelRequestResponseError
-    >("image_generate", {
-      apiUrl: this.info.post_url,
-      apiKey: this.info.api_key,
-      requestBody,
-    });
+    try {
+      // 发起HTTP请求
+      const response = await this.httpHandler.request(
+        this.info.post_url,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.info.api_key}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
 
-    return response;
+      return response as ImageModelRequestResponse;
+    } catch (error) {
+      console.error("图像生成失败:", error);
+      return {
+        message: error instanceof Error ? error.message : String(error),
+      } as ImageModelRequestResponseError;
+    }
   }
 
   /** 获取任务ID */
@@ -137,12 +152,15 @@ export class ImageModel {
   public async getResult(): Promise<
     ImageModelGetResultError | ImageModelGetResponse
   > {
-    const response = await cmd.invoke<
-      ImageModelGetResponse | ImageModelGetResultError
-    >("image_result", {
-      apiUrl: this.info.get_url + this.task_id,
-      apiKey: this.info.api_key,
-    });
+    const response = await this.httpHandler.request(
+      this.info.get_url + this.task_id,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.info.api_key}`,
+        },
+      }
+    );
 
     if (response.output.task_status === "FAILED") {
       return response as ImageModelGetResultError;

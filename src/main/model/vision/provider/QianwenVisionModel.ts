@@ -2,7 +2,7 @@
 import {
   VisionModelProvider,
   VisionModelRequestBody,
-} from "@/model/types/visionModel";
+} from "src/common/types/visionModel";
 import { VisionModel } from "../VisionModel";
 import { VisionModelManager } from "../VisionModelManager";
 

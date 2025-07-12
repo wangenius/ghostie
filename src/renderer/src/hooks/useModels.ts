@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { cmd } from "../utils/shell";
 
 export enum ModelType {
@@ -17,7 +17,13 @@ export interface ModelProvider {
 }
 
 export const useModels = () => {
-  const [providers, setProviders] = useState<Record<string, ModelProvider>>({});
+  const [providersByType, setProvidersByType] = useState<Record<ModelType, Record<string, ModelProvider>>>({
+    [ModelType.TEXT]: {},
+    [ModelType.IMAGE]: {},
+    [ModelType.AUDIO]: {},
+    [ModelType.VISION]: {},
+    [ModelType.EMBEDDING]: {},
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,7 +55,12 @@ export const useModels = () => {
           result = {};
       }
       
-      setProviders(result);
+      // 更新指定类型的提供商，不影响其他类型
+      setProvidersByType(prev => ({
+        ...prev,
+        [type]: result
+      }));
+      
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "获取模型提供商失败";
@@ -87,10 +98,12 @@ export const useModels = () => {
     
     try {
       // 获取所有提供商的API密钥
-      for (const providerName of Object.keys(providers)) {
-        const key = await getApiKey(providerName);
-        if (key) {
-          keys[providerName] = key;
+      for (const typeProviders of Object.values(providersByType)) {
+        for (const providerName of Object.keys(typeProviders)) {
+          const key = await getApiKey(providerName);
+          if (key) {
+            keys[providerName] = key;
+          }
         }
       }
     } catch (err) {
@@ -98,15 +111,42 @@ export const useModels = () => {
     }
     
     return keys;
-  }, [providers, getApiKey]);
+  }, [providersByType, getApiKey]);
+
+  // 获取模型数组（用于下拉选择等）
+  const getModelsArray = useCallback((type?: ModelType) => {
+    const targetProviders = type ? providersByType[type] : {};
+    
+    return Object.values(targetProviders).flatMap(provider => {
+      return Object.values(provider.models).map((model: any) => ({
+        label: model.name,
+        value: {
+          provider: provider.name,
+          name: model.name,
+        },
+        type: provider.name,
+        description: model.description,
+        provider: provider,
+        model: model,
+      }));
+    });
+  }, [providersByType]);
+
+  // 初始化时获取聊天模型
+  useEffect(() => {
+    fetchProviders(ModelType.TEXT);
+  }, [fetchProviders]);
 
   return {
-    providers,
+    providers: providersByType,
     loading,
     error,
     fetchProviders,
     getApiKey,
     setApiKey,
     getAllApiKeys,
+    // 为了向后兼容，保留 models 属性
+    models: getModelsArray(),
+    getModelsArray,
   };
 };

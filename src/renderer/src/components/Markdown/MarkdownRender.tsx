@@ -4,9 +4,21 @@ import ReactMarkdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CodeBlock } from "../custom/CodeBlock";
 
-export const MarkdownRender = ({ children }: { children: string }) => {
+export const MarkdownRender = ({ children }: { children: string | React.ReactNode }) => {
+  // 确保 children 是字符串类型
+  let text: string;
+  
+  if (typeof children === 'string') {
+    text = children;
+  } else if (children === null || children === undefined) {
+    text = '';
+  } else {
+    console.warn('MarkdownRender: children 不是字符串类型:', typeof children, children);
+    text = String(children);
+  }
+  
   // 预处理文本，确保换行符被正确转换为Markdown兼容的格式
-  const processedText = children.replace(/\n/g, "  \n");
+  const processedText = text.replace(/\n/g, "  \n");
 
   return (
     <ReactMarkdown

@@ -103,6 +103,12 @@ export const DEFAULT_AGENT: AgentInfos = {
   system: "",
   version: "0.0.1",
   engine: "react",
+  models: {
+    text: {
+      provider: "OpenAI",
+      name: "gpt-4o-mini",
+    },
+  },
   tools: [],
   mcps: [],
   knowledges: [],

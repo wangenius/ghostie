@@ -1,23 +1,50 @@
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { DrawerSelector } from "@/components/ui/drawer-selector";
 import { Input } from "@/components/ui/input";
-import { useModels } from "@/hooks/useModels";
-import { useState } from "react";
+import { useModels, ModelType } from "@/hooks/useModels";
+import { useAgent } from "@/hooks/useAgent";
+import { useState, useEffect } from "react";
 
-export const AgentEditor = () => {
+// 从useAgent hook导入的类型
+type AgentInfos = NonNullable<ReturnType<typeof useAgent>['agents'][string]>;
 
-  const [agent, setAgent] = useState<any>({
-    id: "",
-    name: "",
-    description: "",
-    version: "0.0.1",
-    engine: "ReAct",
-  });
+interface AgentEditorProps {
+  agent: AgentInfos;
+}
 
-  const { models } = useModels();
+export const AgentEditor = ({ agent }: AgentEditorProps) => {
+  const [localAgent, setLocalAgent] = useState<AgentInfos>(agent);
+  const { updateAgent } = useAgent();
+  const { models, fetchProviders, getModelsArray } = useModels();
+
+  // 当传入的agent变化时，更新本地状态
+  useEffect(() => {
+    setLocalAgent(agent);
+  }, [agent]);
+
+  // 获取文本、视觉和图像模型
+  useEffect(() => {
+    fetchProviders(ModelType.TEXT);
+    fetchProviders(ModelType.VISION);
+    fetchProviders(ModelType.IMAGE);
+  }, [fetchProviders]);
+
+  // 更新agent的辅助函数
+  const handleUpdate = async (updates: Partial<Omit<AgentInfos, 'id'>>) => {
+    const updatedAgent = { ...localAgent, ...updates };
+    setLocalAgent(updatedAgent);
+    
+    try {
+      await updateAgent(agent.id, updates);
+    } catch (error) {
+      console.error("更新Agent失败:", error);
+      // 如果更新失败，回滚本地状态
+      setLocalAgent(agent);
+    }
+  };
 
   return (
-    <div key={agent.infos.id} className="flex-1 overflow-y-auto">
+    <div key={agent.id} className="flex-1 overflow-y-auto">
       {/* 主内容区 */}
       <div className="px-8 py-8">
         <div className="space-y-6">
@@ -26,19 +53,19 @@ export const AgentEditor = () => {
           <div className="flex gap-2">
             <Input
               type="text"
-              defaultValue={agent.infos.name}
+              value={localAgent.name}
               onChange={(e) =>
-                agent.update({
+                handleUpdate({
                   name: e.target.value,
                 })
               }
               placeholder="Assistant Name"
-            />{" "}
+            />
             <Input
               type="text"
-              defaultValue={agent.infos.version || "0.0.1"}
+              value={localAgent.version || "0.0.1"}
               onChange={(e) =>
-                agent.update({
+                handleUpdate({
                   version: e.target.value,
                 })
               }
@@ -47,10 +74,10 @@ export const AgentEditor = () => {
           </div>
 
           <AutoResizeTextarea
-            defaultValue={agent.infos.description}
-            key={agent.infos.id}
+            value={localAgent.description || ""}
+            key={agent.id}
             onValueChange={(e) =>
-              agent.update({
+              handleUpdate({
                 description: e.target.value,
               })
             }
@@ -62,9 +89,9 @@ export const AgentEditor = () => {
           <section className="space-y-2">
             <h3 className="text-lg font-medium">System Prompt</h3>
             <AutoResizeTextarea
-              defaultValue={agent.infos.system}
+              value={localAgent.system}
               onValueChange={(e) =>
-                agent.update({
+                handleUpdate({
                   system: e.target.value,
                 })
               }
@@ -72,34 +99,31 @@ export const AgentEditor = () => {
               placeholder="Please enter the system prompt..."
             />
           </section>
+          
           <section className="space-y-4">
-            <h3 className="text-lg font-medium">More Models</h3>
+            <h3 className="text-lg font-medium">Models</h3>
             <div className="space-y-4">
               <DrawerSelector
-                title="Vision Model"
-                value={[agent.infos.models?.vision]}
-                items={models.flatMap(
-                  (provider: any) => {
-                    const key = provider.getApiKey(provider.name);
-                    if (!key) return [];
-                    const models = provider.models;
-                    return Object.values(models).map((model: any) => {
-                      return {
-                        label: model.name,
-                        value: {
-                          provider: provider.name,
-                          name: model.name,
-                        },
-                        type: provider.name,
-                        description: `${model.description}`,
-                      };
-                    });
-                  },
-                )}
+                title="Text Model"
+                value={[localAgent.models?.text]}
+                items={getModelsArray(ModelType.TEXT)}
                 onSelect={([value]) =>
-                  agent.update({
+                  handleUpdate({
                     models: {
-                      ...agent.infos.models,
+                      ...localAgent.models,
+                      text: value,
+                    },
+                  })
+                }
+              />
+              <DrawerSelector
+                title="Vision Model"
+                value={[localAgent.models?.vision]}
+                items={getModelsArray(ModelType.VISION)}
+                onSelect={([value]) =>
+                  handleUpdate({
+                    models: {
+                      ...localAgent.models,
                       vision: value,
                     },
                   })
@@ -107,29 +131,12 @@ export const AgentEditor = () => {
               />
               <DrawerSelector
                 title="Image Model"
-                value={[agent.infos.models?.image]}
-                items={models.flatMap(
-                  (provider: any) => {
-                    const key = provider.getApiKey(provider.name);
-                    if (!key) return [];
-                    const models = provider.models;
-                    return Object.values(models).map((model: any) => {
-                      return {
-                        label: model.name,
-                        value: {
-                          provider: provider.name,
-                          name: model.name,
-                        },
-                        type: provider.name,
-                        description: `${model.description}`,
-                      };
-                    });
-                  },
-                )}
+                value={[localAgent.models?.image]}
+                items={getModelsArray(ModelType.IMAGE)}
                 onSelect={([value]) =>
-                  agent.update({
+                  handleUpdate({
                     models: {
-                      ...agent.infos.models,
+                      ...localAgent.models,
                       image: value,
                     },
                   })

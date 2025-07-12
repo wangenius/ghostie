@@ -1,5 +1,5 @@
 import { ChatModel } from "../ChatModel";
-import { ChatModelRequestBody } from "@/model/types/chatModel";
+import { ChatModelRequestBody } from "src/common/types/chatModel";
 import { ChatModelManager, ChatModelProvider } from "../ChatModelManager";
 
 export class Moonshot extends ChatModel {

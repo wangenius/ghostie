@@ -1,4 +1,4 @@
-import { ModelProvider } from "@/model/types/model";
+import { ModelProvider } from "src/common/types/model";
 import { EmbeddingModel, EmbeddingModelRequestBody } from "../EmbeddingModel";
 import {
   EmbeddingModelManager,

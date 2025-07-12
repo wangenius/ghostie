@@ -3,11 +3,11 @@ import {
   AudioModelInfo,
   AudioModelRequestBody,
   AudioModelResponse,
-} from "@/model/types/audioModel";
+} from "src/common/types/audioModel";
 import { gen } from "@/utils/generator";
-import { cmd } from "@/utils/shell";
 import { AudioModelManager, AudioModelProps } from "./AudioModelManager";
 import { AudioMessage } from "./AudioMessage";
+import { HttpStreamHandler } from "@/utils/http-stream";
 
 /** 音频模型, 用于与模型进行交互 */
 export class AudioModel {
@@ -21,6 +21,8 @@ export class AudioModel {
   protected temperature: number = 1;
   /** 模型属性 */
   protected props: AudioModelProps;
+  /** HTTP流处理器 */
+  private httpHandler: HttpStreamHandler;
 
   /** 构造函数
    * @param config 模型配置
@@ -29,6 +31,7 @@ export class AudioModel {
   constructor(config: AudioModelInfo, props: AudioModelProps) {
     this.info = config;
     this.props = props;
+    this.httpHandler = new HttpStreamHandler();
   }
 
   /** 创建模型
@@ -75,6 +78,23 @@ export class AudioModel {
     return this;
   }
 
+  /** 设置API密钥 */
+  setApiKey(apiKey: string): this {
+    this.info.api_key = apiKey;
+    return this;
+  }
+
+  /** 设置API URL */
+  setApiUrl(apiUrl: string): this {
+    this.info.api_url = apiUrl;
+    return this;
+  }
+
+  /** 获取模型信息 */
+  getInfo() {
+    return this.info;
+  }
+
   /**
    * 准备请求体，允许子类重写以添加特定参数
    * @param body 基础请求体
@@ -96,13 +116,23 @@ export class AudioModel {
     completion?: string;
   } {
     try {
-      // 默认OpenAI格式解析
-      const data = JSON.parse(payload.replace("data: ", ""));
-      const delta = data.choices?.[0]?.delta;
-      // 提取内容
-      const completion = delta?.content;
-      return { completion };
+      const data = JSON.parse(payload);
+      
+      // 标准 OpenAI 音频生成格式
+      if (data.choices && data.choices[0]) {
+        return {
+          completion: data.choices[0].text || data.choices[0].delta?.content || "",
+        };
+      }
+      
+      // 直接文本格式
+      if (typeof data === 'string') {
+        return { completion: data };
+      }
+      
+      return {};
     } catch (error) {
+      console.error("解析音频响应失败:", error);
       return {};
     }
   }
@@ -191,13 +221,20 @@ export class AudioModel {
 
       console.log(requestBody);
 
-      // 监听流式响应事件
-      const unlistenStream = await cmd.listen(
-        `audio-stream-${this.currentRequestId}`,
-        (event) => {
-          if (!event.payload) return;
-          /* 适配子类不同的相应格式 */
-          const { completion } = this.parseResponseBody(event.payload);
+      // 发起流式请求
+      await this.httpHandler.streamRequest(
+        this.info.api_url,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.info.api_key}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        },
+        (chunk: string) => {
+          /* 适配子类不同的响应格式 */
+          const { completion } = this.parseResponseBody(chunk);
 
           /* 如果返回的是正文 */
           if (completion) {
@@ -207,30 +244,13 @@ export class AudioModel {
             });
           }
         },
-      );
-
-      // 监听错误事件
-      const unlistenError = await cmd.listen(
-        `audio-stream-error-${this.currentRequestId}`,
-        (event) => {
+        (error: Error) => {
           this.Message.updateLastMessage({
-            error: `请求失败: ${event.payload}`,
+            error: `请求失败: ${error.message}`,
           });
-          throw new Error(event.payload);
-        },
+          throw error;
+        }
       );
-
-      // 发起流式请求
-      await cmd.invoke("audio_stream", {
-        apiUrl: this.info.api_url,
-        apiKey: this.info.api_key,
-        requestId: this.currentRequestId,
-        requestBody,
-      });
-
-      // 清理事件监听器
-      unlistenStream();
-      unlistenError();
 
       this.Message.updateLastMessage({
         loading: false,
@@ -253,13 +273,9 @@ export class AudioModel {
 
   /** 停止当前请求 */
   public async stop(): Promise<void> {
-    try {
-      if (this.currentRequestId) {
-        await cmd.invoke("cancel_stream", { requestId: this.currentRequestId });
-        this.currentRequestId = undefined;
-      }
-    } catch (e) {
-      console.error("Failed to stop stream:", e);
+    if (this.currentRequestId) {
+      this.httpHandler.abort();
+      this.currentRequestId = undefined;
     }
   }
 }

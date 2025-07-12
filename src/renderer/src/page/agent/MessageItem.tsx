@@ -2,8 +2,9 @@ import { iconVariants } from "@/components/custom/CodeBlock";
 import { MarkdownRender } from "@/components/Markdown/MarkdownRender";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { MessageItem } from "@common/types/chatModel";
 import { motion } from "framer-motion";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   TbBrain,
   TbCheck,
@@ -51,7 +52,15 @@ const MessageItemState = ({
   );
 };
 
-export function ChatMessageItem({ message, lastMessage, index }: any) {
+export function ChatMessageItem({
+  message,
+  lastMessage,
+  index,
+}: {
+  message: MessageItem;
+  lastMessage: MessageItem | null;
+  index: number;
+}) {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
   const [showReasoning, setShowReasoning] = useState(false);
@@ -61,10 +70,7 @@ export function ChatMessageItem({ message, lastMessage, index }: any) {
     name: "",
   });
 
-
-  const handleMessagePlus = useCallback(() => {
-
-  }, []);
+  const handleMessagePlus = useCallback(() => {}, []);
 
   const handleCopyMessage = () => {
     navigator.clipboard.writeText(message.content);

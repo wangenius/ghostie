@@ -1,4 +1,4 @@
-import { CompletionMessage, MessageItem } from "@/model/types/chatModel";
+import { CompletionMessage, MessageItem } from "src/common/types/chatModel";
 import { gen } from "@/utils/generator";
 import { Agent } from "../Agent";
 import { ContextMemory } from "./Memory";

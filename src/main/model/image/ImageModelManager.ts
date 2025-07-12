@@ -1,6 +1,6 @@
 import { ModelItem } from "@/agent/types/agent";
 import { ModelKey } from "../key/ModelKey";
-import { ModelProvider, ModelProviderList } from "../types/model";
+import { ModelProvider, ModelProviderList } from "../../../common/types/model";
 import { ImageModel } from "./ImageModel";
 
 /** 模型能力接口 */

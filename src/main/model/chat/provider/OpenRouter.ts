@@ -1,4 +1,4 @@
-import { ChatModelRequestBody } from "@/model/types/chatModel";
+import { ChatModelRequestBody } from "src/common/types/chatModel";
 import { ChatModel } from "../ChatModel";
 import { ChatModelManager, ChatModelProvider } from "../ChatModelManager";
 

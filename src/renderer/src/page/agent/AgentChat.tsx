@@ -18,6 +18,7 @@ import {
   TbHistory,
   TbPencil,
   TbPlus,
+  TbStethoscope,
   TbTrash,
   TbUpload,
 } from "react-icons/tb";
@@ -28,6 +29,10 @@ import { EmptyChatMinimal } from "./EmptyChatMinimal";
 import { HistoryPage } from "./HistoryDrawer";
 import { ChatMessageItem } from "./MessageItem";
 import { plainText, TypeArea } from "./TypeArea";
+import { useAgent, useAgentChat } from "@/hooks/useAgent";
+
+// 从useAgent hook导入的类型
+type AgentInfos = NonNullable<ReturnType<typeof useAgent>['agents'][string]>;
 
 // 定义 MentionElement 接口
 interface MentionElement {
@@ -36,7 +41,12 @@ interface MentionElement {
   children: { text: string }[];
 }
 
-export const AgentChat = observer(() => {
+// 定义 AgentChat 组件的 props
+interface AgentChatProps {
+  agent: AgentInfos;
+}
+
+export const AgentChat = observer(({ agent }: AgentChatProps) => {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -53,8 +63,20 @@ export const AgentChat = observer(() => {
   ]);
 
   const [historyOpen, setHistoryOpen] = useState(false);
-  // 获取当前Agent的loading状态
-  const loading = false;
+  
+  // 使用 useAgentChat hook
+  const { 
+    messages, 
+    loading, 
+    error, 
+    sendMessage, 
+    clearMessages, 
+    stopAgent,
+    diagnoseAgent,
+  } = useAgentChat(agent.id);
+  
+  const { deleteAgent } = useAgent();
+
 
 
   // 自动滚动到底部
@@ -62,29 +84,138 @@ export const AgentChat = observer(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, []);
+  }, [messages]);
 
   const handleDeleteAgent = async () => {
     const answer = await cmd.confirm(
-      `Are you sure you want to delete the assistant ""?`,
+      `Are you sure you want to delete the assistant "${agent.name}"?`,
     );
     if (answer) {
       try {
+        await deleteAgent(agent.id);
         toast.success("Successfully deleted agent");
       } catch (error) {
         console.error("delete agent error:", error);
+        toast.error("Failed to delete agent");
       }
     }
   };
+  
   // 提交消息
   const handleSubmit = useCallback(
     async (value: Descendant[]) => {
-      console.log(value);
+      const content = plainText(value).trim();
+      if (!content) return;
+      
+      try {
+        await sendMessage(content);
+        // 清空输入框
+        setValue([
+          {
+            type: "paragraph",
+            children: [{ text: "" }],
+          },
+        ]);
+      } catch (error) {
+        console.error("发送消息失败:", error);
+        toast.error("发送消息失败");
+      }
     },
-    [],
+    [sendMessage],
   );
+  
+  // 清空聊天记录
+  const handleNewChat = useCallback(() => {
+    clearMessages();
+  }, [clearMessages]);
+  
   // 上传机器人
   const handleUpload = useCallback(async () => {}, []);
+  
+  // 执行诊断
+  const handleDiagnose = async () => {
+    try {
+      const result = await diagnoseAgent(agent.id);
+      
+      // 显示诊断结果对话框
+      dialog({
+        title: "配置诊断结果",
+        description: "检查Agent配置是否正确",
+        content: (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${
+                result.status === 'ok' ? 'bg-green-500' :
+                result.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
+              }`} />
+              <span className="font-medium">
+                {result.status === 'ok' ? '配置正常' :
+                 result.status === 'warning' ? '发现警告' : '发现错误'}
+              </span>
+            </div>
+            
+            {result.issues.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm">问题:</h4>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  {result.issues.map((issue, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-red-500 mt-1">•</span>
+                      {issue}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {result.recommendations.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm">建议:</h4>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  {result.recommendations.map((rec, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-1">•</span>
+                      {rec}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        ),
+        footer: (close) => (
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={close}>
+              关闭
+            </Button>
+            {result.status !== 'ok' && (
+              <Button
+                onClick={() => {
+                  close();
+                  setMode("edit");
+                }}
+              >
+                去设置
+              </Button>
+            )}
+          </div>
+        ),
+      });
+      
+      // 如果有问题，显示toast提示
+      if (result.status === 'error') {
+        toast.error("发现配置问题，请查看诊断结果");
+      } else if (result.status === 'warning') {
+        toast.warning("发现一些警告，请查看诊断结果");
+      } else {
+        toast.success("配置正常");
+      }
+    } catch (error) {
+      console.error("诊断失败:", error);
+      toast.error("诊断失败");
+    }
+  };
+
   return (
     <div
       className="flex flex-col h-full border-none shadow-none bg-background/50"
@@ -94,14 +225,14 @@ export const AgentChat = observer(() => {
         <div className="flex items-center space-x-3">
           <Avatar
             size={32}
-            name={""}
+            name={agent.name || agent.id}
             variant="beam"
             colors={["#92A1C6", "#146A7C", "#F0AB3D", "#C271B4", "#C20D90"]}
             square={false}
           />
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              {"未命名助手"}
+              {agent.name || "未命名助手"}
               {mode === "edit" && (
                 <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
                   编辑模式
@@ -110,7 +241,7 @@ export const AgentChat = observer(() => {
             </div>
             <p className="text-xs line-clamp-1 max-w-[260px]">
               {mode === "chat"
-                ? "0.0.1"
+                ? agent.version || "0.0.1"
                 : "您正在编辑助手设置，完成后请点击返回"}
             </p>
           </div>
@@ -123,9 +254,8 @@ export const AgentChat = observer(() => {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => {
-                  
-                }}
+                onClick={handleNewChat}
+                title="新建对话"
               >
                 <TbPlus className="h-4 w-4" />
               </Button>
@@ -133,17 +263,38 @@ export const AgentChat = observer(() => {
                 onClick={() => setHistoryOpen(true)}
                 size="icon"
                 className="h-8 w-8"
+                title="历史记录"
               >
                 <TbHistory className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={handleDiagnose}
+                title="诊断配置问题"
+              >
+                <TbStethoscope className="h-4 w-4" />
               </Button>
               <Drawer
                 open={historyOpen}
                 onOpenChange={setHistoryOpen}
                 children={
                   <HistoryPage
-                    onClick={async (item) => {
+                    agent={agent}
+                    sessions={[]} // TODO: 实现真实的历史会话管理
+                    onClick={(session) => {
                       setHistoryOpen(false);
-                      
+                      // TODO: 加载历史对话
+                      console.log("加载历史对话:", session);
+                    }}
+                    onDeleteSession={(sessionId) => {
+                      // TODO: 删除单个会话
+                      console.log("删除会话:", sessionId);
+                    }}
+                    onDeleteAll={() => {
+                      // TODO: 删除所有会话
+                      console.log("删除所有会话");
                     }}
                   />
                 }
@@ -153,6 +304,7 @@ export const AgentChat = observer(() => {
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => setMode("edit")}
+                title="编辑助手"
               >
                 <TbPencil className="h-4 w-4" />
               </Button>
@@ -194,72 +346,51 @@ export const AgentChat = observer(() => {
       >
         {mode === "chat" && (
           <div className="flex flex-col h-full">
-            { (
-              <div
-                ref={messagesContainerRef}
-                className="px-4 py-4 w-full overflow-y-auto flex-1 scroll-smooth space-y-1"
-                style={{
-                  scrollbarWidth: "thin",
-                  scrollbarColor: "var(--border) transparent",
-                }}
-              >
-                {/* {messages.length === 0 && (
-                  <EmptyChatMinimal />
-                )} */}
-                {/* {messages.length > 0 && (
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs mx-auto text-muted-foreground font-mono">
-                      {new Date(
-                        agent?.context.runtime.created_at || 0,
-                      ).toLocaleString("zh-CN", {
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                )}
-
-                {/* 当前聊天消息 */}
-                  {[{
-                    role: "user",
-                    content: "Hello, how are you?",
-                  }].map((msg, index) => (
+            <div
+              ref={messagesContainerRef}
+              className="px-4 py-4 w-full overflow-y-auto flex-1 scroll-smooth space-y-1"
+              style={{
+                scrollbarWidth: "thin",
+                scrollbarColor: "var(--border) transparent",
+              }}
+            >
+              {messages.length === 0 ? (
+                <EmptyChatMinimal agent={agent} />
+              ) : (
+                <>
+                  {messages.map((message, index) => (
                     <ChatMessageItem
-                    key={`msg-${index}`}
-                    message={msg}
-                    index={index}
-                    lastMessage={index > 0 ? msg : null}
-                  />
-                ))}
-
-                {/* {messages.length !== 0 && (
-                  <div className="h-4" ref={messagesEndRef} />
-                )} */}
-              </div>
-            )}
+                      key={message.created_at.toString()}
+                      message={message}
+                      index={index}
+                      lastMessage={index > 0 ? messages[index - 1] : null}
+                    />
+                  ))}
+                  <div ref={messagesEndRef} />
+                </>
+              )}
+            </div>
+            
+            {/* 输入区域 */}
+            <div className="border-t px-4 py-3">
+              <TypeArea
+                editorRef={editorRef}
+                value={value}
+                onChange={setValue}
+                onSubmit={handleSubmit}
+                currentAgent={agent.name || "助手"}
+                loading={loading}
+              />
+            </div>
           </div>
         )}
+
         {mode === "edit" && (
-          <div className="flex flex-col h-full">
-            <AgentEditor />
-          </div>
+          <AgentEditor agent={agent} />
         )}
       </div>
 
-      {mode === "chat" && (
-        <div key={`type-area`}>
-          <TypeArea
-            value={value}
-            onChange={setValue}
-            onSubmit={handleSubmit}
-            editorRef={editorRef}
-            currentAgent={""}
-            loading={loading}
-          />
-        </div>
-      )}
+
     </div>
   );
 });

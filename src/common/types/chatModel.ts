@@ -1,4 +1,4 @@
-import { FunctionCallProps } from "../../toolkit/types";
+import { FunctionCallProps } from "../../main/toolkit/types";
 
 /** 消息角色类型
  * system: 系统消息
@@ -22,6 +22,12 @@ export interface ToolCallReply {
   function: FunctionCallReply;
   index: number;
   type: "function";
+}
+
+/** 流式响应回调函数类型 */
+export interface OnChunk {
+  completion?: string;
+  reasoner?: string;
 }
 
 /** 消息原型,一般用于调用的接口 */

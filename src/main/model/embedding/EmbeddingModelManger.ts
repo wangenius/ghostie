@@ -1,4 +1,4 @@
-import { ModelProvider } from "../types/model";
+import { ModelProvider } from "../../../common/types/model";
 import { EmbeddingModel } from "./EmbeddingModel";
 /** 模型能力接口 */
 export interface EmbeddingModelProps {

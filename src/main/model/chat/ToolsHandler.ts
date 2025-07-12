@@ -1,13 +1,12 @@
 import { Agent } from "@/agent/Agent";
-import { AgentInfos, AgentMCPProps, AgentToolProps } from "@/agent/types/agent";
+import { AgentInfos, AgentMCPProps, AgentToolProps, ModelItem } from "@/agent/types/agent";
 import { ImageModel } from "../image/ImageModel";
 import {
   FunctionCallResult,
   ToolCallReply,
   ToolRequestBody,
-} from "../types/chatModel";
+} from "../../../common/types/chatModel";
 import { VisionModel } from "../vision/VisionModel";
-import { AgentManager } from "@/store/AgentManager";
 
 export class ToolsHandler {
   static async transformAgentToolToModelFormat(
@@ -257,20 +256,20 @@ export class ToolsHandler {
         throw new Error("tool call arguments error");
       }
 
-      if (tool_call.function.name === "VISION") {
-        const { image, query: queryContent } = query as {
-          image: string;
-          query: string;
-        };
-        console.log(image, queryContent);
-        const vision = VisionModel.create(agent.infos.models?.vision);
-        const result = await vision.execute(image, queryContent);
-        return {
-          name: tool_call.function.name,
-          arguments: tool_call.function.arguments,
-          result,
-        };
-      }
+      // if (tool_call.function.name === "VISION") {
+      //   const { image, query: queryContent } = query as {
+      //     image: string;
+      //     query: string;
+      //   };
+      //   console.log(image, queryContent);
+      //   const vision = VisionModel.create(agent.infos.models?.vision as ModelItem);
+      //   const result = await vision.execute(image, queryContent);
+      //   return {
+      //     name: tool_call.function.name,
+      //     arguments: tool_call.function.arguments,
+      //     result,
+      //   };
+      // }
 
       if (tool_call.function.name === "IMAGE") {
         const { prompt, negative_prompt } = query as {

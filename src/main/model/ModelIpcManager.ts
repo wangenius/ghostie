@@ -121,7 +121,7 @@ export class ModelIpcManager {
   @IpcHandle("model_get_api_key")
   async getModelApiKey(provider: string): Promise<string> {
     try {
-      return ChatModelManager.getApiKey(provider);
+      return ChatModelManager.getApiKey(provider) || "";
     } catch (error) {
       console.error("获取API密钥失败:", error);
       return "";

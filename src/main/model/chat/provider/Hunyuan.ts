@@ -1,5 +1,5 @@
 import { ChatModel } from "../ChatModel";
-import { ChatModelRequestBody, ToolCallReply } from "@/model/types/chatModel";
+import { ChatModelRequestBody, ToolCallReply } from "src/common/types/chatModel";
 import { ChatModelManager, ChatModelProvider } from "../ChatModelManager";
 
 export class Hunyuan extends ChatModel {

@@ -6,10 +6,10 @@ import {
   CompletionMessage,
   ToolCallReply,
   ToolRequestBody,
-} from "@/model/types/chatModel";
+} from "@common/types/chatModel";
 import { gen } from "@/utils/generator";
-import { cmd } from "@/utils/shell";
 import { ChatModelManager } from "./ChatModelManager";
+import { HttpStreamHandler } from "@/utils/http-stream";
 
 interface ChatModelInfo {
   model: string;
@@ -30,13 +30,16 @@ export class ChatModel {
   /** 当前请求ID */
   protected currentRequestId: string | undefined;
   /** 温度 */
-  protected temperature: number = 1;
+  protected temperature: number = 0.7;
+  /** HTTP流处理器 */
+  private httpHandler: HttpStreamHandler;
 
   /** 构造函数
    * @param config 模型配置
    */
   constructor(config: ChatModelInfo) {
     this.info = config;
+    this.httpHandler = new HttpStreamHandler();
   }
 
   /** 创建模型
@@ -98,20 +101,35 @@ export class ChatModel {
     tool_call?: ToolCallReply;
   } {
     try {
-      // 默认OpenAI格式解析
-      const data = JSON.parse(payload.replace("data: ", ""));
-      const delta = data.choices?.[0]?.delta;
-      // 提取内容
-      const completion = delta?.content;
+      const data = JSON.parse(payload);
+      
+      let completion = "";
+      let reasoner = "";
+      let tool_call: ToolCallReply | undefined;
 
-      // 提取工具调用
-      let tool_call;
-      if (delta?.tool_calls?.[0]) {
-        tool_call = delta.tool_calls[0] as ToolCallReply;
+      // 标准 OpenAI 格式
+      if (data.choices && data.choices[0]) {
+        const choice = data.choices[0];
+        
+        // 处理文本内容
+        if (choice.delta?.content) {
+          completion = choice.delta.content;
+        }
+        
+        // 处理工具调用
+        if (choice.delta?.tool_calls && choice.delta.tool_calls[0]) {
+          const toolCall = choice.delta.tool_calls[0];
+          tool_call = {
+            id: toolCall.id,
+            type: toolCall.type,
+            index: toolCall.index || 0,
+            function: {
+              name: toolCall.function?.name || "",
+              arguments: toolCall.function?.arguments || "",
+            },
+          };
+        }
       }
-
-      // 提取推理内容（如果有）
-      const reasoner = delta?.reasoning_content;
 
       return {
         completion,
@@ -119,6 +137,7 @@ export class ChatModel {
         tool_call,
       };
     } catch (error) {
+      console.error("解析响应失败:", error);
       return {};
     }
   }
@@ -129,46 +148,22 @@ export class ChatModel {
    * @returns 处理后的工具调用数组
    */
   protected ToolCallAdapter(rawToolCalls: ToolCallReply[]): ToolCallReply[] {
-    if (!rawToolCalls.length) return [];
-
-    const callsMap = new Map<string, ToolCallReply>();
-
-    for (const chunk of rawToolCalls) {
-      // 如果有ID，说明是新的工具调用或者已存在调用的更新
-      if (chunk.id) {
-        const key = `${chunk.id}-${chunk.index}`;
-        const existingCall = callsMap.get(key);
-
-        if (existingCall) {
-          // 更新已存在的调用
-          existingCall.function.arguments += chunk.function.arguments || "";
+    // 合并相同ID的工具调用
+    const toolCallMap = new Map<string, ToolCallReply>();
+    
+    for (const toolCall of rawToolCalls) {
+      if (toolCall?.id) {
+        const existing = toolCallMap.get(toolCall.id);
+        if (existing) {
+          // 合并arguments
+          existing.function.arguments += toolCall.function.arguments;
         } else {
-          // 创建新的调用
-          const newCall: ToolCallReply = {
-            ...chunk,
-            function: {
-              ...chunk.function,
-              arguments: chunk.function.arguments || "",
-            },
-          };
-          callsMap.set(key, newCall);
-        }
-      }
-      // 没有ID但有参数内容，将参数追加到最后一个处理的工具调用
-      else if (chunk.function.arguments) {
-        // 获取最后一个添加的工具调用
-        const lastAddedKey = Array.from(callsMap.keys()).pop();
-        if (lastAddedKey) {
-          const lastCall = callsMap.get(lastAddedKey);
-          if (lastCall) {
-            lastCall.function.arguments += chunk.function.arguments;
-          }
+          toolCallMap.set(toolCall.id, { ...toolCall });
         }
       }
     }
-
-    // 将Map转换为数组，并按index排序
-    return Array.from(callsMap.values()).sort((a, b) => a.index - b.index);
+    
+    return Array.from(toolCallMap.values());
   }
 
   /** 流式生成
@@ -207,46 +202,39 @@ export class ChatModel {
 
       console.log("requestBody", requestBody);
 
-      // 监听流式响应事件
-      const unlistenStream = await cmd.listen(
-        `chat-stream-${this.currentRequestId}`,
-        (event) => {
-          if (!event.payload) return;
-          /* 适配子类不同的相应格式 */
-          const chunk = this.ResponseBodyAdapter(event.payload);
+      // 发起流式请求
+      await this.httpHandler.streamRequest(
+        this.info.api_url,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.info.api_key}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        },
+        (chunk: string) => {
+          /* 适配子类不同的响应格式 */
+          const parsedChunk = this.ResponseBodyAdapter(chunk);
 
           /* 内容 */
-          completionContent += chunk.completion || "";
-          onChunk?.({ completion: chunk.completion, reasoner: chunk.reasoner });
+          if (parsedChunk.completion) {
+            completionContent += parsedChunk.completion;
+            onChunk?.({ 
+              completion: parsedChunk.completion, 
+              reasoner: parsedChunk.reasoner 
+            });
+          }
 
           /* 收集工具调用 */
-          if (chunk.tool_call) {
-            rawToolCalls.push(chunk.tool_call);
+          if (parsedChunk.tool_call) {
+            rawToolCalls.push(parsedChunk.tool_call);
           }
         },
+        (error: Error) => {
+          throw error;
+        }
       );
-
-      // 监听错误事件
-      const unlistenError = await cmd.listen(
-        `chat-stream-error-${this.currentRequestId}`,
-        (event) => {
-          throw new Error(event.payload);
-        },
-      );
-
-      const body = {
-        apiUrl: this.info.api_url,
-        apiKey: this.info.api_key,
-        requestId: this.currentRequestId,
-        requestBody,
-      };
-
-      // 发起流式请求
-      await cmd.invoke("chat_stream", body);
-
-      // 清理事件监听器
-      unlistenStream();
-      unlistenError();
 
       // 直接处理所有收集到的工具调用
       const tool_calls = this.ToolCallAdapter(rawToolCalls);
@@ -269,38 +257,45 @@ export class ChatModel {
 
   /** 停止生成 */
   public async stop(): Promise<void> {
-    try {
-      if (this.currentRequestId) {
-        await cmd.invoke("cancel_stream", { requestId: this.currentRequestId });
-        this.currentRequestId = undefined;
-      }
-    } catch (e) {
-      console.error("Failed to stop stream:", e);
+    if (this.currentRequestId) {
+      this.httpHandler.abort();
+      this.currentRequestId = undefined;
     }
   }
 
   /**
    * 以 JSON 结构输出内容并自动解析
    * @param message 历史消息
-   * @param format JSON格式约束
-   * @param examples 可选，格式示例
    * @returns Promise<any> 最终解析到的 JSON 对象
    */
   public async json(messages: CompletionMessage[]): Promise<any> {
-    const body = {
-      apiUrl: this.info.api_url,
-      apiKey: this.info.api_key,
-      requestBody: {
-        model: this.info.model,
-        messages,
-        temperature: this.temperature,
-        tools: this.tools,
-      },
+    const requestBody = {
+      model: this.info.model,
+      messages,
+      temperature: this.temperature,
+      tools: this.tools,
     };
+
     try {
-      // 假设 tauri 命令返回字符串
-      const result = await cmd.invoke("chat_json", body);
-      return JSON.parse(result);
+      const result = await this.httpHandler.request(
+        this.info.api_url,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.info.api_key}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
+
+      // 提取响应内容
+      if (result.choices && result.choices[0] && result.choices[0].message) {
+        const content = result.choices[0].message.content;
+        return JSON.parse(content);
+      }
+      
+      throw new Error("无法从响应中提取内容");
     } catch (e) {
       throw new Error("模型输出无法解析为 JSON: " + e);
     }

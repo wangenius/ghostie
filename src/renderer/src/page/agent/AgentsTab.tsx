@@ -6,27 +6,48 @@ import { Tools } from "@/utils/tools";
 import Avatar from "boring-avatars";
 import { TbGhost3, TbPlus } from "react-icons/tb";
 import { AgentChat } from "./AgentChat";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAgent } from "@/hooks/useAgent";
+
+// 从useAgent hook导入的类型
+type AgentInfos = NonNullable<ReturnType<typeof useAgent>['agents'][string]>;
 
 /** AgentsTab */
 export function AgentsTab() {
-  const [activeAgent, setActiveAgent] = useState<any>(null);
+  const [activeAgent, setActiveAgent] = useState<AgentInfos | null>(null);
+  const { agents, loading, error, createAgent, fetchAgents } = useAgent();
+
+  // 当agents更新时，同步更新activeAgent
+  useEffect(() => {
+    if (activeAgent && agents[activeAgent.id]) {
+      setActiveAgent(agents[activeAgent.id]);
+    }
+  }, [agents, activeAgent?.id]);
 
   /* 创建机器人 */
   const handleCreateAgent = async () => {
     try {
-      const agent = {
-        id: "1",
-        name: "Agent 1",
-        description: "Agent 1 description",
+      const newAgent = await createAgent({
+        name: "新助手",
+        description: "这是一个新创建的助手",
+        system: "你是一个有用的AI助手",
         version: "0.0.1",
-        engine: "ReAct",
-      };
-      setActiveAgent(agent);
+        engine: "react",
+        models: {
+          text: {
+            provider: "OpenAI",
+            name: "gpt-4o-mini",
+          },
+        },
+      });
+      setActiveAgent(newAgent);
     } catch (error) {
-      console.error("add agent error:", error);
+      console.error("创建助手失败:", error);
     }
   };
+
+  // 将agents对象转换为数组
+  const agentList = Object.values(agents);
 
   return (
     <PreferenceLayout>
@@ -34,19 +55,13 @@ export function AgentsTab() {
       <PreferenceSidebar
         right={
           <>
-            <Button className="flex-1" onClick={handleCreateAgent}>
+            <Button className="flex-1" onClick={handleCreateAgent} disabled={loading}>
               <TbPlus className="w-4 h-4" />
               New
             </Button>
           </>
         }
-        items={[{
-          id: "1",
-          name: "Agent 1",
-          description: "Agent 1 description",
-          version: "0.0.1",
-          engine: "ReAct",
-        }].map((agent) => {
+        items={agentList.map((agent) => {
             if (!agent.id) {
               return null;
             }
@@ -71,13 +86,13 @@ export function AgentsTab() {
         EmptyIcon={TbGhost3}
         isEmpty={!activeAgent?.id}
       >
-        {activeAgent && <AgentChat />}
+        {activeAgent && <AgentChat agent={activeAgent} />}
       </PreferenceBody>
     </PreferenceLayout>
   );
 }
 
-const TabItem = ({ agent }: { agent: any }) => {
+const TabItem = ({ agent }: { agent: AgentInfos }) => {
   const loadingState = false;
   const message = {
     role: "user",
@@ -105,7 +120,7 @@ const TabItem = ({ agent }: { agent: any }) => {
           </span>
         </div>
         <span className="text-xs text-muted-foreground line-clamp-1">
-          {loadingState[agent.id] ? "typing..." : message?.content || ""}
+          {loadingState ? "typing..." : message?.content || agent.description || ""}
         </span>
       </div>
     </div>
