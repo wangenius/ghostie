@@ -14,8 +14,10 @@ import { Settings } from "./app/Settings";
 import { ipc_handles } from "./ipc";
 import { User } from "./user/User";
 import { SETTINGS_NAV_ITEMS } from "../common/config/nav";
-import { AgentIpcManager } from "./agent/AgentIpcManager";
+// import { AgentIpcManager } from "./agent/AgentIpcManager"; // 已合并到 AgentManager
 import { ModelIpcManager } from "./model/ModelIpcManager";
+import { ChatHistoryManager } from "./store/ChatHistoryManager";
+import { AgentManager } from "./agent/AgentManager";
 
 // 导入模型提供商
 import "./model/chat/provider";
@@ -300,19 +302,20 @@ function setupPlatformSpecific(): void {
  */
 async function setupIPCHandlers(): Promise<void> {
   ipc_handles();
-  
+
   // 初始化 ModelKey（加载API密钥到内存）
   const { ModelKey } = await import("./model/key/ModelKey");
   await ModelKey.init();
-  
+
   // 初始化 AgentManager
-  const { AgentManager } = await import("./store/AgentManager");
+  const { AgentManager } = await import("./agent/AgentManager");
   await AgentManager.init();
-  
-  // 初始化 Agent IPC 管理器
-  const agentIpcManager = AgentIpcManager.getInstance();
-  await agentIpcManager.initializeGlobalAgent();
-  
+
+  // 初始化 ChatHistoryManager
+  await ChatHistoryManager.init();
+
+  // AgentManager.init() 已经包含了全局 Agent 的初始化
+
   // 初始化 Model IPC 管理器
   const { ModelIpcManager } = await import("./model/ModelIpcManager");
   ModelIpcManager.getInstance();
@@ -394,11 +397,10 @@ app.on("activate", () => {
  */
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
-  
-  // 清理 Agent IPC 管理器
-  const agentIpcManager = AgentIpcManager.getInstance();
-  agentIpcManager.cleanup();
-  
+
+  const agentManager = AgentManager.getInstance();
+  agentManager.cleanup();
+
   // 清理 Model IPC 管理器
   const modelIpcManager = ModelIpcManager.getInstance();
   modelIpcManager.cleanup();

@@ -5,6 +5,11 @@ export interface ModelItem {
   /* 模型名称 */
   name: string;
 }
+// 只保留main独有的类型定义
+export interface ExecuteOptions {
+  images?: string[];
+  extra?: string;
+}
 
 /** 模型类型 */
 export type ModelType =

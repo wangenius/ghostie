@@ -1,5 +1,4 @@
 import { dialog } from "@/components/custom/DialogModal";
-import { invoke, windowApi } from "./electron-adapter";
 import { validChannels } from "@common/types/channels";
 
 export abstract class cmd {
@@ -14,7 +13,7 @@ export abstract class cmd {
     if (!validChannels.invoke.includes(channel as any)) {
       throw new Error(`非法的invoke通道: ${channel}，请检查通道名称是否使用了连字符(-)而不是下划线(_)`);
     }
-    return await invoke(channel, ...args);
+    return await (window as any).shell.invoke(channel, ...args);
   }
 
   /** @Description 监听事件 */
@@ -27,6 +26,22 @@ export abstract class cmd {
       throw new Error(`非法的监听通道: ${channel}`);
     }
     return (window as any).shell.on(channel, callback);
+  }
+
+  /** @Description 监听事件 */
+  static on(channel: string, callback: (...args: any[]) => void) {
+    // 验证通道名称是否合法
+    if (!validChannels.on.includes(channel as any)) {
+      throw new Error(`非法的监听通道: ${channel}`);
+    }
+    return (window as any).shell.on(channel, callback);
+  }
+
+  /** @Description 取消监听事件 */
+  static off(channel: string, callback: (...args: any[]) => void) {
+    // 这里我们需要实现取消监听的逻辑
+    // 由于preload中的on方法返回了取消监听的函数，我们需要保存这些函数
+    console.warn('cmd.off方法需要配合on方法返回的取消函数使用');
   }
 
   static async open(
@@ -75,11 +90,11 @@ export abstract class cmd {
     title: string = "信息",
     kind: "info" | "warning" | "error" = "info",
   ) {
-    await windowApi.notify({ msg, title, kind });
+    await (window as any).shell.notify({ msg, title, kind });
   }
 
   static async notify(msg: string): Promise<boolean> {
-    await windowApi.notify({ msg });
+    await (window as any).shell.notify({ msg });
     return true;
   }
 }

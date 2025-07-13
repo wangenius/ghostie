@@ -15,7 +15,7 @@
 ### 1. 在类中使用装饰器
 
 ```typescript
-import { IpcHandle } from "../ipc/decorators";
+import { IpcHandle } from "@main/ipc/decorators";
 
 class MyService {
     @IpcHandle("my-service-method")

@@ -1,4 +1,4 @@
-import { gen } from "@/utils/generator";
+import { gen } from "@common/generator";
 import { WORKFLOW_BODY_DATABASE } from "@/assets/const";
 import {
   createContext,

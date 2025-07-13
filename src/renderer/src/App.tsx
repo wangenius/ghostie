@@ -25,7 +25,6 @@ import WorkflowsTab from "./page/workflow/WorkflowsTab";
 
 export const SETTINGS_NAV_ITEMS = [
   { id: "agents", label: "Agents", icon: TbMessageCircle, divider: false },
-  // { id: "market", label: "Market", icon: TbPlanet, divider: true },
   { id: "plugins", label: "Plugins", icon: TbScript, divider: false },
   { id: "workflows", label: "Workflows", icon: TbShape3, divider: false },
   { id: "mcp", label: "MCP", icon: TbServer, divider: true },

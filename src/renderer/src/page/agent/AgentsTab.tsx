@@ -2,20 +2,25 @@ import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceSidebar } from "@/components/layout/PreferenceSidebar";
 import { Button } from "@/components/ui/button";
-import { Tools } from "@/utils/tools";
+import { Tools } from "@common/tools";
 import Avatar from "boring-avatars";
 import { TbGhost3, TbPlus } from "react-icons/tb";
 import { AgentChat } from "./AgentChat";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAgent } from "@/hooks/useAgent";
 
 // 从useAgent hook导入的类型
-type AgentInfos = NonNullable<ReturnType<typeof useAgent>['agents'][string]>;
+type AgentInfos = NonNullable<ReturnType<typeof useAgent>["agents"][string]>;
 
 /** AgentsTab */
 export function AgentsTab() {
   const [activeAgent, setActiveAgent] = useState<AgentInfos | null>(null);
-  const { agents, loading, error, createAgent, fetchAgents } = useAgent();
+  const { agents, loading, createAgent } = useAgent();
+
+  // 持久化当前选中的Agent ID
+  const [persistedAgentId, setPersistedAgentId] = useState<string | null>(() => {
+    return localStorage.getItem('activeAgentId');
+  });
 
   // 当agents更新时，同步更新activeAgent
   useEffect(() => {
@@ -23,6 +28,28 @@ export function AgentsTab() {
       setActiveAgent(agents[activeAgent.id]);
     }
   }, [agents, activeAgent?.id]);
+
+  // 初始化时恢复上次选中的Agent
+  useEffect(() => {
+    if (persistedAgentId && agents[persistedAgentId] && !activeAgent) {
+      setActiveAgent(agents[persistedAgentId]);
+    } else if (!persistedAgentId && Object.keys(agents).length > 0 && !activeAgent) {
+      // 如果没有持久化的Agent ID，选择第一个Agent
+      const firstAgent = Object.values(agents)[0];
+      if (firstAgent) {
+        setActiveAgent(firstAgent);
+        setPersistedAgentId(firstAgent.id);
+        localStorage.setItem('activeAgentId', firstAgent.id);
+      }
+    }
+  }, [agents, persistedAgentId, activeAgent]);
+
+  // 更新持久化的Agent ID
+  const handleSetActiveAgent = useCallback((agent: AgentInfos) => {
+    setActiveAgent(agent);
+    setPersistedAgentId(agent.id);
+    localStorage.setItem('activeAgentId', agent.id);
+  }, []);
 
   /* 创建机器人 */
   const handleCreateAgent = async () => {
@@ -40,7 +67,7 @@ export function AgentsTab() {
           },
         },
       });
-      setActiveAgent(newAgent);
+      handleSetActiveAgent(newAgent);
     } catch (error) {
       console.error("创建助手失败:", error);
     }
@@ -55,13 +82,18 @@ export function AgentsTab() {
       <PreferenceSidebar
         right={
           <>
-            <Button className="flex-1" onClick={handleCreateAgent} disabled={loading}>
+            <Button
+              className="flex-1"
+              onClick={handleCreateAgent}
+              disabled={loading}
+            >
               <TbPlus className="w-4 h-4" />
               New
             </Button>
           </>
         }
-        items={agentList.map((agent) => {
+        items={agentList
+          .map((agent) => {
             if (!agent.id) {
               return null;
             }
@@ -69,7 +101,7 @@ export function AgentsTab() {
               id: agent.id,
               content: <TabItem agent={agent} />,
               onClick: async () => {
-                setActiveAgent(agent);
+                handleSetActiveAgent(agent);
               },
               actived: activeAgent?.id === agent.id,
               noRemove: true,
@@ -99,7 +131,7 @@ const TabItem = ({ agent }: { agent: AgentInfos }) => {
     content: "Hello, how are you?",
     created_at: new Date().toISOString(),
     id: "1",
-  }
+  };
   return (
     <div className="flex items-center justify-between gap-2 min-h-8">
       <Avatar
@@ -120,7 +152,9 @@ const TabItem = ({ agent }: { agent: AgentInfos }) => {
           </span>
         </div>
         <span className="text-xs text-muted-foreground line-clamp-1">
-          {loadingState ? "typing..." : message?.content || agent.description || ""}
+          {loadingState
+            ? "typing..."
+            : message?.content || agent.description || ""}
         </span>
       </div>
     </div>

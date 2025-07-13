@@ -1,5 +1,9 @@
 import { Agent } from "./Agent";
-import { AgentInfos, ExecuteOptions, AgentChatOptions } from "./types/agent";
+import {
+  AgentInfos,
+  ExecuteOptions,
+  AgentChatOptions,
+} from "@common/types/agent";
 import { ToolsHandler } from "../model/chat/ToolsHandler";
 import { MessageItem } from "../../common/types/chatModel";
 
@@ -12,7 +16,9 @@ export class ReactAgent extends Agent {
   /* 机器人对话 */
   async chat(input: string, options?: AgentChatOptions): Promise<MessageItem> {
     return await this.execute(input, {
-      images: options?.images?.map(img => `data:${img.contentType};base64,${img.base64Image}`),
+      images: options?.images?.map(
+        (img) => `data:${img.contentType};base64,${img.base64Image}`,
+      ),
     });
   }
 
@@ -22,7 +28,9 @@ export class ReactAgent extends Agent {
       await this.ensureInitialized();
       let content = input;
       let iterations = 0;
+      console.log("当前模型:", this.model);
       
+
       this.context.pushMessage({
         role: "user",
         content: content,
@@ -30,13 +38,13 @@ export class ReactAgent extends Agent {
         images: options?.images,
         extra: options?.extra,
       });
-      
+
       /* 开始迭代 */
       while (iterations < 20) {
         iterations++;
         let content = "";
         let reasoner = "";
-        
+
         this.context.addLastMessage({
           role: "assistant",
           content: content,
@@ -44,7 +52,7 @@ export class ReactAgent extends Agent {
           created_at: Date.now(),
           loading: true,
         });
-        
+
         /* 生成响应 */
         const response = await this.model.stream(
           this.context.getCompletionMessages().slice(0, -1),
@@ -67,7 +75,7 @@ export class ReactAgent extends Agent {
           });
           break;
         }
-        
+
         // 如果没有工具调用，说明对话可以结束
         if (response.tool.length === 0) {
           this.context.updateLastMessage({
@@ -80,7 +88,7 @@ export class ReactAgent extends Agent {
             tool_loading: false,
             loading: false,
           });
-          
+
           for (const tool of response.tool) {
             if (tool?.id) {
               this.context.addLastMessage({
@@ -91,7 +99,7 @@ export class ReactAgent extends Agent {
                 loading: true,
                 tool_loading: true,
               });
-              
+
               const toolResult = await ToolsHandler.call(tool, this);
               this.context.updateLastMessage({
                 tool_loading: false,
@@ -118,17 +126,17 @@ export class ReactAgent extends Agent {
           created_at: Date.now(),
           hidden: true,
         });
-        
+
         let content = "";
         let reasoner = "";
-        
+
         this.context.addLastMessage({
           role: "assistant",
           content: "",
           created_at: Date.now(),
           loading: true,
         });
-        
+
         await this.model.stream(
           this.context.getCompletionMessages(),
           (chunk) => {
@@ -140,7 +148,7 @@ export class ReactAgent extends Agent {
             });
           },
         );
-        
+
         this.context.updateLastMessage({
           loading: false,
         });
@@ -156,4 +164,4 @@ export class ReactAgent extends Agent {
       throw error;
     }
   }
-} 
+}

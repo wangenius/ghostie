@@ -39,15 +39,3 @@ createRoot(ToastProvider).render(
     }}
   />,
 );
-
-/**
- * 初始化调度器
- * 启动定时任务和调度功能
- */
-// Scheduler.init();
-
-/**
- * 初始化用户管理器
- * 检查用户状态和权限
- */
-// UserMananger.init();

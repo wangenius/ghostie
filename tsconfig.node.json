@@ -12,6 +12,5 @@
       "@common/*": ["./src/common/*"]
     },
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
   }
 }

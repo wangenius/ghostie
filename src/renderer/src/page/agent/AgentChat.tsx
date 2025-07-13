@@ -1,5 +1,4 @@
 import { dialog } from "@/components/custom/DialogModal";
-import { ImageElement } from "@/components/editor/elements/image";
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
 import {
@@ -8,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAgent, useAgentChat } from "@/hooks/useAgent";
 import { cmd } from "@/utils/shell";
 import Avatar from "boring-avatars";
 import { observer } from "mobx-react-lite";
@@ -19,8 +19,7 @@ import {
   TbPencil,
   TbPlus,
   TbStethoscope,
-  TbTrash,
-  TbUpload,
+  TbTrash
 } from "react-icons/tb";
 import { Descendant } from "slate";
 import { toast } from "sonner";
@@ -28,18 +27,10 @@ import { AgentEditor } from "./AgentEditor";
 import { EmptyChatMinimal } from "./EmptyChatMinimal";
 import { HistoryPage } from "./HistoryDrawer";
 import { ChatMessageItem } from "./MessageItem";
-import { plainText, TypeArea } from "./TypeArea";
-import { useAgent, useAgentChat } from "@/hooks/useAgent";
+import { plainText, TypeArea } from "../../components/TypeArea";
 
 // 从useAgent hook导入的类型
-type AgentInfos = NonNullable<ReturnType<typeof useAgent>['agents'][string]>;
-
-// 定义 MentionElement 接口
-interface MentionElement {
-  type: "mention";
-  id: string;
-  children: { text: string }[];
-}
+type AgentInfos = NonNullable<ReturnType<typeof useAgent>["agents"][string]>;
 
 // 定义 AgentChat 组件的 props
 interface AgentChatProps {
@@ -47,14 +38,10 @@ interface AgentChatProps {
 }
 
 export const AgentChat = observer(({ agent }: AgentChatProps) => {
-  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<{ focus: () => void }>(null);
   const [mode, setMode] = useState<"chat" | "edit">("chat");
-  /* Agent是否已在市场中 */
-  const [isAgentInMarket, setIsAgentInMarket] = useState(false);
-
   const [value, setValue] = useState<Descendant[]>([
     {
       type: "paragraph",
@@ -63,21 +50,21 @@ export const AgentChat = observer(({ agent }: AgentChatProps) => {
   ]);
 
   const [historyOpen, setHistoryOpen] = useState(false);
-  
+
   // 使用 useAgentChat hook
   const { 
     messages, 
     loading, 
-    error, 
     sendMessage, 
     clearMessages, 
-    stopAgent,
-    diagnoseAgent,
+    loadChatSession,
+    getChatSessions,
+    deleteChatSession,
+    deleteAllChatSessions,
+    diagnoseAgent 
   } = useAgentChat(agent.id);
-  
+
   const { deleteAgent } = useAgent();
-
-
 
   // 自动滚动到底部
   useEffect(() => {
@@ -100,13 +87,13 @@ export const AgentChat = observer(({ agent }: AgentChatProps) => {
       }
     }
   };
-  
+
   // 提交消息
   const handleSubmit = useCallback(
     async (value: Descendant[]) => {
       const content = plainText(value).trim();
       if (!content) return;
-      
+
       try {
         await sendMessage(content);
         // 清空输入框
@@ -123,20 +110,17 @@ export const AgentChat = observer(({ agent }: AgentChatProps) => {
     },
     [sendMessage],
   );
-  
+
   // 清空聊天记录
-  const handleNewChat = useCallback(() => {
-    clearMessages();
+  const handleNewChat = useCallback(async () => {
+    await clearMessages();
   }, [clearMessages]);
-  
-  // 上传机器人
-  const handleUpload = useCallback(async () => {}, []);
-  
+
   // 执行诊断
   const handleDiagnose = async () => {
     try {
-      const result = await diagnoseAgent(agent.id);
-      
+      const result = await diagnoseAgent();
+
       // 显示诊断结果对话框
       dialog({
         title: "配置诊断结果",
@@ -144,16 +128,24 @@ export const AgentChat = observer(({ agent }: AgentChatProps) => {
         content: (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${
-                result.status === 'ok' ? 'bg-green-500' :
-                result.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
-              }`} />
+              <div
+                className={`w-3 h-3 rounded-full ${
+                  result.status === "ok"
+                    ? "bg-green-500"
+                    : result.status === "warning"
+                      ? "bg-yellow-500"
+                      : "bg-red-500"
+                }`}
+              />
               <span className="font-medium">
-                {result.status === 'ok' ? '配置正常' :
-                 result.status === 'warning' ? '发现警告' : '发现错误'}
+                {result.status === "ok"
+                  ? "配置正常"
+                  : result.status === "warning"
+                    ? "发现警告"
+                    : "发现错误"}
               </span>
             </div>
-            
+
             {result.issues.length > 0 && (
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">问题:</h4>
@@ -167,7 +159,7 @@ export const AgentChat = observer(({ agent }: AgentChatProps) => {
                 </ul>
               </div>
             )}
-            
+
             {result.recommendations.length > 0 && (
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">建议:</h4>
@@ -188,7 +180,7 @@ export const AgentChat = observer(({ agent }: AgentChatProps) => {
             <Button variant="outline" onClick={close}>
               关闭
             </Button>
-            {result.status !== 'ok' && (
+            {result.status !== "ok" && (
               <Button
                 onClick={() => {
                   close();
@@ -201,11 +193,11 @@ export const AgentChat = observer(({ agent }: AgentChatProps) => {
           </div>
         ),
       });
-      
+
       // 如果有问题，显示toast提示
-      if (result.status === 'error') {
+      if (result.status === "error") {
         toast.error("发现配置问题，请查看诊断结果");
-      } else if (result.status === 'warning') {
+      } else if (result.status === "warning") {
         toast.warning("发现一些警告，请查看诊断结果");
       } else {
         toast.success("配置正常");
@@ -217,9 +209,7 @@ export const AgentChat = observer(({ agent }: AgentChatProps) => {
   };
 
   return (
-    <div
-      className="flex flex-col h-full border-none shadow-none bg-background/50"
-    >
+    <div className="flex flex-col h-full border-none shadow-none bg-background/50">
       {/* Agent信息头部 */}
       <div className="space-y-0 flex flex-row items-center justify-between px-4">
         <div className="flex items-center space-x-3">
@@ -282,19 +272,26 @@ export const AgentChat = observer(({ agent }: AgentChatProps) => {
                 children={
                   <HistoryPage
                     agent={agent}
-                    sessions={[]} // TODO: 实现真实的历史会话管理
+                    getChatSessions={getChatSessions}
                     onClick={(session) => {
                       setHistoryOpen(false);
-                      // TODO: 加载历史对话
-                      console.log("加载历史对话:", session);
+                      loadChatSession(session.id);
                     }}
-                    onDeleteSession={(sessionId) => {
-                      // TODO: 删除单个会话
-                      console.log("删除会话:", sessionId);
+                    onDeleteSession={async (sessionId) => {
+                      try {
+                        await deleteChatSession(sessionId);
+                        toast.success("会话删除成功");
+                      } catch (error) {
+                        toast.error("删除会话失败");
+                      }
                     }}
-                    onDeleteAll={() => {
-                      // TODO: 删除所有会话
-                      console.log("删除所有会话");
+                    onDeleteAll={async () => {
+                      try {
+                        await deleteAllChatSessions();
+                        toast.success("所有会话删除成功");
+                      } catch (error) {
+                        toast.error("删除所有会话失败");
+                      }
                     }}
                   />
                 }
@@ -319,19 +316,11 @@ export const AgentChat = observer(({ agent }: AgentChatProps) => {
                     <TbTrash className="w-4 h-4 mr-2" />
                     Delete
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleUpload}>
-                    <TbUpload className="w-4 h-4 mr-2" />
-                    {isAgentInMarket ? "更新" : "上传"}
-                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : (
-            <Button
-              size="sm"
-              onClick={() => setMode("chat")}
-              className="gap-1"
-            >
+            <Button size="sm" onClick={() => setMode("chat")} className="gap-1">
               <TbArrowLeft className="h-4 w-4" />
               返回聊天
             </Button>
@@ -340,10 +329,7 @@ export const AgentChat = observer(({ agent }: AgentChatProps) => {
       </div>
 
       {/* 聊天区域 */}
-      <div
-        key={`chat-${mode}`}
-        className="flex-1 p-0 overflow-hidden"
-      >
+      <div key={`chat-${mode}`} className="flex-1 p-0 overflow-hidden">
         {mode === "chat" && (
           <div className="flex flex-col h-full">
             <div
@@ -370,7 +356,7 @@ export const AgentChat = observer(({ agent }: AgentChatProps) => {
                 </>
               )}
             </div>
-            
+
             {/* 输入区域 */}
             <div className="border-t px-4 py-3">
               <TypeArea
@@ -385,12 +371,8 @@ export const AgentChat = observer(({ agent }: AgentChatProps) => {
           </div>
         )}
 
-        {mode === "edit" && (
-          <AgentEditor agent={agent} />
-        )}
+        {mode === "edit" && <AgentEditor agent={agent} />}
       </div>
-
-
     </div>
   );
 });

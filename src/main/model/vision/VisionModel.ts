@@ -7,7 +7,7 @@ import {
   VisionModelResponse,
 } from "src/common/types/visionModel";
 import { ImageManager } from "@/resources/Image";
-import { gen } from "@/utils/generator";
+import { gen } from "@common/generator";
 import { VisionMessage } from "./VisionMessage";
 import { VisionModelManager } from "./VisionModelManager";
 import { HttpStreamHandler } from "@/utils/http-stream";

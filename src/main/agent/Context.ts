@@ -1,7 +1,6 @@
 import { CompletionMessage, MessageItem } from "src/common/types/chatModel";
 import { gen } from "@/utils/generator";
-import { Agent } from "../Agent";
-import { ContextMemory } from "./Memory";
+import { Agent } from "./Agent";
 /* 上下文 */
 export interface ContextRuntimeProps {
   id: string;
@@ -16,8 +15,6 @@ export interface ContextRuntimeProps {
 export class Context {
   /** 上下文ID */
   agent: Agent;
-  /** 持久化记忆体： 一个新的Agent对话，也会保持一致。 */
-  memory: ContextMemory;
   /** 运行时上下文 */
   runtime: ContextRuntimeProps;
   /**
@@ -25,7 +22,6 @@ export class Context {
    */
   private constructor(agent: Agent) {
     this.agent = agent;
-    this.memory = new ContextMemory();
     this.runtime = {
       id: gen.id(),
       messages: [],
@@ -37,7 +33,6 @@ export class Context {
       created_at: Date.now(),
       updated_at: Date.now(),
     };
-
   }
 
   setRuntime(runtime?: ContextRuntimeProps) {
@@ -84,8 +79,15 @@ export class Context {
 
   reset() {
     this.runtime = {
-      ...this.runtime,
+      id: gen.id(), // 生成新的会话ID
+      system: {
+        role: "system",
+        content: this.agent.infos.system || "",
+        created_at: Date.now(),
+      },
       messages: [],
+      created_at: Date.now(),
+      updated_at: Date.now(),
     };
   }
   update(messages: MessageItem[]) {

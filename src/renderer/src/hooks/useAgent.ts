@@ -1,12 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
-import { cmd } from "../utils/shell";
 import {
-  AgentInfos,
   AgentChatOptions,
-  ChatMessage,
-  ChatSession,
-} from "../../../common/types/agent";
+  AgentInfos
+} from "@common/types/agent";
 import { MessageItem } from "@common/types/chatModel";
+import { useCallback, useEffect, useState } from "react";
+import { cmd } from "../utils/shell";
 
 /**
  * Agent 管理 Hook
@@ -37,7 +35,8 @@ export const useAgent = () => {
       setLoading(true);
       setError(null);
       const newAgent = await cmd.invoke<AgentInfos>("agent-create", infos);
-      setAgents((prev) => ({ ...prev, [newAgent.id]: newAgent }));
+      // 创建后立即刷新列表以确保同步
+      await fetchAgents();
       return newAgent;
     } catch (err) {
       setError(err instanceof Error ? err.message : "创建 Agent 失败");
@@ -45,12 +44,16 @@ export const useAgent = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchAgents]);
 
   // 根据 ID 获取 Agent
   const getAgentById = useCallback(async (id: string) => {
     try {
       const agent = await cmd.invoke<AgentInfos | null>("agent-get-by-id", id);
+      // 如果获取成功，更新本地状态中的对应Agent
+      if (agent) {
+        setAgents((prev) => ({ ...prev, [agent.id]: agent }));
+      }
       return agent;
     } catch (err) {
       setError(err instanceof Error ? err.message : "获取 Agent 失败");
@@ -64,19 +67,25 @@ export const useAgent = () => {
       try {
         setLoading(true);
         setError(null);
-        await cmd.invoke("agent-update", id, data);
-        setAgents((prev) => ({
+        
+        // 乐观更新：立即更新本地状态
+        setAgents(prev => ({
           ...prev,
-          [id]: { ...prev[id], ...data },
+          [id]: { ...prev[id], ...data }
         }));
+        
+        await cmd.invoke("agent-update", id, data);
+        // 不再需要手动调用fetchAgents，因为后端会发送事件
       } catch (err) {
         setError(err instanceof Error ? err.message : "更新 Agent 失败");
+        // 如果更新失败，重新获取数据以恢复正确状态
+        await fetchAgents();
         throw err;
       } finally {
         setLoading(false);
       }
     },
-    [],
+    [fetchAgents],
   );
 
   // 删除 Agent
@@ -85,23 +94,70 @@ export const useAgent = () => {
       setLoading(true);
       setError(null);
       await cmd.invoke("agent-delete", id);
-      setAgents((prev) => {
-        const newAgents = { ...prev };
-        delete newAgents[id];
-        return newAgents;
-      });
+      // 删除后立即刷新列表以确保同步
+      await fetchAgents();
     } catch (err) {
       setError(err instanceof Error ? err.message : "删除 Agent 失败");
       throw err;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchAgents]);
 
   // 初始化时获取 Agent 列表
   useEffect(() => {
     fetchAgents();
   }, [fetchAgents]);
+
+  // 监听Agent事件和定期刷新
+   useEffect(() => {
+     // 监听Agent事件
+     const handleAgentUpdated = (agentInfo: AgentInfos) => {
+       setAgents(prev => ({
+         ...prev,
+         [agentInfo.id]: agentInfo
+       }));
+     };
+ 
+     const handleAgentCreated = (agentInfo: AgentInfos) => {
+       setAgents(prev => ({
+         ...prev,
+         [agentInfo.id]: agentInfo
+       }));
+     };
+ 
+     const handleAgentDeleted = ({ id }: { id: string }) => {
+       setAgents(prev => {
+         const newAgents = { ...prev };
+         delete newAgents[id];
+         return newAgents;
+       });
+     };
+ 
+     const handleAgentsRefreshed = (newAgents: Record<string, AgentInfos>) => {
+       setAgents(newAgents);
+     };
+ 
+     // 注册事件监听器并保存取消函数
+     const unsubscribeAgentUpdated = cmd.on('agent-updated', handleAgentUpdated);
+     const unsubscribeAgentCreated = cmd.on('agent-created', handleAgentCreated);
+     const unsubscribeAgentDeleted = cmd.on('agent-deleted', handleAgentDeleted);
+     const unsubscribeAgentsRefreshed = cmd.on('agents-refreshed', handleAgentsRefreshed);
+     
+     // 每30秒刷新一次作为备用机制
+     const interval = setInterval(() => {
+       fetchAgents();
+     }, 30000);
+ 
+     return () => {
+       clearInterval(interval);
+       // 清理事件监听器
+       if (typeof unsubscribeAgentUpdated === 'function') unsubscribeAgentUpdated();
+       if (typeof unsubscribeAgentCreated === 'function') unsubscribeAgentCreated();
+       if (typeof unsubscribeAgentDeleted === 'function') unsubscribeAgentDeleted();
+       if (typeof unsubscribeAgentsRefreshed === 'function') unsubscribeAgentsRefreshed();
+     };
+   }, [fetchAgents]);
 
   return {
     agents,
@@ -122,6 +178,34 @@ export const useAgentChat = (agentId: string) => {
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+
+  // 当agentId变化时，重置聊天状态并尝试恢复最后的会话
+  useEffect(() => {
+    setMessages([]);
+    setCurrentSessionId(null);
+    setError(null);
+
+    // 尝试恢复最后的会话
+    const restoreLastSession = async () => {
+      try {
+        const lastSessionId = localStorage.getItem(`lastSessionId_${agentId}`);
+        if (lastSessionId) {
+          const sessionMessages = await cmd.invoke("chat-history-load-session", lastSessionId);
+          if (sessionMessages && sessionMessages.length > 0) {
+            setMessages(sessionMessages);
+            setCurrentSessionId(lastSessionId);
+          }
+        }
+      } catch (error) {
+        console.warn("恢复最后会话失败:", error);
+      }
+    };
+
+    if (agentId) {
+      restoreLastSession();
+    }
+  }, [agentId]);
 
   // 发送消息
   const sendMessage = useCallback(
@@ -142,6 +226,29 @@ export const useAgentChat = (agentId: string) => {
           created_at: Date.now(),
         };
         setMessages((prev) => [...prev, userMessage]);
+
+        // 如果没有当前会话，创建新会话
+        let sessionId = currentSessionId;
+        if (!sessionId) {
+          try {
+            const session = await cmd.invoke("chat-history-create-session", agentId, userMessage);
+            sessionId = session.id;
+            setCurrentSessionId(sessionId);
+            // 保存最后使用的会话ID
+            if (sessionId) {
+              localStorage.setItem(`lastSessionId_${agentId}`, sessionId);
+            }
+          } catch (err) {
+            console.warn("创建聊天会话失败，继续使用内存模式:", err);
+          }
+        } else {
+          // 将用户消息添加到现有会话
+          try {
+            await cmd.invoke("chat-history-add-message", sessionId, userMessage);
+          } catch (err) {
+            console.warn("保存用户消息到会话失败:", err);
+          }
+        }
 
         // 调用 Agent 聊天
         const response = await cmd.invoke(
@@ -179,6 +286,15 @@ export const useAgentChat = (agentId: string) => {
 
         setMessages((prev) => [...prev, aiMessage]);
 
+        // 将AI回复添加到会话
+        if (sessionId) {
+          try {
+            await cmd.invoke("chat-history-add-message", sessionId, aiMessage);
+          } catch (err) {
+            console.warn("保存AI回复到会话失败:", err);
+          }
+        }
+
         return aiMessage;
       } catch (err) {
         setError(err instanceof Error ? err.message : "发送消息失败");
@@ -187,13 +303,24 @@ export const useAgentChat = (agentId: string) => {
         setLoading(false);
       }
     },
-    [agentId],
+    [agentId, currentSessionId],
   );
 
   // 清除消息
-  const clearMessages = useCallback(() => {
+  const clearMessages = useCallback(async () => {
     setMessages([]);
-  }, []);
+    setCurrentSessionId(null);
+    // 清除最后使用的会话ID
+    localStorage.removeItem(`lastSessionId_${agentId}`);
+    
+    // 重置后端Agent的上下文
+    try {
+      await cmd.invoke("agent-reset-context", agentId);
+      console.log("Agent上下文已重置");
+    } catch (error) {
+      console.warn("重置Agent上下文失败:", error);
+    }
+  }, [agentId]);
 
   // 停止Agent
   const stopAgent = useCallback(async () => {
@@ -205,7 +332,7 @@ export const useAgentChat = (agentId: string) => {
   }, []);
 
   // 诊断Agent配置问题
-  const diagnoseAgent = useCallback(async (agentId: string) => {
+  const diagnoseAgent = useCallback(async () => {
     try {
       const result = await cmd.invoke("agent-diagnose") as {
         status: 'ok' | 'warning' | 'error';
@@ -223,12 +350,69 @@ export const useAgentChat = (agentId: string) => {
     }
   }, []);
 
+  // 加载聊天会话
+  const loadChatSession = useCallback(async (sessionId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const sessionMessages = await cmd.invoke("chat-history-load-session", sessionId);
+      setMessages(sessionMessages);
+      setCurrentSessionId(sessionId);
+      // 保存最后使用的会话ID
+      localStorage.setItem(`lastSessionId_${agentId}`, sessionId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "加载聊天会话失败");
+    } finally {
+      setLoading(false);
+    }
+  }, [agentId]);
+
+  // 获取聊天会话列表
+  const getChatSessions = useCallback(async () => {
+    try {
+      return await cmd.invoke("chat-history-get-sessions", agentId);
+    } catch (err) {
+      console.error("获取聊天会话列表失败:", err);
+      return [];
+    }
+  }, [agentId]);
+
+  // 删除聊天会话
+  const deleteChatSession = useCallback(async (sessionId: string) => {
+    try {
+      await cmd.invoke("chat-history-delete-session", sessionId);
+      // 如果删除的是当前会话，清空消息
+      if (sessionId === currentSessionId) {
+        await clearMessages();
+      }
+    } catch (err) {
+      console.error("删除聊天会话失败:", err);
+      throw err;
+    }
+  }, [currentSessionId, clearMessages]);
+
+  // 删除所有聊天会话
+  const deleteAllChatSessions = useCallback(async () => {
+    try {
+      await cmd.invoke("chat-history-delete-sessions-by-agent", agentId);
+      await clearMessages();
+    } catch (err) {
+      console.error("删除所有聊天会话失败:", err);
+      throw err;
+    }
+  }, [agentId, clearMessages]);
+
   return {
     messages,
     loading,
     error,
+    currentSessionId,
     sendMessage,
     clearMessages,
+    loadChatSession,
+    getChatSessions,
+    deleteChatSession,
+    deleteAllChatSessions,
     stopAgent,
     diagnoseAgent,
   };

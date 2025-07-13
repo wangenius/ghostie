@@ -2,7 +2,7 @@
  * 负责管理所有的视觉消息历史记录
  */
 import { VisionMessage as VisionMessageType } from "src/common/types/visionModel";
-import { gen } from "@/utils/generator";
+import { gen } from "@common/generator";
 
 /** 视觉聊天历史记录 */
 export interface VisionHistoryItem {

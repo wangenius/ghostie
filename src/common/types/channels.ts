@@ -53,6 +53,14 @@ export type InvokeChannels =
     | "agent-get-current"
     | "agent-stop"
     | "agent-close"
+    | "agent-reset-context"
+    | "chat-history-get-sessions"
+    | "chat-history-get-session"
+    | "chat-history-create-session"
+    | "chat-history-add-message"
+    | "chat-history-delete-session"
+    | "chat-history-delete-sessions-by-agent"
+    | "chat-history-load-session"
     | "toolkit-market-fetch"
     | "toolkit-market-install"
     | "toolkit-market-uninstall"
@@ -74,7 +82,7 @@ export type SendChannels = "notification";
 /**
  * on 通道类型
  */
-export type OnChannels = "update-available" | "update-downloaded" | "switch-tab";
+export type OnChannels = "update-available" | "update-downloaded" | "switch-tab" | "agent-updated" | "agent-created" | "agent-deleted" | "agents-refreshed";
 
 /**
  * invoke 参数映射
@@ -126,6 +134,14 @@ export type InvokeParamsMap = {
     "agent-get-current": [];
     "agent-stop": [];
     "agent-close": [];
+    "agent-reset-context": [string];
+    "chat-history-get-sessions": [string];
+    "chat-history-get-session": [string];
+    "chat-history-create-session": [string, any?];
+    "chat-history-add-message": [string, any];
+    "chat-history-delete-session": [string];
+    "chat-history-delete-sessions-by-agent": [string];
+    "chat-history-load-session": [string];
     "toolkit-market-fetch": [number, number];
     "toolkit-market-install": [any];
     "toolkit-market-uninstall": [string];
@@ -190,6 +206,14 @@ export type InvokeReturnMap = {
     "agent-get-current": any;
     "agent-stop": void;
     "agent-close": void;
+    "agent-reset-context": void;
+    "chat-history-get-sessions": any[];
+    "chat-history-get-session": any | null;
+    "chat-history-create-session": any;
+    "chat-history-add-message": void;
+    "chat-history-delete-session": void;
+    "chat-history-delete-sessions-by-agent": void;
+    "chat-history-load-session": any[];
     "toolkit-market-fetch": any[];
     "toolkit-market-install": any;
     "toolkit-market-uninstall": void;
@@ -218,6 +242,10 @@ export type OnCallbackParamsMap = {
     "update-available": [any];
     "update-downloaded": [any];
     "switch-tab": [{ event: string; payload: string; id: number }];
+    "agent-updated": [string, any]; // [agentId, updatedAgent]
+    "agent-created": [any]; // [newAgent]
+    "agent-deleted": [string]; // [agentId]
+    "agents-refreshed": [Record<string, any>]; // [agentList]
 };
 
 /**
@@ -271,6 +299,14 @@ export const validChannels = {
         "agent-get-current",
         "agent-stop",
         "agent-close",
+        "agent-reset-context",
+        "chat-history-get-sessions",
+        "chat-history-get-session",
+        "chat-history-create-session",
+        "chat-history-add-message",
+        "chat-history-delete-session",
+        "chat-history-delete-sessions-by-agent",
+        "chat-history-load-session",
         "toolkit-market-fetch",
         "toolkit-market-install",
         "toolkit-market-uninstall",
@@ -285,5 +321,5 @@ export const validChannels = {
         "model_set_api_key"
     ] as const,
     send: ["notification"] as const,
-    on: ["update-available", "update-downloaded", "switch-tab"] as const
-}; 
+    on: ["update-available", "update-downloaded", "switch-tab", "agent-updated", "agent-created", "agent-deleted", "agents-refreshed"] as const
+};

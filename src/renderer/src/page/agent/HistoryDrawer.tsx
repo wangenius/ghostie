@@ -2,9 +2,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TbClock, TbMessageCircle, TbTrash } from "react-icons/tb";
 import { useAgent } from "@/hooks/useAgent";
+import { useState, useEffect } from "react";
 
 // 从useAgent hook导入的类型
-type AgentInfos = NonNullable<ReturnType<typeof useAgent>['agents'][string]>;
+type AgentInfos = NonNullable<ReturnType<typeof useAgent>["agents"][string]>;
 
 interface ChatSession {
   id: string;
@@ -18,56 +19,64 @@ interface ChatSession {
 interface HistoryPageProps {
   agent?: AgentInfos;
   sessions?: ChatSession[];
+  getChatSessions?: () => Promise<ChatSession[]>;
   onClick: (session: ChatSession) => void;
   onDeleteSession?: (sessionId: string) => void;
   onDeleteAll?: () => void;
 }
 
-export const HistoryPage = ({ 
-  agent, 
-  sessions = [], 
-  onClick, 
+export const HistoryPage = ({
+  agent,
+  sessions = [],
+  getChatSessions,
+  onClick,
   onDeleteSession,
-  onDeleteAll 
+  onDeleteAll,
 }: HistoryPageProps) => {
-  
-  // 模拟历史数据（如果没有传入真实数据）
-  const mockSessions: ChatSession[] = [
-    {
-      id: "1",
-      agentId: agent?.id || "",
-      title: "Hello, how are you?",
-      messages: [
-        { id: "1", role: "user", content: "Hello, how are you?", timestamp: Date.now() },
-        { id: "2", role: "assistant", content: "I'm doing well, thank you!", timestamp: Date.now() }
-      ],
-      createdAt: Date.now() - 3600000, // 1小时前
-      updatedAt: Date.now() - 3600000,
-    },
-    {
-      id: "2", 
-      agentId: agent?.id || "",
-      title: "What's the weather like?",
-      messages: [
-        { id: "3", role: "user", content: "What's the weather like?", timestamp: Date.now() },
-      ],
-      createdAt: Date.now() - 7200000, // 2小时前
-      updatedAt: Date.now() - 7200000,
-    }
-  ];
+  const [realSessions, setRealSessions] = useState<ChatSession[]>([]);
 
-  const displaySessions = sessions.length > 0 ? sessions : mockSessions;
+  // 加载真实的聊天会话
+  useEffect(() => {
+    const loadSessions = async () => {
+      if (getChatSessions) {
+        try {
+          const sessions = await getChatSessions();
+          setRealSessions(sessions);
+        } catch (error) {
+          console.error("加载聊天会话失败:", error);
+        }
+      }
+    };
 
-  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
+    loadSessions();
+  }, [getChatSessions]);
+
+  const displaySessions = realSessions.length > 0 ? realSessions : sessions;
+
+  const handleDeleteSession = async (
+    sessionId: string,
+    e: React.MouseEvent,
+  ) => {
     e.stopPropagation();
     if (onDeleteSession) {
-      onDeleteSession(sessionId);
+      await onDeleteSession(sessionId);
+      // 刷新会话列表
+      if (getChatSessions) {
+        try {
+          const sessions = await getChatSessions();
+          setRealSessions(sessions);
+        } catch (error) {
+          console.error("刷新会话列表失败:", error);
+        }
+      }
     }
   };
 
   const handleDeleteAll = async () => {
     if (onDeleteAll) {
-      onDeleteAll();
+      await onDeleteAll();
+      // 清空会话列表
+      setRealSessions([]);
     }
   };
 
@@ -89,7 +98,7 @@ export const HistoryPage = ({
           </Button>
         )}
       </div>
-      
+
       {displaySessions.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-center p-8">
           <TbMessageCircle className="h-12 w-12 text-muted-foreground mb-2" />
@@ -131,7 +140,9 @@ export const HistoryPage = ({
                 )}
               </div>
               <h3 className="text-xs my-1 font-medium line-clamp-2">
-                {session.title || session.messages?.[0]?.content || "无标题对话"}
+                {session.title ||
+                  session.messages?.[0]?.content ||
+                  "无标题对话"}
               </h3>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <TbMessageCircle className="h-3.5 w-3.5" />

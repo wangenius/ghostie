@@ -24,7 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { ParamInput } from "@/page/toolkit/components/ParamInput";
 import { StartNodeConfig } from "@/page/workflow/types/nodes";
-import { gen } from "@/utils/generator";
+import { gen } from "@common/generator";
 import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
 import { format } from "date-fns";
 import { motion } from "framer-motion";

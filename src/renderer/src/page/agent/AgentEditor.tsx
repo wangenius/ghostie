@@ -6,7 +6,7 @@ import { useAgent } from "@/hooks/useAgent";
 import { useState, useEffect } from "react";
 
 // 从useAgent hook导入的类型
-type AgentInfos = NonNullable<ReturnType<typeof useAgent>['agents'][string]>;
+type AgentInfos = NonNullable<ReturnType<typeof useAgent>["agents"][string]>;
 
 interface AgentEditorProps {
   agent: AgentInfos;
@@ -15,7 +15,7 @@ interface AgentEditorProps {
 export const AgentEditor = ({ agent }: AgentEditorProps) => {
   const [localAgent, setLocalAgent] = useState<AgentInfos>(agent);
   const { updateAgent } = useAgent();
-  const { models, fetchProviders, getModelsArray } = useModels();
+  const { fetchProviders, getModelsArray } = useModels();
 
   // 当传入的agent变化时，更新本地状态
   useEffect(() => {
@@ -25,15 +25,13 @@ export const AgentEditor = ({ agent }: AgentEditorProps) => {
   // 获取文本、视觉和图像模型
   useEffect(() => {
     fetchProviders(ModelType.TEXT);
-    fetchProviders(ModelType.VISION);
-    fetchProviders(ModelType.IMAGE);
   }, [fetchProviders]);
 
   // 更新agent的辅助函数
-  const handleUpdate = async (updates: Partial<Omit<AgentInfos, 'id'>>) => {
+  const handleUpdate = async (updates: Partial<Omit<AgentInfos, "id">>) => {
     const updatedAgent = { ...localAgent, ...updates };
     setLocalAgent(updatedAgent);
-    
+
     try {
       await updateAgent(agent.id, updates);
     } catch (error) {
@@ -99,7 +97,7 @@ export const AgentEditor = ({ agent }: AgentEditorProps) => {
               placeholder="Please enter the system prompt..."
             />
           </section>
-          
+
           <section className="space-y-4">
             <h3 className="text-lg font-medium">Models</h3>
             <div className="space-y-4">
@@ -112,32 +110,6 @@ export const AgentEditor = ({ agent }: AgentEditorProps) => {
                     models: {
                       ...localAgent.models,
                       text: value,
-                    },
-                  })
-                }
-              />
-              <DrawerSelector
-                title="Vision Model"
-                value={[localAgent.models?.vision]}
-                items={getModelsArray(ModelType.VISION)}
-                onSelect={([value]) =>
-                  handleUpdate({
-                    models: {
-                      ...localAgent.models,
-                      vision: value,
-                    },
-                  })
-                }
-              />
-              <DrawerSelector
-                title="Image Model"
-                value={[localAgent.models?.image]}
-                items={getModelsArray(ModelType.IMAGE)}
-                onSelect={([value]) =>
-                  handleUpdate({
-                    models: {
-                      ...localAgent.models,
-                      image: value,
                     },
                   })
                 }
