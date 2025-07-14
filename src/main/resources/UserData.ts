@@ -17,16 +17,19 @@ export class UserData {
   }
   async save(data: object, fileName: string): Promise<void> {
     try {
-      const dir = path.dirname(this.path);
-
       // 确保目录存在
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+      if (!fs.existsSync(this.path)) {
+        fs.mkdirSync(this.path, { recursive: true });
+        console.log("创建用户数据目录:", this.path);
       }
 
-      fs.writeFileSync(path.join(dir, fileName), JSON.stringify(data));
+      const filePath = path.join(this.path, fileName);
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+      console.log("文件保存成功:", filePath);
+      console.log("文件大小:", fs.statSync(filePath).size, "字节");
     } catch (error) {
       console.error("保存 Agent 数据失败:", error);
+      throw error;
     }
   }
   async load<T = object>(fileName: string): Promise<T> {

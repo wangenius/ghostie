@@ -87,6 +87,7 @@ export class ReactAgent extends Agent {
             loading: false,
           });
 
+          // 执行工具调用
           for (const tool of response.tool) {
             if (tool?.id) {
               this.context.addLastMessage({
@@ -97,6 +98,30 @@ export class ReactAgent extends Agent {
                 loading: true,
                 tool_loading: true,
               });
+
+              try {
+                // 解析工具调用参数
+                const args = JSON.parse(tool.function.arguments || '{}');
+                console.log(`执行工具: ${tool.function.name}`, args);
+                
+                // 这里应该调用实际的工具执行逻辑
+                // 目前先返回一个占位符结果
+                const toolResult = `工具 ${tool.function.name} 已被调用，参数: ${JSON.stringify(args)}`;
+                
+                this.context.updateLastMessage({
+                  content: toolResult,
+                  loading: false,
+                  tool_loading: false,
+                });
+              } catch (error) {
+                console.error(`工具执行失败: ${tool.function.name}`, error);
+                this.context.updateLastMessage({
+                  content: `工具执行失败: ${error instanceof Error ? error.message : String(error)}`,
+                  loading: false,
+                  tool_loading: false,
+                  error: error instanceof Error ? error.message : String(error),
+                });
+              }
             }
           }
         }

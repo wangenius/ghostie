@@ -218,6 +218,13 @@ export const useAgentChat = (agentId: string) => {
       try {
         setLoading(true);
         setError(null);
+        
+        // 检查后端连接状态
+        try {
+          await cmd.invoke("agent-get-by-id", agentId);
+        } catch (err) {
+          throw new Error("无法连接到后端服务，请检查应用状态");
+        }
 
         // 添加用户消息
         const userMessage: MessageItem = {
@@ -240,6 +247,10 @@ export const useAgentChat = (agentId: string) => {
             }
           } catch (err) {
             console.warn("创建聊天会话失败，继续使用内存模式:", err);
+            // 设置一个临时的错误状态，但不阻止聊天继续
+            setError("聊天会话创建失败，消息将不会被保存");
+            // 3秒后清除错误状态
+            setTimeout(() => setError(null), 3000);
           }
         } else {
           // 将用户消息添加到现有会话
@@ -247,6 +258,8 @@ export const useAgentChat = (agentId: string) => {
             await cmd.invoke("chat-history-add-message", sessionId, userMessage);
           } catch (err) {
             console.warn("保存用户消息到会话失败:", err);
+            setError("消息保存失败，但聊天可以继续");
+            setTimeout(() => setError(null), 3000);
           }
         }
 
@@ -325,16 +338,16 @@ export const useAgentChat = (agentId: string) => {
   // 停止Agent
   const stopAgent = useCallback(async () => {
     try {
-      await cmd.invoke("agent-stop");
+      await cmd.invoke("agent-stop", agentId);
     } catch (err) {
       console.error("停止Agent失败:", err);
     }
-  }, []);
+  }, [agentId]);
 
   // 诊断Agent配置问题
   const diagnoseAgent = useCallback(async () => {
     try {
-      const result = await cmd.invoke("agent-diagnose") as {
+      const result = await cmd.invoke("agent-diagnose", agentId) as {
         status: 'ok' | 'warning' | 'error';
         issues: string[];
         recommendations: string[];
@@ -348,7 +361,7 @@ export const useAgentChat = (agentId: string) => {
         recommendations: ['请检查Agent是否正常运行'],
       };
     }
-  }, []);
+  }, [agentId]);
 
   // 加载聊天会话
   const loadChatSession = useCallback(async (sessionId: string) => {

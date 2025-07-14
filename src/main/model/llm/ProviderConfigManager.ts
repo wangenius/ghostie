@@ -1,8 +1,3 @@
-import { ProviderV1 } from "@ai-sdk/provider";
-import { Providers } from "./LLM";
-import { createOpenAI } from "@ai-sdk/openai";
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { createQwen } from "./provider/qwenProvider";
 import { Settings } from "@/app/Settings";
 import { IpcHandle, registerIpcHandlers } from "@/ipc/decorators";
 
@@ -13,7 +8,7 @@ export interface ProviderConfig {
   description?: string;
   apiKey?: string;
   baseURL?: string;
-  customModels?: string[]; // 用户自定义的模型列表
+  customModels?: string[];
 }
 
 /**
@@ -84,32 +79,6 @@ export class ProviderConfigManager {
    */
   private registerProvider(config: ProviderConfig) {
     try {
-      let provider: ProviderV1;
-
-      switch (config.format) {
-        case "openai":
-          provider = createOpenAI({
-            apiKey: config.apiKey,
-            baseURL: config.baseURL,
-          });
-          break;
-        case "anthropic":
-          provider = createAnthropic({
-            apiKey: config.apiKey,
-            baseURL: config.baseURL,
-          });
-          break;
-        case "qwen":
-          provider = createQwen({
-            apiKey: config.apiKey,
-            baseURL: config.baseURL,
-          });
-          break;
-        default:
-          throw new Error(`不支持的Provider格式: ${config.format}`);
-      }
-
-      Providers.set(config.name, provider);
       console.log(`已注册Provider: ${config.name} (${config.format})`);
     } catch (error) {
       console.error(`注册Provider失败 ${config.name}:`, error);
@@ -157,16 +126,6 @@ export class ProviderConfigManager {
   @IpcHandle("provider-delete")
   async deleteProviderIpc(name: string): Promise<void> {
     return this.deleteProvider(name);
-  }
-
-  /**
-   * 测试Provider连接 - IPC处理器
-   */
-  @IpcHandle("provider-test")
-  async testProviderIpc(
-    config: ProviderConfig,
-  ): Promise<{ success: boolean; error?: string }> {
-    return this.testProvider(config);
   }
 
   /**
@@ -291,52 +250,9 @@ export class ProviderConfigManager {
     }
 
     this.providers.delete(name);
-    Providers.delete(name);
     await this.saveProviders();
   }
 
-  /**
-   * 测试Provider连接
-   */
-  async testProvider(
-    config: ProviderConfig,
-  ): Promise<{ success: boolean; error?: string }> {
-    try {
-      let provider: ProviderV1;
-      switch (config.format) {
-        case "openai":
-          provider = createOpenAI({
-            apiKey: config.apiKey,
-            baseURL: config.baseURL,
-          });
-          break;
-        case "anthropic":
-          provider = createAnthropic({
-            apiKey: config.apiKey,
-            baseURL: config.baseURL,
-          });
-          break;
-        case "qwen":
-          provider = createQwen({
-            apiKey: config.apiKey,
-            baseURL: config.baseURL,
-          });
-          break;
-        default:
-          throw new Error(`不支持的Provider格式: ${config.format}`);
-      }
-
-      // 这里可以添加实际的连接测试逻辑
-      // 比如发送一个简单的请求来验证配置是否正确
-
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
 
   /**
    * 获取Provider配置

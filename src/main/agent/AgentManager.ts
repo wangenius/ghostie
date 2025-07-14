@@ -49,7 +49,10 @@ export class AgentManager {
       const props = agent.getProps();
       agents[props.id] = props;
     });
-    await UserData.getInstance().save(this.agents, "agents.json");
+    console.log("正在保存agents到agents.json:", Object.keys(agents));
+    console.log("agents数据:", JSON.stringify(agents, null, 2));
+    await UserData.getInstance().save(agents, "agents.json");
+    console.log("agents.json保存完成");
   }
 
   /** 根据ID获取Agent实例 */
@@ -73,23 +76,23 @@ export class AgentManager {
       ...infos,
     };
 
-    // 保存到列表中
-    this.agents.set(agentId, new ReactAgent(agentInfos));
-    const agents = {};
-    this.agents.forEach((agent) => {
-      const props = agent.getProps();
-      agents[props.id] = props;
-    });
-    await UserData.getInstance().save(this.agents, "agents.json");
-
     // 创建Agent实例
-    const agent = await Agent.create(agentId);
+    const agent = new ReactAgent(agentInfos);
     this.agents.set(agentId, agent);
+    
+    // 保存到文件
+    await this.save();
+    
     // 发送事件到前端
     const mainWindow = BrowserWindow.getAllWindows()[0];
     if (mainWindow) {
       mainWindow.webContents.send("agent-created", agentInfos);
-      mainWindow.webContents.send("agents-refreshed", { ...agents });
+      const agents = {};
+      this.agents.forEach((agent) => {
+        const props = agent.getProps();
+        agents[props.id] = props;
+      });
+      mainWindow.webContents.send("agents-refreshed", agents);
     }
     return agent;
   }
@@ -101,12 +104,17 @@ export class AgentManager {
     if (!agent) return;
     agent.close();
     this.agents.delete(id);
-    this.save();
+    await this.save();
     // 发送事件到前端
     const mainWindow = BrowserWindow.getAllWindows()[0];
     if (mainWindow) {
       mainWindow.webContents.send("agent-deleted", { id });
-      mainWindow.webContents.send("agents-refreshed", { ...this.agents });
+      const agents = {};
+      this.agents.forEach((agent) => {
+        const props = agent.getProps();
+        agents[props.id] = props;
+      });
+      mainWindow.webContents.send("agents-refreshed", agents);
     }
   }
 
@@ -120,12 +128,17 @@ export class AgentManager {
       throw new Error(`Agent ${id} not found`);
     }
     agent.update(data);
-    this.save();
+    await this.save();
     // 发送事件到前端
     const mainWindow = BrowserWindow.getAllWindows()[0];
     if (mainWindow) {
       mainWindow.webContents.send("agent-updated", agent.props);
-      mainWindow.webContents.send("agents-refreshed", { ...this.agents });
+      const agents = {};
+      this.agents.forEach((agent) => {
+        const props = agent.getProps();
+        agents[props.id] = props;
+      });
+      mainWindow.webContents.send("agents-refreshed", agents);
     }
   }
 

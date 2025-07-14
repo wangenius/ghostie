@@ -24,6 +24,7 @@ export class Agent {
     this.props = props;
     this.context = Context.create(this);
     this.model = LLM.get(this.props.models.chat);
+    
     // 自动注册 IPC 处理器
     registerIpcHandlers(this);
   }

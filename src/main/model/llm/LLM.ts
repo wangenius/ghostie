@@ -1,6 +1,6 @@
-import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
-import { LanguageModelV1, ProviderV1 } from "@ai-sdk/provider";
+import { LanguageModelV1 } from "@ai-sdk/provider";
+import { processDataStream } from "@ai-sdk/ui-utils";
 import { ModelItem } from "@common/types/agent";
 import {
   ChatModelResponse,
@@ -8,42 +8,12 @@ import {
   OnChunk,
   ToolCallReply,
 } from "@common/types/chatModel";
-import { generateText, Tool } from "ai";
+import { generateText, streamText, Tool } from "ai";
+import dotenv from "dotenv";
 import { createQwen } from "./provider/qwenProvider";
 
-export const Providers = new Map<string, ProviderV1>();
+dotenv.config();
 
-// 初始化默认providers
-function initializeDefaultProviders() {
-  // 注册默认的OpenAI provider
-  Providers.set(
-    "openai",
-    createOpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    }),
-  );
-
-  // 注册默认的Anthropic provider
-  Providers.set(
-    "anthropic",
-    createAnthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    }),
-  );
-
-  // 注册默认的Qwen provider
-  Providers.set(
-    "qwen",
-    createQwen({
-      apiKey: process.env.DASHSCOPE_API_KEY,
-    }),
-  );
-
-  console.log("已初始化默认providers:", Array.from(Providers.keys()));
-}
-
-// 立即初始化默认providers
-initializeDefaultProviders();
 /**
  * 简化的 LLM 类，基于 Vercel AI SDK
  */
@@ -57,10 +27,6 @@ export class LLM {
     this.model = config.model;
   }
 
-  static getProvider(providerName: string): ProviderV1 | undefined {
-    return Providers.get(providerName);
-  }
-
   static get(modelItem: ModelItem | undefined): LLM {
     if (!modelItem) {
       return new LLM({
@@ -69,10 +35,10 @@ export class LLM {
         })("gpt-4o-mini"),
       });
     }
-    const provider = LLM.getProvider(modelItem.provider);
-    if (!provider) {
-      throw new Error(`Provider ${modelItem.provider} not found`);
-    }
+    const provider = createQwen({
+      apiKey: "sk-f341aea76bfc4c07bef778649db243cd",
+      baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    });
     return new LLM({
       model: provider.languageModel(modelItem.name),
     });
@@ -108,21 +74,6 @@ export class LLM {
     }));
   }
 
-  /**
-   * 转换工具调用结果
-   */
-  private convertToolCalls(toolCalls: any[]): ToolCallReply[] {
-    return toolCalls.map((call, index) => ({
-      id: call.toolCallId || `call_${index}`,
-      type: "function" as const,
-      index,
-      function: {
-        name: call.toolName,
-        arguments: JSON.stringify(call.args || {}),
-      },
-    }));
-  }
-
   /** 流式生成
    * @param messages 消息列表
    * @param onChunk 数据块处理回调
@@ -136,7 +87,10 @@ export class LLM {
     this.abortController = new AbortController();
 
     let completionContent = "";
+    let fullReasoning = "";
     let toolCalls: ToolCallReply[] = [];
+    let collectedToolCalls: any[] = [];
+    let collectedToolResults: any[] = [];
 
     try {
       const coreMessages = this.convertMessages(messages);
@@ -153,38 +107,114 @@ export class LLM {
         ),
       );
 
-      const result = await generateText({
+      const result = streamText({
         model: this.model,
         messages: coreMessages,
         temperature: this.temperature,
         tools: this.tools,
+        maxSteps: 5,
         abortSignal: this.abortController.signal,
+        onError: (error) => {
+          console.error("流式处理错误:", error);
+        },
       });
 
       console.log("streamText result created, starting to process stream...");
 
-      // 处理流式响应
-      for await (const delta of result.text) {
-        if (this.abortController?.signal.aborted) break;
+      // 使用 processDataStream 进行更精确的流控制
+      await processDataStream({
+        stream: result.toDataStream({
+          sendReasoning: true,
+          sendSources: true,
+          sendUsage: true,
+        }),
+        onTextPart: async (textPart: string) => {
+          if (this.abortController?.signal.aborted) return;
 
-        console.log("Received delta:", delta);
-        completionContent += delta;
-        onChunk?.({
-          completion: delta,
-          reasoner: undefined,
-        });
-      }
+          console.log("收到文本片段:", textPart);
+          completionContent += textPart;
+
+          onChunk?.({
+            completion: textPart,
+            reasoner: undefined,
+          });
+        },
+        onReasoningPart: async (reasoningPart: string) => {
+          if (this.abortController?.signal.aborted) return;
+
+          console.log("收到推理片段:", reasoningPart);
+          fullReasoning += reasoningPart;
+
+          onChunk?.({
+            completion: "",
+            reasoner: reasoningPart,
+          });
+        },
+        onToolCallPart: async (toolCall: any) => {
+          if (this.abortController?.signal.aborted) return;
+
+          console.log("收到工具调用:", toolCall);
+          collectedToolCalls.push(toolCall);
+
+          // 转换为ToolCallReply格式
+          const toolCallReply: ToolCallReply = {
+            id:
+              toolCall.toolCallId ||
+              toolCall.id ||
+              `call_${collectedToolCalls.length - 1}`,
+            type: "function" as const,
+            index: collectedToolCalls.length - 1,
+            function: {
+              name: toolCall.toolName || toolCall.name,
+              arguments: JSON.stringify(toolCall.args || {}),
+            },
+          };
+
+          toolCalls.push(toolCallReply);
+
+          onChunk?.({
+            completion: "",
+            reasoner: undefined,
+          });
+        },
+        onToolResultPart: async (toolResult: any) => {
+          if (this.abortController?.signal.aborted) return;
+
+          console.log("收到工具结果:", toolResult);
+          collectedToolResults.push(toolResult);
+
+          onChunk?.({
+            completion: "",
+            reasoner: undefined,
+          });
+        },
+        onErrorPart: async (error: any) => {
+          console.error("流处理错误:", error);
+          onChunk?.({
+            completion: "",
+            reasoner: undefined,
+          });
+        },
+        onFinishStepPart: async (stepData: any) => {
+          console.log("步骤完成:", stepData);
+        },
+        onFinishMessagePart: async (finishData: any) => {
+          console.log("消息完成:", finishData);
+        },
+        onStartStepPart: async (stepStart: any) => {
+          console.log("步骤开始:", stepStart);
+        },
+        onDataPart: async (dataPart: any) => {
+          console.log("收到数据片段:", dataPart);
+        },
+      });
 
       console.log(
         "Stream processing completed, final content:",
         completionContent,
       );
-
-      // 获取工具调用
-      if (result.toolCalls) {
-        toolCalls = this.convertToolCalls(await result.toolCalls);
-        console.log("Tool calls:", toolCalls);
-      }
+      console.log(`收集到的工具调用数量: ${collectedToolCalls.length}`);
+      console.log(`收集到的工具结果数量: ${collectedToolResults.length}`);
 
       return {
         body: completionContent,
