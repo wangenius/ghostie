@@ -1,33 +1,29 @@
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { memo, useState, useEffect } from "react";
+import { Provider, ModelType } from "@/hooks/useModels";
 
 export const ModelItem = memo(
   ({
-    model,
-    providers,
+    provider,
     getApiKey,
     setApiKey,
   }: {
-    model: any;
-    providers: any;
+    provider: Provider;
     getApiKey?: (provider: string) => Promise<string>;
     setApiKey?: (provider: string, key: string) => Promise<void>;
   }) => {
-    // 获取当前提供商支持的模型列表
-    const currentProvider = model.name;
-    const supportedModels = currentProvider
-      ? Object.values(providers[currentProvider]?.models || {})
-      : [];
-
     const [apiKey, setApiKeyState] = useState<string>("");
+    const [baseUrl, setBaseUrlState] = useState<string>("");
     const [isLoading, setIsLoading] = useState(false);
 
-    // 获取API密钥
+    // 获取API密钥和BaseURL
     useEffect(() => {
-      const fetchApiKey = async () => {
-        if (getApiKey && currentProvider) {
+      const fetchSettings = async () => {
+        if (getApiKey && provider.name) {
           try {
-            const key = await getApiKey(currentProvider);
+            const key = await getApiKey(provider.name);
             setApiKeyState(key);
           } catch (error) {
             console.error("获取API密钥失败:", error);
@@ -35,17 +31,17 @@ export const ModelItem = memo(
         }
       };
 
-      fetchApiKey();
-    }, [currentProvider, getApiKey]);
+      fetchSettings();
+    }, [provider.name, getApiKey]);
 
     // 处理API密钥变更
     const handleApiKeyChange = async (value: string) => {
       setApiKeyState(value);
       
-      if (setApiKey && currentProvider) {
+      if (setApiKey && provider.name) {
         try {
           setIsLoading(true);
-          await setApiKey(currentProvider, value);
+          await setApiKey(provider.name, value);
         } catch (error) {
           console.error("设置API密钥失败:", error);
         } finally {
@@ -54,105 +50,133 @@ export const ModelItem = memo(
       }
     };
 
+    // 获取模型类型的显示名称
+    const getTypeDisplayName = (type: ModelType) => {
+      switch (type) {
+        case ModelType.CHAT:
+          return "聊天";
+        case ModelType.IMAGE:
+          return "图像";
+        case ModelType.AUDIO:
+          return "音频";
+        case ModelType.VISION:
+          return "视觉";
+        case ModelType.EMBEDDING:
+          return "嵌入";
+        default:
+          return type;
+      }
+    };
+
     return (
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto p-2 space-y-3">
-          <div className="flex items-center gap-2">
-            <img
-              src={`/${providers[model.name]?.icon}`}
-              className="w-12 h-12 p-1 rounded-lg"
-              alt={providers[model.name]?.name || model.name}
-            />
+        <div className="max-w-2xl mx-auto p-2 space-y-6">
+          {/* 提供商头部信息 */}
+          <div className="flex items-center gap-4">
+            {provider.icon ? (
+              <img
+                src={`/${provider.icon}`}
+                className="w-16 h-16 p-2 rounded-lg bg-muted"
+                alt={provider.displayName || provider.name}
+              />
+            ) : (
+              <div className="w-16 h-16 p-2 rounded-lg bg-muted flex items-center justify-center text-2xl font-bold">
+                {provider.name.charAt(0).toUpperCase()}
+              </div>
+            )}
 
-            <h1 className="text-2xl font-medium flex-1">
-              {model.name
-                ? providers[model.name]?.name || model.name
-                : "base model"}
-            </h1>
+            <div className="flex-1">
+              <h1 className="text-2xl font-medium">
+                {provider.displayName || provider.name}
+              </h1>
+              {provider.description && (
+                <p className="text-muted-foreground mt-1">
+                  {provider.description}
+                </p>
+              )}
+            </div>
 
-            <span className="text-xs flex-none bg-primary/10 px-2 py-0.5 rounded-full">
-              {model.name
-                ? providers[model.name]?.name || model.name
-                : "base model"}
-            </span>
+            <div className="flex flex-col gap-2">
+              <Badge variant="outline">
+                {provider.name}
+              </Badge>
+              {provider.requiresApiKey && (
+                <Badge variant="secondary">
+                  需要API密钥
+                </Badge>
+              )}
+            </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="space-y-1">
+          {/* 支持的模型类型 */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-muted-foreground">
+              支持的模型类型
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {provider.supportedTypes.map((type) => (
+                <Badge key={type} variant="outline">
+                  {getTypeDisplayName(type)}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          {/* 默认BaseURL */}
+          {provider.defaultBaseUrl && (
+            <div className="space-y-3">
               <label className="text-sm font-medium text-muted-foreground">
-                API KEY
+                默认BaseURL
+              </label>
+              <div className="p-3 bg-muted rounded-lg">
+                <code className="text-sm font-mono">
+                  {provider.defaultBaseUrl}
+                </code>
+              </div>
+            </div>
+          )}
+
+          {/* API密钥配置 */}
+          {provider.requiresApiKey && (
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-muted-foreground">
+                API密钥
               </label>
               <Input
                 type="password"
                 spellCheck={false}
                 value={apiKey}
                 onChange={(e) => handleApiKeyChange(e.target.value)}
-                placeholder="if you need to update the API key, please enter the new value"
+                placeholder="请输入API密钥"
                 className="font-mono h-10"
                 disabled={isLoading}
               />
+              <p className="text-xs text-muted-foreground">
+                API密钥将被安全存储，用于访问 {provider.displayName || provider.name} 的服务
+              </p>
             </div>
-            <div className="space-y-3 rounded-lg">
-              {currentProvider && supportedModels.length > 0 && (
-                <div className="mt-6 space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Models
-                  </label>
-                  <div className="space-y-3">
-                    {supportedModels.map((modelInfo: any) => (
-                      <div
-                        key={modelInfo.name}
-                        className="rounded-lg bg-muted p-3 border-border"
-                      >
-                        <div className="flex justify-between items-center mb-2">
-                          <div className="font-medium">{modelInfo.name}</div>
-                        </div>
-                        <div className="text-xs text-muted-foreground mb-2">
-                          {modelInfo.description || "no description"}
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          {modelInfo.contextWindow && (
-                            <div className="flex items-center gap-1">
-                              <span className="text-muted-foreground">
-                                context window:
-                              </span>
-                              <span>
-                                {modelInfo.contextWindow.toLocaleString()}
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-1">
-                            <span className="text-muted-foreground">
-                              stream output:
-                            </span>
-                            <span>{modelInfo.supportStream ? "✓" : "✗"}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="text-muted-foreground">
-                              JSON mode:
-                            </span>
-                            <span>{modelInfo.supportJson ? "✓" : "✗"}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="text-muted-foreground">
-                              tool calls:
-                            </span>
-                            <span>
-                              {modelInfo.supportToolCalls ? "✓" : "✗"}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="text-muted-foreground">
-                              reasoner:
-                            </span>
-                            <span>{modelInfo.supportReasoner ? "✓" : "✗"}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+          )}
+
+          {/* 使用说明 */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-muted-foreground">
+              使用说明
+            </label>
+            <div className="p-4 bg-muted/50 rounded-lg space-y-2 text-sm">
+              <p>
+                这是一个 <strong>{provider.displayName || provider.name}</strong> 模型提供商。
+              </p>
+              <p>
+                支持的模型类型：{provider.supportedTypes.map(type => getTypeDisplayName(type)).join("、")}
+              </p>
+              {provider.requiresApiKey && (
+                <p>
+                  使用前请先配置API密钥。
+                </p>
               )}
+              <p>
+                配置完成后，您可以在创建Agent时选择使用此提供商的模型。
+              </p>
             </div>
           </div>
         </div>

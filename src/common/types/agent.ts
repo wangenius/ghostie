@@ -1,8 +1,6 @@
 /** 模型配置*/
 export interface ModelItem {
-  /* 模型提供商 */
   provider: string;
-  /* 模型名称 */
   name: string;
 }
 // 只保留main独有的类型定义
@@ -13,7 +11,7 @@ export interface ExecuteOptions {
 
 /** 模型类型 */
 export type ModelType =
-  | "text"
+  | "chat"
   | "vision"
   | "image"
   | "audio"
@@ -35,7 +33,7 @@ export interface AgentMCPProps {
 }
 
 /** 代理配置信息 */
-export interface AgentInfos {
+export interface AgentProps {
   /* 助手id */
   id: string;
   /* 名称 */
@@ -51,7 +49,7 @@ export interface AgentInfos {
   /* 助手版本 */
   version: string;
   /* 模型能力 */
-  models?: {
+  models: {
     [key in ModelType]?: ModelItem;
   };
   /* 可调用的工具 */
@@ -102,22 +100,17 @@ export interface ChatSession {
   updatedAt: number;
 }
 
-export const DEFAULT_AGENT: AgentInfos = {
+export const DEFAULT_AGENT: AgentProps = {
   id: "",
   name: "",
   system: "",
   version: "0.0.1",
   engine: "react",
-  models: {
-    text: {
-      provider: "OpenAI",
-      name: "gpt-4o-mini",
-    },
-  },
+  models: {},
   tools: [],
   mcps: [],
   knowledges: [],
   workflows: [],
   agents: [],
   skills: [],
-}; 
+};

@@ -4,6 +4,7 @@ export const TabListItem = (provider: {
   icon?: ReactNode;
   title: string;
   description: string;
+  actions?: ReactNode;
 }) => {
   return (
     <div className="flex items-center justify-between gap-2 min-h-8">
@@ -14,6 +15,11 @@ export const TabListItem = (provider: {
           {provider.description}
         </span>
       </div>
+      {provider.actions && (
+        <div className="flex items-center">
+          {provider.actions}
+        </div>
+      )}
     </div>
   );
 };

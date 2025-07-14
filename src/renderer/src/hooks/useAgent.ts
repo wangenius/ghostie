@@ -1,6 +1,6 @@
 import {
   AgentChatOptions,
-  AgentInfos
+  AgentProps
 } from "@common/types/agent";
 import { MessageItem } from "@common/types/chatModel";
 import { useCallback, useEffect, useState } from "react";
@@ -10,7 +10,7 @@ import { cmd } from "../utils/shell";
  * Agent 管理 Hook
  */
 export const useAgent = () => {
-  const [agents, setAgents] = useState<Record<string, AgentInfos>>({});
+  const [agents, setAgents] = useState<Record<string, AgentProps>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,7 +20,7 @@ export const useAgent = () => {
       setLoading(true);
       setError(null);
       const agentList =
-        await cmd.invoke<Record<string, AgentInfos>>("agent-list");
+        await cmd.invoke<Record<string, AgentProps>>("agent-list");
       setAgents(agentList);
     } catch (err) {
       setError(err instanceof Error ? err.message : "获取 Agent 列表失败");
@@ -30,11 +30,11 @@ export const useAgent = () => {
   }, []);
 
   // 创建 Agent
-  const createAgent = useCallback(async (infos?: Partial<AgentInfos>) => {
+  const createAgent = useCallback(async (infos?: Partial<AgentProps>) => {
     try {
       setLoading(true);
       setError(null);
-      const newAgent = await cmd.invoke<AgentInfos>("agent-create", infos);
+      const newAgent = await cmd.invoke<AgentProps>("agent-create", infos);
       // 创建后立即刷新列表以确保同步
       await fetchAgents();
       return newAgent;
@@ -49,7 +49,7 @@ export const useAgent = () => {
   // 根据 ID 获取 Agent
   const getAgentById = useCallback(async (id: string) => {
     try {
-      const agent = await cmd.invoke<AgentInfos | null>("agent-get-by-id", id);
+      const agent = await cmd.invoke<AgentProps | null>("agent-get-by-id", id);
       // 如果获取成功，更新本地状态中的对应Agent
       if (agent) {
         setAgents((prev) => ({ ...prev, [agent.id]: agent }));
@@ -63,7 +63,7 @@ export const useAgent = () => {
 
   // 更新 Agent
   const updateAgent = useCallback(
-    async (id: string, data: Partial<Omit<AgentInfos, "id">>) => {
+    async (id: string, data: Partial<Omit<AgentProps, "id">>) => {
       try {
         setLoading(true);
         setError(null);
@@ -112,14 +112,14 @@ export const useAgent = () => {
   // 监听Agent事件和定期刷新
    useEffect(() => {
      // 监听Agent事件
-     const handleAgentUpdated = (agentInfo: AgentInfos) => {
+     const handleAgentUpdated = (agentInfo: AgentProps) => {
        setAgents(prev => ({
          ...prev,
          [agentInfo.id]: agentInfo
        }));
      };
  
-     const handleAgentCreated = (agentInfo: AgentInfos) => {
+     const handleAgentCreated = (agentInfo: AgentProps) => {
        setAgents(prev => ({
          ...prev,
          [agentInfo.id]: agentInfo
@@ -134,7 +134,7 @@ export const useAgent = () => {
        });
      };
  
-     const handleAgentsRefreshed = (newAgents: Record<string, AgentInfos>) => {
+     const handleAgentsRefreshed = (newAgents: Record<string, AgentProps>) => {
        setAgents(newAgents);
      };
  
@@ -422,7 +422,7 @@ export const useAgentChat = (agentId: string) => {
  * 当前 Agent Hook
  */
 export const useCurrentAgent = () => {
-  const [currentAgent, setCurrentAgent] = useState<AgentInfos | null>(null);
+  const [currentAgent, setCurrentAgent] = useState<AgentProps | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -431,7 +431,7 @@ export const useCurrentAgent = () => {
     try {
       setLoading(true);
       setError(null);
-      const agent = await cmd.invoke<AgentInfos>("agent-get-current");
+      const agent = await cmd.invoke<AgentProps>("agent-get-current");
       setCurrentAgent(agent);
       return agent;
     } catch (err) {

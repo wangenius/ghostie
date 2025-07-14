@@ -5,7 +5,7 @@ const ipcHandlers = new Map<
   string,
   { target: any; method: string; channel: string }
 >();
-// 存储已注册的实例
+
 const registeredInstances = new WeakSet<any>();
 
 /**
@@ -62,45 +62,4 @@ export function registerIpcHandlers(instance: any) {
 
   // 标记实例为已注册
   registeredInstances.add(instance);
-}
-
-/**
- * 取消注册 IPC 处理器
- * @param instance 实例对象
- */
-export function unregisterIpcHandlers(instance: any) {
-  if (!registeredInstances.has(instance)) {
-    return;
-  }
-
-  for (const [channel, handler] of ipcHandlers) {
-    if (instance instanceof handler.target) {
-      ipcMain.removeHandler(channel);
-      console.log(`已取消注册 IPC 处理器: ${channel}`);
-    }
-  }
-
-  // 移除已注册标记
-  registeredInstances.delete(instance);
-}
-
-/**
- * 获取所有已注册的 IPC 通道
- */
-export function getRegisteredChannels(): string[] {
-  return Array.from(ipcHandlers.keys());
-}
-
-/**
- * 检查是否已注册指定通道
- */
-export function isChannelRegistered(channel: string): boolean {
-  return ipcHandlers.has(channel);
-}
-
-/**
- * 获取指定通道的处理器信息
- */
-export function getHandlerInfo(channel: string) {
-  return ipcHandlers.get(channel);
 }

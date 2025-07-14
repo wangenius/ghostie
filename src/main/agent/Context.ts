@@ -20,14 +20,14 @@ export class Context {
   /**
    * 构造函数
    */
-  private constructor(agent: Agent) {
+  constructor(agent: Agent) {
     this.agent = agent;
     this.runtime = {
       id: gen.id(),
       messages: [],
       system: {
         role: "system",
-        content: this.agent.infos.system || "",
+        content: this.agent.props.system || "",
         created_at: Date.now(),
       },
       created_at: Date.now(),
@@ -44,7 +44,7 @@ export class Context {
         messages: [],
         system: {
           role: "system",
-          content: this.agent.infos.system || "",
+          content: this.agent.props.system || "",
           created_at: Date.now(),
         },
         created_at: Date.now(),
@@ -82,7 +82,7 @@ export class Context {
       id: gen.id(), // 生成新的会话ID
       system: {
         role: "system",
-        content: this.agent.infos.system || "",
+        content: this.agent.props.system || "",
         created_at: Date.now(),
       },
       messages: [],

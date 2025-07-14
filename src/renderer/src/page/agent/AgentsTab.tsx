@@ -61,9 +61,9 @@ export function AgentsTab() {
         version: "0.0.1",
         engine: "react",
         models: {
-          text: {
-            provider: "OpenAI",
-            name: "gpt-4o-mini",
+          chat: {
+            provider: "qwen",
+            name: "qwen-turbo",
           },
         },
       });

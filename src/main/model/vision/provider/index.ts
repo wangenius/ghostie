@@ -1,2 +1,0 @@
-import "./QianwenVisionModel";
-import "./DoubaoVisionModel";

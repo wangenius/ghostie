@@ -2,7 +2,7 @@
   "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
   "include": [
     "src/common/**/*",
-    "src/main/**/*",
+    "src/main/**/*", "test.ts",
   ],
   "compilerOptions": {
     "composite": true,

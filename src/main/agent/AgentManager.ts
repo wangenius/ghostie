@@ -1,11 +1,15 @@
 import { UserData } from "@/resources/UserData";
-import { AgentInfos, DEFAULT_AGENT, AgentChatOptions } from "@common/types/agent";
+import {
+  AgentChatOptions,
+  AgentProps,
+  DEFAULT_AGENT,
+} from "@common/types/agent";
 import { BrowserWindow } from "electron";
+import { IpcHandle, registerIpcHandlers } from "../ipc/decorators";
+import { ChatHistoryManager } from "../store/ChatHistoryManager";
 import { gen } from "../utils/generator";
 import { Agent } from "./Agent";
 import { ReactAgent } from "./ReactAgent";
-import { IpcHandle, registerIpcHandlers } from "../ipc/decorators";
-import { ChatHistoryManager } from "../store/ChatHistoryManager";
 
 /**
  * Agent 管理器
@@ -15,16 +19,9 @@ export class AgentManager {
   private static instance: AgentManager;
 
   // 持久化存储
-  private agentsList: Record<string, AgentInfos> = {};
-
-  // 运行时状态
-  private openedAgents: Map<string, Agent> = new Map();
-  private globalAgent: Agent | null = null;
-  private currentOpenedAgent: string = "";
-  private loadingState: Record<string, boolean> = {};
+  private agents: Map<string, Agent> = new Map();
 
   private constructor() {
-    // 注册IPC处理器
     registerIpcHandlers(this);
   }
 
@@ -37,90 +34,39 @@ export class AgentManager {
 
   /** 初始化 */
   async init(): Promise<void> {
-    this.agentsList =
-      await UserData.getInstance().load<Record<string, AgentInfos>>(
+    const agentProps =
+      await UserData.getInstance().load<Record<string, AgentProps>>(
         "agents.json",
       );
-    await this.initializeGlobalAgent();
+    Object.entries(agentProps).forEach(([id, props]) => {
+      this.agents.set(id, new ReactAgent(props));
+    });
   }
 
-  /**
-   * 初始化全局 Agent 实例
-   * 这个实例将处理所有的 IPC 请求
-   */
-  private async initializeGlobalAgent(): Promise<void> {
-    if (this.globalAgent) {
-      return;
-    }
-
-    try {
-      // 创建一个全局 Agent 实例来处理 IPC 请求
-      // 使用默认配置确保有文本模型
-      this.globalAgent = await Agent.create("global-agent");
-      console.log("全局 Agent IPC 处理器已初始化");
-    } catch (error) {
-      console.error("初始化全局 Agent 失败:", error);
-
-      this.globalAgent = new ReactAgent({
-        ...DEFAULT_AGENT,
-        id: "global-agent",
-        name: "Global Agent",
-        system: "你是一个全局的AI助手，用于处理系统级的请求。",
-      });
-      console.log("使用默认配置创建全局 Agent");
-    }
-  }
-
-  /**
-   * 获取全局 Agent 实例
-   */
-  getGlobalAgent(): Agent | null {
-    return this.globalAgent;
-  }
-
-  /** 获取所有 Agent 列表 */
-  async getList(): Promise<Record<string, AgentInfos>> {
-    return { ...this.agentsList };
+  async save() {
+    const agents = {};
+    this.agents.forEach((agent) => {
+      const props = agent.getProps();
+      agents[props.id] = props;
+    });
+    await UserData.getInstance().save(this.agents, "agents.json");
   }
 
   /** 根据ID获取Agent实例 */
-  async getById(id: string): Promise<Agent | null> {
+  async getById(id: string): Promise<Agent | undefined> {
     try {
-      // 先检查是否已经有打开的实例
-      const openedAgent = this.openedAgents.get(id);
-      if (openedAgent) {
-        return openedAgent;
-      }
-
-      // 检查 Agent 是否存在于列表中
-      if (!this.agentsList[id]) {
-        return null;
-      }
-
-      // 创建新的Agent实例
-      const agent = await Agent.create(id);
-
-      // 存储到打开的Agent列表中
-      this.openedAgents.set(id, agent);
-
+      const agent = this.agents.get(id);
       return agent;
     } catch (error) {
       console.error("获取Agent失败:", error);
-      return null;
+      return undefined;
     }
   }
 
-  /**
-   * 获取 Agent 实例（兼容 AgentIpcManager 接口）
-   */
-  getAgent(id: string): Agent | undefined {
-    return this.openedAgents.get(id);
-  }
-
   /** 创建新的Agent */
-  async create(infos?: Partial<AgentInfos>): Promise<Agent> {
+  async create(infos?: Partial<AgentProps>): Promise<Agent> {
     const agentId = gen.id();
-    const agentInfos: AgentInfos = {
+    const agentInfos: AgentProps = {
       ...DEFAULT_AGENT,
       id: agentId,
       name: infos?.name || `Agent ${agentId.slice(0, 6)}`,
@@ -128,135 +74,59 @@ export class AgentManager {
     };
 
     // 保存到列表中
-    this.agentsList[agentId] = agentInfos;
-    await UserData.getInstance().save(this.agentsList, "agents.json");
+    this.agents.set(agentId, new ReactAgent(agentInfos));
+    const agents = {};
+    this.agents.forEach((agent) => {
+      const props = agent.getProps();
+      agents[props.id] = props;
+    });
+    await UserData.getInstance().save(this.agents, "agents.json");
 
     // 创建Agent实例
     const agent = await Agent.create(agentId);
-
-    // 存储到打开的Agent列表中
-    this.openedAgents.set(agentId, agent);
-
+    this.agents.set(agentId, agent);
     // 发送事件到前端
     const mainWindow = BrowserWindow.getAllWindows()[0];
     if (mainWindow) {
       mainWindow.webContents.send("agent-created", agentInfos);
-      mainWindow.webContents.send("agents-refreshed", { ...this.agentsList });
+      mainWindow.webContents.send("agents-refreshed", { ...agents });
     }
-
     return agent;
-  }
-
-  /**
-   * 创建并注册新的 Agent（兼容 AgentIpcManager 接口）
-   */
-  async createAgent(id?: string, infos?: Partial<AgentInfos>): Promise<Agent> {
-    if (id) {
-      // 如果指定了ID，直接创建
-      const agent = await Agent.create(id);
-      if (infos) {
-        await agent.update(infos);
-      }
-      this.openedAgents.set(id, agent);
-      return agent;
-    } else {
-      // 否则使用标准创建流程
-      return await this.create(infos);
-    }
   }
 
   /** 删除Agent */
   async delete(id: string): Promise<void> {
     // 从列表中删除
-    delete this.agentsList[id];
-    await UserData.getInstance().save(this.agentsList, "agents.json");
-
-    // 从打开的实例中删除
-    const agent = this.openedAgents.get(id);
-    if (agent) {
-      agent.close();
-      this.openedAgents.delete(id);
-    }
-
-    // 如果是当前激活的Agent，清除激活状态
-    if (this.currentOpenedAgent === id) {
-      this.currentOpenedAgent = "";
-    }
-
+    const agent = this.agents.get(id);
+    if (!agent) return;
+    agent.close();
+    this.agents.delete(id);
+    this.save();
     // 发送事件到前端
     const mainWindow = BrowserWindow.getAllWindows()[0];
     if (mainWindow) {
       mainWindow.webContents.send("agent-deleted", { id });
-      mainWindow.webContents.send("agents-refreshed", { ...this.agentsList });
-    }
-  }
-
-  /**
-   * 删除 Agent 实例（兼容 AgentIpcManager 接口）
-   */
-  removeAgent(id: string): void {
-    const agent = this.openedAgents.get(id);
-    if (agent) {
-      agent.close(); // 这会自动取消注册 IPC 处理器
-      this.openedAgents.delete(id);
+      mainWindow.webContents.send("agents-refreshed", { ...this.agents });
     }
   }
 
   /** 更新Agent信息 */
   async update(
     id: string,
-    data: Partial<Omit<AgentInfos, "id">>,
+    data: Partial<Omit<AgentProps, "id">>,
   ): Promise<void> {
-    const currentInfos = this.agentsList[id];
-    if (!currentInfos) {
+    const agent = this.agents.get(id);
+    if (!agent) {
       throw new Error(`Agent ${id} not found`);
     }
-
-    const updatedInfos = { ...currentInfos, ...data };
-
-    // 更新列表中的信息
-    this.agentsList[id] = updatedInfos;
-    await UserData.getInstance().save(this.agentsList, "agents.json");
-
-    // 如果有打开的实例，也更新实例
-    const openedAgent = this.openedAgents.get(id);
-    if (openedAgent) {
-      await openedAgent.update(data);
-    }
-
+    agent.update(data);
+    this.save();
     // 发送事件到前端
     const mainWindow = BrowserWindow.getAllWindows()[0];
     if (mainWindow) {
-      mainWindow.webContents.send("agent-updated", updatedInfos);
-      mainWindow.webContents.send("agents-refreshed", { ...this.agentsList });
+      mainWindow.webContents.send("agent-updated", agent.props);
+      mainWindow.webContents.send("agents-refreshed", { ...this.agents });
     }
-  }
-
-  /** 获取当前激活的 Agent ID */
-  getCurrentAgentId(): string {
-    return this.currentOpenedAgent;
-  }
-
-  /** 设置当前激活的 Agent */
-  setCurrentAgent(id: string): void {
-    this.currentOpenedAgent = id;
-  }
-
-  /** 获取加载状态 */
-  getLoadingState(id: string): boolean {
-    return this.loadingState[id] || false;
-  }
-
-  /** 设置加载状态 */
-  setLoadingState(id: string, loading: boolean): void {
-    this.loadingState[id] = loading;
-  }
-
-  /**
-   * 获取所有 Agent 实例（兼容 AgentIpcManager 接口）
-   */
-  getAllAgents(): Map<string, Agent> {
-    return new Map(this.openedAgents);
   }
 
   /**
@@ -264,15 +134,8 @@ export class AgentManager {
    */
   cleanup(): void {
     // 清理所有 Agent 实例
-    for (const [, agent] of this.openedAgents) {
+    for (const [, agent] of this.agents) {
       agent.close();
-    }
-    this.openedAgents.clear();
-
-    // 清理全局 Agent
-    if (this.globalAgent) {
-      this.globalAgent.close();
-      this.globalAgent = null;
     }
   }
 
@@ -282,9 +145,14 @@ export class AgentManager {
    * 获取 Agent 列表
    */
   @IpcHandle("agent-list")
-  async getAgentListIpc(): Promise<Record<string, AgentInfos>> {
+  async getAgentListIpc(): Promise<Record<string, AgentProps>> {
     try {
-      return await this.getList();
+      const agents: Record<string, AgentProps> = {};
+      this.agents.forEach((agent) => {
+        const props = agent.getProps();
+        agents[props.id] = props;
+      });
+      return agents;
     } catch (error) {
       console.error("获取 Agent 列表失败:", error);
       return {};
@@ -295,10 +163,10 @@ export class AgentManager {
    * 创建新的 Agent
    */
   @IpcHandle("agent-create")
-  async createAgentIpc(infos?: Partial<AgentInfos>): Promise<AgentInfos> {
+  async createAgentIpc(infos?: Partial<AgentProps>): Promise<AgentProps> {
     try {
       const agent = await this.create(infos);
-      return agent.infos;
+      return agent.props;
     } catch (error) {
       console.error("创建 Agent 失败:", error);
       throw new Error(`创建 Agent 失败: ${error}`);
@@ -309,10 +177,10 @@ export class AgentManager {
    * 根据 ID 获取 Agent
    */
   @IpcHandle("agent-get-by-id")
-  async getAgentByIdIpc(id: string): Promise<AgentInfos | null> {
+  async getAgentByIdIpc(id: string): Promise<AgentProps | null> {
     try {
       const agent = await this.getById(id);
-      return agent ? agent.infos : null;
+      return agent ? agent.props : null;
     } catch (error) {
       console.error("获取 Agent 失败:", error);
       return null;
@@ -325,7 +193,7 @@ export class AgentManager {
   @IpcHandle("agent-update")
   async updateAgentIpc(
     id: string,
-    data: Partial<Omit<AgentInfos, "id">>,
+    data: Partial<Omit<AgentProps, "id">>,
   ): Promise<void> {
     try {
       await this.update(id, data);
@@ -352,7 +220,11 @@ export class AgentManager {
    * Agent 聊天
    */
   @IpcHandle("agent-chat")
-  async agentChatIpc(id: string, message: string, options?: AgentChatOptions): Promise<any> {
+  async agentChatIpc(
+    id: string,
+    message: string,
+    options?: AgentChatOptions,
+  ): Promise<any> {
     try {
       const agent = await this.getById(id);
       if (!agent) {
@@ -362,23 +234,6 @@ export class AgentManager {
     } catch (error) {
       console.error("Agent 聊天失败:", error);
       throw new Error(`Agent 聊天失败: ${error}`);
-    }
-  }
-
-  /**
-   * 获取当前 Agent 信息
-   */
-  @IpcHandle("agent-get-current")
-  async getCurrentAgentIpc(): Promise<AgentInfos | null> {
-    try {
-      if (!this.currentOpenedAgent) {
-        return null;
-      }
-      const agent = await this.getById(this.currentOpenedAgent);
-      return agent ? agent.infos : null;
-    } catch (error) {
-      console.error("获取当前 Agent 失败:", error);
-      return null;
     }
   }
 
@@ -403,10 +258,9 @@ export class AgentManager {
   @IpcHandle("agent-close")
   async closeAgentIpc(id: string): Promise<void> {
     try {
-      const agent = this.openedAgents.get(id);
+      const agent = this.agents.get(id);
       if (agent) {
         agent.close();
-        this.openedAgents.delete(id);
       }
     } catch (error) {
       console.error("关闭 Agent 失败:", error);
@@ -428,7 +282,7 @@ export class AgentManager {
         return {
           status: "error",
           issues: ["Agent 不存在"],
-          recommendations: ["请检查 Agent ID 是否正确"]
+          recommendations: ["请检查 Agent ID 是否正确"],
         };
       }
       // 调用Agent的诊断方法
@@ -437,7 +291,7 @@ export class AgentManager {
       return {
         status: "error",
         issues: [`诊断过程出错: ${error}`],
-        recommendations: ["请检查Agent配置并重试"]
+        recommendations: ["请检查Agent配置并重试"],
       };
     }
   }
@@ -576,58 +430,5 @@ export class AgentManager {
       console.error("重置Agent上下文失败:", error);
       throw new Error(`重置Agent上下文失败: ${error}`);
     }
-  }
-
-  static async init(): Promise<void> {
-    const instance = AgentManager.getInstance();
-    await instance.init();
-  }
-
-  static async getList(): Promise<Record<string, AgentInfos>> {
-    const instance = AgentManager.getInstance();
-    return await instance.getList();
-  }
-
-  static async getById(id: string): Promise<Agent | null> {
-    const instance = AgentManager.getInstance();
-    return await instance.getById(id);
-  }
-
-  static async create(infos?: Partial<AgentInfos>): Promise<Agent> {
-    const instance = AgentManager.getInstance();
-    return await instance.create(infos);
-  }
-
-  static async delete(id: string): Promise<void> {
-    const instance = AgentManager.getInstance();
-    await instance.delete(id);
-  }
-
-  static async update(
-    id: string,
-    data: Partial<Omit<AgentInfos, "id">>,
-  ): Promise<void> {
-    const instance = AgentManager.getInstance();
-    await instance.update(id, data);
-  }
-
-  static getCurrentAgentId(): string {
-    const instance = AgentManager.getInstance();
-    return instance.getCurrentAgentId();
-  }
-
-  static setCurrentAgent(id: string): void {
-    const instance = AgentManager.getInstance();
-    instance.setCurrentAgent(id);
-  }
-
-  static getLoadingState(id: string): boolean {
-    const instance = AgentManager.getInstance();
-    return instance.getLoadingState(id);
-  }
-
-  static setLoadingState(id: string, loading: boolean): void {
-    const instance = AgentManager.getInstance();
-    instance.setLoadingState(id, loading);
   }
 }

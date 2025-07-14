@@ -11,17 +11,17 @@ import {
   TbSettings,
   TbShape3,
 } from "react-icons/tb";
-import { AgentsTab } from "./page/agent/AgentsTab";
-import { KnowledgeTab } from "./page/knowledge/KnowledgeTab";
-import { MarketTab } from "./page/market/MarketTab";
-import { MCPTab } from "./page/mcp/MCPManagerTab";
-import { ModelsTab } from "./page/model/ModelsTab";
-import { ResourcesTab } from "./page/resource/ResourcesTab";
-import { SchedulesTab } from "./page/schedule/SchedulesTab";
-import { GeneralSettingsPage } from "./page/settings/GeneralSettingsPage";
-import TeamsTab from "./page/team/TeamsTab";
-import { ToolkitTab } from "./page/toolkit/ToolkitTab";
-import WorkflowsTab from "./page/workflow/WorkflowsTab";
+import { AgentsTab } from "@/page/agent/AgentsTab";
+import { KnowledgeTab } from "@/page/knowledge/KnowledgeTab";
+import { MarketTab } from "@/page/market/MarketTab";
+import { MCPTab } from "@/page/mcp/MCPManagerTab";
+import { ModelsTab } from "@/page/model/ModelsTab";
+import { ResourcesTab } from "@/page/resource/ResourcesTab";
+import { SchedulesTab } from "@/page/schedule/SchedulesTab";
+import { GeneralSettingsPage } from "@/page/settings/GeneralSettingsPage";
+import TeamsTab from "@/page/team/TeamsTab";
+import { ToolkitTab } from "@/page/toolkit/ToolkitTab";
+import WorkflowsTab from "@/page/workflow/WorkflowsTab";
 
 export const SETTINGS_NAV_ITEMS = [
   { id: "agents", label: "Agents", icon: TbMessageCircle, divider: false },

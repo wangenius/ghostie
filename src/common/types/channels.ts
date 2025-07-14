@@ -72,7 +72,19 @@ export type InvokeChannels =
     | "model_get_vision_providers"
     | "model_get_embedding_providers"
     | "model_get_api_key"
-    | "model_set_api_key";
+    | "model_set_api_key"
+    | "provider-list"
+    | "provider-get"
+    | "provider-set"
+    | "provider-add"
+    | "provider-remove"
+    | "provider-update"
+    | "provider-delete"
+    | "provider-test"
+    | "provider-supported-formats"
+    | "provider-models"
+    | "provider-get-models"
+    | "provider-set-models";
 
 /**
  * send 通道类型
@@ -154,6 +166,18 @@ export type InvokeParamsMap = {
     "model_get_embedding_providers": [];
     "model_get_api_key": [string];
     "model_set_api_key": [string, string];
+    "provider-list": [];
+    "provider-get": [string];
+    "provider-set": [string, { apiKey?: string; baseURL?: string }];
+    "provider-add": [any];
+    "provider-remove": [string];
+    "provider-update": [string, any];
+    "provider-delete": [string];
+    "provider-test": [any];
+    "provider-supported-formats": [];
+    "provider-models": [string];
+    "provider-get-models": [string];
+    "provider-set-models": [string, string[]];
 };
 
 /**
@@ -226,6 +250,18 @@ export type InvokeReturnMap = {
     "model_get_embedding_providers": any;
     "model_get_api_key": string;
     "model_set_api_key": void;
+    "provider-list": any[];
+    "provider-get": any | null;
+    "provider-set": void;
+    "provider-add": void;
+    "provider-remove": void;
+    "provider-update": void;
+    "provider-delete": void;
+    "provider-test": { success: boolean; error?: string };
+    "provider-supported-formats": string[];
+    "provider-models": string[];
+    "provider-get-models": string[];
+    "provider-set-models": void;
 };
 
 /**
@@ -318,7 +354,19 @@ export const validChannels = {
         "model_get_vision_providers",
         "model_get_embedding_providers",
         "model_get_api_key",
-        "model_set_api_key"
+        "model_set_api_key",
+        "provider-list",
+        "provider-get",
+        "provider-set",
+        "provider-add",
+        "provider-remove",
+        "provider-update",
+        "provider-delete",
+        "provider-test",
+        "provider-supported-formats",
+        "provider-models",
+        "provider-get-models",
+        "provider-set-models"
     ] as const,
     send: ["notification"] as const,
     on: ["update-available", "update-downloaded", "switch-tab", "agent-updated", "agent-created", "agent-deleted", "agents-refreshed"] as const

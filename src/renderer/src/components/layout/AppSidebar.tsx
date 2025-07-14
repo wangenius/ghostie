@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { AgentInfos } from '@common/types/agent';
+import { AgentProps } from '@common/types/agent';
 import { SidebarContainer, SidebarItem } from '@/components/ui/sidebar';
 import { AgentList } from '@/components/agent/AgentList';
 import { AgentEditDialog } from '@/components/agent/AgentEditDialog';
@@ -14,14 +14,14 @@ interface AppSidebarProps {
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
   agentHooks: {
-    agents: AgentInfos[];
-    currentAgent: AgentInfos | null;
+    agents: AgentProps[];
+    currentAgent: AgentProps | null;
     isLoading: boolean;
     error: string | null;
-    createAgent: (data: Partial<AgentInfos>) => Promise<AgentInfos>;
-    updateAgent: (id: string, data: Partial<Omit<AgentInfos, 'id'>>) => Promise<void>;
+    createAgent: (data: Partial<AgentProps>) => Promise<AgentProps>;
+    updateAgent: (id: string, data: Partial<Omit<AgentProps, 'id'>>) => Promise<void>;
     deleteAgent: (id: string) => Promise<void>;
-    selectAgent: (agent: AgentInfos | null) => void;
+    selectAgent: (agent: AgentProps | null) => void;
   };
 }
 
@@ -33,11 +33,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   agentHooks,
 }) => {
   
-  const [editingAgent, setEditingAgent] = useState<AgentInfos | null>(null);
+  const [editingAgent, setEditingAgent] = useState<AgentProps | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   // 处理 Agent 保存
-  const handleAgentSave = async (agent: AgentInfos) => {
+  const handleAgentSave = async (agent: AgentProps) => {
     try {
       if (editingAgent) {
         await agentHooks.updateAgent(agent.id, agent);
@@ -58,7 +58,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   };
 
   // 处理编辑 Agent
-  const handleEditAgent = (agent: AgentInfos) => {
+  const handleEditAgent = (agent: AgentProps) => {
     setEditingAgent(agent);
     setShowCreateDialog(true);
   };

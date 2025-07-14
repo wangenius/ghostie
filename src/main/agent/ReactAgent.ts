@@ -1,16 +1,16 @@
 import { Agent } from "./Agent";
 import {
-  AgentInfos,
+  AgentProps,
   ExecuteOptions,
   AgentChatOptions,
 } from "@common/types/agent";
-import { ToolsHandler } from "../model/chat/ToolsHandler";
-import { MessageItem } from "../../common/types/chatModel";
+import { MessageItem } from "@common/types/chatModel";
 
 /* ReAct Agent 子类 */
 export class ReactAgent extends Agent {
-  constructor(infos: AgentInfos) {
+  constructor(infos: AgentProps) {
     super(infos);
+    console.log(this.props);
   }
 
   /* 机器人对话 */
@@ -25,11 +25,9 @@ export class ReactAgent extends Agent {
   /* 执行 ReAct 逻辑 */
   async execute(input: string, options?: ExecuteOptions): Promise<MessageItem> {
     try {
-      await this.ensureInitialized();
       let content = input;
       let iterations = 0;
       console.log("当前模型:", this.model);
-      
 
       this.context.pushMessage({
         role: "user",
@@ -98,17 +96,6 @@ export class ReactAgent extends Agent {
                 created_at: Date.now(),
                 loading: true,
                 tool_loading: true,
-              });
-
-              const toolResult = await ToolsHandler.call(tool, this);
-              this.context.updateLastMessage({
-                tool_loading: false,
-                tool_call_id: tool.id,
-                loading: false,
-                content:
-                  typeof toolResult?.result === "string"
-                    ? toolResult?.result
-                    : JSON.stringify(toolResult?.result),
               });
             }
           }

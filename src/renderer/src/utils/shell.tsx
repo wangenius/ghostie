@@ -11,7 +11,7 @@ export abstract class cmd {
   static async invoke<T = any>(channel: string, ...args: any[]): Promise<T> {
     // 验证通道名称是否合法
     if (!validChannels.invoke.includes(channel as any)) {
-      throw new Error(`非法的invoke通道: ${channel}，请检查通道名称是否使用了连字符(-)而不是下划线(_)`);
+      throw new Error(`非法的invoke通道: ${channel}`);
     }
     return await (window as any).shell.invoke(channel, ...args);
   }

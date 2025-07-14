@@ -1,9 +1,12 @@
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
-import { DrawerSelector } from "@/components/ui/drawer-selector";
+import {
+  DrawerSelector,
+  DrawerSelectorItem,
+} from "@/components/ui/drawer-selector";
 import { Input } from "@/components/ui/input";
 import { useModels, ModelType } from "@/hooks/useModels";
 import { useAgent } from "@/hooks/useAgent";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 // 从useAgent hook导入的类型
 type AgentInfos = NonNullable<ReturnType<typeof useAgent>["agents"][string]>;
@@ -15,7 +18,7 @@ interface AgentEditorProps {
 export const AgentEditor = ({ agent }: AgentEditorProps) => {
   const [localAgent, setLocalAgent] = useState<AgentInfos>(agent);
   const { updateAgent } = useAgent();
-  const { fetchProviders, getModelsArray } = useModels();
+  const { fetchProviders, providers } = useModels();
 
   // 当传入的agent变化时，更新本地状态
   useEffect(() => {
@@ -24,8 +27,39 @@ export const AgentEditor = ({ agent }: AgentEditorProps) => {
 
   // 获取文本、视觉和图像模型
   useEffect(() => {
-    fetchProviders(ModelType.TEXT);
+    fetchProviders();
   }, [fetchProviders]);
+
+  // 将提供商配置转换为 DrawerSelectorItem 格式
+  const getModelsArray = useMemo(() => {
+    return (type: ModelType): DrawerSelectorItem[] => {
+      const items: DrawerSelectorItem[] = [];
+
+      providers.forEach((provider) => {
+        // 为每个提供商添加其自定义模型
+        if (provider.customModels && provider.customModels.length > 0) {
+          provider.customModels.forEach((modelName) => {
+            items.push({
+              label: `${provider.displayName} - ${modelName}`,
+              value: `${provider.name}:${modelName}`,
+              description: `${provider.displayName} (${provider.format})`,
+              type: type,
+            });
+          });
+        } else {
+          // 如果没有自定义模型，添加一个默认项
+          items.push({
+            label: provider.displayName,
+            value: `${provider.name}:default`,
+            description: `${provider.displayName} (${provider.format})`,
+            type: type,
+          });
+        }
+      });
+
+      return items;
+    };
+  }, [providers]);
 
   // 更新agent的辅助函数
   const handleUpdate = async (updates: Partial<Omit<AgentInfos, "id">>) => {
@@ -103,16 +137,27 @@ export const AgentEditor = ({ agent }: AgentEditorProps) => {
             <div className="space-y-4">
               <DrawerSelector
                 title="Text Model"
-                value={[localAgent.models?.text]}
-                items={getModelsArray(ModelType.TEXT)}
-                onSelect={([value]) =>
+                value={
+                  localAgent.models?.chat
+                    ? [
+                        `${localAgent.models.chat.provider}:${localAgent.models.chat.name}`,
+                      ]
+                    : []
+                }
+                items={getModelsArray(ModelType.CHAT)}
+                onSelect={([value]) => {
+                  // 解析 value 格式: "provider:modelName" 为 ModelItem 格式
+                  const [provider, name] = value.split(":");
                   handleUpdate({
                     models: {
                       ...localAgent.models,
-                      text: value,
+                      chat: {
+                        provider: provider,
+                        name: name || "default",
+                      },
                     },
-                  })
-                }
+                  });
+                }}
               />
             </div>
           </section>
