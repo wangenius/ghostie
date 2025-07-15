@@ -4,7 +4,7 @@ import {
   ExecuteOptions,
   AgentChatOptions,
 } from "@common/types/agent";
-import { MessageItem } from "@common/types/MessageType";
+import { MemoryMessage } from "@common/types/MessageType";
 
 /* ReAct Agent 子类 */
 export class ReactAgent extends Agent {
@@ -13,7 +13,10 @@ export class ReactAgent extends Agent {
   }
 
   /* 机器人对话 */
-  async chat(input: string, options?: AgentChatOptions): Promise<MessageItem> {
+  async chat(
+    input: string,
+    options?: AgentChatOptions,
+  ): Promise<MemoryMessage> {
     return await this.run(input, {
       images: options?.images?.map(
         (img) => `data:${img.contentType};base64,${img.base64Image}`,
@@ -22,18 +25,22 @@ export class ReactAgent extends Agent {
   }
 
   /* 执行 ReAct 逻辑 */
-  async run(input: string, options?: ExecuteOptions): Promise<MessageItem> {
+  async run(input: string, options?: ExecuteOptions): Promise<MemoryMessage> {
     try {
       let content = input;
       let iterations = 0;
       console.log("当前模型:", this.model);
 
       this.context.pushMessage({
-        role: "user",
-        content: content,
+        from: "user",
+        content: [
+          {
+            type: "text",
+            content: content,
+          },
+        ],
         created_at: Date.now(),
-        images: options?.images,
-        extra: options?.extra,
+        updated_at: Date.now(),
       });
 
       /* 开始迭代 */
@@ -43,25 +50,26 @@ export class ReactAgent extends Agent {
         let reasoner = "";
 
         this.context.addLastMessage({
-          role: "assistant",
-          content: content,
-          reasoner: reasoner,
+          from: "agent",
+          content: [
+            {
+              type: "text",
+              content: content,
+            },
+          ],
           created_at: Date.now(),
-          loading: true,
+          updated_at: Date.now(),
         });
 
         /* 生成响应 */
-        const response = await this.model.stream(
-          this.context,
-          (chunk) => {
-            content += chunk.completion || "";
-            reasoner += chunk.reasoner || "";
-            this.context.updateLastMessage({
-              content,
-              reasoner,
-            });
-          },
-        );
+        const response = await this.model.stream(this.context, (chunk) => {
+          content += chunk.completion || "";
+          reasoner += chunk.reasoner || "";
+          this.context.updateLastMessage({
+            content,
+            reasoner,
+          });
+        });
 
         console.log(response);
 
@@ -107,13 +115,13 @@ export class ReactAgent extends Agent {
 
               try {
                 // 解析工具调用参数
-                const args = JSON.parse(tool.function.arguments || '{}');
+                const args = JSON.parse(tool.function.arguments || "{}");
                 console.log(`执行工具: ${tool.function.name}`, args);
-                
+
                 // 这里应该调用实际的工具执行逻辑
                 // 目前先返回一个占位符结果
                 const toolResult = `工具 ${tool.function.name} 已被调用，参数: ${JSON.stringify(args)}`;
-                
+
                 this.context.updateLastMessage({
                   content: toolResult,
                   loading: false,
@@ -155,17 +163,14 @@ export class ReactAgent extends Agent {
           loading: true,
         });
 
-        await this.model.stream(
-          this.context,
-          (chunk) => {
-            content += chunk.completion || "";
-            reasoner += chunk.reasoner || "";
-            this.context.updateLastMessage({
-              content,
-              reasoner,
-            });
-          },
-        );
+        await this.model.stream(this.context, (chunk) => {
+          content += chunk.completion || "";
+          reasoner += chunk.reasoner || "";
+          this.context.updateLastMessage({
+            content,
+            reasoner,
+          });
+        });
 
         this.context.updateLastMessage({
           loading: false,

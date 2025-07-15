@@ -1,14 +1,4 @@
 import { contextBridge, ipcRenderer } from "electron";
-import {
-  InvokeChannels,
-  InvokeParamsMap,
-  InvokeReturnMap,
-  OnChannels,
-  OnCallbackParamsMap,
-  SendChannels,
-  SendParamsMap,
-  validChannels,
-} from "../common/types/channels";
 
 /**
  * 安全的 IPC 通信接口
@@ -21,13 +11,7 @@ const secureIPC = {
    * @param args 调用参数
    * @returns Promise<T> 调用结果
    */
-  invoke: <C extends InvokeChannels>(
-    channel: C,
-    ...args: InvokeParamsMap[C]
-  ): Promise<InvokeReturnMap[C]> => {
-    if (!validChannels.invoke.includes(channel)) {
-      throw new Error(`非法的invoke通道: ${channel}`);
-    }
+  invoke: <C extends string>(channel: C, ...args: any[]): Promise<any> => {
     return ipcRenderer.invoke(channel, ...args);
   },
 
@@ -36,13 +20,7 @@ const secureIPC = {
    * @param channel IPC 通道名称
    * @param args 发送参数
    */
-  send: <C extends SendChannels>(
-    channel: C,
-    ...args: SendParamsMap[C]
-  ): void => {
-    if (!validChannels.send.includes(channel)) {
-      throw new Error(`非法的send通道: ${channel}`);
-    }
+  send: <C extends string>(channel: C, ...args: any): void => {
     ipcRenderer.send(channel, ...args);
   },
 
@@ -52,15 +30,8 @@ const secureIPC = {
    * @param callback 回调函数
    * @returns 取消监听的函数
    */
-  on: <C extends OnChannels>(
-    channel: C,
-    callback: (...args: OnCallbackParamsMap[C]) => void,
-  ) => {
-    if (!validChannels.on.includes(channel)) {
-      throw new Error(`非法的on通道: ${channel}`);
-    }
-    const subscription = (_event: any, ...args: OnCallbackParamsMap[C]) =>
-      callback(...args);
+  on: <C extends string>(channel: C, callback: (...args: any[]) => void) => {
+    const subscription = (_event: any, ...args: any[]) => callback(...args);
     ipcRenderer.on(channel, subscription);
 
     return () => {
@@ -73,16 +44,8 @@ const secureIPC = {
    * @param channel IPC 通道名称
    * @param callback 回调函数
    */
-  once: <C extends OnChannels>(
-    channel: C,
-    callback: (...args: OnCallbackParamsMap[C]) => void,
-  ) => {
-    if (!validChannels.on.includes(channel)) {
-      throw new Error(`非法的once通道: ${channel}`);
-    }
-    ipcRenderer.once(channel, (_event, ...args: OnCallbackParamsMap[C]) =>
-      callback(...args),
-    );
+  once: <C extends string>(channel: C, callback: (...args: any[]) => void) => {
+    ipcRenderer.once(channel, (_event, ...args: any[]) => callback(...args));
   },
 };
 
