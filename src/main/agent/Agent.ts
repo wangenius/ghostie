@@ -21,7 +21,8 @@ export class Agent {
   /** 构造函数 */
   protected constructor(props: AgentProps) {
     this.props = props;
-    this.context = new Context();
+    console.log("Agent constructor", props);
+    this.context = new Context(props.system);
     this.model = LLM.get(this.props.models.chat);
   }
 

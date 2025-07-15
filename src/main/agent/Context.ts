@@ -2,7 +2,7 @@ import { gen } from "@common/generator";
 import {
   AgentMemoryMessage,
   AgentMessageContent,
-  MemoryMessage
+  MemoryMessage,
 } from "@common/types/MessageType";
 
 /**
@@ -18,12 +18,12 @@ export class Context {
   /**
    * 构造函数
    */
-  constructor() {
+  constructor(system: string) {
     this.id = gen.id();
     this.messages = [];
     this.system = {
       from: "system",
-      content: "你是一个智能助手",
+      content: system,
     };
     this.created_at = Date.now();
     this.updated_at = Date.now();
@@ -31,10 +31,6 @@ export class Context {
 
   reset() {
     this.messages = [];
-    this.system = {
-      from: "system",
-      content: "你是一个智能助手",
-    };
     this.created_at = Date.now();
     this.updated_at = Date.now();
   }
@@ -66,19 +62,22 @@ export class Context {
     if (last && last.from === "agent") {
       const agentMsg = last as AgentMemoryMessage;
       const content = [...agentMsg.content];
-      
+
       // 如果是text类型，尝试合并到最后一个text内容中
       if (message.type === "text") {
-        const lastTextIndex = content.findLastIndex(item => item.type === "text");
+        const lastTextIndex = content.findLastIndex(
+          (item) => item.type === "text",
+        );
         if (lastTextIndex !== -1) {
           // 确保现有的content是字符串，如果不是则转换为字符串
-          const existingContent = typeof content[lastTextIndex].content === "string" 
-            ? content[lastTextIndex].content 
-            : String(content[lastTextIndex].content);
+          const existingContent =
+            typeof content[lastTextIndex].content === "string"
+              ? content[lastTextIndex].content
+              : String(content[lastTextIndex].content);
           // 合并到最后一个text内容中
           content[lastTextIndex] = {
             ...content[lastTextIndex],
-            content: existingContent + message.content
+            content: existingContent + message.content,
           };
         } else {
           // 没有找到text类型，直接添加
@@ -88,7 +87,7 @@ export class Context {
         // 非text类型，直接添加
         content.push(message);
       }
-      
+
       this.messages[this.messages.length - 1] = {
         ...agentMsg,
         content,
