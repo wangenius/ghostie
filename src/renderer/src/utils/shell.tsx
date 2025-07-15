@@ -1,6 +1,4 @@
 import { dialog } from "@/components/custom/DialogModal";
-import { validChannels } from "@common/types/channels";
-
 export abstract class cmd {
   /**
    * 运行主进程中的方法
@@ -9,10 +7,6 @@ export abstract class cmd {
    * @returns 返回主进程执行结果
    */
   static async invoke<T = any>(channel: string, ...args: any[]): Promise<T> {
-    // 验证通道名称是否合法
-    if (!validChannels.invoke.includes(channel as any)) {
-      throw new Error(`非法的invoke通道: ${channel}`);
-    }
     return await (window as any).shell.invoke(channel, ...args);
   }
 
@@ -21,26 +15,16 @@ export abstract class cmd {
     channel: string,
     callback: (message: { event: string; payload: string; id: number }) => void,
   ) {
-    // 验证通道名称是否合法
-    if (!validChannels.on.includes(channel as any)) {
-      throw new Error(`非法的监听通道: ${channel}`);
-    }
     return (window as any).shell.on(channel, callback);
   }
 
   /** @Description 监听事件 */
   static on(channel: string, callback: (...args: any[]) => void) {
-    // 验证通道名称是否合法
-    if (!validChannels.on.includes(channel as any)) {
-      throw new Error(`非法的监听通道: ${channel}`);
-    }
     return (window as any).shell.on(channel, callback);
   }
 
   /** @Description 取消监听事件 */
   static off(channel: string, callback: (...args: any[]) => void) {
-    // 这里我们需要实现取消监听的逻辑
-    // 由于preload中的on方法返回了取消监听的函数，我们需要保存这些函数
     console.warn('cmd.off方法需要配合on方法返回的取消函数使用');
   }
 

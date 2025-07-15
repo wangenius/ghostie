@@ -1,14 +1,13 @@
 import { Context } from "@/agent/Context";
-import { registerIpcHandlers } from "@/ipc/decorators";
 import { LLM } from "@/model/llm/LLM";
-import { gen } from "@/utils/generator";
+import { gen } from "@common/generator";
 import {
   AgentChatOptions,
   AgentProps,
   DEFAULT_AGENT,
   ExecuteOptions,
 } from "@common/types/agent";
-import { MessageItem } from "@common/types/chatModel";
+import { MemoryMessage } from "@common/types/MessageType";
 import { ReactAgent } from "./ReactAgent";
 
 /** Agent类 */
@@ -19,15 +18,11 @@ export class Agent {
   model: LLM;
   /* 上下文 */
   context: Context;
-
   /** 构造函数 */
   protected constructor(props: AgentProps) {
     this.props = props;
     this.context = Context.create(this);
     this.model = LLM.get(this.props.models.chat);
-
-    // 自动注册 IPC 处理器
-    registerIpcHandlers(this);
   }
 
   /** 创建代理或者获取代理 */
@@ -52,15 +47,12 @@ export class Agent {
   async chat(
     _input: string,
     _options?: AgentChatOptions,
-  ): Promise<MessageItem> {
+  ): Promise<MemoryMessage> {
     throw new Error("chat方法需要在子类中实现");
   }
 
   /* Agent执行 - 基类默认实现，子类需要重写 */
-  async execute(
-    _input: string,
-    _options?: ExecuteOptions,
-  ): Promise<MessageItem> {
+  async run(_input: string, _options?: ExecuteOptions): Promise<MemoryMessage> {
     throw new Error("execute方法需要在子类中实现");
   }
 

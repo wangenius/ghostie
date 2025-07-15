@@ -1,4 +1,4 @@
-import { MessageItem } from "../../common/types/chatModel";
+import { MemoryMessage } from "../../common/types/MessageType";
 import { ChatSession, ChatMessage } from "../../common/types/agent";
 import { gen } from "../utils/generator";
 import fs from "fs";
@@ -46,7 +46,7 @@ const loadFromFile = async () => {
 };
 
 // 转换MessageItem到ChatMessage
-const convertMessageItemToChatMessage = (item: MessageItem): ChatMessage | null => {
+const convertMessageItemToChatMessage = (item: MemoryMessage): ChatMessage | null => {
   // 过滤掉tool角色的消息，因为ChatMessage不支持
   if (item.role === 'tool') {
     return null;
@@ -76,7 +76,7 @@ const convertMessageItemToChatMessage = (item: MessageItem): ChatMessage | null 
 };
 
 // 转换ChatMessage到MessageItem
-const convertChatMessageToMessageItem = (message: ChatMessage): MessageItem => {
+const convertChatMessageToMessageItem = (message: ChatMessage): MemoryMessage => {
   return {
     role: message.role,
     content: message.content,
@@ -92,7 +92,7 @@ export class ChatHistoryManager {
   }
 
   /** 创建新的聊天会话 */
-  static async createSession(agentId: string, firstMessage?: MessageItem): Promise<ChatSession> {
+  static async createSession(agentId: string, firstMessage?: MemoryMessage): Promise<ChatSession> {
     const messages: ChatMessage[] = [];
     if (firstMessage) {
       const convertedMessage = convertMessageItemToChatMessage(firstMessage);
@@ -129,7 +129,7 @@ export class ChatHistoryManager {
   }
 
   /** 向会话添加消息 */
-  static async addMessageToSession(sessionId: string, message: MessageItem): Promise<void> {
+  static async addMessageToSession(sessionId: string, message: MemoryMessage): Promise<void> {
     const session = chatSessions[sessionId];
     if (!session) {
       throw new Error(`会话 ${sessionId} 不存在`);
@@ -183,7 +183,7 @@ export class ChatHistoryManager {
   }
 
   /** 获取会话的消息列表（转换为MessageItem格式） */
-  static async getSessionMessages(sessionId: string): Promise<MessageItem[]> {
+  static async getSessionMessages(sessionId: string): Promise<MemoryMessage[]> {
     const session = chatSessions[sessionId];
     if (!session) {
       return [];

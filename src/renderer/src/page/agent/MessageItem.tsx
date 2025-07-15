@@ -2,7 +2,7 @@ import { iconVariants } from "@/components/custom/CodeBlock";
 import { MarkdownRender } from "@/components/Markdown/MarkdownRender";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { MessageItem } from "@common/types/chatModel";
+import { MemoryMessage } from "@common/types/MessageType";
 import { motion } from "framer-motion";
 import { useCallback, useState } from "react";
 import {
@@ -57,8 +57,8 @@ export function ChatMessageItem({
   lastMessage,
   index,
 }: {
-  message: MessageItem;
-  lastMessage: MessageItem | null;
+  message: MemoryMessage;
+  lastMessage: MemoryMessage | null;
   index: number;
 }) {
   const isUser = message.role === "user";

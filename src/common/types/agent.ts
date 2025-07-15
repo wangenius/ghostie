@@ -39,7 +39,7 @@ export interface AgentProps {
   /* 名称 */
   name: string;
   /* 描述 */
-  description?: string;
+  description: string;
   /* 头像 */
   avatar?: string;
   /* 系统提示 */
@@ -71,39 +71,11 @@ export interface AgentProps {
   };
 }
 
-/** 代理使用数据 */
-export interface AgentUsedData {
-  /* 置顶 */
-  pinned?: boolean;
-  /* 使用次数 */
-  usageCount?: number;
-  /* 最后使用时间 */
-  lastUsed?: number;
-}
-
-/** 聊天消息 */
-export interface ChatMessage {
-  id: string;
-  role: "user" | "assistant" | "system";
-  content: string;
-  timestamp: number;
-  images?: { contentType: string; base64Image: string }[];
-}
-
-/** 聊天会话 */
-export interface ChatSession {
-  id: string;
-  agentId: string;
-  title: string;
-  messages: ChatMessage[];
-  createdAt: number;
-  updatedAt: number;
-}
-
 export const DEFAULT_AGENT: AgentProps = {
   id: "",
   name: "",
   system: "",
+  description: "",
   version: "0.0.1",
   engine: "react",
   models: {},

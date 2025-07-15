@@ -1,21 +1,20 @@
+import { MemoryMessage } from "@common/types/MessageType";
 import { createOpenAI } from "@ai-sdk/openai";
 import { LanguageModelV1 } from "@ai-sdk/provider";
 import { processDataStream } from "@ai-sdk/ui-utils";
 import { ModelItem } from "@common/types/agent";
-import {
-  ChatModelResponse,
-  CompletionMessage,
-  OnChunk,
-  ToolCallReply,
-} from "@common/types/chatModel";
-import { generateText, streamText, Tool } from "ai";
+import { OnChunk } from "@common/types/MessageType";
+import { CoreMessage, generateText, streamText, Tool, ToolCallPart } from "ai";
 import dotenv from "dotenv";
 import { createQwen } from "./provider/qwenProvider";
+import { Context } from "@/agent/Context";
 
 dotenv.config();
 
 /**
  * 简化的 LLM 类，基于 Vercel AI SDK
+ * 传入 MemoryMessage， 输出 MemoryMessage 的结构和子结构。
+ * 封装 MemoryMessage 到 CoreMessage 之间的转换逻辑。
  */
 export class LLM {
   private model: LanguageModelV1;
@@ -36,7 +35,7 @@ export class LLM {
       });
     }
     const provider = createQwen({
-      apiKey: "sk-f341aea76bfc4c07bef778649db243cd",
+      apiKey: process.env.QWEN_API_KEY || "",
       baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     });
     return new LLM({
@@ -67,33 +66,46 @@ export class LLM {
   /**
    * 转换消息格式
    */
-  private convertMessages(messages: CompletionMessage[]): any[] {
-    return messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
+  private convertMessages(messages: MemoryMessage[]): CoreMessage[] {
+    return messages
+      .filter((msg) => !msg.error && !msg.hidden)
+      .map((msg) => {
+        const result: Record<string, any> = {
+          role: msg.role,
+          content: msg.content + (msg.extra ? `\n\n${msg.extra}` : ""),
+        };
+        if (msg.tool_calls) result.tool_calls = msg.tool_calls;
+        if (msg.tool_call_id) result.tool_call_id = msg.tool_call_id;
+        if (msg.images) result.images = msg.images;
+        return result as CoreMessage;
+      });
   }
 
   /** 流式生成
-   * @param messages 消息列表
+   * @param context 上下文对象
    * @param onChunk 数据块处理回调
    * @returns 流式生成结果
    */
   public async stream(
-    messages: CompletionMessage[],
+    context: Context,
     onChunk?: (chunk: OnChunk) => void,
-  ): Promise<ChatModelResponse<string>> {
+  ): Promise<{
+    body?: string;
+    error?: string;
+    tool: ToolCallPart[];
+    stop: () => Promise<void>;
+  }> {
     await this.stop(); // 停止之前的请求
     this.abortController = new AbortController();
 
     let completionContent = "";
     let fullReasoning = "";
-    let toolCalls: ToolCallReply[] = [];
+    let toolCalls: ToolCallPart[] = [];
     let collectedToolCalls: any[] = [];
     let collectedToolResults: any[] = [];
 
     try {
-      const coreMessages = this.convertMessages(messages);
+      const coreMessages = this.convertMessages(context.getMessages());
       console.log(
         "baseArgs",
         JSON.stringify(
@@ -133,7 +145,6 @@ export class LLM {
 
           console.log("收到文本片段:", textPart);
           completionContent += textPart;
-
           onChunk?.({
             completion: textPart,
             reasoner: undefined,
@@ -152,26 +163,9 @@ export class LLM {
         },
         onToolCallPart: async (toolCall: any) => {
           if (this.abortController?.signal.aborted) return;
-
           console.log("收到工具调用:", toolCall);
           collectedToolCalls.push(toolCall);
-
-          // 转换为ToolCallReply格式
-          const toolCallReply: ToolCallReply = {
-            id:
-              toolCall.toolCallId ||
-              toolCall.id ||
-              `call_${collectedToolCalls.length - 1}`,
-            type: "function" as const,
-            index: collectedToolCalls.length - 1,
-            function: {
-              name: toolCall.toolName || toolCall.name,
-              arguments: JSON.stringify(toolCall.args || {}),
-            },
-          };
-
-          toolCalls.push(toolCallReply);
-
+          toolCalls.push(toolCall);
           onChunk?.({
             completion: "",
             reasoner: undefined,
@@ -237,7 +231,7 @@ export class LLM {
   /**
    * 非流式生成（用于JSON格式输出）
    */
-  public async json(messages: CompletionMessage[]): Promise<any> {
+  public async json(messages: MemoryMessage[]): Promise<any> {
     const text = await this.generate(messages);
     return JSON.parse(text);
   }
@@ -245,7 +239,7 @@ export class LLM {
   /**
    * 简单的文本生成
    */
-  public async generate(messages: CompletionMessage[]): Promise<string> {
+  public async generate(messages: MemoryMessage[]): Promise<string> {
     const coreMessages = this.convertMessages(messages);
 
     const result = await generateText({

@@ -7,7 +7,7 @@ import {
 import { BrowserWindow } from "electron";
 import { IpcHandle, registerIpcHandlers } from "../ipc/decorators";
 import { ChatHistoryManager } from "../store/ChatHistoryManager";
-import { gen } from "../utils/generator";
+import { gen } from "@common/generator";
 import { Agent } from "./Agent";
 import { ReactAgent } from "./ReactAgent";
 

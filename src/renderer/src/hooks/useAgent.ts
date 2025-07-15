@@ -2,7 +2,7 @@ import {
   AgentChatOptions,
   AgentProps
 } from "@common/types/agent";
-import { MessageItem } from "@common/types/chatModel";
+import { MemoryMessage } from "@common/types/MessageType";
 import { useCallback, useEffect, useState } from "react";
 import { cmd } from "../utils/shell";
 
@@ -175,7 +175,7 @@ export const useAgent = () => {
  * Agent 聊天 Hook
  */
 export const useAgentChat = (agentId: string) => {
-  const [messages, setMessages] = useState<MessageItem[]>([]);
+  const [messages, setMessages] = useState<MemoryMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -227,7 +227,7 @@ export const useAgentChat = (agentId: string) => {
         }
 
         // 添加用户消息
-        const userMessage: MessageItem = {
+        const userMessage: MemoryMessage = {
           role: "user",
           content: message,
           created_at: Date.now(),
@@ -290,7 +290,7 @@ export const useAgentChat = (agentId: string) => {
         }
 
         // 添加 AI 回复
-        const aiMessage: MessageItem = {
+        const aiMessage: MemoryMessage = {
           role: "assistant",
           content: content,
           created_at: Date.now(),

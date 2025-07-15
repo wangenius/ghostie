@@ -1,11 +1,11 @@
-import { CompletionMessage, MessageItem } from "src/common/types/chatModel";
-import { gen } from "@/utils/generator";
+import { CoreMessage, MemoryMessage } from "@common/types/MessageType";
+import { gen } from "@common/generator";
 import { Agent } from "./Agent";
 /* 上下文 */
 export interface ContextRuntimeProps {
   id: string;
-  system: MessageItem;
-  messages: MessageItem[];
+  messages: MemoryMessage[];
+  system?: MemoryMessage;
   created_at: number;
   updated_at: number;
 }
@@ -25,11 +25,6 @@ export class Context {
     this.runtime = {
       id: gen.id(),
       messages: [],
-      system: {
-        role: "system",
-        content: this.agent.props.system || "",
-        created_at: Date.now(),
-      },
       created_at: Date.now(),
       updated_at: Date.now(),
     };
@@ -45,7 +40,6 @@ export class Context {
         system: {
           role: "system",
           content: this.agent.props.system || "",
-          created_at: Date.now(),
         },
         created_at: Date.now(),
         updated_at: Date.now(),
@@ -63,7 +57,7 @@ export class Context {
   /** 转化成completion格式
    * @returns 所有消息的数组
    */
-  getCompletionMessages(): CompletionMessage[] {
+  getCompletionMessages(): CoreMessage[] {
     return this.getMessages()
       .filter((msg) => !msg.error)
       .map((msg) => {
@@ -73,7 +67,7 @@ export class Context {
         };
         if (msg.tool_calls) result.tool_calls = msg.tool_calls;
         if (msg.tool_call_id) result.tool_call_id = msg.tool_call_id;
-        return result as CompletionMessage;
+        return result as CoreMessage;
       });
   }
 
@@ -90,7 +84,7 @@ export class Context {
       updated_at: Date.now(),
     };
   }
-  update(messages: MessageItem[]) {
+  update(messages: MemoryMessage[]) {
     this.runtime = {
       ...this.runtime,
       messages,
@@ -99,14 +93,18 @@ export class Context {
   }
 
   getMessages() {
-    return [this.runtime.system, ...this.runtime.messages];
+    const messages = [...this.runtime.messages];
+    if (this.runtime.system) {
+      return [this.runtime.system, ...messages];
+    }
+    return messages;
   }
 
   getLastMessage() {
     return this.runtime.messages[this.runtime.messages.length - 1];
   }
 
-  addLastMessage(message: MessageItem) {
+  addLastMessage(message: MemoryMessage) {
     this.runtime = {
       ...this.runtime,
       messages: [...this.runtime.messages, message],
@@ -114,7 +112,7 @@ export class Context {
     };
   }
 
-  updateLastMessage(message: Partial<MessageItem>) {
+  updateLastMessage(message: Partial<MemoryMessage>) {
     this.runtime = {
       ...this.runtime,
       messages: [
@@ -139,7 +137,7 @@ export class Context {
     };
   }
 
-  pushMessage(message: MessageItem) {
+  pushMessage(message: MemoryMessage) {
     this.runtime = {
       ...this.runtime,
       messages: [...this.runtime.messages, message],

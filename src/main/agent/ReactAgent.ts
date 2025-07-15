@@ -4,18 +4,17 @@ import {
   ExecuteOptions,
   AgentChatOptions,
 } from "@common/types/agent";
-import { MessageItem } from "@common/types/chatModel";
+import { MessageItem } from "@common/types/MessageType";
 
 /* ReAct Agent 子类 */
 export class ReactAgent extends Agent {
   constructor(infos: AgentProps) {
     super(infos);
-    console.log(this.props);
   }
 
   /* 机器人对话 */
   async chat(input: string, options?: AgentChatOptions): Promise<MessageItem> {
-    return await this.execute(input, {
+    return await this.run(input, {
       images: options?.images?.map(
         (img) => `data:${img.contentType};base64,${img.base64Image}`,
       ),
@@ -23,7 +22,7 @@ export class ReactAgent extends Agent {
   }
 
   /* 执行 ReAct 逻辑 */
-  async execute(input: string, options?: ExecuteOptions): Promise<MessageItem> {
+  async run(input: string, options?: ExecuteOptions): Promise<MessageItem> {
     try {
       let content = input;
       let iterations = 0;
@@ -53,7 +52,7 @@ export class ReactAgent extends Agent {
 
         /* 生成响应 */
         const response = await this.model.stream(
-          this.context.getCompletionMessages().slice(0, -1),
+          this.context,
           (chunk) => {
             content += chunk.completion || "";
             reasoner += chunk.reasoner || "";
@@ -72,6 +71,13 @@ export class ReactAgent extends Agent {
             loading: false,
           });
           break;
+        }
+
+        // 更新内容
+        if (response.body) {
+          this.context.updateLastMessage({
+            content: response.body,
+          });
         }
 
         // 如果没有工具调用，说明对话可以结束
@@ -150,7 +156,7 @@ export class ReactAgent extends Agent {
         });
 
         await this.model.stream(
-          this.context.getCompletionMessages(),
+          this.context,
           (chunk) => {
             content += chunk.completion || "";
             reasoner += chunk.reasoner || "";
