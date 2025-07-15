@@ -175,7 +175,16 @@ export const useAgent = () => {
  * Agent 聊天 Hook
  */
 export const useAgentChat = (agentId: string) => {
-  const [messages, setMessages] = useState<MemoryMessage[]>([]);
+  const [messages, setMessages] = useState<(MemoryMessage & {
+    loading?: boolean;
+    error?: string;
+    reasoner?: string;
+    tool_calls?: any;
+    images?: string[];
+    hidden?: boolean;
+    tool_call_id?: string;
+    tool_loading?: boolean;
+  })[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -227,10 +236,19 @@ export const useAgentChat = (agentId: string) => {
         }
 
         // 添加用户消息
-        const userMessage: MemoryMessage = {
-          role: "user",
-          content: message,
+        const userMessage: MemoryMessage & {
+          loading?: boolean;
+          error?: string;
+        } = {
+          from: "user",
+          content: [
+            {
+              type: "text",
+              content: message,
+            },
+          ],
           created_at: Date.now(),
+          updated_at: Date.now(), 
         };
         setMessages((prev) => [...prev, userMessage]);
 
@@ -263,6 +281,25 @@ export const useAgentChat = (agentId: string) => {
           }
         }
 
+        // 添加一个临时的加载消息
+        const loadingMessage: MemoryMessage & {
+          loading?: boolean;
+          error?: string;
+          reasoner?: string;
+        } = {
+          from: "agent",
+          content: [
+            {
+              type: "text",
+              content: "",
+            },
+          ],
+          created_at: Date.now(),
+          updated_at: Date.now(),
+          loading: true,
+        };
+        setMessages((prev) => [...prev, loadingMessage]);
+
         // 调用 Agent 聊天
         const response = await cmd.invoke(
           "agent-chat",
@@ -272,32 +309,72 @@ export const useAgentChat = (agentId: string) => {
         );
 
         // 处理 MessageItem 响应
-        let content = "";
+        let agentMessage: MemoryMessage;
         let messageError: string | undefined;
 
-        if (response && typeof response === "object") {
-          // 如果有错误，记录错误信息
-          if (response.error) {
-            messageError = response.error;
-            content = "处理消息时发生错误";
-          } else {
-            // 否则使用内容
-            content = response.content || "没有收到回复";
-          }
+        if (response && typeof response === "object" && response.from === "agent") {
+          // 如果响应是完整的 MemoryMessage 对象，直接使用
+          agentMessage = response as MemoryMessage;
+          messageError = response.error;
         } else {
-          // 如果响应是字符串，直接使用
-          content = response || "没有收到回复";
+          // 如果响应是其他格式，创建标准的 agent 消息
+          let content = "";
+          if (response && typeof response === "object") {
+            if (response.error) {
+              messageError = response.error;
+              content = "处理消息时发生错误";
+            } else {
+              content = response.content || "没有收到回复";
+            }
+          } else {
+            content = response || "没有收到回复";
+          }
+          
+          agentMessage = {
+            from: "agent",
+            content: [
+              {
+                type: "text",
+                content: content,
+              },
+            ],
+            created_at: Date.now(),
+            updated_at: Date.now(),
+          };
         }
 
-        // 添加 AI 回复
-        const aiMessage: MemoryMessage = {
-          role: "assistant",
-          content: content,
-          created_at: Date.now(),
+        // 更新最后一条消息（移除loading状态并添加内容）
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          const lastMessage = newMessages[newMessages.length - 1];
+          if (lastMessage && lastMessage.from === "agent" && lastMessage.loading) {
+            // 确保 agentMessage 是 AgentMemoryMessage 类型
+            if (agentMessage.from === "agent") {
+              lastMessage.content = agentMessage.content;
+              lastMessage.loading = false;
+              lastMessage.error = messageError;
+              if ('created_at' in agentMessage && 'updated_at' in agentMessage) {
+                lastMessage.created_at = agentMessage.created_at;
+                lastMessage.updated_at = agentMessage.updated_at;
+              } else {
+                lastMessage.updated_at = Date.now();
+              }
+            }
+          }
+          return newMessages;
+        });
+
+        // 创建最终的AI消息用于返回
+        const aiMessage: MemoryMessage & {
+          loading?: boolean;
+          error?: string;
+          reasoner?: string;
+        } = {
+          ...agentMessage,
           error: messageError,
         };
 
-        setMessages((prev) => [...prev, aiMessage]);
+        // 消息已经通过状态更新添加，不需要再次添加
 
         // 将AI回复添加到会话
         if (sessionId) {

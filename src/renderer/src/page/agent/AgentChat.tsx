@@ -19,7 +19,7 @@ import {
   TbPencil,
   TbPlus,
   TbStethoscope,
-  TbTrash
+  TbTrash,
 } from "react-icons/tb";
 import { Descendant } from "slate";
 import { toast } from "sonner";
@@ -52,16 +52,16 @@ export const AgentChat = observer(({ agent }: AgentChatProps) => {
   const [historyOpen, setHistoryOpen] = useState(false);
 
   // 使用 useAgentChat hook
-  const { 
-    messages, 
-    loading, 
-    sendMessage, 
-    clearMessages, 
+  const {
+    messages,
+    loading,
+    sendMessage,
+    clearMessages,
     loadChatSession,
     getChatSessions,
     deleteChatSession,
     deleteAllChatSessions,
-    diagnoseAgent 
+    diagnoseAgent,
   } = useAgentChat(agent.id);
 
   const { deleteAgent } = useAgent();
@@ -346,7 +346,7 @@ export const AgentChat = observer(({ agent }: AgentChatProps) => {
                 <>
                   {messages.map((message, index) => (
                     <ChatMessageItem
-                      key={message.created_at.toString()}
+                      key={index}
                       message={message}
                       index={index}
                       lastMessage={index > 0 ? messages[index - 1] : null}

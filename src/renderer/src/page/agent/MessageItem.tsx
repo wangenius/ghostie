@@ -57,11 +57,29 @@ export function ChatMessageItem({
   lastMessage,
   index,
 }: {
-  message: MemoryMessage;
-  lastMessage: MemoryMessage | null;
+  message: MemoryMessage & {
+    loading?: boolean;
+    error?: string;
+    reasoner?: string;
+    tool_calls?: any;
+    images?: string[];
+    hidden?: boolean;
+    tool_call_id?: string;
+    tool_loading?: boolean;
+  };
+  lastMessage: (MemoryMessage & {
+    loading?: boolean;
+    error?: string;
+    reasoner?: string;
+    tool_calls?: any;
+    images?: string[];
+    hidden?: boolean;
+    tool_call_id?: string;
+    tool_loading?: boolean;
+  }) | null;
   index: number;
 }) {
-  const isUser = message.role === "user";
+  const isUser = message.from === "user";
   const [copied, setCopied] = useState(false);
   const [showReasoning, setShowReasoning] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -73,7 +91,15 @@ export function ChatMessageItem({
   const handleMessagePlus = useCallback(() => {}, []);
 
   const handleCopyMessage = () => {
-    navigator.clipboard.writeText(message.content);
+    let textContent = "";
+    if (Array.isArray(message.content)) {
+      // 合并所有text类型的内容
+      textContent = message.content
+        .filter(item => item.type === "text")
+        .map(item => item.content)
+        .join("");
+    }
+    navigator.clipboard.writeText(textContent);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -130,7 +156,7 @@ export function ChatMessageItem({
     );
   }
 
-  if (message.role === "user")
+  if (message.from === "user")
     return (
       <>
         <div
@@ -139,7 +165,14 @@ export function ChatMessageItem({
             "text-muted-foreground bg-muted",
           )}
         >
-          {message.content && <span className="block">{message.content}</span>}
+          {message.content && message.content.length > 0 && (
+            <span className="block">
+              {message.content
+                .filter(item => item.type === "text")
+                .map(item => item.content)
+                .join("")}
+            </span>
+          )}
           {message.images && message.images.length > 0 && (
             <div className="flex gap-2 py-1">
               {message.images.map((image) => (
@@ -169,8 +202,8 @@ export function ChatMessageItem({
     );
 
   if (
-    message.role === "assistant" &&
-    !message.content &&
+    message.from === "agent" &&
+    (!message.content || message.content.length === 0) &&
     !message.loading &&
     !message.reasoner &&
     !message.error
@@ -179,12 +212,12 @@ export function ChatMessageItem({
 
   return (
     <div
-      data-id={message.role}
+      data-id={message.from}
       className={cn(
         "border-0 transition-colors group overflow-hidden text-primary text-sm space-y-2",
       )}
     >
-      {message.loading && !message.content && !message.reasoner && (
+      {message.loading && (!message.content || message.content.length === 0) && !message.reasoner && (
         <MessageItemState
           isLoading={message.loading || false}
           name="loading..."
@@ -197,7 +230,7 @@ export function ChatMessageItem({
             name="reasoning"
             icon={TbBrain}
             onClick={() => setShowReasoning((prev) => !prev)}
-            isLoading={!(message.content || message.tool_calls)}
+            isLoading={(!message.content || message.content.length === 0) && !message.tool_calls}
           />
           {showReasoning && (
             <div className="text-[12px] text-muted-foreground/70 pl-3 pt-1 pb-3 ml-3 border-l-2 border-muted">
@@ -209,8 +242,13 @@ export function ChatMessageItem({
         </div>
       )}
 
-      {message.role === "assistant" && message.content && (
-        <MarkdownRender>{message.content}</MarkdownRender>
+      {message.from === "agent" && message.content && message.content.length > 0 && (
+        <MarkdownRender>
+          {message.content
+            .filter(item => item.type === "text")
+            .map(item => item.content)
+            .join("") || ""}
+        </MarkdownRender>
       )}
       {message.error && (
         <div className="flex items-center gap-2 px-3 bg-red-500/10 rounded-md text-red-500 text-sm py-2">
@@ -219,7 +257,7 @@ export function ChatMessageItem({
       )}
       {!message.tool_calls && !message.loading && (
         <div className="text-xs text-muted-foreground items-center flex select-none">
-          {!isUser && message.role === "assistant" && (
+          {!isUser && message.from === "agent" && (
             <Button variant="ghost" size="icon" onClick={handleCopyMessage}>
               {copied ? (
                 <motion.div
@@ -245,7 +283,7 @@ export function ChatMessageItem({
           >
             <TbMessagePlus className="w-3.5 h-3.5" />
           </Button>
-          {message.role === "assistant" && (
+          {message.from === "agent" && (
             <span className="flex items-center gap-1 px-2">
               {new Date(message.created_at)
                 .toLocaleString("zh-CN", {

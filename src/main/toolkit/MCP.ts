@@ -1,4 +1,4 @@
-import { gen } from "@/utils/generator";
+import { gen } from "@common/generator";
 
 export interface MCPTool {
   name: string;

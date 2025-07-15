@@ -1,4 +1,4 @@
-import { UserData } from "@/resources/UserData";
+import { UserData } from "@/store/UserData";
 import {
   AgentChatOptions,
   AgentProps,

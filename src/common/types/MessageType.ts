@@ -12,7 +12,8 @@ export type MessageContentType =
   | "video"
   | "tool-call"
   | "tool-result"
-  | "reasoning";
+  | "reasoning"
+  | "error";
 
 /**
  * 消息内容项
@@ -55,3 +56,22 @@ export type MemoryMessage =
   | UserMemoryMessage
   | AgentMemoryMessage
   | SystemMemoryMessage;
+
+/**
+ * 流式响应数据块接口
+ */
+export interface OnChunk {
+  completion: string;
+  reasoner?: string;
+}
+
+
+// 聊天会话接口
+export interface ChatSession {
+  id: string;
+  agentId: string;
+  title: string;
+  messages: MemoryMessage[];
+  createdAt: number;
+  updatedAt: number;
+}

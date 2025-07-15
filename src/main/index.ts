@@ -13,7 +13,6 @@ import { SETTINGS_NAV_ITEMS } from "../common/config/nav";
 import { App } from "./app/App";
 import { Settings } from "./app/Settings";
 import { ipc_handles } from "./ipc";
-import { User } from "./user/User";
 import { ChatHistoryManager } from "./store/ChatHistoryManager";
 
 import "./model/llm/provider";
@@ -344,7 +343,6 @@ app.whenReady().then(async () => {
     const window = await createWindow();
     await setupAlwaysOnTop();
     setupGlobalShortcuts();
-    User.checkout();
     createTray(window);
   } catch (error) {
     console.error("应用初始化失败:", error);

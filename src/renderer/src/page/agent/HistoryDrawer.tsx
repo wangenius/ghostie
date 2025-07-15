@@ -3,18 +3,10 @@ import { cn } from "@/lib/utils";
 import { TbClock, TbMessageCircle, TbTrash } from "react-icons/tb";
 import { useAgent } from "@/hooks/useAgent";
 import { useState, useEffect } from "react";
+import { ChatSession } from "@common/types/MessageType";
 
 // 从useAgent hook导入的类型
 type AgentInfos = NonNullable<ReturnType<typeof useAgent>["agents"][string]>;
-
-interface ChatSession {
-  id: string;
-  agentId: string;
-  title: string;
-  messages: any[];
-  createdAt: number;
-  updatedAt: number;
-}
 
 interface HistoryPageProps {
   agent?: AgentInfos;
@@ -141,8 +133,20 @@ export const HistoryPage = ({
               </div>
               <h3 className="text-xs my-1 font-medium line-clamp-2">
                 {session.title ||
-                  session.messages?.[0]?.content ||
-                  "无标题对话"}
+                  (() => {
+                    const firstMessage = session.messages?.[0];
+                    if (!firstMessage?.content) return "无标题对话";
+                    if (Array.isArray(firstMessage.content)) {
+                      return (
+                        firstMessage.content.find(
+                          (item) => item.type === "text",
+                        )?.content || "无标题对话"
+                      );
+                    }
+                    return typeof firstMessage.content === "string"
+                      ? firstMessage.content
+                      : "无标题对话";
+                  })()}
               </h3>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <TbMessageCircle className="h-3.5 w-3.5" />

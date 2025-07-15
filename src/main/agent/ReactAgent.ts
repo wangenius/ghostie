@@ -1,10 +1,8 @@
-import { Agent } from "./Agent";
 import {
-  AgentProps,
-  ExecuteOptions,
-  AgentChatOptions,
+  AgentProps
 } from "@common/types/agent";
 import { MemoryMessage } from "@common/types/MessageType";
+import { Agent } from "./Agent";
 
 /* ReAct Agent 子类 */
 export class ReactAgent extends Agent {
@@ -15,22 +13,15 @@ export class ReactAgent extends Agent {
   /* 机器人对话 */
   async chat(
     input: string,
-    options?: AgentChatOptions,
   ): Promise<MemoryMessage> {
-    return await this.run(input, {
-      images: options?.images?.map(
-        (img) => `data:${img.contentType};base64,${img.base64Image}`,
-      ),
-    });
+    return await this.run(input);
   }
 
   /* 执行 ReAct 逻辑 */
-  async run(input: string, options?: ExecuteOptions): Promise<MemoryMessage> {
+  async run(input: string): Promise<MemoryMessage> {
     try {
       let content = input;
       let iterations = 0;
-      console.log("当前模型:", this.model);
-
       this.context.pushMessage({
         from: "user",
         content: [
@@ -51,12 +42,7 @@ export class ReactAgent extends Agent {
 
         this.context.addLastMessage({
           from: "agent",
-          content: [
-            {
-              type: "text",
-              content: content,
-            },
-          ],
+          content: [],
           created_at: Date.now(),
           updated_at: Date.now(),
         });
@@ -65,75 +51,73 @@ export class ReactAgent extends Agent {
         const response = await this.model.stream(this.context, (chunk) => {
           content += chunk.completion || "";
           reasoner += chunk.reasoner || "";
-          this.context.updateLastMessage({
-            content,
-            reasoner,
-          });
+          if (chunk.completion) {
+            this.context.updateLastMessage({
+              type: "text",
+              content: chunk.completion,
+            });
+          }
+          if (chunk.reasoner) {
+            this.context.updateLastMessage({
+              type: "reasoning",
+              content: chunk.reasoner,
+            });
+          }
         });
 
         console.log(response);
 
         if (response.error) {
           this.context.updateLastMessage({
-            error: response.error,
-            loading: false,
+            type: "text",
+            content: `错误: ${response.error}`,
           });
           break;
         }
 
-        // 更新内容
-        if (response.body) {
-          this.context.updateLastMessage({
-            content: response.body,
-          });
-        }
+        // 流式处理已经通过chunk回调更新了内容，这里不需要再次更新
 
         // 如果没有工具调用，说明对话可以结束
-        if (response.tool.length === 0) {
-          this.context.updateLastMessage({
-            loading: false,
-          });
+        if (!response.tool || response.tool.length === 0) {
           break;
         } else {
-          this.context.updateLastMessage({
-            tool_calls: response.tool.filter((tool) => tool?.id),
-            tool_loading: false,
-            loading: false,
-          });
-
           // 执行工具调用
           for (const tool of response.tool) {
-            if (tool?.id) {
-              this.context.addLastMessage({
-                role: "tool",
-                content: "",
-                tool_call_id: tool.id,
-                created_at: Date.now(),
-                loading: true,
-                tool_loading: true,
+            const { toolCallId, toolName, args } = tool;
+            if (toolCallId && toolName) {
+              // 追加工具调用内容
+              this.context.updateLastMessage({
+                type: "tool-call",
+                content: {
+                  toolCallId,
+                  toolName,
+                  args,
+                },
               });
 
+              // 工具执行结果
               try {
-                // 解析工具调用参数
-                const args = JSON.parse(tool.function.arguments || "{}");
-                console.log(`执行工具: ${tool.function.name}`, args);
-
+                const parsedArgs =
+                  typeof args === "string" ? JSON.parse(args) : args;
+                console.log(`执行工具: ${toolName}`, parsedArgs);
                 // 这里应该调用实际的工具执行逻辑
                 // 目前先返回一个占位符结果
-                const toolResult = `工具 ${tool.function.name} 已被调用，参数: ${JSON.stringify(args)}`;
-
+                const toolResult = `工具 ${toolName} 已被调用，参数: ${JSON.stringify(parsedArgs)}`;
                 this.context.updateLastMessage({
-                  content: toolResult,
-                  loading: false,
-                  tool_loading: false,
+                  type: "tool-result",
+                  content: {
+                    toolCallId,
+                    result: toolResult,
+                  },
                 });
               } catch (error) {
-                console.error(`工具执行失败: ${tool.function.name}`, error);
+                console.error(`工具执行失败: ${toolName}`, error);
                 this.context.updateLastMessage({
-                  content: `工具执行失败: ${error instanceof Error ? error.message : String(error)}`,
-                  loading: false,
-                  tool_loading: false,
-                  error: error instanceof Error ? error.message : String(error),
+                  type: "tool-result",
+                  content: {
+                    toolCallId,
+                    result: `工具执行失败: ${error instanceof Error ? error.message : String(error)}`,
+                  },
                 });
               }
             }
@@ -147,33 +131,42 @@ export class ReactAgent extends Agent {
       // 如果达到最大迭代次数，生成一个说明
       if (iterations >= 20) {
         this.context.pushMessage({
-          role: "user",
-          content: "已达到最大迭代次数。基于当前信息，请生成最终总结回应。",
+          from: "user",
+          content: [
+            {
+              type: "text",
+              content: "已达到最大迭代次数。基于当前信息，请生成最终总结回应。",
+            },
+          ],
           created_at: Date.now(),
-          hidden: true,
+          updated_at: Date.now(),
         });
 
         let content = "";
         let reasoner = "";
 
         this.context.addLastMessage({
-          role: "assistant",
-          content: "",
+          from: "agent",
+          content: [],
           created_at: Date.now(),
-          loading: true,
+          updated_at: Date.now(),
         });
 
         await this.model.stream(this.context, (chunk) => {
           content += chunk.completion || "";
           reasoner += chunk.reasoner || "";
-          this.context.updateLastMessage({
-            content,
-            reasoner,
-          });
-        });
-
-        this.context.updateLastMessage({
-          loading: false,
+          if (chunk.completion) {
+            this.context.updateLastMessage({
+              type: "text",
+              content: chunk.completion,
+            });
+          }
+          if (chunk.reasoner) {
+            this.context.updateLastMessage({
+              type: "reasoning",
+              content: chunk.reasoner,
+            });
+          }
         });
       }
 
@@ -181,8 +174,8 @@ export class ReactAgent extends Agent {
     } catch (error) {
       console.error("Chat error:", error);
       this.context.updateLastMessage({
-        error: error instanceof Error ? error.message : String(error),
-        loading: false,
+        type: "text",
+        content: `错误: ${error instanceof Error ? error.message : String(error)}`,
       });
       throw error;
     }

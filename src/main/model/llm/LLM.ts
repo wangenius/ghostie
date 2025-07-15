@@ -1,9 +1,8 @@
-import { MemoryMessage } from "@common/types/MessageType";
+import { MemoryMessage, OnChunk } from "@common/types/MessageType";
 import { createOpenAI } from "@ai-sdk/openai";
 import { LanguageModelV1 } from "@ai-sdk/provider";
 import { processDataStream } from "@ai-sdk/ui-utils";
 import { ModelItem } from "@common/types/agent";
-import { OnChunk } from "@common/types/MessageType";
 import { CoreMessage, generateText, streamText, Tool, ToolCallPart } from "ai";
 import dotenv from "dotenv";
 import { createQwen } from "./provider/qwenProvider";
@@ -35,7 +34,7 @@ export class LLM {
       });
     }
     const provider = createQwen({
-      apiKey: process.env.QWEN_API_KEY || "",
+      apiKey: process.env.DASHSCOPE_API_KEY || "",
       baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     });
     return new LLM({
@@ -67,18 +66,36 @@ export class LLM {
    * 转换消息格式
    */
   private convertMessages(messages: MemoryMessage[]): CoreMessage[] {
-    return messages
-      .filter((msg) => !msg.error && !msg.hidden)
-      .map((msg) => {
-        const result: Record<string, any> = {
-          role: msg.role,
-          content: msg.content + (msg.extra ? `\n\n${msg.extra}` : ""),
-        };
-        if (msg.tool_calls) result.tool_calls = msg.tool_calls;
-        if (msg.tool_call_id) result.tool_call_id = msg.tool_call_id;
-        if (msg.images) result.images = msg.images;
-        return result as CoreMessage;
-      });
+    return messages.map((msg) => {
+      const result: Record<string, any> = {
+        role:
+          msg.from === "user"
+            ? "user"
+            : msg.from === "agent"
+              ? "assistant"
+              : "system",
+      };
+
+      if (msg.from === "system") {
+        result.content = msg.content;
+      } else if (msg.from === "user") {
+        // 处理用户消息内容数组
+        const textContent = msg.content
+          .filter((item) => item.type === "text")
+          .map((item) => item.content)
+          .join("\n");
+        result.content = textContent;
+      } else if (msg.from === "agent") {
+        // 处理代理消息内容数组
+        const textContent = msg.content
+          .filter((item) => item.type === "text")
+          .map((item) => item.content)
+          .join("\n");
+        result.content = textContent;
+      }
+
+      return result as CoreMessage;
+    });
   }
 
   /** 流式生成
