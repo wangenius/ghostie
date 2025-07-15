@@ -9,6 +9,7 @@ import {
   ExecuteOptions,
 } from "@common/types/agent";
 import { MessageItem } from "@common/types/chatModel";
+import { ReactAgent } from "./ReactAgent";
 
 /** Agent类 */
 export class Agent {
@@ -24,7 +25,7 @@ export class Agent {
     this.props = props;
     this.context = Context.create(this);
     this.model = LLM.get(this.props.models.chat);
-    
+
     // 自动注册 IPC 处理器
     registerIpcHandlers(this);
   }
@@ -33,22 +34,8 @@ export class Agent {
   static async create(id?: string): Promise<Agent> {
     /* 创建代理 */
     const infos = { ...DEFAULT_AGENT, id: id || gen.id() };
-    // 根据engine类型创建相应的Agent子类
-    const engineType = infos.engine || "react";
-    // 动态导入并创建相应的Agent子类
-    let agent: Agent;
-
-    switch (engineType) {
-      case "react":
-      default: {
-        const { ReactAgent } = await import("./ReactAgent");
-        agent = new ReactAgent(infos);
-        break;
-      }
-    }
-
     /* 返回代理 */
-    return agent;
+    return new ReactAgent(infos);
   }
 
   /* 更新机器人元数据 */
