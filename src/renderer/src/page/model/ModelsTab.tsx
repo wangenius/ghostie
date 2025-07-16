@@ -2,54 +2,22 @@ import { TabListItem } from "@/components/custom/TabListItem";
 import { PreferenceBody } from "@/components/layout/PreferenceBody";
 import { PreferenceLayout } from "@/components/layout/PreferenceLayout";
 import { PreferenceSidebar } from "@/components/layout/PreferenceSidebar";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
-import { TbBox, TbPlus, TbSettings, TbEdit, TbTrash } from "react-icons/tb";
-import { ProviderItem } from "./ProviderItem";
-import { ProviderConfigDialog } from "./ProviderConfigDialog";
-import { useProviders, ProviderConfigItem } from "@/hooks/useProviders";
+import { Button } from "@/components/ui/button";
+import { ProviderConfigItem, useProviders } from "@/hooks/useProviders";
+import { useEffect, useState } from "react";
+import { TbBox, TbEdit, TbPlus, TbSettings, TbTrash } from "react-icons/tb";
 
 export function ModelsTab() {
   const [selectedProvider, setSelectedProvider] =
     useState<ProviderConfigItem | null>(null);
-  const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
-  const [configDialogMode, setConfigDialogMode] = useState<"add" | "edit">(
-    "add",
-  );
-  const [editingProvider, setEditingProvider] = useState<
-    ProviderConfigItem | undefined
-  >();
 
-  const {
-    providers,
-    loading,
-    error,
-    fetchProviders,
-    addCustomProvider,
-    updateProvider,
-    deleteProvider,
-    testProvider,
-    getSupportedFormats,
-  } = useProviders();
-
+  const { providers, loading, error, fetchProviders, deleteProvider } =
+    useProviders();
   // 初始化时获取providers
   useEffect(() => {
     fetchProviders();
   }, [fetchProviders]);
-
-  const handleAddProvider = () => {
-    setConfigDialogMode("add");
-    setEditingProvider(undefined);
-    setIsConfigDialogOpen(true);
-  };
-
-  const handleEditProvider = (provider: ProviderConfigItem) => {
-    setConfigDialogMode("edit");
-    setEditingProvider(provider);
-    setIsConfigDialogOpen(true);
-  };
 
   const handleDeleteProvider = async (providerName: string) => {
     if (confirm(`确定要删除Provider "${providerName}" 吗？`)) {
@@ -81,7 +49,7 @@ export function ModelsTab() {
                 size="sm"
                 variant="ghost"
                 className="h-6 w-6 p-0"
-                onClick={handleAddProvider}
+                onClick={() => {}}
               >
                 <TbPlus className="w-4 h-4" />
               </Button>
@@ -116,7 +84,6 @@ export function ModelsTab() {
                         className="h-6 w-6 p-0"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleEditProvider(provider);
                         }}
                       >
                         <TbEdit className="h-3 w-3" />
@@ -158,16 +125,9 @@ export function ModelsTab() {
           isEmpty={!selectedProvider}
           EmptyIcon={TbBox}
         >
-          {selectedProvider && <ProviderItem provider={selectedProvider} />}
+          {<></>}
         </PreferenceBody>
       </PreferenceLayout>
-
-      <ProviderConfigDialog
-        open={isConfigDialogOpen}
-        onOpenChange={setIsConfigDialogOpen}
-        provider={editingProvider}
-        mode={configDialogMode}
-      />
     </>
   );
 }
