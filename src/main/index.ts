@@ -14,6 +14,7 @@ import { App } from "./app/App";
 import { Settings } from "./store/Settings";
 import { ipc_handles } from "./ipc";
 import { ChatHistoryManager } from "./store/ChatHistoryManager";
+import { ProviderManager } from "./store/ProviderManager";
 
 import "./model/llm/provider";
 import { AgentManager } from "@/agent/AgentManager";
@@ -294,6 +295,9 @@ function setupPlatformSpecific(): void {
  */
 async function setupIPCHandlers(): Promise<void> {
   ipc_handles();
+
+  // 初始化 ProviderManager
+  await ProviderManager.getInstance().init();
 
   await AgentManager.getInstance().init();
 

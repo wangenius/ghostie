@@ -4,8 +4,9 @@ import {
   DrawerSelectorItem,
 } from "@/components/ui/drawer-selector";
 import { Input } from "@/components/ui/input";
-import { useModels, ModelType } from "@/hooks/useModels";
 import { useAgent } from "@/hooks/useAgent";
+import { useProviders } from "@/hooks/useProviders";
+import { ModelType } from "@common/types/agent";
 import { useState, useEffect, useMemo } from "react";
 
 // 从useAgent hook导入的类型
@@ -18,7 +19,7 @@ interface AgentEditorProps {
 export const AgentEditor = ({ agent }: AgentEditorProps) => {
   const [localAgent, setLocalAgent] = useState<AgentInfos>(agent);
   const { updateAgent } = useAgent();
-  const { fetchProviders, providers } = useModels();
+  const { fetchProviders, providers } = useProviders();
 
   // 当传入的agent变化时，更新本地状态
   useEffect(() => {
@@ -37,26 +38,17 @@ export const AgentEditor = ({ agent }: AgentEditorProps) => {
 
       providers.forEach((provider) => {
         // 为每个提供商添加其自定义模型
-        if (provider.customModels && provider.customModels.length > 0) {
-          provider.customModels.forEach((modelName) => {
+        if (provider.models && provider.models.length > 0) {
+          provider.models.forEach((modelName) => {
             items.push({
-              label: `${provider.displayName} - ${modelName}`,
+              label: `${modelName}`,
               value: `${provider.name}:${modelName}`,
-              description: `${provider.displayName} (${provider.format})`,
+              description: `${provider.name} (${provider.format})`,
               type: type,
             });
           });
-        } else {
-          // 如果没有自定义模型，添加一个默认项
-          items.push({
-            label: provider.displayName,
-            value: `${provider.name}:default`,
-            description: `${provider.displayName} (${provider.format})`,
-            type: type,
-          });
         }
       });
-
       return items;
     };
   }, [providers]);
@@ -144,9 +136,8 @@ export const AgentEditor = ({ agent }: AgentEditorProps) => {
                       ]
                     : []
                 }
-                items={getModelsArray(ModelType.CHAT)}
+                items={getModelsArray(ModelType.Chat)}
                 onSelect={([value]) => {
-                  // 解析 value 格式: "provider:modelName" 为 ModelItem 格式
                   const [provider, name] = value.split(":");
                   handleUpdate({
                     models: {

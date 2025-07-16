@@ -10,13 +10,14 @@ export interface ExecuteOptions {
 }
 
 /** 模型类型 */
-export type ModelType =
-  | "chat"
-  | "vision"
-  | "image"
-  | "audio"
-  | "video"
-  | "embedding";
+export enum ModelType {
+  Chat = "chat",
+  Vision = "vision",
+  Image = "image",
+  Audio = "audio",
+  Video = "video",
+  Embedding = "embedding",
+}
 
 export interface AgentChatOptions {
   images?: { contentType: string; base64Image: string }[];

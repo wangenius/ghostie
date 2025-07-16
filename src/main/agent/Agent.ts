@@ -36,7 +36,42 @@ export class Agent {
 
   /* 更新机器人元数据 */
   async update(data: Partial<Omit<AgentProps, "id">>) {
+    const oldProps = this.props;
     this.props = { ...this.props, ...data };
+    
+    // 如果模型配置发生变化，重新初始化模型实例
+    if (data.models) {
+      let modelUpdated = false;
+      
+      // 检查chat模型是否变更（这是主要使用的模型）
+      if (data.models.chat && data.models.chat !== oldProps.models.chat) {
+        // 停止旧模型
+        if (this.model) {
+          this.model.stop();
+        }
+        // 创建新模型实例
+        this.model = LLM.get(this.props.models.chat);
+        console.log(`Agent ${this.props.id} chat模型已更新为: ${JSON.stringify(this.props.models.chat)}`);
+        modelUpdated = true;
+      }
+      
+      // 如果没有chat模型但有其他模型变更，也记录日志
+      if (!modelUpdated) {
+        const changedModels = Object.keys(data.models).filter(key => 
+          data.models![key as keyof typeof data.models] !== oldProps.models[key as keyof typeof oldProps.models]
+        );
+        if (changedModels.length > 0) {
+          console.log(`Agent ${this.props.id} 模型配置已更新: ${changedModels.join(', ')}`);
+        }
+      }
+    }
+    
+    // 如果系统提示词发生变化，更新上下文
+    if (data.system && data.system !== oldProps.system) {
+      this.context.setSystem(data.system);
+      console.log(`Agent ${this.props.id} 系统提示词已更新`);
+    }
+    
     return this;
   }
 

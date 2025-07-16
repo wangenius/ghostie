@@ -2,7 +2,7 @@ import {
   AgentChatOptions,
   AgentProps
 } from "@common/types/agent";
-import { MemoryMessage } from "@common/types/MessageType";
+import { MemoryMessage, ChatSession } from "@common/types/MessageType";
 import { useCallback, useEffect, useState } from "react";
 import { cmd } from "../utils/shell";
 
@@ -385,6 +385,9 @@ export const useAgentChat = (agentId: string) => {
           }
         }
 
+        // 触发消息更新事件，通知其他组件刷新
+        triggerMessageUpdate(agentId);
+
         return aiMessage;
       } catch (err) {
         setError(err instanceof Error ? err.message : "发送消息失败");
@@ -549,5 +552,82 @@ export const useCurrentAgent = () => {
     error,
     fetchCurrentAgent,
     closeCurrentAgent,
+  };
+};
+
+// 全局消息更新事件
+const messageUpdateEvents = new Map<string, Set<() => void>>();
+
+// 触发特定agent的消息更新事件
+export const triggerMessageUpdate = (agentId: string) => {
+  const listeners = messageUpdateEvents.get(agentId);
+  if (listeners) {
+    listeners.forEach(listener => listener());
+  }
+};
+
+/**
+ * 获取Agent最近消息的Hook
+ */
+export const useAgentLatestMessage = (agentId: string) => {
+  const [latestMessage, setLatestMessage] = useState<MemoryMessage | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchLatestMessage = useCallback(async () => {
+    if (!agentId) {
+      setLatestMessage(null);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // 获取该agent的所有会话
+      const sessions = await cmd.invoke<ChatSession[]>("chat-history-get-sessions", agentId);
+      
+      if (sessions && sessions.length > 0) {
+        // 按更新时间排序，获取最新的会话
+        const latestSession = sessions.sort((a, b) => b.updatedAt - a.updatedAt)[0];
+        
+        if (latestSession && latestSession.messages && latestSession.messages.length > 0) {
+          // 获取该会话的最后一条消息
+          const lastMessage = latestSession.messages[latestSession.messages.length - 1];
+          setLatestMessage(lastMessage);
+        } else {
+          setLatestMessage(null);
+        }
+      } else {
+        setLatestMessage(null);
+      }
+    } catch (error) {
+      console.warn(`获取Agent ${agentId} 最近消息失败:`, error);
+      setLatestMessage(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [agentId]);
+
+  useEffect(() => {
+    fetchLatestMessage();
+    
+    // 注册消息更新监听器
+    if (!messageUpdateEvents.has(agentId)) {
+      messageUpdateEvents.set(agentId, new Set());
+    }
+    const listeners = messageUpdateEvents.get(agentId)!;
+    listeners.add(fetchLatestMessage);
+    
+    // 清理函数
+    return () => {
+      listeners.delete(fetchLatestMessage);
+      if (listeners.size === 0) {
+        messageUpdateEvents.delete(agentId);
+      }
+    };
+  }, [fetchLatestMessage, agentId]);
+
+  return {
+    latestMessage,
+    loading,
+    refetch: fetchLatestMessage,
   };
 };

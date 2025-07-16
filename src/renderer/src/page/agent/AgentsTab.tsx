@@ -7,7 +7,7 @@ import Avatar from "boring-avatars";
 import { TbGhost3, TbPlus } from "react-icons/tb";
 import { AgentChat } from "./AgentChat";
 import { useState, useEffect, useCallback } from "react";
-import { useAgent } from "@/hooks/useAgent";
+import { useAgent, useAgentLatestMessage } from "@/hooks/useAgent";
 
 // 从useAgent hook导入的类型
 type AgentInfos = NonNullable<ReturnType<typeof useAgent>["agents"][string]>;
@@ -125,22 +125,47 @@ export function AgentsTab() {
 }
 
 const TabItem = ({ agent }: { agent: AgentInfos }) => {
-  const loadingState = false;
-  const message = {
-    role: "user",
-    content: "Hello, how are you?",
-    created_at: new Date().toISOString(),
-    id: "1",
+  const { latestMessage, loading: loadingState } = useAgentLatestMessage(agent.id);
+  
+  // 提取消息内容和时间
+  const getMessageContent = () => {
+    if (!latestMessage) return agent.description || "";
+    
+    if (latestMessage.from === "user" || latestMessage.from === "agent") {
+      const textContent = latestMessage.content.find((item: any) => item.type === "text");
+      // 确保返回字符串，如果content不是字符串则转换为字符串
+      if (textContent?.content) {
+        return typeof textContent.content === "string" 
+          ? textContent.content 
+          : String(textContent.content);
+      }
+      return "";
+    } else if (latestMessage.from === "system") {
+      return typeof latestMessage.content === "string" 
+        ? latestMessage.content 
+        : String(latestMessage.content);
+    }
+    
+    return "";
+  };
+  
+  const getMessageTime = () => {
+    if (!latestMessage) return "";
+    
+    if (latestMessage.from === "user" || latestMessage.from === "agent") {
+      return latestMessage.created_at || latestMessage.updated_at;
+    }
+    
+    return "";
   };
   return (
     <div className="flex items-center justify-between gap-2 min-h-8">
       <Avatar
         size={32}
         name={agent.id}
-        variant="beam"
+        variant="marble"
         colors={["#92A1C6", "#146A7C", "#F0AB3D", "#C271B4", "#C20D90"]}
         className="flex-none"
-        square={false}
       />
       <div className="flex flex-col items-start justify-start flex-1 gap-1">
         <div className="flex justify-between w-full">
@@ -148,13 +173,13 @@ const TabItem = ({ agent }: { agent: AgentInfos }) => {
             {agent.name || "未命名助手"}{" "}
           </span>
           <span className="font-normal text-xs text-muted-foreground/50 truncate">
-            {message?.created_at ? Tools.whenWasThat(message?.created_at) : ""}
+            {getMessageTime() ? Tools.whenWasThat(getMessageTime()) : ""}
           </span>
         </div>
         <span className="text-xs text-muted-foreground line-clamp-1">
           {loadingState
             ? "typing..."
-            : message?.content || agent.description || ""}
+            : getMessageContent()}
         </span>
       </div>
     </div>

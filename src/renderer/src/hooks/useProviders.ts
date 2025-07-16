@@ -1,15 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { cmd } from "../utils/shell";
-
-export interface ProviderConfigItem {
-  name: string;
-  format: "openai" | "qwen" | "anthropic";
-  displayName: string;
-  description?: string;
-  apiKey?: string;
-  baseURL?: string;
-  customModels?: string[]; // 用户自定义的模型列表
-}
+import { ProviderConfigItem } from "@common/types/ProviderTypes";
 
 export const useProviders = () => {
   const [providers, setProviders] = useState<ProviderConfigItem[]>([]);
@@ -23,7 +14,6 @@ export const useProviders = () => {
       setError(null);
       const result = await cmd.invoke<ProviderConfigItem[]>("provider-list");
       console.log(result);
-      
       setProviders(result);
       return result;
     } catch (err) {
@@ -49,7 +39,10 @@ export const useProviders = () => {
 
   // 设置Provider配置
   const setProviderConfig = useCallback(
-    async (name: string, config: { apiKey?: string; baseURL?: string }) => {
+    async (
+      name: string,
+      config: { apiKey?: string; baseUrl?: string; baseURL?: string },
+    ) => {
       try {
         await cmd.invoke("provider-set", name, config);
         // 刷新Provider列表
@@ -111,16 +104,36 @@ export const useProviders = () => {
   }, []);
 
   // 获取常用模型列表
-  const getCommonModels = useCallback(async (format: string) => {
-    try {
-      return await cmd.invoke<string[]>("provider-models", format);
-    } catch (err) {
-      console.error("获取常用模型失败:", err);
-      return [];
-    }
-  }, []);
+  const getCommonModels = useCallback(
+    async (format?: string) => {
+      try {
+        if (format) {
+          return await cmd.invoke<string[]>("provider-models", format);
+        } else {
+          // 如果没有指定格式，返回所有格式的模型
+          const formats = await getSupportedFormats();
+          const allModels: Record<string, string[]> = {};
+          for (const fmt of formats) {
+            try {
+              allModels[fmt] = await cmd.invoke<string[]>(
+                "provider-models",
+                fmt,
+              );
+            } catch (err) {
+              console.error(`获取${fmt}格式模型失败:`, err);
+              allModels[fmt] = [];
+            }
+          }
+          return allModels;
+        }
+      } catch (err) {
+        console.error("获取常用模型失败:", err);
+        return format ? [] : {};
+      }
+    },
+    [getSupportedFormats],
+  );
 
-  // 获取特定Provider的模型列表（包括自定义模型）
   const getProviderModels = useCallback(async (providerName: string) => {
     try {
       return await cmd.invoke<string[]>("provider-get-models", providerName);
@@ -131,16 +144,19 @@ export const useProviders = () => {
   }, []);
 
   // 设置Provider的自定义模型列表
-  const setProviderModels = useCallback(async (providerName: string, models: string[]) => {
-    try {
-      await cmd.invoke("provider-set-models", providerName, models);
-      // 刷新Provider列表
-      await fetchProviders();
-    } catch (err) {
-      console.error("设置Provider模型列表失败:", err);
-      throw new Error(`设置Provider模型列表失败: ${err}`);
-    }
-  }, [fetchProviders]);
+  const setProviderModels = useCallback(
+    async (providerName: string, models: string[]) => {
+      try {
+        await cmd.invoke("provider-set-models", providerName, models);
+        // 刷新Provider列表
+        await fetchProviders();
+      } catch (err) {
+        console.error("设置Provider模型列表失败:", err);
+        throw new Error(`设置Provider模型列表失败: ${err}`);
+      }
+    },
+    [fetchProviders],
+  );
 
   // 初始化时获取Provider列表
   useEffect(() => {
@@ -215,7 +231,9 @@ export const useProviders = () => {
     getProvider,
     setProviderConfig,
     addCustomProvider,
+    addProvider: addCustomProvider, // 别名，保持向后兼容
     removeCustomProvider,
+    deleteCustomProvider: deleteProvider, // 别名，保持向后兼容
     updateProvider,
     deleteProvider,
     testProvider,

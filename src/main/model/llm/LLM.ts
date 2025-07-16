@@ -7,6 +7,7 @@ import { CoreMessage, generateText, streamText, Tool, ToolCallPart } from "ai";
 import dotenv from "dotenv";
 import { createQwen } from "./provider/qwenProvider";
 import { Context } from "@/agent/Context";
+import { ProviderManager } from "../../store/ProviderManager";
 
 dotenv.config();
 
@@ -27,19 +28,28 @@ export class LLM {
 
   static get(modelItem: ModelItem | undefined): LLM {
     if (!modelItem) {
+      // 默认使用 OpenAI 的 gpt-4o-mini 模型
       return new LLM({
         model: createOpenAI({
           apiKey: "",
         })("gpt-4o-mini"),
       });
     }
-    const provider = createQwen({
-      apiKey: process.env.DASHSCOPE_API_KEY || "",
-      baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    });
-    return new LLM({
-      model: provider.languageModel(modelItem.name),
-    });
+    
+    try {
+      // 使用 ProviderManager 创建模型实例
+      const providerManager = ProviderManager.getInstance();
+      const model = providerManager.createLanguageModel(modelItem.provider, modelItem.name);
+      return new LLM({ model });
+    } catch (error) {
+      console.error(`创建模型实例失败 (${modelItem.provider}/${modelItem.name}):`, error);
+      // 回退到默认模型
+      return new LLM({
+        model: createOpenAI({
+          apiKey: "",
+        })("gpt-4o-mini"),
+      });
+    }
   }
 
   /** 设置温度 */
