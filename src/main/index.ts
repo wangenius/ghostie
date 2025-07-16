@@ -11,7 +11,7 @@ import {
 import { join } from "path";
 import { SETTINGS_NAV_ITEMS } from "../common/config/nav";
 import { App } from "./app/App";
-import { Settings } from "./app/Settings";
+import { Settings } from "./store/Settings";
 import { ipc_handles } from "./ipc";
 import { ChatHistoryManager } from "./store/ChatHistoryManager";
 

@@ -6,7 +6,6 @@ import { UserData } from "./UserData";
 let chatSessions: Record<string, ChatSession> = {};
 const CHAT_HISTORY_FILE = "chat_history.json";
 
-// 保存到文件
 const saveToFile = async () => {
   try {
     await UserData.getInstance().save(chatSessions, CHAT_HISTORY_FILE);

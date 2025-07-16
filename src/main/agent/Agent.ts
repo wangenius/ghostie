@@ -61,6 +61,7 @@ export class Agent {
     this.model.stop();
   }
 
+  /* 关闭Agent */
   close() {
     this.model.stop();
     this.context.reset();

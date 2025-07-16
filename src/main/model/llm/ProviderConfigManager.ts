@@ -1,4 +1,4 @@
-import { Settings } from "@/app/Settings";
+import { Settings } from "@/store/Settings";
 import { IpcHandle, registerIpcHandlers } from "@/ipc/decorators";
 
 export interface ProviderConfig {

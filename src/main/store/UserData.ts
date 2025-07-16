@@ -5,6 +5,7 @@ import path from "path";
 export class UserData {
   private static instance: UserData;
   readonly path: string;
+
   constructor() {
     this.path = app.getPath("userData");
   }
@@ -15,6 +16,7 @@ export class UserData {
     }
     return UserData.instance;
   }
+
   async save(data: object, fileName: string): Promise<void> {
     try {
       // 确保目录存在
